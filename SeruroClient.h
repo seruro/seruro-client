@@ -1,6 +1,7 @@
 #pragma once
 
 #include "wx/wxprec.h"
+#include <wx/wx.h>
 
 #include <wx/icon.h>
 
@@ -41,7 +42,7 @@ public:
 
     // event handlers (these functions should _not_ be virtual)
     void OnQuit(wxCommandEvent& event);
-	void MainFrame::OnClose(wxCloseEvent &event);
+	void OnClose(wxCloseEvent &event);
     void OnAbout(wxCommandEvent& event);
 	void OnIconize(wxIconizeEvent& event);
 

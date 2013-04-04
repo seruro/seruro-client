@@ -11,7 +11,7 @@ END_EVENT_TABLE()
 
 const int SeruroTray::PopupExitID = wxID_HIGHEST + 1;
 
-SeruroTray::SeruroTray() : wxTaskBarIcon()
+SeruroTray::SeruroTray() : wxTaskBarIcon(wxTBI_CUSTOM_STATUSITEM)
 {
 	mainFrame = NULL;
 }

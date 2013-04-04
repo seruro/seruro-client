@@ -4,14 +4,8 @@
 #include "SeruroClient.h"
 #include "SeruroTray.h"
 
+#include "resources/icon_good.xpm"
 
-// ----------------------------------------------------------------------------
-// event tables and other macros for wxWidgets
-// ----------------------------------------------------------------------------
-
-// the event tables connect the wxWidgets events with the functions (event
-// handlers) which process them. It can be also done at run-time, but for the
-// simple menu events like this the static method is much simpler.
 BEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_MENU	(Event_Quit,	MainFrame::OnQuit)
     EVT_MENU	(Event_About,	MainFrame::OnAbout)
@@ -21,45 +15,22 @@ BEGIN_EVENT_TABLE(MainFrame, wxFrame)
 	EVT_CLOSE	(				MainFrame::OnClose)
 END_EVENT_TABLE()
 
-// Create a new application object: this macro will allow wxWidgets to create
-// the application object during program execution (it's better than using a
-// static object for many reasons) and also implements the accessor function
-// wxGetApp() which will return the reference of the right type (i.e. SeruroClient and
-// not wxApp)
+
 IMPLEMENT_APP(SeruroClient)
 
-// ----------------------------------------------------------------------------
-// the application class
-// ----------------------------------------------------------------------------
 
-// 'Main program' equivalent: the program execution "starts" here
 bool SeruroClient::OnInit()
 {
-    // call the base class initialization method, currently it only parses a
-    // few common command-line options but it could be do more in the future
     if ( !wxApp::OnInit() )
         return false;
 
-    // create the main application window
     MainFrame *frame = new MainFrame(wxT("Seruro Client"));
 
-    // and show it (the frames, unlike simple controls, are not shown when
-    // created initially)
     frame->Show(true);
 
-    // success: wxApp::OnRun() will be called which will enter the main message
-    // loop and the application will run. If we returned false here, the
-    // application would exit immediately.
     return true;
 }
 
-//const wxString MainFrame::SeruroIconFile = wxT("resources\\icon_good.png");
-
-// ----------------------------------------------------------------------------
-// main frame
-// ----------------------------------------------------------------------------
-
-// frame constructor
 MainFrame::MainFrame(const wxString& title) : wxFrame(NULL, wxID_ANY, title)
 {
 	tray = new SeruroTray();
@@ -67,8 +38,13 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(NULL, wxID_ANY, title)
 
 	#if defined(__WXMSW__)
 		SetIcon(wxICON(main));
-		tray->SetIcon(wxICON(main));
+        tray->SetIcon(wxICON(main), wxT("Seruro Client"));
 	#endif
+    
+    /* Round-about way of setting tray icon */
+    #if defined(__WXMAC__)
+        tray->SetIcon(wxIcon(icon_good), wxT("Seruro Client"));
+    #endif
 
 #if wxUSE_MENUS
     // create a menu bar
@@ -107,11 +83,6 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(NULL, wxID_ANY, title)
 
 }
 
-
-// event handlers
-
-// The user "closes" the window frame, which causes the app to continue to persist in the system tray
-// This is not a "quit" app event.
 void MainFrame::OnClose(wxCloseEvent &event)
 {
 	if (event.CanVeto()) {
@@ -119,7 +90,6 @@ void MainFrame::OnClose(wxCloseEvent &event)
 		event.Veto();
 		return;
 	}
-
 	// Problem
 	tray->RemoveIcon();
 	tray->Destroy();
