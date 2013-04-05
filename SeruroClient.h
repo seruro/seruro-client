@@ -5,6 +5,13 @@
 
 #include <wx/icon.h>
 
+#if defined(__VLD__)
+#include <vld.h>
+#endif
+
+#ifndef H_SeruroClient
+#define H_SeruroClient
+
 class SeruroTray;
 
 // IDs for the controls and the menu commands
@@ -26,17 +33,16 @@ public:
 };
 
 // Define a new frame type: this is going to be our main frame
-class MainFrame : public wxFrame
+class SeruroFrame : public wxFrame
 {
 public:
     // ctor(s)
-    MainFrame(const wxString& title);
+    SeruroFrame(const wxString& title);
 
     // event handlers (these functions should _not_ be virtual)
-    void OnQuit(wxCommandEvent& event);
 	void OnClose(wxCloseEvent &event);
-    void OnAbout(wxCommandEvent& event);
 	void OnIconize(wxIconizeEvent& event);
+	void OnQuit(wxCommandEvent& event);
 
 protected:
 	SeruroTray *tray;
@@ -44,3 +50,5 @@ protected:
 private:
     DECLARE_EVENT_TABLE()
 };
+
+#endif

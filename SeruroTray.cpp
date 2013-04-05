@@ -44,7 +44,7 @@ SeruroTray::SeruroTray() : wxTaskBarIcon(wxTBI_CUSTOM_STATUSITEM)
 	mainFrame = NULL;
 }
 
-void SeruroTray::SetMainFrame(MainFrame *frame)
+void SeruroTray::SetMainFrame(SeruroFrame *frame)
 {
 	mainFrame = frame;
 }
@@ -64,23 +64,28 @@ void SeruroTray::OnQuit(wxCommandEvent& WXUNUSED(event)){
 	if (mainFrame) mainFrame->Close(true);
 }
 
+void SeruroTray::OnAbout(wxCommandEvent& WXUNUSED(event))
+{
+    wxMessageBox(wxString::Format(
+		wxT("Welcome to %s!\n\nThis is the minimal wxWidgets sample\nrunning under %s."), 
+		wxVERSION_STRING, wxGetOsDescription()), 
+		wxT("About wxWidgets minimal sample"), wxOK | wxICON_INFORMATION);
+}
+
 wxMenu* SeruroTray::CreatePopupMenu()
 {
 	wxMenu *popup = new wxMenu;
-	wxMenuItem *header = new wxMenuItem;
-
-	header->SetItemLabel(wxT("Active Sessions"));
-	header->SetTextColour(wxT("gray"));
+	/*wxMenuItem *header = new wxMenuItem;
 
 	popup->Append(seruroID_ENCRYPT, wxT("Encrypt"));
 	popup->Append(seruroID_DECRYPT, wxT("Decrypt"));
 	popup->AppendSeparator();
-	popup->Append(header);
 	popup->AppendSeparator();
 	popup->Append(seruroID_SEARCH, wxT("Search"));
 	popup->Append(seruroID_UPDATE, wxT("Update"));
 	popup->AppendSeparator();
-	popup->Append(seruroID_CONFIGURE, wxT("Configure"));
+	popup->Append(seruroID_CONFIGURE, wxT("Configure"));*/
 	popup->Append(seruroID_EXIT, wxT("E&xit"));
+
 	return popup;
 }

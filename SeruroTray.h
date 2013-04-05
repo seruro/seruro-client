@@ -3,7 +3,10 @@
 
 #include <wx/taskbar.h>
 
-class MainFrame;
+#ifndef H_SeruroTray
+#define H_SeruroTray
+
+class SeruroFrame;
 
 const int seruroID_SEARCH		= wxID_HIGHEST + 10;
 const int seruroID_CONFIGURE	= wxID_HIGHEST + 11;
@@ -16,9 +19,9 @@ class SeruroTray: public wxTaskBarIcon
 {
 public:
 	SeruroTray();
-	~SeruroTray() {}
+	//~SeruroTray() {}
 
-	void SetMainFrame(MainFrame *frame);
+	void SetMainFrame(SeruroFrame *frame);
 	virtual wxMenu *CreatePopupMenu();
 
 	void onEncrypt(wxCommandEvent &event);
@@ -29,10 +32,13 @@ public:
 
 	void OnLeftDoubleClick(wxTaskBarIconEvent &event);
 	void OnQuit(wxCommandEvent &event);
+	void OnAbout(wxCommandEvent& event);
 
 protected:
-	MainFrame *mainFrame;
+	SeruroFrame *mainFrame;
 
 private:
 	DECLARE_EVENT_TABLE()
 };
+
+#endif
