@@ -10,12 +10,7 @@ class SeruroTray;
 // IDs for the controls and the menu commands
 enum
 {
-    // menu items
     Event_Quit = wxID_EXIT,
-
-    // it is important for the id corresponding to the "About" command to have
-    // this standard value as otherwise it won't be handled properly under Mac
-    // (where it is special and put into the "Apple" menu)
     Event_About = wxID_ABOUT,
 };
 
@@ -23,9 +18,6 @@ enum
 class SeruroClient : public wxApp
 {
 public:
-    // override base class virtuals
-    // ----------------------------
-
     // this one is called on application startup and is a good place for the app
     // initialization (doing it here and not in the ctor allows to have an error
     // return: if OnInit() returns false, the application terminates)
@@ -48,11 +40,7 @@ public:
 
 protected:
 	SeruroTray *tray;
-	
-	//wxIcon SeruroIcon;
-	//static const wxString SeruroIconFile;
 
 private:
-    // any class wishing to process wxWidgets events must use this macro
     DECLARE_EVENT_TABLE()
 };
