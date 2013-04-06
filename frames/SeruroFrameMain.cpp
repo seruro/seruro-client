@@ -25,14 +25,20 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title) : SeruroFrame(title)
 	tray = new SeruroTray();
 	tray->SetMainFrame(this);
 
-	#if defined(__WXMSW__)
-    	SetIcon(wxICON(main));
-		tray->SetIcon(wxICON(main), wxT("Seruro Client"));
-	#endif
-    #if defined(__WXMAC__)
-		#include "resources/icon_good.xpm"
+	/* Todo: replace icon */
+	//#if defined(__WXMSW__)
+    	SetIcon(wxIcon(icon_good));
+	//	tray->SetIcon(wxICON(main), wxT("Seruro Client"));
+	//#endif
+    //#if defined(__WXMAC__)
         tray->SetIcon(wxIcon(icon_good), wxT("Seruro Client"));
-    #endif
+    //#endif
+
+	/* There is an optional setup wizard. */
+	if (false) {
+		SeruroSetup setup(this);
+		setup.RunWizard(setup.GetFirstPage());
+	}
 
 	/* Testing IMGCTRL */
 	const wxSize imageSize(32, 32);
@@ -93,4 +99,19 @@ void SeruroFrameMain::OnQuit(wxCommandEvent& WXUNUSED(event))
 {
     // true is to force the frame to close
     Close(true);
+}
+
+void SeruroFrameMain::OnSetupRun(wxCommandEvent &event)
+{
+
+}
+
+void SeruroFrameMain::OnSetupCancel(wxWizardEvent& event)
+{
+
+}
+
+void SeruroFrameMain::OnSetupFinished(wxWizardEvent& event)
+{
+
 }

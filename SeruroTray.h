@@ -1,19 +1,23 @@
 
-#include <wx/wxprec.h>
-
-#include <wx/taskbar.h>
-
 #ifndef H_SeruroTray
 #define H_SeruroTray
 
-class SeruroFrame;
+#include <wx/taskbar.h>
 
-const int seruroID_SEARCH		= wxID_HIGHEST + 10;
-const int seruroID_CONFIGURE	= wxID_HIGHEST + 11;
-const int seruroID_UPDATE		= wxID_HIGHEST + 12;
-const int seruroID_DECRYPT		= wxID_HIGHEST + 13;
-const int seruroID_ENCRYPT		= wxID_HIGHEST + 14;
-const int seruroID_EXIT			= wxID_HIGHEST + 1;
+#include "SeruroClient.h"
+#include "frames/SeruroFrames.h"
+
+class SeruroMainFrame;
+
+enum
+{
+	seruroID_SEARCH		= wxID_HIGHEST + 10,
+	seruroID_CONFIGURE	= wxID_HIGHEST + 11,
+	seruroID_UPDATE		= wxID_HIGHEST + 12,
+	seruroID_DECRYPT	= wxID_HIGHEST + 13,
+	seruroID_ENCRYPT	= wxID_HIGHEST + 14,
+	seruroID_EXIT		= wxID_HIGHEST + 1
+};
 
 class SeruroTray: public wxTaskBarIcon
 {
@@ -21,7 +25,7 @@ public:
 	SeruroTray();
 	//~SeruroTray() {}
 
-	void SetMainFrame(SeruroFrame *frame);
+	void SetMainFrame(SeruroFrameMain *frame);
 	virtual wxMenu *CreatePopupMenu();
 
 	void onEncrypt(wxCommandEvent &event);
@@ -35,7 +39,7 @@ public:
 	void OnAbout(wxCommandEvent& event);
 
 protected:
-	SeruroFrame *mainFrame;
+	SeruroFrameMain *mainFrame;
 
 private:
 	DECLARE_EVENT_TABLE()

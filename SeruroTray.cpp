@@ -2,7 +2,6 @@
 #include <wx/menu.h>
 
 #include "SeruroTray.h"
-#include "SeruroClient.h"
 
 BEGIN_EVENT_TABLE(SeruroTray, wxTaskBarIcon)
 	EVT_TASKBAR_LEFT_DCLICK(SeruroTray::OnLeftDoubleClick)
@@ -44,7 +43,7 @@ SeruroTray::SeruroTray() : wxTaskBarIcon(wxTBI_CUSTOM_STATUSITEM)
 	mainFrame = NULL;
 }
 
-void SeruroTray::SetMainFrame(SeruroFrame *frame)
+void SeruroTray::SetMainFrame(SeruroFrameMain *frame)
 {
 	mainFrame = frame;
 }
@@ -75,7 +74,7 @@ void SeruroTray::OnAbout(wxCommandEvent& WXUNUSED(event))
 wxMenu* SeruroTray::CreatePopupMenu()
 {
 	wxMenu *popup = new wxMenu;
-	/*wxMenuItem *header = new wxMenuItem;
+	wxMenuItem *header = new wxMenuItem;
 
 	popup->Append(seruroID_ENCRYPT, wxT("Encrypt"));
 	popup->Append(seruroID_DECRYPT, wxT("Decrypt"));
@@ -84,7 +83,7 @@ wxMenu* SeruroTray::CreatePopupMenu()
 	popup->Append(seruroID_SEARCH, wxT("Search"));
 	popup->Append(seruroID_UPDATE, wxT("Update"));
 	popup->AppendSeparator();
-	popup->Append(seruroID_CONFIGURE, wxT("Configure"));*/
+	popup->Append(seruroID_CONFIGURE, wxT("Configure"));
 	popup->Append(seruroID_EXIT, wxT("E&xit"));
 
 	return popup;

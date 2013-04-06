@@ -1,7 +1,11 @@
 
+#ifndef H_SeruroSetup
+#define H_SeruroSetup
+
 #include "wx/wizard.h"
 
 #include "SeruroClient.h"
+#include "frames/SeruroFrameMain.h"
 
 enum
 {
@@ -11,13 +15,13 @@ enum
 class SeruroSetup : public wxWizard
 {
 public:
-	SeruroSetup(wxFrame *parent);
+	SeruroSetup(SeruroFrameMain *parent);
 
 	wxWizardPage *GetFirstPage() const { return page1; }
 
 private:
 	wxWizardPageSimple *page1;
-}
+};
 
 class SeruroSetupAlert : public wxWizardPageSimple
 {
@@ -38,7 +42,7 @@ public:
 	virtual bool TransferDataFromWindow() 
 	{
 		if (! this->checkBox->GetValue()) {
-			wxMessageBox(wxT("Please verify that you would like to configure the Seruro Client manually.", wxT("No Way"), wxICON_WARNING | wxOK, this);
+			wxMessageBox(wxT("Please verify that you would like to configure the Seruro Client manually."), wxT("No Way"), wxICON_WARNING | wxOK, this);
 			return false;
 		}
 		return true;
@@ -46,5 +50,6 @@ public:
 
 private:
 	wxCheckBox *checkBox;
-}
+};
 
+#endif

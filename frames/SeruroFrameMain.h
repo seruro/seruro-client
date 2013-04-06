@@ -1,8 +1,10 @@
 
-#include "../SeruroClient.h"
-
 #ifndef H_SeruroFrameMain
 #define H_SeruroFrameMain
+
+#include <wx/wizard.h>
+
+#include "../SeruroClient.h"
 
 // IDs for the controls and the menu commands
 enum

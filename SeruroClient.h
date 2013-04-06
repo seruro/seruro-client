@@ -1,25 +1,19 @@
 #pragma once
 
+#ifndef H_SeruroClient
+#define H_SeruroClient
+
 #include "wx/wxprec.h"
 #include <wx/wx.h>
 
-#include <wx/icon.h>
+#include <wx/notebook.h>
 
 #if defined(__VLD__)
 #include <vld.h>
 #endif
 
-#ifndef H_SeruroClient
-#define H_SeruroClient
-
-class SeruroTray;
-
-// IDs for the controls and the menu commands
-enum
-{
-    Event_Quit = wxID_EXIT,
-    Event_About = wxID_ABOUT,
-};
+/* Sample icon to use for everything while testing. */
+#include "resources/icon_good.xpm"
 
 // Define a new application type, each program should derive a class from wxApp
 class SeruroClient : public wxApp
@@ -32,23 +26,16 @@ public:
 
 };
 
-// Define a new frame type: this is going to be our main frame
 class SeruroFrame : public wxFrame
 {
 public:
-    // ctor(s)
-    SeruroFrame(const wxString& title);
+	SeruroFrame(const wxString &title) : wxFrame(NULL, wxID_ANY, title) {}
+};
 
-    // event handlers (these functions should _not_ be virtual)
-	void OnClose(wxCloseEvent &event);
-	void OnIconize(wxIconizeEvent& event);
-	void OnQuit(wxCommandEvent& event);
-
-protected:
-	SeruroTray *tray;
-
-private:
-    DECLARE_EVENT_TABLE()
+class SeruroPanel : public wxPanel
+{
+public:
+	SeruroPanel(wxBookCtrlBase *parent, const wxString &title);
 };
 
 #endif
