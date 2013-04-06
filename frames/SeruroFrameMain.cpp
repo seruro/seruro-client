@@ -34,12 +34,6 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title) : SeruroFrame(title)
         tray->SetIcon(wxIcon(icon_good), wxT("Seruro Client"));
     //#endif
 
-	/* There is an optional setup wizard. */
-	if (false) {
-		SeruroSetup setup(this);
-		setup.RunWizard(setup.GetFirstPage());
-	}
-
 	/* Testing IMGCTRL */
 	const wxSize imageSize(32, 32);
 	wxImageList *list = new wxImageList(imageSize.GetWidth(), imageSize.GetHeight());

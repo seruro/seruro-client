@@ -9,7 +9,7 @@
 #include <wx/notebook.h>
 
 #if defined(__VLD__)
-#include <vld.h>
+//#include <vld.h>
 #endif
 
 /* Sample icon to use for everything while testing. */
@@ -24,7 +24,28 @@ public:
     // return: if OnInit() returns false, the application terminates)
     virtual bool OnInit();
 
+private:
+	/* Search whatever the backing store is for a configuration (in JSON). */
+	void FindConfig();
+
+	/* Todo: work in progress settings */
+	bool hasConfig;
 };
+
+#include <boost/property_tree/ptree.hpp>
+
+class SeruroConfig
+{
+public:
+	SeruroConfig() {}
+
+	void LoadConfig();
+	void WriteConfig();
+
+private:
+	bool hasConfig;
+	boost::property_tree::ptree ConfigData;
+}
 
 class SeruroFrame : public wxFrame
 {
