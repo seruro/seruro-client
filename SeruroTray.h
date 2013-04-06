@@ -26,6 +26,7 @@ public:
 	//~SeruroTray() {}
 
 	void SetMainFrame(SeruroFrameMain *frame);
+    void RaiseFrame();
 	virtual wxMenu *CreatePopupMenu();
 
 	void onEncrypt(wxCommandEvent &event);

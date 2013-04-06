@@ -41,7 +41,7 @@ void SeruroClient::FindConfig()
 	this->hasConfig = true;
 	boost::filesystem::path exePath(std::string(this->argv[0]));
 	boost::filesystem::path configFile("SeruroClient.config");
-	//boost::filesystem::ofstream log("SeruroClient.log");
+	boost::filesystem::ofstream log("SeruroClient.log");
 	//log << exePath.parent_path().string() << std::endl;
 	//std::cout << configFile.is_relative() << std::endl;
 	if (! boost::filesystem::exists(exePath.parent_path() / configFile)) {
@@ -51,3 +51,5 @@ void SeruroClient::FindConfig()
 		return;
 	}
 }
+
+

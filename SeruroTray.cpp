@@ -3,42 +3,73 @@
 
 #include "SeruroTray.h"
 
+/* OSX Hack for active focus */
+#if defined(__WXMAC__)
+#include <Carbon/Carbon.h>
+extern "C" { void CPSEnableForegroundOperation(ProcessSerialNumber *psn); }
+#endif
+
 BEGIN_EVENT_TABLE(SeruroTray, wxTaskBarIcon)
 	EVT_TASKBAR_LEFT_DCLICK(SeruroTray::OnLeftDoubleClick)
 	EVT_MENU(seruroID_ENCRYPT, SeruroTray::onEncrypt)
-	EVT_MENU(seruroID_ENCRYPT, SeruroTray::onDecrypt)
-	EVT_MENU(seruroID_ENCRYPT, SeruroTray::onSearch)
-	EVT_MENU(seruroID_ENCRYPT, SeruroTray::onConfigure)
-	EVT_MENU(seruroID_ENCRYPT, SeruroTray::onUpdate)
+	EVT_MENU(seruroID_DECRYPT, SeruroTray::onDecrypt)
+	EVT_MENU(seruroID_SEARCH, SeruroTray::onSearch)
+	EVT_MENU(seruroID_CONFIGURE, SeruroTray::onConfigure)
+	EVT_MENU(seruroID_UPDATE, SeruroTray::onUpdate)
 	EVT_MENU(seruroID_EXIT, SeruroTray::OnQuit)
 END_EVENT_TABLE()
 
+void SeruroTray::RaiseFrame()
+{
+    if (! mainFrame)
+		return;
+	if (mainFrame->IsIconized())
+        mainFrame->Iconize(false);
+    mainFrame->SetFocus();
+    mainFrame->Raise();
+	//if (! mainFrame->IsShown())
+        mainFrame->Show(true);
+    
+    /* Hardcore */
+#if defined(__WXMAC__)
+    //wxTheApp->SetFrontProcess();
+    //wxTheApp->SetActive(true, NULL);
+    //wx::MacSetFrontProcess();
+    //wxTheApp->MacReopenApp();
+    ProcessSerialNumber psn;
+    GetCurrentProcess(&psn);
+    //CPSEnableForegroundOperation(&psn);
+    TransformProcessType(&psn, kProcessTransformToForegroundApplication);
+    //SetFrontProcess(&psn);
+#endif
+}
+
 void SeruroTray::onEncrypt(wxCommandEvent &event)
 {
-
+    RaiseFrame();
 }
 
 void SeruroTray::onDecrypt(wxCommandEvent &event)
 {
-
+    RaiseFrame();
 }
 
 void SeruroTray::onSearch(wxCommandEvent &event)
 {
-
+    RaiseFrame();
 }
 
-void SeruroTray::onConfigure(wxCommandEvent &event)
+void SeruroTray::onConfigure(wxCommandEvent& WXUNUSED(event))
 {
-
+    RaiseFrame();
 }
 
 void SeruroTray::onUpdate(wxCommandEvent &event)
 {
-
+    RaiseFrame();
 }
 
-SeruroTray::SeruroTray() : wxTaskBarIcon(wxTBI_CUSTOM_STATUSITEM)
+SeruroTray::SeruroTray() : wxTaskBarIcon(wxTBI_CUSTOM_STATUSITEM) /* wxTBI_CUSTOM_STATUSITEM */
 {
 	mainFrame = NULL;
 }
@@ -50,11 +81,7 @@ void SeruroTray::SetMainFrame(SeruroFrameMain *frame)
 
 void SeruroTray::OnLeftDoubleClick(wxTaskBarIconEvent &event)
 {
-	if (! mainFrame)
-		return;
-	if (mainFrame->IsIconized()) mainFrame->Iconize(false);
-	if (! mainFrame->IsShown()) mainFrame->Show();
-	mainFrame->Raise();
+	RaiseFrame();
 }
 
 void SeruroTray::OnQuit(wxCommandEvent& WXUNUSED(event)){

@@ -45,7 +45,7 @@ public:
 private:
 	bool hasConfig;
 	boost::property_tree::ptree ConfigData;
-}
+};
 
 class SeruroFrame : public wxFrame
 {
