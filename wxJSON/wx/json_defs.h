@@ -90,7 +90,7 @@
 // modify it. If the platform seems to support 64-bits integers,
 // the following lines define the 'wxJSON_64BIT_INT' macro
 #if defined( wxLongLong_t )
-#define wxJSON_64BIT_INT
+//#define wxJSON_64BIT_INT
 #endif
 
 

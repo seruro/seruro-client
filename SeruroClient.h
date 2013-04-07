@@ -10,7 +10,6 @@
 #include <wx/wx.h>
 
 #include <wx/notebook.h>
-#include <wx/log.h>
 
 /* Remove when finished developing. */
 #ifndef __WXDEBUG__
@@ -28,6 +27,7 @@
 #include "resources/icon_good.xpm"
 
 class SeruroConfig;
+class SeruroFrameMain;
 
 // Define a new application type, each program should derive a class from wxApp
 class SeruroClient : public wxApp
@@ -40,34 +40,11 @@ public:
     /* Run networking thread from OnInit() */
     virtual bool OnInit();
 
+	void InitLogger();
+
 private:
 	SeruroConfig *config;
-};
-
-/* Config */
-#include <boost/property_tree/ptree.hpp>
-#include <wx/textfile.h>
-#include "wxJSON/wx/jsonval.h"
-
-class SeruroConfig
-{
-public:
-	SeruroConfig();
-
-    /* OS locations:
-       MSW(XP): <UserDir>/AppData/Roaming/Seruro/SeruroClient.config
-       MSW(6+): <UserDir>/Application Data/Seruro/SeruroClient.config
-       OSX: <UserDir>/Library/Seruro/SeruroClient.config
-       LNX: <UserDir>/.seruro/SeruroClient.config
-     */
-	void LoadConfig();
-	void WriteConfig();
-    bool HasConfig();
-
-private:
-    bool configValid;
-    wxTextFile *configFile;
-	wxJSONValue configData;
+	SeruroFrameMain *mainFrame;
 };
 
 class SeruroFrame : public wxFrame
@@ -79,7 +56,11 @@ public:
 class SeruroPanel : public wxPanel
 {
 public:
-	SeruroPanel(wxBookCtrlBase *parent, const wxString &title);
+	SeruroPanel(wxBookCtrlBase *parent, const wxString &title) :
+	  wxPanel(parent, wxID_ANY) {
+		  /* Todo, the last param is the imageID, it's currently static. */
+		  parent->AddPage(this, title, false, 0);
+	  }
 };
 
 #endif
