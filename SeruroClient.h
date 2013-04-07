@@ -47,6 +47,7 @@ private:
 /* Config */
 #include <boost/property_tree/ptree.hpp>
 #include <wx/textfile.h>
+#include "wxJSON/wx/jsonval.h"
 
 class SeruroConfig
 {
@@ -64,8 +65,9 @@ public:
     bool HasConfig();
 
 private:
+    bool configValid;
     wxTextFile *configFile;
-	boost::property_tree::ptree configData;
+	wxJSONValue configData;
 };
 
 class SeruroFrame : public wxFrame

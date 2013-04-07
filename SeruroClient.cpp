@@ -36,8 +36,8 @@ bool SeruroClient::OnInit()
 
 	/* There is an optional setup wizard. */
 	if (! this->config->HasConfig()) {
-		//SeruroSetup setup(mainFrame);
-		//setup.RunWizard(setup.GetFirstPage());
+		SeruroSetup setup(mainFrame);
+		setup.RunWizard(setup.GetFirstPage());
 	}
 
     return true;
@@ -55,15 +55,21 @@ SeruroConfig::SeruroConfig()
     this->configFile = new wxTextFile(paths->GetUserDataDir() + wxT("/") + wxT(SERURO_CONFIG_NAME));
     
     wxLogMessage(wxT("Config file: " + this->configFile->GetName()));
-    if (! HasConfig())
+    if (! this->configFile->Exists())
         wxLogMessage(wxT("Config does not exist"));
-    /* May be a good idea to remove loadConfig, and put the code here. */
+    
+    this->configValid = false;
     this->LoadConfig();
+
+    /* May be a good idea to remove loadConfig, and put the code here. */
+
 }
+
+#include "wxJSON/wx/jsonreader.h"
 
 void SeruroConfig::LoadConfig()
 {
-    if (! this->HasConfig())
+    if (! this->configFile->Exists())
         /* Cannot load a non-existing config file. */
         return;
     
@@ -71,16 +77,26 @@ void SeruroConfig::LoadConfig()
     wxString configString;
     configFile->Open();
     while (! configFile->Eof()) {
-        configString += configFile->GetNextLine();
+        configString += configFile->GetNextLine() + wxT("\n");
     }
     wxLogMessage(configString);
     
     /* Parse the file into JSON. */
+    wxJSONReader configReader;
+    int numErrors = configReader.Parse(configString, &configData);
+    if (numErrors > 0) {
+        //wxLogMessage(reader.GetErrors());
+        wxLogMessage(wxT("Error: could not parse config file."));
+        return;
+    }
+    
+    /* Indicate that the config is valid. */
+    this->configValid = true;
 }
 
 bool SeruroConfig::HasConfig()
 {
-    return this->configFile->Exists();
+    return (this->configFile->Exists() && this->configValid);
 }
 
 
