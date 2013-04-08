@@ -21,6 +21,12 @@ public:
 	void WriteConfig();
     bool HasConfig();
 
+	wxArrayString GetServers() { return GetMemberArray("servers"); }
+	wxArrayString GetAddresses() { return GetMemberArray("addresses"); }
+
+protected:
+	wxArrayString GetMemberArray(const wxString &member);
+
 private:
     bool configValid;
     wxTextFile *configFile;

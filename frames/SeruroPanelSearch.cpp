@@ -1,28 +1,14 @@
 
-#include "SeruroFrames.h"
+#include "SeruroPanelSearch.h"
 
-BEGIN_EVENT_TABLE(SeruroFrameSearch, SeruroFrame)
-END_EVENT_TABLE()
+#include <wx/stattext.h>
 
-SeruroFrameSearch::SeruroFrameSearch(const wxString& title) : SeruroFrame(title)
+SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, wxT("Search"))
 {
-	wxBoxSizer *VertSizer, *HorzSizer;
-	wxPanel *panel;
-
-	panel = new wxPanel(this);
-
-	/* Whole frame sizer */
-	VertSizer = new wxBoxSizer(wxVERTICAL);
-	HorzSizer = new wxBoxSizer(wxHORIZONTAL);
-	VertSizer->Add(HorzSizer, 1, wxEXPAND, 5);
-
 	wxStaticText *SearchLabel;
 	SearchLabel = new wxStaticText(this, wxID_ANY, wxT("Name or Email:"), 
 		wxDefaultPosition, wxDefaultSize, 0);
 
-	HorzSizer->Add(SearchLabel, wxRIGHT, 5);
-
-	panel->SetSizer(VertSizer);
-	this->Layout();
+	this->mainSizer->Add(SearchLabel, wxRIGHT, 5);
 	//SearchControl = new wxSearchCtrl
 }

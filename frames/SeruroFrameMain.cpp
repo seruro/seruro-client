@@ -4,6 +4,12 @@
 #include <wx/artprov.h>
 
 #include "SeruroFrameMain.h"
+#include "SeruroPanelConfigure.h"
+#include "SeruroPanelSearch.h"
+#include "SeruroPanelDecrypt.h"
+#include "SeruroPanelEncrypt.h"
+#include "SeruroPanelUpdate.h"
+
 #include "../SeruroTray.h"
 #include "../SeruroSetup.h"
 
@@ -35,17 +41,21 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title) : SeruroFrame(title)
     //#endif
 
 	/* Testing IMGCTRL */
-	const wxSize imageSize(32, 32);
-	wxImageList *list = new wxImageList(imageSize.GetWidth(), imageSize.GetHeight());
-	list->Add(wxArtProvider::GetIcon(wxART_INFORMATION, wxART_OTHER, imageSize));
+	//const wxSize imageSize(32, 32);
+	//wxImageList *list = new wxImageList(imageSize.GetWidth(), imageSize.GetHeight());
+	//list->Add(wxArtProvider::GetIcon(wxART_INFORMATION, wxART_OTHER, imageSize));
 
 	/* Add singular panel */
 	wxPanel *panel = new wxPanel(this, wxID_ANY);
-	wxNotebook *book = new wxNotebook(panel, wxID_ANY, wxPoint(-1, -1), wxSize(-1, -1), wxNB_TOP);
-	book->SetImageList(list);
+	book = new wxNotebook(panel, wxID_ANY, wxPoint(-1, -1), wxSize(-1, -1), wxNB_TOP);
+	//book->SetImageList(list);
 
 	/* Add content */
-	SeruroPanel *configure = new SeruroPanel(book, wxT("Configure"));
+	SeruroPanelSearch	 *search	= new SeruroPanelSearch(book);
+	SeruroPanelEncrypt	 *encrypt	= new SeruroPanelEncrypt(book);
+	SeruroPanelDecrypt	 *decrypt	= new SeruroPanelDecrypt(book);
+	SeruroPanelConfigure *configure = new SeruroPanelConfigure(book);
+	SeruroPanelUpdate	 *update	= new SeruroPanelUpdate(book);
 
 	//wxPanel *page1 = new wxPanel(book, wxID_ANY);
 	//wxStaticText *page1_t = new wxStaticText(page1, wxID_ANY, wxT("This is a page1."));
@@ -54,16 +64,39 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title) : SeruroFrame(title)
 	//book->AddPage(page1, wxT("Page 2"), false, 0);
 
 	/* Footer sizer */
-	wxBoxSizer *mainSizer = new wxBoxSizer(wxVERTICAL);
-	mainSizer->Add(book, 1, wxEXPAND);
-	panel->SetSizer(mainSizer);
+	wxBoxSizer *panelSizer = new wxBoxSizer(wxVERTICAL);
+	panelSizer->Add(book, 1, wxEXPAND);
+	panel->SetSizer(panelSizer);
 	panel->Layout();
 
-
+	this->mainSizer->Add(panel, 1, wxEXPAND, 5);
 	/*
 	SeruroFrameConfigure	*configure	= new SeruroFrameConfigure(wxT("Seruro Client: Configure"));
 	SeruroFrameSearch		*search		= new SeruroFrameSearch(wxT("Seruro Client: Search"));
 	*/
+}
+
+/* The tray menu generates events based on IDs, these IDs correspond to pages. 
+ * The mainFrame should change the notebook selection to the given page.
+ */
+void SeruroFrameMain::ChangePanel(tray_option_t option)
+{
+	switch (option) {
+	case seruroID_SEARCH:
+		this->book->SetSelection(0);
+		break;
+	case seruroID_ENCRYPT:
+		book->SetSelection(1);
+		break;
+	case seruroID_DECRYPT:
+		book->SetSelection(2);
+		break;
+	case seruroID_CONFIGURE:
+		book->SetSelection(3);
+		break;
+	case seruroID_UPDATE:
+		book->SetSelection(4);
+	}
 }
 
 void SeruroFrameMain::OnClose(wxCloseEvent &event)

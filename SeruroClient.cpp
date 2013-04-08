@@ -5,7 +5,7 @@
 #include "SeruroSetup.h"
 #include "SeruroConfig.h"
 
-#include "frames/SeruroFrames.h"
+#include "frames/SeruroFrameMain.h"
 
 #include <wx/log.h>
 
@@ -24,12 +24,15 @@ bool SeruroClient::OnInit()
 	/* User config instance */
     this->config = new SeruroConfig();
 
+	wxArrayString servers = config->GetServers();
+	wxLogStatus(servers[0]);
+
 	mainFrame->Show(); /* for debugging */
 
 	/* There is an optional setup wizard. */
 	if (! this->config->HasConfig()) {
-		SeruroSetup setup(mainFrame);
-		setup.RunWizard(setup.GetFirstPage());
+		//SeruroSetup setup(mainFrame);
+		//setup.RunWizard(setup.GetFirstPage());
 	}
 
     return true;
@@ -40,7 +43,7 @@ void SeruroClient::InitLogger()
 	wxLogWindow *logger = new wxLogWindow(this->mainFrame, wxT("Logger"));
 
     logger->GetFrame()->SetWindowStyle(wxDEFAULT_FRAME_STYLE|wxSTAY_ON_TOP);
-    logger->GetFrame()->SetSize( wxRect(0,50,400,250) );
+    logger->GetFrame()->SetSize( wxRect(0,1000,400,250) );
     wxLog::SetActiveTarget(logger);
     wxLogStatus(wxT("Seruro Client started."));
 }

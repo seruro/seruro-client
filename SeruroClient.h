@@ -47,20 +47,4 @@ private:
 	SeruroFrameMain *mainFrame;
 };
 
-class SeruroFrame : public wxFrame
-{
-public:
-	SeruroFrame(const wxString &title) : wxFrame(NULL, wxID_ANY, title) {}
-};
-
-class SeruroPanel : public wxPanel
-{
-public:
-	SeruroPanel(wxBookCtrlBase *parent, const wxString &title) :
-	  wxPanel(parent, wxID_ANY) {
-		  /* Todo, the last param is the imageID, it's currently static. */
-		  parent->AddPage(this, title, false, 0);
-	  }
-};
-
 #endif

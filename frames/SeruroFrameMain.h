@@ -4,7 +4,7 @@
 
 #include <wx/wizard.h>
 
-#include "../SeruroClient.h"
+#include "SeruroFrame.h"
 
 // IDs for the controls and the menu commands
 enum
@@ -13,7 +13,10 @@ enum
     Event_About = wxID_ABOUT,
 };
 
+/* From SeruroTray */
 class SeruroTray;
+
+enum tray_option_t;
 
 class SeruroFrameMain : public SeruroFrame
 {
@@ -29,8 +32,11 @@ public:
     void OnSetupCancel(wxWizardEvent& event);
     void OnSetupFinished(wxWizardEvent& event);
 
+	void ChangePanel(tray_option_t page);
+
 protected:
 	SeruroTray *tray;
+	wxNotebook *book;
 
 private:
 	DECLARE_EVENT_TABLE()

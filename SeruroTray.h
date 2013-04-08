@@ -4,12 +4,9 @@
 
 #include <wx/taskbar.h>
 
-#include "SeruroClient.h"
-#include "frames/SeruroFrames.h"
+class SeruroFrameMain;
 
-class SeruroMainFrame;
-
-enum
+enum tray_option_t
 {
 	seruroID_SEARCH		= wxID_HIGHEST + 10,
 	seruroID_CONFIGURE	= wxID_HIGHEST + 11,

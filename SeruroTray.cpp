@@ -1,7 +1,9 @@
 
 #include <wx/menu.h>
+#include <wx/msgdlg.h>
 
 #include "SeruroTray.h"
+#include "frames/SeruroFrameMain.h"
 
 /* OSX Hack for active focus */
 #if defined(__WXMAC__)
@@ -47,26 +49,31 @@ void SeruroTray::RaiseFrame()
 void SeruroTray::onEncrypt(wxCommandEvent &event)
 {
     RaiseFrame();
+	mainFrame->ChangePanel(seruroID_ENCRYPT);
 }
 
 void SeruroTray::onDecrypt(wxCommandEvent &event)
 {
     RaiseFrame();
+	mainFrame->ChangePanel(seruroID_DECRYPT);
 }
 
 void SeruroTray::onSearch(wxCommandEvent &event)
 {
     RaiseFrame();
+	mainFrame->ChangePanel(seruroID_SEARCH);
 }
 
 void SeruroTray::onConfigure(wxCommandEvent& WXUNUSED(event))
 {
     RaiseFrame();
+	mainFrame->ChangePanel(seruroID_CONFIGURE);
 }
 
 void SeruroTray::onUpdate(wxCommandEvent &event)
 {
     RaiseFrame();
+	mainFrame->ChangePanel(seruroID_UPDATE);
 }
 
 SeruroTray::SeruroTray() : wxTaskBarIcon(wxTBI_CUSTOM_STATUSITEM) /* wxTBI_CUSTOM_STATUSITEM */

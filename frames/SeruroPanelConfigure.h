@@ -1,17 +1,14 @@
 
-#include <wx/wx.h>
-#include <wx/icon.h>
+#ifndef H_SeruroPanelConfigure
+#define H_SeruroPanelConfigure
 
-#include "../SeruroClient.h"
-
-#ifndef H_SeruroFrameConfigure
-#define H_SeruroFrameConfigure
+#include "SeruroFrame.h"
 
 // Define a new frame type: this is going to be our main frame
-class SeruroFrameConfigure : public SeruroFrame
+class SeruroPanelConfigure : public SeruroPanel
 {
 public:
-    SeruroFrameConfigure(const wxString& title);
+    SeruroPanelConfigure(wxBookCtrlBase *book);
 };
 
 #endif

@@ -1,20 +1,15 @@
 
-#include <wx/wx.h>
+#ifndef H_SeruroPanelSearch
+#define H_SeruroPanelSearch
 
-#include "../SeruroClient.h"
-
-#ifndef H_SeruroFrameSearch
-#define H_SeruroFrameSearch
+#include "SeruroFrame.h"
 
 // Define a new frame type: this is going to be our main frame
-class SeruroFrameSearch : public SeruroFrame
+class SeruroPanelSearch : public SeruroPanel
 {
 public:
     // ctor(s)
-    SeruroFrameSearch(const wxString& title);
-
-private:
-    DECLARE_EVENT_TABLE()
+    SeruroPanelSearch(wxBookCtrlBase *book);
 };
 
 #endif

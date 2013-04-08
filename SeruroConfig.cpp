@@ -45,8 +45,27 @@ void SeruroConfig::LoadConfig()
         return;
     }
     
+	/* Config must have "servers" and "addresses", and they must be arrays. */
+	if (! configData.HasMember("servers") || ! configData.HasMember("addresses") ||
+		! configData["servers"].IsArray() || ! configData["addresses"].IsArray()) {
+		wxLogStatus(wxT("Config: could not find a required object array (servers, addresses)."));
+		return;
+	}
+
     /* Indicate that the config is valid. */
     this->configValid = true;
+}
+
+wxArrayString SeruroConfig::GetMemberArray(const wxString &member)
+{
+	/* Semi pointless check. */
+	wxArrayString values;
+	if (HasConfig()) {
+		for (int i = 0; i < configData[member].Size(); i++) {
+			values.Add(configData[member][i].AsString());
+		}
+	}
+	return values;
 }
 
 bool SeruroConfig::HasConfig()
