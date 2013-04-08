@@ -1,7 +1,10 @@
 
 #include "SeruroPanelConfigure.h"
+#include "../api/SeruroServerAPI.h"
 
 #include <wx/stattext.h>
+
+/* Todo: catch some custom SeruroRequestEvents (error, timeout, data) */
 
 SeruroPanelConfigure::SeruroPanelConfigure(wxBookCtrlBase *book) : SeruroPanel(book, wxT("Configure"))
 {
@@ -10,4 +13,9 @@ SeruroPanelConfigure::SeruroPanelConfigure(wxBookCtrlBase *book) : SeruroPanel(b
 		wxDefaultPosition, wxDefaultSize, 0);
 
 	this->mainSizer->Add(SearchLabel);
+
+	/* Button */
+	//SeruroServerAPI *api = new SeruroServerAPI();
+	//api->CreateRequest("api_name");
+	//api->Run();
 }
