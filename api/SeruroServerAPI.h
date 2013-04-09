@@ -15,7 +15,7 @@ enum api_name_t
 	SERURO_API_GET_CA,
 	SERURO_API_GET_CRL,
 	SERURO_API_GET_SYNC_CERT,
-	SERURO_API_LOGIN
+	SERURO_API_SETUP
 };
 
 /* When an API command finished it will add a SERURO_API_RESULT event.
@@ -33,16 +33,17 @@ DECLARE_EVENT_TYPE(SERURO_API_RESULT, -1);
 class SeruroRequest : public wxThread
 {
 public:
-	SeruroRequest(api_name_t name, wxJSONValue params,wxEvtHandler *parent);
+	SeruroRequest(wxJSONValue params, wxEvtHandler *parent, int parentEvtId);
 	virtual ~SeruroRequest();
 
 	virtual void *Entry(); /* thread execution starts */
 	/* Todo: consider an OnExit() is the thread can be terminated by user action. */
 
 private:
-	api_name_t name;
 	wxJSONValue params;
+
 	wxEvtHandler *evtHandler;
+	int evtId;
 	/* Todo: consider naming the frame that spawns the request.
 	 * to provide a progress update? */
 };
@@ -52,7 +53,15 @@ class SeruroServerAPI
 public:
 	SeruroServerAPI(wxEvtHandler *caller) : evtHandler(caller) {}
 
-	SeruroRequest *CreateRequest(api_name_t name, wxJSONValue params);
+	/* Must provide the API name, params, and callback event ID */
+	SeruroRequest *CreateRequest(api_name_t name, wxJSONValue params, int evtId);
+
+protected:
+	/* Name needed to determine (setup || the rest). */
+	wxJSONValue GetAuth(api_name_t name);
+	/* Params will be embedded into the request URL or as headers. */
+	wxJSONValue GetRequest(api_name_t name, wxJSONValue params);
+
 private:
 	//SeruroRequest *thread;
 	wxEvtHandler *evtHandler;

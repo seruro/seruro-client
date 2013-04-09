@@ -11,6 +11,11 @@ enum api_actions_t
 	BUTTON_GET_CA
 };
 
+enum api_result_handlers_t
+{
+	GET_CA_CALLBACK
+};
+
 // Define a new frame type: this is going to be our main frame
 class SeruroPanelTest : public SeruroPanel
 {
