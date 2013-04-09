@@ -10,6 +10,10 @@
 #include "SeruroPanelEncrypt.h"
 #include "SeruroPanelUpdate.h"
 
+#if defined(__WXDEBUG__) || defined(__DEBUG__)
+#include "SeruroPanelTest.h"
+#endif
+
 #include "../SeruroTray.h"
 #include "../SeruroSetup.h"
 
@@ -56,6 +60,10 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title) : SeruroFrame(title)
 	SeruroPanelDecrypt	 *decrypt	= new SeruroPanelDecrypt(book);
 	SeruroPanelConfigure *configure = new SeruroPanelConfigure(book);
 	SeruroPanelUpdate	 *update	= new SeruroPanelUpdate(book);
+
+#if defined(__WXDEBUG__) || defined(__DEBUG__)
+	SeruroPanelTest		*test = new SeruroPanelTest(book);
+#endif
 
 	//wxPanel *page1 = new wxPanel(book, wxID_ANY);
 	//wxStaticText *page1_t = new wxStaticText(page1, wxID_ANY, wxT("This is a page1."));

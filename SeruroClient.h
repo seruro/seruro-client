@@ -11,10 +11,6 @@
 #define NDEBUG 1
 #endif
 
-#if defined(__VLD__)
-//#include <vld.h>
-#endif
-
 #define SERURO_CONFIG_NAME  "SeruroClient.config"
 #define SERURO_APP_NAME     "Seruro Client"
 
@@ -44,6 +40,9 @@ public:
     
     /* Run networking thread from OnInit() */
     virtual bool OnInit();
+	~SeruroClient() {
+		/* Delete all threads. */
+	}
 
 	void InitLogger();
 
@@ -61,4 +60,10 @@ private:
 //const SeruroClient *wxTheSeruro = (SeruroClient *) wxTheApp;
 /* See documentation for wxGetApp() and the DECLARE_APP macro */
 
+#endif
+
+#if defined(__VLD__)
+	//#undef GetClassInfoW
+	//#include <wx/msw/winundef.h>
+	//#include <vld.h>
 #endif
