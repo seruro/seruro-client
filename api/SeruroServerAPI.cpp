@@ -29,10 +29,19 @@ wxThread::ExitCode SeruroRequest::Entry()
 
 	wxLogMessage("Seruro Thread finished...");
 
-	//wxJSONValue response;
+	//wxJSONValue *response = new wxJSONValue(wxT("data"));
+	wxJSONValue response;
+	response[wxT("data")] = wxT("data");
 	//response[wxT("data")] = wxT("data");
 	wxCommandEvent evt(SERURO_API_RESULT, wxID_ANY);
-	//evt.SetEventObject(response);
+
+	/* The controller might be responsible for remove this memory, the wxWidgets API does not
+	 * explicitly call out who owns this object. 
+	 */
+	/* Alternatively, this could be passed as a string (both in an out actually), 
+	 * and reassembled as a JSON object by the caller. 
+	 */
+	evt.SetClientData((void *) new wxJSONValue(response));
 
 	/* Not a critical section? */
 	evtHandler->AddPendingEvent(evt);

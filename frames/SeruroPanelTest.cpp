@@ -37,5 +37,12 @@ void SeruroPanelTest::OnGetCA(wxCommandEvent &event)
 
 void SeruroPanelTest::OnResult(wxCommandEvent &event)
 {
+	wxJSONValue *response = (wxJSONValue *) event.GetClientData();
 
+	bool hasMember = response->HasMember("data");
+	if (hasMember)
+		wxLogMessage(wxT("SeruroPanelTest> API valid response."));
+
+	/* Controller owns client data? */
+	delete[] response;
 }
