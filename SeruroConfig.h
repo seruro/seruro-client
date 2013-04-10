@@ -21,6 +21,8 @@ public:
 	void WriteConfig();
     bool HasConfig();
 
+	bool HasSyncCert();
+
 	wxArrayString GetServers() { return GetMemberArray("servers"); }
 	wxArrayString GetAddresses() { return GetMemberArray("addresses"); }
 

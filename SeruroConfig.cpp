@@ -73,4 +73,9 @@ bool SeruroConfig::HasConfig()
     return (this->configFile->Exists() && this->configValid);
 }
 
+/* Not finished */
+bool SeruroConfig::HasSyncCert()
+{
+	return false;
+}
 

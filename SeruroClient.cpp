@@ -5,6 +5,8 @@
 #include "SeruroSetup.h"
 #include "SeruroConfig.h"
 
+#include "crypto/SeruroCrypto.h"
+
 #include "frames/SeruroFrameMain.h"
 
 #include <wx/log.h>
@@ -24,15 +26,24 @@ bool SeruroClient::OnInit()
 	/* User config instance */
     this->config = new SeruroConfig();
 
-	wxArrayString servers = config->GetServers();
-	wxLogStatus(servers[0]);
+	/* CryptoInstance */
+	SeruroCrypto *crypt = new SeruroCrypto();
+	crypt->OnInit();
+
+	//wxArrayString servers = config->GetServers();
+	//wxLogStatus(servers[0]);
 
 	mainFrame->Show(); /* for debugging */
 
 	/* There is an optional setup wizard. */
 	if (! this->config->HasConfig()) {
-		//SeruroSetup setup(mainFrame);
-		//setup.RunWizard(setup.GetFirstPage());
+		SeruroSetup setup(mainFrame);
+		setup.RunWizard(setup.GetManualConfig());
+	} 
+	/* Todo: this should be an else if */
+	if (! this->config->HasSyncCert()) {
+		/* Show login/setup modal. */
+		wxDialog *diag = new wxDialog();
 	}
 
     return true;

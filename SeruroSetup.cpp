@@ -10,9 +10,16 @@ SeruroSetup::SeruroSetup(SeruroFrameMain *parent)
 		wxIcon(icon_good), wxDefaultPosition,
 		wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
 
-	this->page1 = new SeruroSetupAlert(this);
+	this->manualConfigPage = new SeruroSetupAlert(this);
+	downloadP12Page = new SeruroSetupDownload(this);
+	/* Todo: does going backward make sense? */
+	manualConfigPage->SetNext(downloadP12Page);
+	downloadP12Page->SetPrev(manualConfigPage);
+	decryptP12Page = new SeruroSetupDecrypt(this);
+	downloadP12Page->SetNext(decryptP12Page);
+	decryptP12Page->SetPrev(downloadP12Page);
     /* This will auto size the window vertically. */
-    this->GetPageAreaSizer()->Add(this->page1);
+    this->GetPageAreaSizer()->Add(this->manualConfigPage);
 }
 
 SeruroSetupAlert::SeruroSetupAlert(wxWizard *parent) : wxWizardPageSimple(parent)
@@ -42,3 +49,22 @@ bool SeruroSetupAlert::TransferDataFromWindow()
 	}
 	return true;
 }
+
+SeruroSetupDownload::SeruroSetupDownload(wxWizard *parent) : wxWizardPageSimple(parent)
+{
+}
+
+bool SeruroSetupDownload::TransferDataFromWindow()
+{
+	return true;
+}
+
+SeruroSetupDecrypt::SeruroSetupDecrypt(wxWizard *parent) : wxWizardPageSimple(parent)
+{
+}
+
+bool SeruroSetupDecrypt::TransferDataFromWindow()
+{
+	return true;
+}
+
