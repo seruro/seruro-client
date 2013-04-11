@@ -6,6 +6,14 @@
 #include <wx/textfile.h>
 #include "wxJSON/wx/jsonval.h"
 
+#define SERURO_DEFAULT_PORT 8080
+#define SERURO_DEFAULT_USER_AGENT "SeruroClient/1.0"
+
+#define SERURO_SECURITY_OPTIONS_TLS12	0x0001
+#define SERURO_SECURITY_OPTIONS_STRONG	0x0010
+#define SERURO_SECURITY_OPTIONS_CLIENT  0x0100
+#define SERURO_SECURITY_OPTIONS_DATA	0x1000
+
 class SeruroConfig
 {
 public:
