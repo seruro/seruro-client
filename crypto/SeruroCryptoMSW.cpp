@@ -8,11 +8,13 @@
 #include <winhttp.h>
 
 #pragma comment(lib, "winhttp")
+#pragma comment(lib, "crypt32")
 
 /* Code goes here */
 #include "../SeruroConfig.h"
 #include "SeruroCryptoMSW.h"
 
+/* Helper function to convert wxString to a L, the caller is responsible for memory. */
 BSTR AsLongString(wxString &input)
 {
 	int size = lstrlenA(input.mb_str(wxConvUTF8));
@@ -21,6 +23,7 @@ BSTR AsLongString(wxString &input)
 	return long_object;
 }
 
+/* Overload for easiness! */
 BSTR AsLongString(const char* input)
 {
 	wxString wx_input(input);
@@ -31,20 +34,20 @@ void SeruroCryptoMSW::OnInit()
 {
 	wxLogStatus(wxT("SeruroCrypt::MSW> Initialized"));
 
-	wxString none("192.168.0.123");
-	wxString verb("POST");
-	wxString object("/api");
+	wxString none("google.com");
+	wxString verb("GET");
+	wxString object("/");
 	wxString data("{home: yeah}");
-	TLSRequest(none, SERURO_SECURITY_OPTIONS_DATA, verb, object, data);
+	TLSRequest(none, 0, verb, object, data); /* SERURO_SECURITY_OPTIONS_DATA */
 }
 
 /* Errors should be events. */
 
-void SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress, 
+wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress, 
 		int p_options, wxString &p_verb, wxString &p_object)
 {
 	wxString wx_data;
-	TLSRequest(p_serverAddress, p_options, p_verb, p_object, wx_data);
+	return TLSRequest(p_serverAddress, p_options, p_verb, p_object, wx_data);
 }
 
 /* The TLS Request will assure the server meets the client's requirements for security.
@@ -59,12 +62,14 @@ void SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress,
  * acceptable client chains (signature chains). If the server requests a client certificate and the CLIENT
  * flag is not set, the request will fail.
  */
-void SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress, 
+wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress, 
 		int p_options, wxString &p_verb, wxString &p_object, wxString &p_data)
 {
 	DWORD dwSize = 0;
 	DWORD dwDownloaded = 0;
 	LPSTR pszOutBuffer;
+
+	wxString responseString("");
 
 	HINTERNET hSession = NULL, hConnect = NULL, hRequest = NULL;
 
@@ -130,47 +135,30 @@ void SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress,
 	dwSize = sizeof(DWORD);
 	bResults = WinHttpQueryOption(hRequest,
 		WINHTTP_OPTION_SECURITY_FLAGS, (LPVOID) &securitySupport, &dwSize);
-	//wxLogMessage(wxT("Security Support: %s"), wxString::Format(wxT("%u"), securitySupport));
-	if (! bResults) {
-		wxLogMessage("SeruroCrypto::TLSRequest> Invalid security support.");
-	}
 
-	if (! (securitySupport & SECURITY_FLAG_STRENGTH_STRONG)) {
+	if (! bResults || !(securitySupport & SECURITY_FLAG_STRENGTH_STRONG)) {
 		wxLogMessage("SeruroCrypto::TLSRequest> Server does not support strong security!");
-	} else {
 		/* Warning: The server DOES not meet requirements! */
 		/* Todo: fail here and report. */
+		goto bailout;
 	}
 
 	/* As a check, try to set MAX security, if this fails, that is a good thing. */
 
-	/* Check certificate information, for optional pinning. */
-	WINHTTP_CERTIFICATE_INFO certInfo;
-	dwSize = sizeof(WINHTTP_CERTIFICATE_INFO);
-	bResults = WinHttpQueryOption(hRequest,
-		WINHTTP_OPTION_SECURITY_CERTIFICATE_STRUCT, (LPVOID) &certInfo, &dwSize);
-	if (!bResults) {
-		wxLogMessage("SeruroCrypto::TLSRequest> Could not query server certificate.");
-	} else {
-		/* Save these for pinning. */
-		wxLogMessage(wxT("%s"), certInfo.lpszSubjectInfo);
-		wxLogMessage(wxT("%s"), certInfo.lpszIssuerInfo);
-		/* Documentation says only free these two, but there are other lpsz (pointers)??? */
-		LocalFree(certInfo.lpszSubjectInfo);
-		LocalFree(certInfo.lpszIssuerInfo);
-	}
+	/* Check for failure */
+	//wxLogMessage(wxT("%s"), wxString::Format(wxT("%d"), GetLastError()));
 
-
-	if (!bResults) {
-		/* SOmething went wrong, get out. */
-		wxLogMessage("SeruroCrypto::TLSRequest> WinHttpSendRequest failed.");
-		goto bailout;
-	}
+	/* Consider pinning techniques here. */
 
 	/* End the request. */
 	bResults = WinHttpReceiveResponse(hRequest, NULL);
 
 	if (!bResults) {
+		wxLogMessage(wxT("%s"), wxString::Format(wxT("%d"), GetLastError()));
+		if (GetLastError() == ERROR_WINHTTP_SECURE_FAILURE) {
+			wxLogMessage("SeruroCrypto::TLSRequest> server certificate failed.");
+			goto bailout;
+		}
 		if (GetLastError() == ERROR_WINHTTP_CLIENT_AUTH_CERT_NEEDED) {
 			/* Check if we're expecting. */
 			wxLogMessage("SeruroCrypto::TLSRequest> client auth cert needed.");
@@ -178,41 +166,43 @@ void SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress,
 		goto bailout;
 	}
 
-	if (bResults) {
-		wxString output("");
-		do {
+	do {
+		dwSize = 0;
+		if (! WinHttpQueryDataAvailable(hRequest, &dwSize)) {
+			wxLogMessage(wxT("SeruroCrypt> error in WinHttpReadData."));
+		}
+		pszOutBuffer = new char[dwSize+1];
+		if (!pszOutBuffer) {
+			// Out of memory
 			dwSize = 0;
-			if (! WinHttpQueryDataAvailable(hRequest, &dwSize)) {
-				wxLogMessage(wxT("SeruroCrypt> error in WinHttpReadData."));
-			}
-			pszOutBuffer = new char[dwSize+1];
-			if (!pszOutBuffer) {
-				// Out of memory
-				dwSize = 0;
+		} else {
+			ZeroMemory(pszOutBuffer, dwSize+1);
+			if (! WinHttpReadData(hRequest, (LPVOID) pszOutBuffer, dwSize, &dwDownloaded)) {
+				//error
 			} else {
-				ZeroMemory(pszOutBuffer, dwSize+1);
-				if (! WinHttpReadData(hRequest, (LPVOID) pszOutBuffer, dwSize, &dwDownloaded)) {
-					//error
-				} else {
-					//wxLogMessage(wxString::Format(wxT("%s"), pszOutBuffer));
-					output = output + wxString::FromAscii(pszOutBuffer, dwDownloaded);
-				}
-				delete [] pszOutBuffer;
+				//wxLogMessage(wxString::Format(wxT("%s"), pszOutBuffer));
+				responseString = responseString + wxString::FromAscii(pszOutBuffer, dwDownloaded);
 			}
-		} while (dwSize > 0);
-		wxLogMessage(wxT("%s"), output);
-	}
+			delete [] pszOutBuffer;
+		}
+	} while (dwSize > 0);
+	//wxLogMessage(wxT("%s"), output);
+	wxLogMessage("SeruroCrypto::TLSRequest> Response (TLS) success.");
 
-	return;	
+	/* Call some provided callback (optional). */
+
+	goto finished;
 
 bailout:
-
 	/* Send error event */
-	wxLogMessage("SeruroCrypto> error occured.");
+	wxLogMessage("SeruroCrypto::TLSRequest> error occured.");
 
+finished:
 	if (hRequest) WinHttpCloseHandle(hRequest);
 	if (hConnect) WinHttpCloseHandle(hConnect);
 	if (hSession) WinHttpCloseHandle(hSession);
+
+	return responseString;
 }
 
 #endif

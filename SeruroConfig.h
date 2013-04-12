@@ -6,8 +6,8 @@
 #include <wx/textfile.h>
 #include "wxJSON/wx/jsonval.h"
 
-#define SERURO_DEFAULT_PORT 8080
-#define SERURO_DEFAULT_USER_AGENT "SeruroClient/1.0"
+#define SERURO_DEFAULT_PORT 443
+#define SERURO_DEFAULT_USER_AGENT "Client/1.0"
 
 #define SERURO_SECURITY_OPTIONS_TLS12	0x0001
 #define SERURO_SECURITY_OPTIONS_STRONG	0x0010

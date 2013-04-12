@@ -5,6 +5,8 @@
 #ifndef H_SeruroCryptoMSW
 #define H_SeruroCryptoMSW
 
+#include <wx/string.h>
+
 class SeruroCryptoMSW
 {
 public:
@@ -12,9 +14,9 @@ public:
 	void OnInit();
 
 	/* For easy overloading access. */
-	void SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress, 
+	wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress, 
 		int p_options, wxString &p_verb, wxString &p_object);
-	void TLSRequest(wxString &p_serverAddress, 
+	wxString TLSRequest(wxString &p_serverAddress, 
 		int p_options, wxString &p_verb, wxString &p_object, 
 		wxString &p_data);
 
