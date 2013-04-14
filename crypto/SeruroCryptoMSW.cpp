@@ -34,14 +34,12 @@ void SeruroCryptoMSW::OnInit()
 {
 	wxLogStatus(wxT("SeruroCrypt::MSW> Initialized"));
 
-	wxString none("google.com");
-	wxString verb("GET");
-	wxString object("/");
-	wxString data("{home: yeah}");
-	TLSRequest(none, 0, verb, object, data); /* SERURO_SECURITY_OPTIONS_DATA */
+	//TLSRequest(none, 0, verb, object, data); /* SERURO_SECURITY_OPTIONS_DATA */
 }
 
 /* Errors should be events. */
+
+
 
 wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress, 
 		int p_options, wxString &p_verb, wxString &p_object)

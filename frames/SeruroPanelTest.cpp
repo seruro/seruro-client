@@ -24,8 +24,7 @@ SeruroPanelTest::SeruroPanelTest(wxBookCtrlBase *book) : SeruroPanel(book, wxT("
 void SeruroPanelTest::OnGetCA(wxCommandEvent &event)
 {
 	wxJSONValue params; /* no params */
-	//SeruroServerAPI *api = new SeruroServerAPI();
-	//SeruroRequest *api = new SeruroRequest(SERURO_API_GET_CA, params);
+	params[wxT("server")] = wxT("google.com");
 
 	SeruroRequest *request = api->CreateRequest(SERURO_API_GET_CA, params, GET_CA_CALLBACK);
 	request->Run();
@@ -35,7 +34,7 @@ void SeruroPanelTest::OnResult(wxCommandEvent &event)
 {
 	wxJSONValue *response = (wxJSONValue *) event.GetClientData();
 
-	bool hasMember = response->HasMember("data");
+	bool hasMember = response->HasMember("result");
 	if (hasMember)
 		wxLogMessage(wxT("SeruroPanelTest> API valid response."));
 

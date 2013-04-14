@@ -26,10 +26,6 @@ bool SeruroClient::OnInit()
 	/* User config instance */
     this->config = new SeruroConfig();
 
-	/* CryptoInstance */
-	SeruroCrypto *crypt = new SeruroCrypto();
-	crypt->OnInit();
-
 	//wxArrayString servers = config->GetServers();
 	//wxLogStatus(servers[0]);
 
