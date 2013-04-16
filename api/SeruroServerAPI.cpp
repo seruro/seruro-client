@@ -31,10 +31,10 @@ wxThread::ExitCode SeruroRequest::Entry()
 
 	/* Do some stuff */
 	SeruroCrypto *cryptoHelper = new SeruroCrypto();
-
+    
 	wxLogMessage(wxT("SeruroRequest (TLS)> %s,%s,%s"),
 		params["server"].AsString(), params["request"]["verb"].AsString(), params["request"]["object"].AsString());
-	wxString response = cryptoHelper->TLSRequest(params["server"].AsString(), params["request"]["flags"].AsInt(), 
+	wxString response = cryptoHelper->TLSRequest(params["server"].AsString(), params["request"]["flags"].AsInt(),
 		params["request"]["verb"].AsString(), params["request"]["object"].AsString());
 
 	delete [] cryptoHelper;

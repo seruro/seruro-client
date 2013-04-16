@@ -4,6 +4,7 @@
 #include "../wxJSON/wx/jsonval.h"
 
 #include <wx/button.h>
+#include <wx/log.h>
 
 BEGIN_EVENT_TABLE(SeruroPanelTest, wxPanel)
 	EVT_BUTTON(BUTTON_GET_CA, SeruroPanelTest::OnGetCA)
@@ -18,7 +19,7 @@ SeruroPanelTest::SeruroPanelTest(wxBookCtrlBase *book) : SeruroPanel(book, wxT("
 
 	wxButton *get_ca = new wxButton(this, BUTTON_GET_CA, wxT("GET CA"), 
 		wxDefaultPosition, wxDefaultSize, 0);
-	//this->mainSizer->Add(get_ca, wxRIGHT, 5);
+	this->mainSizer->Add(get_ca, wxRIGHT, 5);
 }
 
 void SeruroPanelTest::OnGetCA(wxCommandEvent &event)
@@ -39,5 +40,6 @@ void SeruroPanelTest::OnResult(wxCommandEvent &event)
 		wxLogMessage(wxT("SeruroPanelTest> API valid response."));
 
 	/* Controller owns client data? */
-	delete[] response;
+    if (response)
+        delete[] response;
 }

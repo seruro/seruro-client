@@ -10,11 +10,10 @@
 #include "SeruroPanelEncrypt.h"
 #include "SeruroPanelUpdate.h"
 
-#if defined(__WXDEBUG__) || defined(__DEBUG__)
+//#if defined(__WXDEBUG__)
 #include "SeruroPanelTest.h"
-#endif
+//#endif
 
-#include "../SeruroTray.h"
 #include "../SeruroSetup.h"
 
 BEGIN_EVENT_TABLE(SeruroFrameMain, wxFrame)
@@ -61,8 +60,8 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title) : SeruroFrame(title)
 	SeruroPanelConfigure *configure = new SeruroPanelConfigure(book);
 	SeruroPanelUpdate	 *update	= new SeruroPanelUpdate(book);
 
-#if defined(__WXDEBUG__) || defined(__DEBUG__)
-	SeruroPanelTest		*test = new SeruroPanelTest(book);
+#if defined(__WXDEBUG__)
+	SeruroPanelTest		*test1 = new SeruroPanelTest(book);
 #endif
 
 	//wxPanel *page1 = new wxPanel(book, wxID_ANY);

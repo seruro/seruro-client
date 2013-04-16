@@ -20,7 +20,7 @@ public:
 		int p_options, wxString &p_verb, wxString &p_object, 
 		wxString &p_data);
 
-	void InstallP12() {}
+	bool InstallP12() {return false;}
 };
 
 #endif 

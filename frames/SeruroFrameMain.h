@@ -5,6 +5,7 @@
 #include <wx/wizard.h>
 
 #include "SeruroFrame.h"
+#include "../SeruroTray.h"
 
 // IDs for the controls and the menu commands
 enum
@@ -16,7 +17,7 @@ enum
 /* From SeruroTray */
 class SeruroTray;
 
-enum tray_option_t;
+//extern enum tray_option_t;
 
 class SeruroFrameMain : public SeruroFrame
 {

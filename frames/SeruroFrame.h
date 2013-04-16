@@ -2,15 +2,6 @@
 #ifndef H_SeruroFrame
 #define H_SeruroFrame
 
-/*
-#include "SeruroFrameMain.h"
-#include "SeruroPanelConfigure.h"
-#include "SeruroPanelDecrypt.h"
-#include "SeruroPanelEncrypt.h"
-#include "SeruroPanelSearch.h"
-#include "SeruroPanelUpdate.h"
-*/
-
 #include <wx/frame.h>
 #include <wx/panel.h>
 #include <wx/sizer.h>
