@@ -51,8 +51,10 @@ public:
 	wxArrayThread seruro_threads;
 	//wxSemaphore seruro_semFinished;
 
-private:
+public:
 	SeruroConfig *config;
+
+private:
 	SeruroFrameMain *mainFrame;
 };
 

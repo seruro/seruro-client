@@ -15,8 +15,10 @@ enum api_name_t
 	SERURO_API_GET_CA,
 	SERURO_API_GET_CRL,
 	SERURO_API_GET_SYNC_CERT,
-	SERURO_API_SETUP
+	SERURO_API_GET_P12
 };
+
+/* Define the API routes (all prefixed with /api) */
 
 /* When an API command finished it will add a SERURO_API_RESULT event.
  * This event should be caught by a single function and the event object
@@ -57,9 +59,15 @@ public:
 	SeruroRequest *CreateRequest(api_name_t name, wxJSONValue params, int evtId);
 
 protected:
-	/* Name needed to determine (setup || the rest). */
-	wxJSONValue GetAuth(api_name_t name);
-	/* Params will be embedded into the request URL or as headers. */
+	/* Given an API identifier, this function will assemble the authorization
+	 * headers required for an API REQUEST. This will return a JSON property
+	 * with parameters needed by SeruroCrypto::TLSRequest. (either client auth
+	 * or username and password).
+	 * Name needed to determine (setup || the rest). */
+	wxJSONValue GetAuth(api_name_t name, wxJSONValue params);
+	/* Given an API identifier, this function will return a JSON propery with
+	 * the required REQUEST parameters (including verb, object, servername.
+	 * Params will be embedded into the request URL or as headers. */
 	wxJSONValue GetRequest(api_name_t name, wxJSONValue params);
 
 private:

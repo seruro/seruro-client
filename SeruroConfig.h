@@ -6,7 +6,7 @@
 #include <wx/textfile.h>
 #include "wxJSON/wx/jsonval.h"
 
-#define SERURO_DEFAULT_PORT 443
+#define SERURO_DEFAULT_PORT 4443
 #define SERURO_DEFAULT_USER_AGENT "Client/1.0"
 
 #define SERURO_SECURITY_OPTIONS_NONE    0x00
@@ -34,6 +34,11 @@ public:
 
 	wxArrayString GetServers() { return GetMemberArray("servers"); }
 	wxArrayString GetAddresses() { return GetMemberArray("addresses"); }
+	wxString GetSyncSubjectFromServer(wxString &p_serverAddress) {
+		/* Use the input server hostname to lookup the user's address, then append ' sync'. */
+		wxString address(wxT("/CN=teddy.reed@gmail.com sync"));
+		return address;
+	}
 
 protected:
 	wxArrayString GetMemberArray(const wxString &member);

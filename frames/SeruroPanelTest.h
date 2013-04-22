@@ -13,7 +13,11 @@ enum api_actions_t
 
 enum api_result_handlers_t
 {
-	GET_CA_CALLBACK
+	CALLBACK_GET_CA,
+	CALLBACK_GET_P12,
+	CALLBACK_GET_CERT,
+	CALLBACK_GET_CRL,
+	CALLBACK_SEARCH
 };
 
 // Define a new frame type: this is going to be our main frame
@@ -24,7 +28,10 @@ public:
     SeruroPanelTest(wxBookCtrlBase *book);
 
 	void OnGetCA(wxCommandEvent &event);
-	void OnResult(wxCommandEvent &event);
+	void OnGetCAResult(wxCommandEvent &event);
+
+	void OnGetP12(wxCommandEvent &event);
+	void OnGetP12Result(wxCommandEvent &event);
 
 private:
 	SeruroServerAPI *api;
