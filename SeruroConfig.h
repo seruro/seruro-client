@@ -19,6 +19,10 @@ class SeruroConfig
 {
 public:
 	SeruroConfig();
+	~SeruroConfig() {
+		delete configFile;
+		//delete configData;
+	}
 
     /* OS locations:
        MSW(XP): <UserDir>/AppData/Roaming/Seruro/SeruroClient.config
@@ -46,7 +50,7 @@ protected:
 private:
     bool configValid;
     wxTextFile *configFile;
-	wxJSONValue configData;
+	wxJSONValue *configData;
 };
 
 #endif

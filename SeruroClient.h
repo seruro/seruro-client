@@ -22,8 +22,9 @@
 
 /* Sample icon to use for everything while testing. */
 #include "resources/icon_good.xpm"
+#include "SeruroConfig.h"
 
-class SeruroConfig;
+//class SeruroConfig;
 class SeruroFrameMain;
 
 /* Source: thread samples */
@@ -40,8 +41,9 @@ public:
     
     /* Run networking thread from OnInit() */
     virtual bool OnInit();
-	~SeruroClient() {
-		/* Delete all threads. */
+	int OnExit() {
+		delete config;
+		return 0;
 	}
 
 	void InitLogger();
@@ -65,7 +67,10 @@ private:
 #endif
 
 #if defined(__VLD__)
-	//#undef GetClassInfoW
-	//#include <wx/msw/winundef.h>
-	//#include <vld.h>
+	#undef GetClassInfoW
+	#include <wx/msw/winundef.h>
+	#include <vld.h>
+#else
+	void VLDDisable (void) {}
+	void VLDEnable (void) {}
 #endif

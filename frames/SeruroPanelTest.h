@@ -8,7 +8,8 @@
 
 enum api_actions_t
 {
-	BUTTON_GET_CA
+	BUTTON_GET_CA,
+	BUTTON_GET_P12
 };
 
 enum api_result_handlers_t
@@ -26,6 +27,9 @@ class SeruroPanelTest : public SeruroPanel
 public:
     // ctor(s)
     SeruroPanelTest(wxBookCtrlBase *book);
+	~SeruroPanelTest() {
+		delete [] api;
+	}
 
 	void OnGetCA(wxCommandEvent &event);
 	void OnGetCAResult(wxCommandEvent &event);

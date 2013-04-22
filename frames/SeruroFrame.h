@@ -19,7 +19,7 @@ public:
 		mainSizer = new wxBoxSizer(wxHORIZONTAL);
 		vertSizer->Add(mainSizer, 1, wxEXPAND, 5);
 
-		this->SetSizer(mainSizer);
+		this->SetSizer(vertSizer);
 	}
 
 protected:
@@ -42,7 +42,7 @@ public:
 		mainSizer = new wxBoxSizer(wxHORIZONTAL);
 		vertSizer->Add(mainSizer, 1, wxEXPAND, 5);
 
-		this->SetSizer(mainSizer);
+		this->SetSizer(vertSizer);
 	}
 
 protected:

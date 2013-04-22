@@ -5,6 +5,7 @@
 #include "../crypto/SeruroCrypto.h"
 
 #include "../wxJSON/wx/jsonreader.h"
+#include "../wxJSON/wx/jsonwriter.h"
 
 DECLARE_APP(SeruroClient);
 DEFINE_EVENT_TYPE(SERURO_API_RESULT);
@@ -102,7 +103,13 @@ wxThread::ExitCode SeruroRequest::Entry()
 	/* Alternatively, this could be passed as a string (both in an out actually), 
 	 * and reassembled as a JSON object by the caller (JSONWriter, JSONReader). 
 	 */
-	evt.SetClientData((void *) new wxJSONValue(responseData));
+	wxJSONWriter writer;
+	wxString responseString;
+	writer.Write(responseData, responseString);
+
+	//evt.SetClientData((void *) new wxString(responseString));
+	//evt.
+	evt.SetString(responseString);
 
 	/* Todo: is this a critical section? */
 	this->evtHandler->AddPendingEvent(evt);
@@ -138,6 +145,7 @@ SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue param
 			data_string = data_string + data_names[i] + wxString(wxT("=")) + 
 				wxString(encoded);
 		}
+		delete encoded;
 	}
 	/* This exists by default for TLSRequest calling compatibility. */
 	params["request"]["data_string"] = data_string;
@@ -167,7 +175,7 @@ wxJSONValue SeruroServerAPI::GetAuth(api_name_t name, wxJSONValue params)
 	
 	if (name == SERURO_API_GET_P12) {
 		/* Setup auth will be transported as "data" as extra headers or POST */
-		auth["data"]["auth"] = wxT("teddy\npassword");
+		auth["data"]["auth"] = wxT("teddy.reed\npassword");
 		//auth["data"]["nonce"] = wxT("thisisanonce");
 		//auth["data"]["date"] = wxT("today");
 		/* Set flags indicating data. */

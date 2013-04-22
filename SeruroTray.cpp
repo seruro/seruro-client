@@ -108,7 +108,7 @@ void SeruroTray::OnAbout(wxCommandEvent& WXUNUSED(event))
 wxMenu* SeruroTray::CreatePopupMenu()
 {
 	wxMenu *popup = new wxMenu;
-	wxMenuItem *header = new wxMenuItem;
+	//wxMenuItem *header = new wxMenuItem;
 
 	popup->Append(seruroID_ENCRYPT, wxT("Encrypt"));
 	popup->Append(seruroID_DECRYPT, wxT("Decrypt"));

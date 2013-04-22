@@ -39,7 +39,7 @@ bool SeruroClient::OnInit()
 	/* Todo: this should be an else if */
 	if (! this->config->HasSyncCert()) {
 		/* Show login/setup modal. */
-		wxDialog *diag = new wxDialog();
+		//wxDialog *diag = new wxDialog();
 	}
 
     return true;
