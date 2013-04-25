@@ -125,6 +125,22 @@ wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress,
 			WINHTTP_ADDREQ_FLAG_ADD);
 	}
 
+	if (p_options & SERURO_SECURITY_OPTIONS_CLIENT) {
+		wxLogMessage(wxT("SeruroCrypto::TLSRequest> attaching a client certificate."));
+		PCCERT_CONTEXT clientCert = NULL;
+		/* If running before Send/Receive, hRequest cannot be used. */
+		bResults = GetClientCert(hRequest, p_serverAddress, clientCert);
+		if (! bResults) {
+			wxLogMessage(wxT("SeruroCrypto::TLSRequest> could not find client certificate."));
+			goto bailout;
+		}
+		/* Add the client certificate to the request. */
+		WinHttpSetOption(hRequest, WINHTTP_OPTION_CLIENT_CERT_CONTEXT, 
+				(LPVOID) clientCert, sizeof(CERT_CONTEXT));
+		/* Only need to free certificate if one was created/allocated. */
+		CertFreeCertificateContext(clientCert);
+	}
+
 	/* Send VERB and OBJECT (if post data exists it will be sent as well). */
 	bResults = WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
 		 (LPVOID) data, dwOptionalLength, dwOptionalLength, 0);
@@ -232,6 +248,7 @@ finished:
  */
 bool GetClientCert(HINTERNET hRequest, wxString &p_serverAddress, PCCERT_CONTEXT &p_clientCert)
 {
+	/* Get the CN for the API sync cert. */
 	wxString syncSubject = wxGetApp().config->GetSyncSubjectFromServer(p_serverAddress);
 	wxLogMessage(wxT("Got sync subject: \"%s\" from %s."), syncSubject, p_serverAddress);
 
@@ -248,6 +265,7 @@ bool GetClientCert(HINTERNET hRequest, wxString &p_serverAddress, PCCERT_CONTEXT
 	p_clientCert = CertFindCertificateInStore(hCertStore, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0,
 		CERT_FIND_SUBJECT_STR, (LPVOID) subjectName, NULL);
 	::SysFreeString(subjectName);
+
 	if (! p_clientCert) {
 		wxLogMessage(wxT("Could not find a certificate matching the subjectName."));
 		/* Repeat close, goto statement not needed. */
@@ -256,6 +274,86 @@ bool GetClientCert(HINTERNET hRequest, wxString &p_serverAddress, PCCERT_CONTEXT
 	}
 
 	CertCloseStore(hCertStore, 0);
+	return true;
+}
+
+bool SeruroCryptoMSW::InstallP12(wxMemoryBuffer &p12, wxString &p_password)
+{
+	CRYPT_DATA_BLOB blob;
+
+	blob.cbData = p12.GetDataLen();
+	blob.pbData = (BYTE*) p12.GetData();
+
+	/* Test input P12. */
+	if (! PFXIsPFXBlob(&blob)) {
+		wxLogMessage(wxT("SeruroCrypto::InstallP12> p12 is not a recognized PFX."));
+		return false;
+	}
+
+	/* Create temporary store (MSDN does not say if this means in-memory). */
+	HCERTSTORE pfxStore;
+	BSTR password = AsLongString(p_password);
+	pfxStore = PFXImportCertStore(&blob, password, CRYPT_USER_KEYSET | CRYPT_EXPORTABLE);
+	::SysFreeString(password);
+
+	/* PFXImport... will not return a valid handle if the operation was unsuccessfull.
+	 * GetLastError() will yield the exact error. */
+	if (pfxStore == NULL) {
+		wxLogMessage(wxT("SeruroCrypto::InstallP12> could not decrypt P12."));
+		return false;
+	}
+
+	HCERTSTORE myStore;
+	/* This should set the "existing" flag and MUST set the "CURRENT_USER" high word. */
+	/* This is the user's "Personal" store, while iterating, this should identify included
+	 * CA certificates and potentially handle them differently. */
+	myStore = CertOpenStore(CERT_STORE_PROV_SYSTEM, 0, 0, 
+		CERT_STORE_OPEN_EXISTING_FLAG | CERT_SYSTEM_STORE_CURRENT_USER, L"MY");
+
+	if (myStore == NULL) {
+		wxLogMessage(wxT("SeruroCrypto::InstallP12> could not open CURRENT_USER/'My' store.")); 
+		CertCloseStore(pfxStore, 0);
+		return false;
+	}
+
+	PCCERT_CONTEXT cert = NULL;
+	BOOL bResult;
+	wchar_t certName[256];
+	/* Iterate through certificates within P12 cert store, using the current cert as a "previous" iterator. */
+	while (NULL != (cert = CertEnumCertificatesInStore(pfxStore, cert))) {
+		bResult = CertGetNameString(cert, CERT_NAME_FRIENDLY_DISPLAY_TYPE, 0, 0, certName, 256);
+		if (! bResult) {
+			wxLogMessage(wxT("SeruroCrypto::InstallP12> could not get certificate display name."));
+		} else {
+			wxLogMessage(wxT("SeruroCrypto::InstallP12> found certificate: %s"), certName);
+		}
+
+		bResult = CertAddCertificateContextToStore(myStore, cert, CERT_STORE_ADD_NEW, 0);
+		if (! bResult && GetLastError() == CRYPT_E_EXISTS) {
+			wxLogMessage(wxT("SeruroCrypto::InstallP12> Warning! certificate exists, replacing."));
+			bResult = CertAddCertificateContextToStore(myStore, cert, CERT_STORE_ADD_REPLACE_EXISTING, 0);
+			if (! bResult) {
+				/* At this point we should also backup and remove any certs added. */
+				wxLogMessage(wxT("SeruroCrypto::InstallP12> problem overwriting certificate."));
+				//delete [] certName;
+				CertCloseStore(myStore, 0);
+				CertCloseStore(pfxStore, 0);
+				return false;
+			}
+		} else if (! bResult) {
+			/* At this point we should also backup and remove any certs added. */
+			wxLogMessage(wxT("SeruroCrypto::InstallP12> unhandled error while adding certificate."));
+			//delete [] certName;
+			CertCloseStore(myStore, 0);
+			CertCloseStore(pfxStore, 0);
+			return false;
+		}
+	}
+
+	//delete [] certName;
+	CertCloseStore(myStore, 0);
+	CertCloseStore(pfxStore, 0);
+
 	return true;
 }
 

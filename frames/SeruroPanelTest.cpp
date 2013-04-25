@@ -1,5 +1,6 @@
 
 #include "SeruroPanelTest.h"
+#include "../crypto/SeruroCrypto.h"
 
 #include "../wxJSON/wx/jsonval.h"
 #include "../wxJSON/wx/jsonreader.h"
@@ -74,12 +75,19 @@ void SeruroPanelTest::OnGetP12Result(wxCommandEvent &event)
 	/* Todo: error check the decode. */
 
 	/* Get password from user for p12 containers. */
+	wxString p12_key;
 	wxPasswordEntryDialog *get_key = new wxPasswordEntryDialog(this, wxT("Enter decryption key"));
 	if (get_key->ShowModal() == wxID_OK) {
-
+		p12_key = get_key->GetValue();
+	} else {
+		return;
 	}
-	
 	get_key->Destroy();
+
+	SeruroCrypto *cryptoHelper = new SeruroCrypto();
+	cryptoHelper->InstallP12(tls_p12, p12_key);
+	delete cryptoHelper;
+
 	return;
 }
 

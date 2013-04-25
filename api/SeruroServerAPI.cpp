@@ -220,7 +220,8 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 		request["object"] = wxString(wxT("cert/")) + params["request_address"].AsString();
 		break;
 	case SERURO_API_GET_CA:
-		request["object"] = wxString(wxT("seruro/getCA"));
+		request["verb"] = wxT("GET");
+		request["object"] = wxT("seruro/getCA");
 		break;
 	}
 
