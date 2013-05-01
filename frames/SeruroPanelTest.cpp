@@ -62,17 +62,12 @@ void SeruroPanelTest::OnGetP12Result(wxCommandEvent &event)
 
 	wxLogMessage(wxT("SeruroPanelTest> (GetP12) API valid response."));
 
-	/* The getP12 API call should respond with two P12s, a TLS and SMIME container. */
-	if (! response.HasMember("p12") || 
-		(! response["p12"].HasMember("tls") || ! response["p12"].HasMember("smime"))) {
-		wxLogMessage(wxT("SeruroPanelTest> (GetP12) Response does not include P12 TLS/SMIME data."));
+	/* The getP12 API call should respond with up to 3 P12s. */
+	if (! response.HasMember("p12"))
+	{
+		wxLogMessage(wxT("SeruroPanelTest> (GetP12) Response does not include P12 data."));
 		return;
 	}
-
-	/* Both P12s will be base64 encoded for HTTP transfer. */
-	wxMemoryBuffer tls_p12 = wxBase64Decode(response["p12"]["tls"].AsString());
-	wxMemoryBuffer smime_p12 = wxBase64Decode(response["p12"]["smime"].AsString());
-	/* Todo: error check the decode. */
 
 	/* Get password from user for p12 containers. */
 	wxString p12_key;
@@ -82,11 +77,35 @@ void SeruroPanelTest::OnGetP12Result(wxCommandEvent &event)
 	} else {
 		return;
 	}
+	/* Remove the modal from memory. */
 	get_key->Destroy();
 
 	SeruroCrypto *cryptoHelper = new SeruroCrypto();
-	cryptoHelper->InstallP12(tls_p12, p12_key);
+
+	/* Install all P12 b64 blobs. */
+	wxArrayString p12_blobs = response["p12"].GetMemberNames();
+	wxString p12_encoded;
+	size_t p12_decode_error;
+	wxMemoryBuffer p12_decoded;
+
+	for (size_t i = 0; i < p12_blobs.size(); i++) {
+		p12_encoded = response["p12"][p12_blobs[i]].AsString();
+		p12_decode_error = 0;
+		p12_decoded = wxBase64Decode(p12_encoded, wxBase64DecodeMode_Relaxed, &p12_decode_error);
+		
+		if (p12_decode_error != 0) {
+			/* posErr (the argument name) is the position in the encoded string of the non-decodable object. */
+			wxLogMessage(wxT("SeruroPanelTest> (GetP12) Could not decode position %d in p12 blob '%s'."), 
+				p12_decode_error, p12_blobs[i]);
+			continue;
+		}
+
+		cryptoHelper->InstallP12(p12_decoded, p12_key);
+	}
+
+	/* Cleanup. */
 	delete cryptoHelper;
+	p12_key.Empty();
 
 	return;
 }

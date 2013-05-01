@@ -286,7 +286,7 @@ bool SeruroCryptoMSW::InstallP12(wxMemoryBuffer &p12, wxString &p_password)
 
 	/* Test input P12. */
 	if (! PFXIsPFXBlob(&blob)) {
-		wxLogMessage(wxT("SeruroCrypto::InstallP12> p12 is not a recognized PFX."));
+		wxLogMessage(wxT("SeruroCrypto::InstallP12> p12 (size: %d) is not a recognized PFX."), p12.GetDataLen());
 		return false;
 	}
 

@@ -6,7 +6,7 @@
 #include <wx/textfile.h>
 #include "wxJSON/wx/jsonval.h"
 
-#define SERURO_DEFAULT_PORT 4443
+#define SERURO_DEFAULT_PORT 443
 #define SERURO_DEFAULT_USER_AGENT "Client/1.0"
 #define SERURO_AUTH_API_SYNC " sync"
 
