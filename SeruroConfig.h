@@ -28,8 +28,9 @@ public:
     bool HasConfig();
 
 	/* Token management, this file can exist before a config. */
-	wxJSONValue GetToken(wxString &server, wxString &address);
-	bool WriteToken(wxString &server, wxString &address, wxString &token);
+	wxString GetToken(const wxString &server, const wxString &address);
+	bool WriteToken(const wxString &server, const wxString &address, 
+		const wxString &token);
 
 	wxArrayString GetServers() { return GetMemberArray("servers"); }
 

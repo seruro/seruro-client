@@ -1,6 +1,7 @@
 
 #include "SeruroPanelTest.h"
 #include "../crypto/SeruroCrypto.h"
+#include "../SeruroClient.h"
 
 #include "../wxJSON/wx/jsonval.h"
 #include "../wxJSON/wx/jsonreader.h"
@@ -15,9 +16,12 @@
 /* Username and password, encryption keys. */
 #include <wx/textdlg.h>
 
+DECLARE_APP(SeruroClient);
+
 BEGIN_EVENT_TABLE(SeruroPanelTest, wxPanel)
 	EVT_BUTTON(BUTTON_GET_CA, SeruroPanelTest::OnGetCA)
 	EVT_BUTTON(BUTTON_GET_P12, SeruroPanelTest::OnGetP12)
+	EVT_BUTTON(BUTTON_WRITE_TOKEN, SeruroPanelTest::OnWriteToken)
 
 	/* Request events */
 	EVT_COMMAND(CALLBACK_GET_CA, SERURO_API_RESULT, SeruroPanelTest::OnGetCAResult)
@@ -30,10 +34,31 @@ SeruroPanelTest::SeruroPanelTest(wxBookCtrlBase *book) : SeruroPanel(book, wxT("
 
 	wxButton *get_ca = new wxButton(this, BUTTON_GET_CA, wxT("GET CA"), wxDefaultPosition, wxDefaultSize, 0);
 	wxButton *get_p12 = new wxButton(this, BUTTON_GET_P12, wxT("GET P12"), wxDefaultPosition, wxDefaultSize, 0);
+	wxButton *write_token = new wxButton(this, BUTTON_WRITE_TOKEN, wxT("WRITE TOKEN"), 
+		wxDefaultPosition, wxDefaultSize, 0);
 	this->mainSizer->Add(get_ca, wxRIGHT, 5);
 	this->mainSizer->Add(get_p12, wxRIGHT, 5);
+	this->mainSizer->Add(write_token, wxRIGHT, 5);
 
 	//this->SetSizer(mainSizer);
+}
+
+void SeruroPanelTest::OnWriteToken(wxCommandEvent &event)
+{
+	wxString current_token = wxGetApp().config->GetToken(wxT("open.seruro.com"), wxT("ted@valdrea.com"));
+	wxLogMessage(wxT("Token for open.seruro.com, ted@valdrea.com: %s"), current_token);
+
+	wxString token_string;
+	wxTextEntryDialog *get_token = new wxTextEntryDialog(this, wxT("Enter token"));
+	if (get_token->ShowModal() == wxID_OK) {
+		token_string = get_token->GetValue();
+	} else {
+		return;
+	}
+	get_token->Destroy();
+
+	bool results = wxGetApp().config->WriteToken(wxT("open.seruro.com"), wxT("ted@valdrea.com"), token_string);
+
 }
 
 void SeruroPanelTest::OnGetP12(wxCommandEvent &event)

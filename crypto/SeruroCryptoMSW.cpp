@@ -65,12 +65,9 @@ wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress,
  * 
  * Usage guide: 
  *   p_options = (DATA | STRONG | TLS12)
- * The important options for this set of flags are DATA and CLIENT. 
+ * The important options for this set of flags are DATA and (removed CLIENT). 
  * DATA: will attach the p_data string to the request, after the headers. 
  *  This is used to send POST data if set. Otherwise it is attached as a header.
- * CLIENT: allow the client to lookup a matching client certificate to a server-provided list of 
- * acceptable client chains (signature chains). If the server requests a client certificate and 
- * the CLIENT flag is not set, the request will fail.
  */
 wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress, 
 		int p_options, wxString &p_verb, wxString &p_object, wxString &p_data)

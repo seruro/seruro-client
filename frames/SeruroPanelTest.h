@@ -9,7 +9,9 @@
 enum api_actions_t
 {
 	BUTTON_GET_CA,
-	BUTTON_GET_P12
+	BUTTON_GET_P12,
+
+	BUTTON_WRITE_TOKEN
 };
 
 enum api_result_handlers_t
@@ -36,6 +38,8 @@ public:
 
 	void OnGetP12(wxCommandEvent &event);
 	void OnGetP12Result(wxCommandEvent &event);
+
+	void OnWriteToken(wxCommandEvent &event);
 
 private:
 	SeruroServerAPI *api;
