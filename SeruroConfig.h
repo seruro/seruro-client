@@ -27,6 +27,10 @@ public:
 	void WriteConfig();
     bool HasConfig();
 
+	/* Token management, this file can exist before a config. */
+	wxJSONValue GetToken(wxString &server, wxString &address);
+	bool WriteToken(wxString &server, wxString &address, wxString &token);
+
 	wxArrayString GetServers() { return GetMemberArray("servers"); }
 
 protected:

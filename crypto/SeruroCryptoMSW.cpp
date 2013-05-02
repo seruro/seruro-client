@@ -64,7 +64,7 @@ wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress,
  * We can optionally lower security expectations for TLS and session key size.
  * 
  * Usage guide: 
- *   p_options = (DATA | CLIENT | STRONG | TLS12)
+ *   p_options = (DATA | STRONG | TLS12)
  * The important options for this set of flags are DATA and CLIENT. 
  * DATA: will attach the p_data string to the request, after the headers. 
  *  This is used to send POST data if set. Otherwise it is attached as a header.
@@ -125,22 +125,6 @@ wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress,
 			WINHTTP_ADDREQ_FLAG_ADD);
 	}
 
-	if (p_options & SERURO_SECURITY_OPTIONS_CLIENT) {
-		wxLogMessage(wxT("SeruroCrypto::TLSRequest> attaching a client certificate."));
-		PCCERT_CONTEXT clientCert = NULL;
-		/* If running before Send/Receive, hRequest cannot be used. */
-		bResults = GetClientCert(hRequest, p_serverAddress, clientCert);
-		if (! bResults) {
-			wxLogMessage(wxT("SeruroCrypto::TLSRequest> could not find client certificate."));
-			goto bailout;
-		}
-		/* Add the client certificate to the request. */
-		WinHttpSetOption(hRequest, WINHTTP_OPTION_CLIENT_CERT_CONTEXT, 
-				(LPVOID) clientCert, sizeof(CERT_CONTEXT));
-		/* Only need to free certificate if one was created/allocated. */
-		CertFreeCertificateContext(clientCert);
-	}
-
 	/* Send VERB and OBJECT (if post data exists it will be sent as well). */
 	bResults = WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
 		 (LPVOID) data, dwOptionalLength, dwOptionalLength, 0);
@@ -176,25 +160,8 @@ wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress,
 	/* Todo: check for client certificate request. */
 	if (! bResults) {
 		wxLogMessage(wxT("WinHttpReceiveResponse error: %s"), wxString::Format(wxT("%d"), GetLastError()));
-		if (GetLastError() == ERROR_WINHTTP_CLIENT_AUTH_CERT_NEEDED) {
-			/* Check if we're expecting. */
-			wxLogMessage("SeruroCrypto::TLSRequest> client auth cert needed.");
-			/* MSDN says ISSUER list works for Windows 2008/Vista? */
-			PCCERT_CONTEXT clientCert = NULL;
-			bResults = GetClientCert(hRequest, p_serverAddress, clientCert);
-			if (! bResults) {
-				/* Could not find a valid TLS client cert. */
-				goto bailout;
-			}
-			/* Set option */
-			WinHttpSetOption(hRequest, WINHTTP_OPTION_CLIENT_CERT_CONTEXT, 
-				(LPVOID) clientCert, sizeof(CERT_CONTEXT)); /* PCC... is a const pointer. */
-			/* Only need to free certificate if one was created/allocated. */
-			CertFreeCertificateContext(clientCert);
-		} else {
-			/* Unhandled error state. */
-			goto bailout;
-		}
+		/* Unhandled error state. */
+		goto bailout;
 	}
 
 	/* Read response data. */
@@ -235,47 +202,7 @@ finished:
 	return responseString;
 }
 
-/* Given a server address, and optional issuer list, fill in clientCert and return a
- * success status if the client cert was found and can be used.
- * This method will:
- * (1) Ask the SeruroConfig for the configured [email] address for the given serverAddress.
- * (2) Use that [email] address to match a subject string for a PKCS#7 certificate.
- * (3) If no certificate are found: try to request the server's issuer list.
- *
- * Note: (3) does not always apply because the TLS certificate the server presents, and it's
- * issuer may be external to the Seruro CA used for S/MIME, thus we support allowing the
- * server application to make TLS client authorization decisions.
- */
-bool GetClientCert(HINTERNET hRequest, wxString &p_serverAddress, PCCERT_CONTEXT &p_clientCert)
-{
-	/* Get the CN for the API sync cert. */
-	wxString syncSubject = wxGetApp().config->GetSyncSubjectFromServer(p_serverAddress);
-	wxLogMessage(wxT("Got sync subject: \"%s\" from %s."), syncSubject, p_serverAddress);
 
-	BSTR subjectName = AsLongString(syncSubject);
-
-	/* Todo: find appropriate name for certificate store. */
-	HCERTSTORE hCertStore = CertOpenSystemStore(0, TEXT("MY"));
-	if (! hCertStore) {
-		wxLogMessage(wxT("Could not open 'MY' certificate store."));
-		return false;
-	}
-
-	/* Look up a TLS client cert matching the naming convention inherited by SeruroConfig::GetSyncSubject... */
-	p_clientCert = CertFindCertificateInStore(hCertStore, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0,
-		CERT_FIND_SUBJECT_STR, (LPVOID) subjectName, NULL);
-	::SysFreeString(subjectName);
-
-	if (! p_clientCert) {
-		wxLogMessage(wxT("Could not find a certificate matching the subjectName."));
-		/* Repeat close, goto statement not needed. */
-		CertCloseStore(hCertStore, 0);
-		return false;
-	}
-
-	CertCloseStore(hCertStore, 0);
-	return true;
-}
 
 bool SeruroCryptoMSW::InstallP12(wxMemoryBuffer &p12, wxString &p_password)
 {

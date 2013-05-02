@@ -9,6 +9,7 @@
 #define NDEBUG 1
 #endif
 
+#define SERURO_DEFAULT_PORT 443
 #define SERURO_CONFIG_NAME  "SeruroClient.config"
 #define SERURO_TOKENS_FILE	"tokens"
 #define SERURO_APP_NAME     "Seruro Client"

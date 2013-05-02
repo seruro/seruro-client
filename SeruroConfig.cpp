@@ -87,3 +87,17 @@ bool SeruroConfig::HasConfig()
     return (this->configFile->Exists() && this->configValid);
 }
 
+/* Token management methods. */
+wxJSONValue SeruroConfig::GetToken(wxString &server, wxString &address)
+{
+	wxJSONValue token_data;
+
+	return token_data;
+}
+
+bool SeruroConfig::WriteToken(wxString &server, wxString &address, wxString &token)
+{
+	bool success = false;
+
+	return success;
+}
