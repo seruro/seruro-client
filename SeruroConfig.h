@@ -3,18 +3,10 @@
 #ifndef H_SeruroConfig
 #define H_SeruroConfig
 
+#include "Defs.h"
+
 #include <wx/textfile.h>
 #include "wxJSON/wx/jsonval.h"
-
-#define SERURO_DEFAULT_PORT 443
-#define SERURO_DEFAULT_USER_AGENT "Client/1.0"
-#define SERURO_AUTH_API_SYNC " sync"
-
-#define SERURO_SECURITY_OPTIONS_NONE    0x00
-#define SERURO_SECURITY_OPTIONS_TLS12	0x01
-#define SERURO_SECURITY_OPTIONS_STRONG	0x02
-#define SERURO_SECURITY_OPTIONS_CLIENT  0x04
-#define SERURO_SECURITY_OPTIONS_DATA	0x08
 
 class SeruroConfig
 {
@@ -35,15 +27,7 @@ public:
 	void WriteConfig();
     bool HasConfig();
 
-	bool HasSyncCert();
-
 	wxArrayString GetServers() { return GetMemberArray("servers"); }
-	wxArrayString GetAddresses() { return GetMemberArray("addresses"); }
-	wxString GetSyncSubjectFromServer(wxString &p_serverAddress) {
-		/* Use the input server hostname to lookup the user's address, then append ' sync'. */
-		wxString address(wxString(wxT("teddy.reed@gmail.com")) + wxT(SERURO_AUTH_API_SYNC));
-		return address;
-	}
 
 protected:
 	wxArrayString GetMemberArray(const wxString &member);

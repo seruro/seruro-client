@@ -36,11 +36,6 @@ bool SeruroClient::OnInit()
 		SeruroSetup setup(mainFrame);
 		setup.RunWizard(setup.GetManualConfig());
 	} 
-	/* Todo: this should be an else if */
-	if (! this->config->HasSyncCert()) {
-		/* Show login/setup modal. */
-		//wxDialog *diag = new wxDialog();
-	}
 
     return true;
 }

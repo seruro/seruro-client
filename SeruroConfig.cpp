@@ -17,8 +17,10 @@ SeruroConfig::SeruroConfig()
     delete [] paths;
 
     wxLogStatus(wxT("Config file: " + this->configFile->GetName()));
-    if (! this->configFile->Exists())
+    if (! this->configFile->Exists()) {
+		/* A config will be written using the SeruroSetup wizard. */
         wxLogMessage(wxT("Config does not exist"));
+	}
     
     this->configValid = false;
     this->LoadConfig();
@@ -57,10 +59,9 @@ void SeruroConfig::LoadConfig()
 
 	this->configData = &tmpConfigData;
     
-	/* Config must have "servers" and "addresses", and they must be arrays. */
-	if (! configData->HasMember("servers") || ! configData->HasMember("addresses") ||
-		! (*configData)["servers"].IsArray() || ! (*configData)["addresses"].IsArray()) {
-		wxLogStatus(wxT("Config: could not find a required object array (servers, addresses)."));
+	/* Config must have an array of "servers". */
+	if (! configData->HasMember("servers") || ! (*configData)["servers"].IsArray()) {
+		wxLogStatus(wxT("Config: could not find a 'servers' array."));
 		return;
 	}
 
@@ -82,12 +83,7 @@ wxArrayString SeruroConfig::GetMemberArray(const wxString &member)
 
 bool SeruroConfig::HasConfig()
 {
+	/* Make a decision to run the SeruroSetup wizard. */
     return (this->configFile->Exists() && this->configValid);
-}
-
-/* Not finished */
-bool SeruroConfig::HasSyncCert()
-{
-	return false;
 }
 
