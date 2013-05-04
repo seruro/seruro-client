@@ -1,12 +1,12 @@
 
-#include "SeruroPanelConfigure.h"
+#include "SeruroPanelSettings.h"
 #include "../api/SeruroServerAPI.h"
 
 #include <wx/stattext.h>
 
 /* Todo: catch some custom SeruroRequestEvents (error, timeout, data) */
 
-SeruroPanelConfigure::SeruroPanelConfigure(wxBookCtrlBase *book) : SeruroPanel(book, wxT("Configure"))
+SeruroPanelSettings::SeruroPanelSettings(wxBookCtrlBase *book) : SeruroPanel(book, wxT("Settings"))
 {
 	wxStaticText *SearchLabel;
 	SearchLabel = new wxStaticText(this, wxID_ANY, wxT("Name or Email:"), 

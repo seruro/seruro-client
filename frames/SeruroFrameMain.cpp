@@ -4,11 +4,11 @@
 #include <wx/artprov.h>
 
 #include "SeruroFrameMain.h"
-#include "SeruroPanelConfigure.h"
+#include "SeruroPanelSettings.h"
 #include "SeruroPanelSearch.h"
 #include "SeruroPanelDecrypt.h"
 #include "SeruroPanelEncrypt.h"
-#include "SeruroPanelUpdate.h"
+//#include "SeruroPanelUpdate.h"
 
 //#if defined(__WXDEBUG__)
 #include "SeruroPanelTest.h"
@@ -57,10 +57,10 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title) : SeruroFrame(title)
 	SeruroPanelSearch	 *search	= new SeruroPanelSearch(book);
 	SeruroPanelEncrypt	 *encrypt	= new SeruroPanelEncrypt(book);
 	SeruroPanelDecrypt	 *decrypt	= new SeruroPanelDecrypt(book);
-	SeruroPanelConfigure *configure = new SeruroPanelConfigure(book);
-	SeruroPanelUpdate	 *update	= new SeruroPanelUpdate(book);
+	SeruroPanelSettings  *settings  = new SeruroPanelSettings(book);
+	//SeruroPanelUpdate	 *update	= new SeruroPanelUpdate(book);
 
-#if defined(__WXDEBUG__)
+#if defined(DEBUG)
 	SeruroPanelTest		*test1 = new SeruroPanelTest(book);
 #endif
 
