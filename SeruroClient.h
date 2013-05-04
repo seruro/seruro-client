@@ -3,16 +3,7 @@
 #ifndef H_SeruroClient
 #define H_SeruroClient
 
-/* Remove when finished developing. */
-#ifndef __WXDEBUG__
-#define __WXDEBUG__ 1
-#endif
-#ifndef NDEBUG
-#define NDEBUG 1
-#endif
-
-#define SERURO_CONFIG_NAME  "SeruroClient.config"
-#define SERURO_APP_NAME     "Seruro Client"
+#include "Defs.h"
 
 #include <wx/wxprec.h>
 #include <wx/wx.h>

@@ -67,18 +67,20 @@ wxThread::ExitCode SeruroRequest::Entry()
 {
 	wxLogMessage("SeruroRequest> Thread started...");
 
-	/* Do some stuff */
+	/* Get a crypto helper object for TLS requests. */
 	SeruroCrypto *cryptoHelper = new SeruroCrypto();
     
+	/* Show debug output. */
 	wxLogMessage(wxT("SeruroRequest (TLS)> %s,%s,%s"),
 		params["server"].AsString(), params["verb"].AsString(), params["object"].AsString());
 
+	/* Make the API call. */
 	wxString response = cryptoHelper->TLSRequest(params["server"].AsString(), params["flags"].AsInt(),
 		params["verb"].AsString(), params["object"].AsString(), params["data_string"].AsString());
 
 	delete [] cryptoHelper;
 
-	/* The controller might be responsible for remove this memory, the wxWidgets API does not
+	/* The controller might be responsible for removing this memory, the wxWidgets API does not
 	 * explicitly call out who owns this object. 
 	 */
 	wxCommandEvent evt(SERURO_API_RESULT, this->evtId);
@@ -122,17 +124,21 @@ wxThread::ExitCode SeruroRequest::Entry()
 SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue params, int evtId)
 {
 	/* Add to params with GetAuth / GetRequest */
-	params["auth"] = GetAuth(name, params);
+	params["auth"] = GetAuth();
+	/* Todo: if ["auth"]["data"] then append to ["data"] */
+
 	/* GetRequest will expect auth to exist. */
 	params["request"] = GetRequest(name, params);
+	/* Server name provided by SeruroConfig 
+	 * This is passed to CreateRequest because a client may use multiple servers, in which case
+	 * this was a selectable choosen by the user. 
+	 */
 	params["request"]["server"] = params["server"];
 
 	wxString data_string;
 	if (params["request"].HasMember("data")) {
 		char *encoded = new char[256]; /* Todo: increate size of buffer. */
 		wxString data_value;
-		/* Convert optional data JSON into string format, for HTTP POST. */
-		//wxJSONWriter writer;
 
 		/* Construct a URL query string from JSON. */
 		wxArrayString data_names = params["request"]["data"].GetMemberNames();
@@ -163,28 +169,20 @@ SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue param
 	return thread;
 }
 
-wxJSONValue SeruroServerAPI::GetAuth(api_name_t name, wxJSONValue params)
+wxJSONValue SeruroServerAPI::GetAuth()
 {
-	/* The authorization property will be scanned and should match the property
-	 * layout of the request, namely "flags" and "data"
-	 */
+	/* return {"data": {}, "have_token": bool, "token": ""} */
+
 	wxJSONValue auth;
+	//auth["flags"] = SERURO_SECURITY_OPTIONS_NONE;
+	
+	/* If token is not present, add data object for authentication. */
 	wxJSONValue data;
 	auth["data"] = data;
-	auth["flags"] = SERURO_SECURITY_OPTIONS_NONE;
-	
-	if (name == SERURO_API_GET_P12) {
-		/* Setup auth will be transported as "data" as extra headers or POST */
-		auth["data"]["auth"] = wxT("teddy.reed\npassword");
-		//auth["data"]["nonce"] = wxT("thisisanonce");
-		//auth["data"]["date"] = wxT("today");
-		/* Set flags indicating data. */
-		auth["flags"] = SERURO_SECURITY_OPTIONS_DATA;
-	} else {
-		auth["flags"] = SERURO_SECURITY_OPTIONS_CLIENT;
-	}
+	auth["data"]["user[email]"] = wxT("ted@valdrea.com");
+	auth["data"]["user[password"] = wxT("password");
 
-	wxLogMessage(wxT("SeruroServerAPI::GetAuth> auth options: %d, data: %s."), auth["flags"].AsInt(), auth["data"].AsString());
+
 	return auth;
 }
 

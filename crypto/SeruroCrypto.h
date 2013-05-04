@@ -4,6 +4,8 @@
 #ifndef H_SeruroCrypto
 #define H_SeruroCrypto
 
+#include "../Defs.h"
+
 /* Class inherits from OS-specific? */
 
 #include "SeruroCryptoMSW.h"

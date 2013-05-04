@@ -59,12 +59,13 @@ public:
 	SeruroRequest *CreateRequest(api_name_t name, wxJSONValue params, int evtId);
 
 protected:
-	/* Given an API identifier, this function will assemble the authorization
-	 * headers required for an API REQUEST. This will return a JSON property
-	 * with parameters needed by SeruroCrypto::TLSRequest. (either client auth
-	 * or username and password).
-	 * Name needed to determine (setup || the rest). */
-	wxJSONValue GetAuth(api_name_t name, wxJSONValue params);
+	/* Return an auth object {"auth": {"token": "", "have_token": bool}}.
+	 * If have_token is false, the call will block to retreive a username/password.
+	 * Finally auth["data"] will be filled in appropriately.
+	 * Otherwise token will be assembled and passed as a query variable.
+	 */
+	wxJSONValue GetAuth();
+
 	/* Given an API identifier, this function will return a JSON propery with
 	 * the required REQUEST parameters (including verb, object, servername.
 	 * Params will be embedded into the request URL or as headers. */
