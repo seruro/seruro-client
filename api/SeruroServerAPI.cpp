@@ -80,11 +80,6 @@ wxThread::ExitCode SeruroRequest::Entry()
 
 	delete [] cryptoHelper;
 
-	/* The controller might be responsible for removing this memory, the wxWidgets API does not
-	 * explicitly call out who owns this object. 
-	 */
-	wxCommandEvent evt(SERURO_API_RESULT, this->evtId);
-
 	/* Parse the file into JSON. */
     wxJSONReader responseReader;
 	wxJSONValue responseData;
@@ -109,8 +104,10 @@ wxThread::ExitCode SeruroRequest::Entry()
 	wxString responseString;
 	writer.Write(responseData, responseString);
 
-	//evt.SetClientData((void *) new wxString(responseString));
-	//evt.
+	/* The controller might be responsible for removing this memory, the wxWidgets API does not
+	 * explicitly call out who owns this object. 
+	 */
+	wxCommandEvent evt(SERURO_API_RESULT, this->evtId);
 	evt.SetString(responseString);
 
 	/* Todo: is this a critical section? */

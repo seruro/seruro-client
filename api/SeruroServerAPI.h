@@ -41,6 +41,10 @@ public:
 	virtual void *Entry(); /* thread execution starts */
 	/* Todo: consider an OnExit() is the thread can be terminated by user action. */
 
+protected:
+	wxString GetAuthToken(wxJSONValue params);
+	wxJSONValue DoCall(wxJSONValue params);
+
 private:
 	wxJSONValue params;
 

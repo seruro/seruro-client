@@ -32,13 +32,22 @@ SeruroPanelTest::SeruroPanelTest(wxBookCtrlBase *book) : SeruroPanel(book, wxT("
 {
 	api = new SeruroServerAPI(this->GetEventHandler());
 
+	wxBoxSizer *hSizer = new wxBoxSizer(wxHORIZONTAL);
 	wxButton *get_ca = new wxButton(this, BUTTON_GET_CA, wxT("GET CA"), wxDefaultPosition, wxDefaultSize, 0);
 	wxButton *get_p12 = new wxButton(this, BUTTON_GET_P12, wxT("GET P12"), wxDefaultPosition, wxDefaultSize, 0);
+	hSizer->Add(get_ca, wxRIGHT, 5);
+	hSizer->Add(get_p12, wxRIGHT, 5);
+
+	wxBoxSizer *hSizer2 = new wxBoxSizer(wxHORIZONTAL);
 	wxButton *write_token = new wxButton(this, BUTTON_WRITE_TOKEN, wxT("WRITE TOKEN"), 
 		wxDefaultPosition, wxDefaultSize, 0);
-	this->mainSizer->Add(get_ca, wxRIGHT, 5);
-	this->mainSizer->Add(get_p12, wxRIGHT, 5);
-	this->mainSizer->Add(write_token, wxRIGHT, 5);
+	hSizer2->Add(write_token, wxRIGHT, 5);
+
+	wxBoxSizer *vSizer = new wxBoxSizer(wxVERTICAL);
+	vSizer->Add(hSizer, wxRIGHT, 5);
+	vSizer->Add(hSizer2, wxRIGHT, 5);
+
+	this->mainSizer->Add(vSizer, wxRIGHT, 5);
 
 	//this->SetSizer(mainSizer);
 }
