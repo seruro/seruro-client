@@ -19,7 +19,7 @@ public:
 	wxString TLSRequest(wxString p_serverAddress,
         int p_options, wxString p_verb, wxString p_object, wxString p_data);
     
-	bool InstallP12() {return false;}
+	bool InstallP12(wxMemoryBuffer &p12, wxString &password);
 };
 
 #endif 

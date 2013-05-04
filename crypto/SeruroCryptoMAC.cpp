@@ -17,7 +17,10 @@ void SeruroCryptoMAC::OnInit()
 
 /* Errors should be events. */
 
-
+bool SeruroCryptoMAC::InstallP12(wxMemoryBuffer &p12, wxString &password)
+{
+    return false;
+}
 
 wxString SeruroCryptoMAC::TLSRequest(wxString p_serverAddress,
     int p_options, wxString p_verb, wxString p_object)

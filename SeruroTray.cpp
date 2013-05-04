@@ -110,14 +110,14 @@ wxMenu* SeruroTray::CreatePopupMenu()
 	wxMenu *popup = new wxMenu;
 	//wxMenuItem *header = new wxMenuItem;
 
+    popup->Append(seruroID_SEARCH, wxT("Search"));
 	popup->Append(seruroID_ENCRYPT, wxT("Encrypt"));
 	popup->Append(seruroID_DECRYPT, wxT("Decrypt"));
 	popup->AppendSeparator();
-	popup->AppendSeparator();
-	popup->Append(seruroID_SEARCH, wxT("Search"));
-	popup->Append(seruroID_UPDATE, wxT("Update"));
-	popup->AppendSeparator();
-	popup->Append(seruroID_CONFIGURE, wxT("Configure"));
+	//popup->AppendSeparator();
+	//popup->Append(seruroID_UPDATE, wxT("Update"));
+	//popup->AppendSeparator();
+	popup->Append(seruroID_CONFIGURE, wxT("Settings"));
 	popup->Append(seruroID_EXIT, wxT("E&xit"));
 
 	return popup;

@@ -11,6 +11,13 @@
 
 #include <wx/log.h>
 
+#if !defined(__VLD__)
+    /* (Hack) If the Virtual Leak Detector is not enabled (a MSW DLL only) then create dummy
+     * symbols for control functions used in this application. */
+    void VLDDisable (void) {}
+    void VLDEnable (void) {}
+#endif
+
 IMPLEMENT_APP(SeruroClient)
 
 bool SeruroClient::OnInit()

@@ -55,13 +55,14 @@ private:
 //const SeruroClient *wxTheSeruro = (SeruroClient *) wxTheApp;
 /* See documentation for wxGetApp() and the DECLARE_APP macro */
 
+/* All MSW to enable Virtual Leak Detection. */
+#if defined(__VLD__) && defined(__WXMSW__)
+    #undef GetClassInfoW
+    #include <wx/msw/winundef.h>
+    #include <vld.h>
+#else
+    void VLDDisable (void);
+    void VLDEnable (void);
 #endif
 
-#if defined(__VLD__)
-	#undef GetClassInfoW
-	#include <wx/msw/winundef.h>
-	#include <vld.h>
-#else
-	void VLDDisable (void) {}
-	void VLDEnable (void) {}
 #endif
