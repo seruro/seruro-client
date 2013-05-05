@@ -16,7 +16,7 @@ SeruroConfig::SeruroConfig()
 	VLDDisable();
     this->configFile = new wxTextFile(configPath);
 	VLDEnable();
-    delete [] paths;
+    delete paths;
 
     wxLogStatus(wxT("Config file: " + this->configFile->GetName()));
     if (! this->configFile->Exists()) {

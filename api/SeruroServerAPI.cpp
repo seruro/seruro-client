@@ -41,6 +41,36 @@ void URLEncode(char* dest, const char* source, int length)
 	dest[destc] = '\0';
 }
 
+wxJSONValue parseResponse(wxString raw_response)
+{
+    wxJSONValue response;
+    wxJSONReader response_reader;
+    int num_errors;
+
+    /* Parse the response (raw content) string into JSON. */
+    num_errors = response_reader.Parse(raw_response, &response);
+    if (num_errors > 0) {
+        wxLogStatus(wxT("SeruroRequest> could not parse response data as JSON."));
+    }
+	if (! response.HasMember("success")) {
+		wxLogMessage(wxT("SeruroRequest> response does not contain a 'success' key."));
+		/* Fill in JSON data with TLS/connection error. */
+		response["success"] = false;
+        if (! response.HasMember("error")) {
+            response["error"] = wxT("Connection failed.");
+        }
+	}
+    
+    /* Error may be a string, dict, or list? */
+    if (! response["success"].AsBool()) {
+		wxLogMessage(wxT("SeruroRequest> failed: (%s)."), response["error"].AsString());
+	}
+    
+    /* Todo: consider checking for error string that indicated invalid token. */
+    
+    return response;
+}
+
 SeruroRequest::SeruroRequest(wxJSONValue api_params, wxEvtHandler *parent, int parentEvtId) 
 	: wxThread(), params(api_params), evtHandler(parent), evtId(parentEvtId) {}
 
@@ -65,50 +95,34 @@ SeruroRequest::~SeruroRequest()
  */
 wxThread::ExitCode SeruroRequest::Entry()
 {
+    wxJSONWriter writer;
+    wxJSONValue response;
+    wxString event_string;
+    
+    
 	wxLogMessage("SeruroRequest> Thread started...");
 
-	/* Get a crypto helper object for TLS requests. */
-	SeruroCrypto *cryptoHelper = new SeruroCrypto();
+    /* Check for params["auth"]["have_token"], if false perform GetAuthToken, fill in params["auth"]["token"]. */
     
-	/* Show debug output. */
-	wxLogMessage(wxT("SeruroRequest (TLS)> %s,%s,%s"),
-		params["server"].AsString(), params["verb"].AsString(), params["object"].AsString());
-
-	/* Make the API call. */
-	wxString response = cryptoHelper->TLSRequest(params["server"].AsString(), params["flags"].AsInt(),
-		params["verb"].AsString(), params["object"].AsString(), params["data_string"].AsString());
-
-	delete [] cryptoHelper;
-
-	/* Parse the file into JSON. */
-    wxJSONReader responseReader;
-	wxJSONValue responseData;
-    int numErrors = responseReader.Parse(response, &responseData);
-    if (numErrors > 0) {
-        //wxLogMessage(reader.GetErrors());
-        wxLogStatus(wxT("SeruroRequest> could not parse response data."));
-    }
-	if (! responseData.HasMember("result")) {
-		wxLogMessage(wxT("SeruroRequest> response does not contain a result."));
-		/* Fill in JSON data with TLS/connection error. */
-		responseData["result"] = false;
-		responseData["error"] = wxT("Connection failed");
-	} else if (! responseData["result"].AsBool()) {
-		wxLogMessage(wxT("SeruroRequest> failed: %s."), responseData["error"].AsString());
-	}
+    /* Perform Request, receive JSON response. */
+    response = this->DoRequest();
+       
+    /* Match error of "Invalid authentication token." if true, perform GetAuthToken, fill in params["auth"]["token"]. */
+    /* If true, perform request again (as token may have been outdated), receive JSON response. */
+    
+    /* Create request event, fill in JSON. */
+    
 	
 	/* Alternatively, this could be passed as a string (both in an out actually), 
 	 * and reassembled as a JSON object by the caller (JSONWriter, JSONReader). 
 	 */
-	wxJSONWriter writer;
-	wxString responseString;
-	writer.Write(responseData, responseString);
+	writer.Write(response, event_string);
 
 	/* The controller might be responsible for removing this memory, the wxWidgets API does not
 	 * explicitly call out who owns this object. 
 	 */
 	wxCommandEvent evt(SERURO_API_RESULT, this->evtId);
-	evt.SetString(responseString);
+	evt.SetString(event_string);
 
 	/* Todo: is this a critical section? */
 	this->evtHandler->AddPendingEvent(evt);
@@ -116,6 +130,45 @@ wxThread::ExitCode SeruroRequest::Entry()
 	wxLogMessage("SeruroRequest> Thread finished...");
 
 	return (ExitCode)0;
+}
+
+wxString SeruroRequest::GetAuthToken()
+{
+    wxString token;
+    /* Perform TLS request to create API session, receive a raw content (string) response. */
+    
+    /* Try to parse response as JSON (on failure, bail, meaning return blank token. */
+    
+    /* If "result" (boolean) is true, update token store for "email", and params["request"]["server"], set "token". */
+    /* Warning, possible critical section. */
+    wxCriticalSectionLocker enter(wxGetApp().seruro_critSection);
+    
+    /* Respond with "token" as string. */
+    return token;
+}
+
+wxJSONValue SeruroRequest::DoRequest()
+{
+    wxJSONValue response;
+    wxString raw_response;
+    
+	/* Get a crypto helper object for TLS requests. */
+	SeruroCrypto *cryptoHelper = new SeruroCrypto();
+    
+	/* Show debug statement, list the request. */
+	wxLogMessage(wxT("SeruroRequest (TLS)> %s,%s,%s"),
+        this->params["server"].AsString(), this->params["verb"].AsString(), this->params["object"].AsString());
+    
+	/* Perform the request, receive a raw content (string) response. */
+	raw_response = cryptoHelper->TLSRequest(this->params["server"].AsString(), this->params["flags"].AsInt(),
+        this->params["verb"].AsString(), this->params["object"].AsString(), this->params["data_string"].AsString());
+    
+	delete [] cryptoHelper;
+    
+    /* Try to parse response as JSON (on failure, bail, meaning fill in JSON error ourselves). */
+    response = parseResponse(raw_response);
+    
+    return response;
 }
 
 SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue params, int evtId)

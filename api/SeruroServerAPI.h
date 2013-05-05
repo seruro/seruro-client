@@ -42,8 +42,10 @@ public:
 	/* Todo: consider an OnExit() is the thread can be terminated by user action. */
 
 protected:
-	wxString GetAuthToken(wxJSONValue params);
-	wxJSONValue DoCall(wxJSONValue params);
+    /* Creates a TLS Request (as an attempt) to create an authentication token. */
+	wxString GetAuthToken();
+    /* Performs the TLS Request (all of which require an authentication token. */
+	wxJSONValue DoRequest();
 
 private:
 	wxJSONValue params;

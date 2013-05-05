@@ -51,8 +51,6 @@ void SeruroCryptoMSW::OnInit()
 
 /* Errors should be events. */
 
-bool GetClientCert(HINTERNET hRequest, wxString &p_serverAddress, PCCERT_CONTEXT &p_clientCert);
-
 wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress, 
 		int p_options, wxString &p_verb, wxString &p_object)
 {
@@ -98,14 +96,14 @@ wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress,
 	hConnect = WinHttpConnect(hSession, serverAddress, SERURO_DEFAULT_PORT, 0);
 	::SysFreeString(serverAddress);
 
-	wxLogMessage(wxT("SeruroCrypto::TLSRequest> Received, options: %d."), p_options);
+	wxLogMessage(wxT("SeruroCrypto::TLS> Received, options: %d."), p_options);
 
 	/* Set TLS1.2 only! (...doesn't seem to work) */
 	BOOL bResults = FALSE;
 	DWORD dwOpt = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1; /* Todo: change me. TLS1_2 */
 	bResults = WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS, &dwOpt, sizeof(dwOpt));
 	if (! bResults) {
-		wxLogMessage("SeruroCrypto::TLSRequest> Cannot set client support TLS1.2.");
+		wxLogMessage("SeruroCrypto::TLS> Cannot set client support TLS1.");
 		/* Todo: fail if cannot support 1_2 */
 	}
 
@@ -118,7 +116,7 @@ wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress,
 	/* Calculate length of "data", which comes after heads, if any, add a urlencoded Content-Type. */
 	DWORD dwOptionalLength = (p_options & SERURO_SECURITY_OPTIONS_DATA) ? p_data.length() : 0;
 	if (dwOptionalLength > 0) {
-		WinHttpAddRequestHeaders(hRequest, L"Content-Type: application/x-www-form-urlencoded", (ULONG)-1L,
+		WinHttpAddRequestHeaders(hRequest, L"Accept: application/json", (ULONG)-1L,
 			WINHTTP_ADDREQ_FLAG_ADD);
 	}
 
@@ -130,7 +128,7 @@ wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress,
 		wxLogMessage(wxT("WinHttpSendResponse error: %s"), wxString::Format(wxT("%d"), GetLastError()));
 		if (GetLastError() == ERROR_WINHTTP_SECURE_FAILURE) {
 			/* The server certificate is invalid. */
-			wxLogMessage("SeruroCrypto::TLSRequest> server certificate verification failed.");
+			wxLogMessage("SeruroCrypto::TLS> server certificate verification failed.");
 			goto bailout;
 		}
 	}
@@ -142,7 +140,7 @@ wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress,
 		WINHTTP_OPTION_SECURITY_FLAGS, (LPVOID) &securitySupport, &dwSize);
 
 	if (! bResults || !(securitySupport & SECURITY_FLAG_STRENGTH_STRONG)) {
-		wxLogMessage("SeruroCrypto::TLSRequest> Server does not support strong security!");
+		wxLogMessage("SeruroCrypto::TLS> Server does not support strong security!");
 		/* Warning: The server DOES not meet requirements! */
 		/* Todo: fail here and report. */
 		goto bailout;
@@ -154,7 +152,7 @@ wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress,
 	/* End the request. */
 	bResults = WinHttpReceiveResponse(hRequest, NULL);
 
-	/* Todo: check for client certificate request. */
+	/* Check for unhandled error states. */
 	if (! bResults) {
 		wxLogMessage(wxT("WinHttpReceiveResponse error: %s"), wxString::Format(wxT("%d"), GetLastError()));
 		/* Unhandled error state. */
@@ -165,7 +163,7 @@ wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress,
 	do {
 		dwSize = 0;
 		if (! WinHttpQueryDataAvailable(hRequest, &dwSize)) {
-			wxLogMessage(wxT("SeruroCrypt> error in WinHttpReadData."));
+			wxLogMessage(wxT("SeruroCryptp:TLS> error in WinHttpReadData."));
 		}
 		pszOutBuffer = new char[dwSize+1];
 		if (!pszOutBuffer) {
@@ -181,7 +179,7 @@ wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress,
 			delete [] pszOutBuffer;
 		}
 	} while (dwSize > 0);
-	wxLogMessage("SeruroCrypto::TLSRequest> Response (TLS) success.");
+	wxLogMessage("SeruroCrypto::TLS> Response (TLS) success.");
 
 	/* Call some provided callback (optional). */
 
@@ -189,7 +187,7 @@ wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress,
 
 bailout:
 	/* Send error event */
-	wxLogMessage("SeruroCrypto::TLSRequest> error occured.");
+	wxLogMessage("SeruroCrypto::TLS> error occured.");
 
 finished:
 	if (hRequest) WinHttpCloseHandle(hRequest);
