@@ -49,26 +49,18 @@ void SeruroCryptoMSW::OnInit()
 	//TLSRequest(none, 0, verb, object, data); /* SERURO_SECURITY_OPTIONS_DATA */
 }
 
-/* Errors should be events. */
-
-wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress, 
-		int p_options, wxString &p_verb, wxString &p_object)
-{
-	wxString wx_data;
-	return TLSRequest(p_serverAddress, p_options, p_verb, p_object, wx_data);
-}
+/* Todo: Errors should be events. */
 
 /* The TLS Request will assure the server meets the client's requirements for security.
  * We can optionally lower security expectations for TLS and session key size.
  * 
  * Usage guide: 
- *   p_options = (DATA | STRONG | TLS12)
+ *   params["options"] = (DATA | STRONG | TLS12)
  * The important options for this set of flags are DATA and (removed CLIENT). 
- * DATA: will attach the p_data string to the request, after the headers. 
+ * DATA: will attach the params["data"] string to the request, after the headers. 
  *  This is used to send POST data if set. Otherwise it is attached as a header.
  */
-wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress, 
-		int p_options, wxString &p_verb, wxString &p_object, wxString &p_data)
+wxString SeruroCryptoMSW::TLSRequest(wxJSONValue params)
 {
 	DWORD dwSize = 0;
 	DWORD dwDownloaded = 0;
@@ -82,10 +74,12 @@ wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress,
 	BSTR userAgent = AsLongString(SERURO_DEFAULT_USER_AGENT);
 
 	/* Get the server address from config */
-	BSTR serverAddress = AsLongString(p_serverAddress);
-	BSTR verb = AsLongString(p_verb);
-	BSTR object = AsLongString(p_object);
-	LPCSTR data = p_data.mb_str();
+	BSTR serverAddress = AsLongString(params["server"].AsString());
+	BSTR verb = AsLongString(params["verb"].AsString());
+	BSTR object = AsLongString(params["object"].AsString());
+	wxString data_string = params["data_string"].AsString();
+	//const char *data_raw = params["data_string"].AsString().mb_str(wxConvUTF8);
+	LPCSTR data = data_string.mb_str(wxConvUTF8);
 
 	/* Create session object. */
 	hSession = WinHttpOpen( userAgent, 
@@ -96,7 +90,7 @@ wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress,
 	hConnect = WinHttpConnect(hSession, serverAddress, SERURO_DEFAULT_PORT, 0);
 	::SysFreeString(serverAddress);
 
-	wxLogMessage(wxT("SeruroCrypto::TLS> Received, options: %d."), p_options);
+	wxLogMessage(wxT("SeruroCrypto::TLS> Received, options: %d."), params["flags"].AsInt());
 
 	/* Set TLS1.2 only! (...doesn't seem to work) */
 	BOOL bResults = FALSE;
@@ -114,11 +108,13 @@ wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress,
 	::SysFreeString(object);
 
 	/* Calculate length of "data", which comes after heads, if any, add a urlencoded Content-Type. */
-	DWORD dwOptionalLength = (p_options & SERURO_SECURITY_OPTIONS_DATA) ? p_data.length() : 0;
-	if (dwOptionalLength > 0) {
-		WinHttpAddRequestHeaders(hRequest, L"Accept: application/json", (ULONG)-1L,
-			WINHTTP_ADDREQ_FLAG_ADD);
-	}
+	DWORD dwOptionalLength = (params["flags"].AsInt() & SERURO_SECURITY_OPTIONS_DATA) ? params["data_string"].AsString().length() : 0;
+	//if (dwOptionalLength > 0) {
+	/* no Content-Type: application/json support. */
+	WinHttpAddRequestHeaders(hRequest, 
+		L"Content-Type: application/x-www-form-urlencoded\r\nAccept: application/json", (ULONG)-1L,
+		WINHTTP_ADDREQ_FLAG_ADD);
+	//}
 
 	/* Send VERB and OBJECT (if post data exists it will be sent as well). */
 	bResults = WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
@@ -180,6 +176,9 @@ wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress,
 		}
 	} while (dwSize > 0);
 	wxLogMessage("SeruroCrypto::TLS> Response (TLS) success.");
+
+	wxLogMessage(wxT("SeruroCrypto::TLS> read body: %s"), responseString);
+
 
 	/* Call some provided callback (optional). */
 

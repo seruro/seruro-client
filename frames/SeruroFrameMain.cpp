@@ -60,7 +60,7 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title) : SeruroFrame(title)
 	SeruroPanelSettings  *settings  = new SeruroPanelSettings(book);
 	//SeruroPanelUpdate	 *update	= new SeruroPanelUpdate(book);
 
-#if defined(DEBUG)
+#if defined(DEBUG) || defined(__WXDEBUG__)
 	SeruroPanelTest		*test1 = new SeruroPanelTest(book);
 #endif
 

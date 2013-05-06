@@ -13,12 +13,8 @@ public:
 	SeruroCryptoMSW() {}
 	void OnInit();
 
-	/* For easy overloading access. */
-	wxString SeruroCryptoMSW::TLSRequest(wxString &p_serverAddress, 
-		int p_options, wxString &p_verb, wxString &p_object);
-	wxString TLSRequest(wxString &p_serverAddress, 
-		int p_options, wxString &p_verb, wxString &p_object, 
-		wxString &p_data);
+	/* wxJSONValue, For easy overloading access. */
+	wxString TLSRequest(wxJSONValue params);
 
 	bool InstallP12(wxMemoryBuffer &p12, wxString &password);
 };

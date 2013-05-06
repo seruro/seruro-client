@@ -70,7 +70,7 @@ protected:
 	 * Finally auth["data"] will be filled in appropriately.
 	 * Otherwise token will be assembled and passed as a query variable.
 	 */
-	wxJSONValue GetAuth();
+	wxJSONValue GetAuth(wxString &server);
 
 	/* Given an API identifier, this function will return a JSON propery with
 	 * the required REQUEST parameters (including verb, object, servername.

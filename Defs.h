@@ -9,7 +9,7 @@
 #define NDEBUG 1
 #endif
 
-#define SERURO_DEFAULT_PORT 443
+#define SERURO_DEFAULT_PORT 443 /* Todo: maybe a string representation.*/
 #define SERURO_CONFIG_NAME  "SeruroClient.config"
 #define SERURO_TOKENS_FILE	"tokens"
 #define SERURO_APP_NAME     "Seruro Client"
@@ -24,6 +24,18 @@
 #define SERURO_SECURITY_OPTIONS_CLIENT  0x04
 #define SERURO_SECURITY_OPTIONS_DATA	0x08
 
+/* Used in SeruroServerAPI. */
+#define SERURO_API_ERROR_INVALID_AUTH	"Invalid authentication token."
+
+#define SERURO_API_OBJECT_SESSION_CREATE "/api/sessions/create"
+#define SERURO_API_OBJECT_GETP12 "/api/seruro/getP12"
+#define SERURO_API_OBJECT_GETCA "/api/seruro/getCA"
+#define SERURO_API_OBJECT_GETCERT "/api/seruro/getCert"
+#define SERURO_API_OBJECT_SEARCH "/api/seruro/search"
+#define SERURO_API_OBJECT_GETCRL "/api/seruro/getCRL"
+
+#define SERURO_API_AUTH_FIELD_EMAIL "user_login[email]"
+#define SERURO_API_AUTH_FIELD_PASSWORD "user_login[password]"
 
 
 #endif 

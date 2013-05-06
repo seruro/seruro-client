@@ -73,7 +73,8 @@ void SeruroPanelTest::OnWriteToken(wxCommandEvent &event)
 void SeruroPanelTest::OnGetP12(wxCommandEvent &event)
 {
 	wxJSONValue params; /* no params */
-	params[wxT("server")] = wxT("open.seruro.com");
+	params["server"] = wxT("open.seruro.com");
+	params["address"] = wxT("ted@valdrea.com");
 
 	SeruroRequest *request = api->CreateRequest(SERURO_API_GET_P12, params, CALLBACK_GET_P12);
 	request->Run();
