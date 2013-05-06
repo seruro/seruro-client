@@ -52,7 +52,7 @@ void SeruroClient::InitLogger()
 	wxLogWindow *logger = new wxLogWindow(this->mainFrame, wxT("Logger"));
 
     logger->GetFrame()->SetWindowStyle(wxDEFAULT_FRAME_STYLE|wxSTAY_ON_TOP);
-    logger->GetFrame()->SetSize( wxRect(1000,500,500,500) );
+    logger->GetFrame()->SetSize( wxRect(800,350,500,500) );
     wxLog::SetActiveTarget(logger);
     wxLogStatus(wxT("Seruro Client started."));
 }

@@ -269,7 +269,7 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 		break;
 	case SERURO_API_GET_CA:
 		request["verb"] = wxT("GET");
-		request["object"] = wxT("seruro/getCA");
+		request["object"] = wxT("getCA");
 		break;
 	}
 
@@ -288,6 +288,6 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 	request["flags"] = request["flags"].AsInt() | params["auth"]["flags"].AsInt();
 
 	/* Add prefix of "/api/". */
-	request["object"] = wxString(wxT("/api/")) + request["object"].AsString();
+	request["object"] = wxString(wxT("/api/seruro/")) + request["object"].AsString();
 	return request;
 }

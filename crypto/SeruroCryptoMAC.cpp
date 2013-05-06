@@ -108,6 +108,10 @@ wxString SeruroCryptoMAC::TLSRequest(wxString p_serverName,
     
     bool status;
     CFIndex bytes_read;
+    /* Used to read data from stream sychronously. */
+    UInt8 *read_buffer;
+    /* HTTP response data structure. */
+    CFHTTPMessageRef http_response;
     
     /* Set TLS version (hopfully TLS1.2 (fallback to TLS1), fail if not that (???). */
     wxString url_string = wxString(wxT("https://") + p_serverName + wxT(":") + wxT("443") + p_object);
@@ -124,15 +128,21 @@ wxString SeruroCryptoMAC::TLSRequest(wxString p_serverName,
     if (p_options & SERURO_SECURITY_OPTIONS_DATA) {
         wxLogMessage(wxT("SeruroCrypto::TLS> POST, must add headers."));
         CFHTTPMessageSetHeaderFieldValue(request, CFSTR("Content-Type"), CFSTR("application/json"));
+        /* Todo: cleanup possible auth data in p_data parameter. */
     }
     
     /* Add request headers "Accept: application/json", calculate length. */
     CFHTTPMessageSetHeaderFieldValue(request, CFSTR("Accept"), CFSTR("application/json"));
     
     /* This will make a copy of the request, which can be released afterward (this will open the request!). */
-    /* See listing 3-2 for releasing data. */
     CFReadStreamRef read_stream = CFReadStreamCreateForHTTPRequest(kCFAllocatorDefault, request);
     status = CFReadStreamOpen(read_stream);
+    
+    /* See listing 3-2 for releasing data. */
+    CFRelease(request);
+    CFRelease(cfverb);
+    CFRelease(url_cfstring);
+    
     if (! status) {
         wxLogMessage(wxT("SeruroCrypto::TLS> could not open stream."));
         goto bailout;
@@ -142,29 +152,63 @@ wxString SeruroCryptoMAC::TLSRequest(wxString p_serverName,
     /* Check that security is set to MAX. */
     
     /* Check for unhandled error states. */
+    UInt64 response_code;
+    CFDataRef http_response_body;
 
-    /* Read data. */
+    /* Read data (sync, meaning no run loop). */
     bytes_read = 0;
-    UInt8 *buffer;
     do {
-        buffer = (UInt8 *) malloc(256 * sizeof(UInt8));
-        bzero(buffer, 256);
-        bytes_read = CFReadStreamRead(read_stream, buffer, 246);
+        read_buffer = (UInt8 *) malloc(256 * sizeof(UInt8));
+        bzero(read_buffer, 256);
+        bytes_read = CFReadStreamRead(read_stream, read_buffer, 246);
         
-        response = response + wxString::FromAscii(buffer, bytes_read);
+        response = response + wxString::FromAscii(read_buffer, bytes_read);
+        /* Free allocated data. */
+        delete read_buffer;
     } while (bytes_read != 0);
     
-    //UInt32 response_code = CFHTTPMessageGetResponseStatusCode(response);
-    //wxLogMessage(wxT("SeruroCrypto::TLS> response code (%d)"), response_code);
+    /* Nothing to release yet (http_request is open). */
+    if (bytes_read < 0) {
+        wxLogMessage(wxT("SeruroCrypto::TLS> problem reading from stream."));
+        goto bailout;
+    }
     
+    /* Create response (HTTP message) data structure. Use read_buffer again (for UInt8 conversion). */
+    read_buffer = (UInt8 *) malloc(response.size() * sizeof(UInt8));
+    memcpy(read_buffer, response.mbc_str(), response.size() * sizeof(UInt8));
+    
+    http_response = CFHTTPMessageCreateEmpty(kCFAllocatorDefault, false);
+    status = CFHTTPMessageAppendBytes(http_response, read_buffer, response.size());
+    delete read_buffer;
+    
+    /* Check the response code, expecting 200, but 401, 301 are acceptable. */
+    response_code = CFHTTPMessageGetResponseStatusCode(http_response);
+    wxLogMessage(wxT("SeruroCrypto::TLS> response code (%d)"), response_code);
+    
+    /* Now copy only the body data. */
+    http_response_body = CFHTTPMessageCopyBody(http_response);
+    read_buffer = (UInt8 *) malloc(CFDataGetLength(http_response_body) * sizeof(UInt8));
+    CFDataGetBytes(http_response_body, CFRangeMake(0, CFDataGetLength(http_response_body)), read_buffer);
+    
+    /* Finally convert to wxString */
+    response = wxString::FromAscii((char *) read_buffer, CFDataGetLength(http_response_body));
+    
+    /* Clean up */
+    CFRelease(http_response_body);
+    delete read_buffer;
+    
+    wxLogMessage(wxT("SeruroCrypto::TLS> read body: %s"), response);
     wxLogMessage(wxT("SeruroCrypto::TLS> Response (TLS) success."));
+    
     goto finished;
     
 bailout:
-    
     wxLogMessage(wxT("SeruroCrypto::TLS> error occured."));
     
 finished:
+    CFReadStreamClose(read_stream);
+    CFRelease(read_stream);
+    /* Todo, cleanup possible auth data in request. */
     
     return response;
 }
