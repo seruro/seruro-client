@@ -124,11 +124,12 @@ wxString SeruroCryptoMAC::TLSRequest(wxString p_serverName,
     CFStringRef cfverb = CFStringCreateWithCString(kCFAllocatorDefault, p_verb.mbc_str(), kCFStringEncodingMacRoman);
     CFHTTPMessageRef request = CFHTTPMessageCreateRequest(kCFAllocatorDefault, cfverb, url, kCFHTTPVersion1_1);
     
-    /* Todo: consider adding Content-Type: x-form-encoded... */
+    /* Todo: consider adding Content-Type: x-form-encoded (application/json)?... */
     if (p_options & SERURO_SECURITY_OPTIONS_DATA) {
         wxLogMessage(wxT("SeruroCrypto::TLS> POST, must add headers."));
         CFHTTPMessageSetHeaderFieldValue(request, CFSTR("Content-Type"), CFSTR("application/json"));
         /* Todo: cleanup possible auth data in p_data parameter. */
+        //CFHTTPMessageSetBody(<#CFHTTPMessageRef message#>, <#CFDataRef bodyData#>);
     }
     
     /* Add request headers "Accept: application/json", calculate length. */
