@@ -38,6 +38,7 @@ public:
 	}
 
 	void InitLogger();
+	wxWindow *GetFrame();
 
 	/* Todo: Consider accessor methods */
 	wxCriticalSection seruro_critSection;
