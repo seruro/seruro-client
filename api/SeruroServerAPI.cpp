@@ -121,6 +121,22 @@ wxString encodeData(wxJSONValue data)
 	return data_string;
 }
 
+wxJSONValue getAuthFromPrompt(wxString &server)
+{
+    /* Todo: Get all users (emails) for given server. */
+    
+
+	wxString p12_key;
+	wxPasswordEntryDialog *get_key = new wxPasswordEntryDialog(wxGetApp().GetFrame(), wxT("Enter decryption key"));
+	if (get_key->ShowModal() == wxID_OK) {
+		p12_key = get_key->GetValue();
+	} else {
+		return wxString("");
+	}
+	/* Remove the modal from memory. */
+	get_key->Destroy();
+}
+
 SeruroRequest::SeruroRequest(wxJSONValue api_params, wxEvtHandler *parent, int parentEvtId) 
 	: wxThread(), params(api_params), evtHandler(parent), evtId(parentEvtId) {}
 
@@ -203,17 +219,6 @@ wxString SeruroRequest::GetAuthToken()
 	bool wrote_token;
 
 	wxLogMessage(wxT("SeruroRequest::GetAuthToken> requesting token."));
-
-	/* Get password from user for p12 containers. */
-	wxString p12_key;
-	wxPasswordEntryDialog *get_key = new wxPasswordEntryDialog(wxGetApp().GetFrame(), wxT("Enter decryption key"));
-	if (get_key->ShowModal() == wxID_OK) {
-		p12_key = get_key->GetValue();
-	} else {
-		return wxString("");
-	}
-	/* Remove the modal from memory. */
-	get_key->Destroy();
 
 	/* Perform TLS request to create API session, receive a raw content (string) response. */
 	auth_params["data_string"] = encodeData(this->params["auth"]["data"]);

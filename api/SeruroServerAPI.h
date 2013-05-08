@@ -82,5 +82,11 @@ private:
 	wxEvtHandler *evtHandler;
 };
 
+class AuthDialog : public wxDialog
+{
+public:
+    AuthDialog(wxString &server);
+};
+
 
 #endif
