@@ -37,5 +37,8 @@
 #define SERURO_API_AUTH_FIELD_EMAIL "user_login[email]"
 #define SERURO_API_AUTH_FIELD_PASSWORD "user_login[password]"
 
+#define TEXT_ACCOUNT_LOGIN "Please enter your Account Information \
+to log into the Seruro Server: "
+//#define TEXT_ACCOUNT_LOGIN_LABEL "Account Information"
 
 #endif 

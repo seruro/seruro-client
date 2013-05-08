@@ -5,6 +5,8 @@
 #include <wx/socket.h>
 #include "../wxJSON/wx/jsonval.h"
 
+#include "../Defs.h"
+
 /* API commands are identified by enum macro, and the API params are manually
  * parsed and assembled by the call handler.
  */
@@ -82,10 +84,28 @@ private:
 	wxEvtHandler *evtHandler;
 };
 
+/* The auth dialog is a beefed up password dialog with an added selection for
+ * username (or email address). Since a single server may have multiple addresses
+ * configured. 
+ */
 class AuthDialog : public wxDialog
 {
 public:
     AuthDialog(wxString &server);
+	//~AuthDialog();
+
+	/* Return the address/password pair. */
+	wxJSONValue GetValues();
+
+	/* Note: there are no events registered, since the auth dialog should
+	 * only be used as a modal. 
+	 */
+
+private:
+	//wxString address;
+	//wxString password;
+	wxTextCtrl *address_control;
+	wxTextCtrl *password_control;
 };
 
 

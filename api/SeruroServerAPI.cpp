@@ -124,17 +124,73 @@ wxString encodeData(wxJSONValue data)
 wxJSONValue getAuthFromPrompt(wxString &server)
 {
     /* Todo: Get all users (emails) for given server. */
-    
+    wxJSONValue auth;
 
-	wxString p12_key;
+	/*wxString p12_key;
 	wxPasswordEntryDialog *get_key = new wxPasswordEntryDialog(wxGetApp().GetFrame(), wxT("Enter decryption key"));
 	if (get_key->ShowModal() == wxID_OK) {
 		p12_key = get_key->GetValue();
 	} else {
 		return wxString("");
-	}
+	}*/
+
 	/* Remove the modal from memory. */
-	get_key->Destroy();
+	//get_key->Destroy();
+
+	AuthDialog *dialog = new AuthDialog(server);
+	if (dialog->ShowModal() == wxID_OK) {
+		wxLogMessage(wxT("SeruroServerAPI::getAuthFromPrompt> OK"));
+		auth = dialog->GetValues();
+	}
+	delete dialog;
+
+	return auth;
+}
+
+AuthDialog::AuthDialog(wxString &server) : 
+	wxDialog(wxGetApp().GetFrame(), wxID_ANY, wxString(wxT("Seruro Server Login")),
+	wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER)
+{
+	wxSizer* const sizerTop = new wxBoxSizer(wxVERTICAL);
+
+	/* Show a textual message. */
+	wxStaticText *msg = new wxStaticText(this, wxID_ANY, 
+		wxString(wxT(TEXT_ACCOUNT_LOGIN) + server));
+	msg->Wrap(300);
+	sizerTop->Add(msg, wxSizerFlags().Expand().Border(wxTOP | wxLEFT | wxRIGHT, 10));
+
+
+	wxSizer* const sizerInfo = new wxStaticBoxSizer(wxVERTICAL, this, "&Account Information");
+	/* Todo: this should be a dropdown. */
+	/* Email address selection */
+	sizerInfo->Add(new wxStaticText(this, wxID_ANY, "&Email Address:"));
+	address_control = new wxTextCtrl(this, wxID_ANY);
+	sizerInfo->Add(address_control, wxSizerFlags().Expand().Border(wxBOTTOM));
+	/* Password selection. */
+	sizerInfo->Add(new wxStaticText(this, wxID_ANY, "&Password:"));
+	password_control = new wxTextCtrl(this, wxID_ANY, 
+		wxEmptyString, wxDefaultPosition, wxDefaultSize,
+		wxTE_PASSWORD);
+	//password_control->SetDefaultStyle(wxTextAttr(*wxTE_PASSWORD));
+	sizerInfo->Add(password_control, wxSizerFlags().Expand().Border(wxBOTTOM));
+
+	/* Default buttons. */
+	sizerTop->Add(sizerInfo, wxSizerFlags().Expand().Border(wxALL, 10));
+	/* Note, the standard buttons allow us to use this dialog as a modal. Do not change
+	 * the button selections or the modal will no longer respond.
+	 */
+	sizerTop->Add(CreateStdDialogButtonSizer(wxOK | wxCANCEL), wxSizerFlags().Right().Border());
+	SetSizerAndFit(sizerTop);
+}
+
+wxJSONValue AuthDialog::GetValues()
+{
+	wxJSONValue values;
+
+	values[SERURO_API_AUTH_FIELD_EMAIL] = this->address_control->GetValue();
+	values[SERURO_API_AUTH_FIELD_PASSWORD] = this->password_control->GetValue();
+
+	return values;
 }
 
 SeruroRequest::SeruroRequest(wxJSONValue api_params, wxEvtHandler *parent, int parentEvtId) 
@@ -220,8 +276,9 @@ wxString SeruroRequest::GetAuthToken()
 
 	wxLogMessage(wxT("SeruroRequest::GetAuthToken> requesting token."));
 
+	//wxJSONValue prompts = getAuthFromPrompt(this->params["server"].AsString());
 	/* Perform TLS request to create API session, receive a raw content (string) response. */
-	auth_params["data_string"] = encodeData(this->params["auth"]["data"]);
+	auth_params["data_string"] = encodeData(getAuthFromPrompt(this->params["server"].AsString()));
 
 	auth_params["flags"] = SERURO_SECURITY_OPTIONS_DATA;
 	auth_params["server"] = this->params["server"];
@@ -293,11 +350,11 @@ wxJSONValue SeruroServerAPI::GetAuth(wxString &server)
 	/* return {"data": {}, "have_token": bool, "token": ""} */
 
 	wxJSONValue auth;
-	wxJSONValue data;
+	//wxJSONValue data;
 	wxString address;
 	//auth["flags"] = SERURO_SECURITY_OPTIONS_NONE;
 
-	auth["data"] = data;
+	//auth["data"] = data;
 
 	/* Determine address to request token for (from given server). */
 	/* Todo: prompt to get address, perhaps from a list (might as well get password too). */
@@ -313,8 +370,9 @@ wxJSONValue SeruroServerAPI::GetAuth(wxString &server)
 		/* Failed to find a valid token. */
 
 		//auth["data"]["user[email]"] = wxT("ted@valdrea.com");
-		auth["data"][SERURO_API_AUTH_FIELD_EMAIL] = address;
-		auth["data"][SERURO_API_AUTH_FIELD_PASSWORD] = wxT("password");
+		//auth["data"][SERURO_API_AUTH_FIELD_EMAIL] = address;
+		//auth["data"][SERURO_API_AUTH_FIELD_PASSWORD] = wxT("password");
+		//auth["data"] = getAuthFromPrompt(server);
 		/* Todo: prompt for password (but provide override method, like input to ::GetRequest). */
 	}
 
