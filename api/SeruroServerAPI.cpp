@@ -248,7 +248,8 @@ wxJSONValue SeruroRequest::DoRequest()
 SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue params, int evtId)
 {
 	/* Add to params with GetAuth / GetRequest */
-	params["auth"] = GetAuth(params["server"].AsString());
+    wxString server = params["server"].AsString();
+	params["auth"] = GetAuth(server);
 
 	/* GetRequest will expect auth to exist. */
 	params["request"] = GetRequest(name, params);

@@ -113,6 +113,7 @@ wxString SeruroCryptoMAC::TLSRequest(wxJSONValue params)
     /* Set TLS version (hopfully TLS1.2 (fallback to TLS1), fail if not that (???). */
     wxString url_string = wxString(wxT("https://") + params["server"].AsString() + wxT(":") + wxT("443") + 
 		params["object"].AsString());
+    /* Todo: fix static port */
     CFStringRef url_cfstring = CFStringCreateWithCString(kCFAllocatorDefault, 
 		AsChar(url_string), kCFStringEncodingMacRoman);
     CFURLRef url = CFURLCreateWithString(kCFAllocatorDefault, url_cfstring, NULL);
@@ -121,8 +122,9 @@ wxString SeruroCryptoMAC::TLSRequest(wxJSONValue params)
 	/* Todo: set user agent. */
 
     /* Set VERB and OBJECT (if post data exists, add.*/
+    wxString verb = params["verb"].AsString();
     CFStringRef cfverb = CFStringCreateWithCString(kCFAllocatorDefault, 
-		AsChar(params["verb"].AsString()), kCFStringEncodingMacRoman);
+		AsChar(verb), kCFStringEncodingMacRoman);
     CFHTTPMessageRef request = CFHTTPMessageCreateRequest(kCFAllocatorDefault, cfverb, url, kCFHTTPVersion1_1);
     
     /* Todo: consider adding Content-Type: x-form-encoded (application/json)?... */
