@@ -156,6 +156,7 @@ wxThread::ExitCode SeruroRequest::Entry()
 	requested_token = false;
 	wxLogMessage(wxT("SeruroRequest::Entry> have token (%s), token (%s)."), 
 		params["auth"]["have_token"].AsString(), params["auth"]["token"].AsString());
+
 	if (! params["auth"].HasMember("have_token") || ! params["auth"]["have_token"].AsBool()) {
 		wxLogMessage(wxT("SeruroRequest::Entry> no auth token present."));
 		params["auth"]["token"] = this->GetAuthToken();
@@ -197,14 +198,22 @@ wxThread::ExitCode SeruroRequest::Entry()
 
 wxString SeruroRequest::GetAuthToken()
 {
-    wxString token;
 	wxJSONValue response;
-	
 	wxJSONValue auth_params;
-	
 	bool wrote_token;
 
 	wxLogMessage(wxT("SeruroRequest::GetAuthToken> requesting token."));
+
+	/* Get password from user for p12 containers. */
+	wxString p12_key;
+	wxPasswordEntryDialog *get_key = new wxPasswordEntryDialog(wxGetApp().GetFrame(), wxT("Enter decryption key"));
+	if (get_key->ShowModal() == wxID_OK) {
+		p12_key = get_key->GetValue();
+	} else {
+		return wxString("");
+	}
+	/* Remove the modal from memory. */
+	get_key->Destroy();
 
 	/* Perform TLS request to create API session, receive a raw content (string) response. */
 	auth_params["data_string"] = encodeData(this->params["auth"]["data"]);
@@ -237,12 +246,15 @@ wxString SeruroRequest::GetAuthToken()
 
 finished:
     /* Respond with "token" as string. */
-    return token;
+    return response["token"].AsString();
 }
 
 wxJSONValue SeruroRequest::DoRequest()
 {
-	return performRequest(this->params);
+	wxJSONValue request_params = this->params;
+	request_params["object"] = params["object"].AsString() + wxT("?token=") + 
+		params["auth"]["token"].AsString();
+	return performRequest(request_params);
 }
 
 SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue params, int evtId)

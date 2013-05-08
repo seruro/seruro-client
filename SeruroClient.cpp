@@ -47,6 +47,11 @@ bool SeruroClient::OnInit()
     return true;
 }
 
+wxWindow* SeruroClient::GetFrame()
+{
+	return (wxWindow *) this->mainFrame;
+}
+
 void SeruroClient::InitLogger()
 {
 	wxLogWindow *logger = new wxLogWindow(this->mainFrame, wxT("Logger"));
