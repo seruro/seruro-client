@@ -54,7 +54,9 @@ SeruroPanelTest::SeruroPanelTest(wxBookCtrlBase *book) : SeruroPanel(book, wxT("
 
 void SeruroPanelTest::OnWriteToken(wxCommandEvent &event)
 {
-	wxString current_token = wxGetApp().config->GetToken(wxT("open.seruro.com"), wxT("ted@valdrea.com"));
+	wxString server_name = wxT("Open Seruro");
+	wxString address = wxT("ted@valdrea.com");
+	wxString current_token = wxGetApp().config->GetToken(server_name, address);
 	wxLogMessage(wxT("Token for open.seruro.com, ted@valdrea.com: %s"), current_token);
 
 	wxString token_string;
@@ -66,14 +68,18 @@ void SeruroPanelTest::OnWriteToken(wxCommandEvent &event)
 	}
 	get_token->Destroy();
 
-	bool results = wxGetApp().config->WriteToken(wxT("open.seruro.com"), wxT("ted@valdrea.com"), token_string);
+	bool results = wxGetApp().config->WriteToken(server_name, address, 
+		token_string);
 
 }
 
 void SeruroPanelTest::OnGetP12(wxCommandEvent &event)
 {
 	wxJSONValue params; /* no params */
-	params["server"] = wxT("open.seruro.com");
+	wxString server_name = wxT("Open Seruro");
+
+	params["server"] = api->GetServer(server_name);
+	/* Todo, revisit an explicit auth. */
 	params["address"] = wxT("ted@valdrea.com");
 
 	SeruroRequest *request = api->CreateRequest(SERURO_API_GET_P12, params, CALLBACK_GET_P12);
@@ -148,7 +154,8 @@ void SeruroPanelTest::OnGetP12Result(wxCommandEvent &event)
 void SeruroPanelTest::OnGetCA(wxCommandEvent &event)
 {
 	wxJSONValue params; /* no params */
-	params[wxT("server")] = wxT("open.seruro.com");
+	wxString server_name = wxT("Open Seruro");
+	params["server"] = api->GetServer(server_name);//wxT("open.seruro.com");
 
 	SeruroRequest *request = api->CreateRequest(SERURO_API_GET_CA, params, CALLBACK_GET_CA);
 	request->Run();

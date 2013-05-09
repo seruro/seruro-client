@@ -63,6 +63,10 @@ class SeruroServerAPI
 public:
 	SeruroServerAPI(wxEvtHandler *caller) : evtHandler(caller) {}
 
+	/* Helper functions for those who do not want to DECLARE_APP 
+	 * for access to the config methods. 
+	 */
+	wxJSONValue GetServer(wxString &server);
 	/* Must provide the API name, params, and callback event ID */
 	SeruroRequest *CreateRequest(api_name_t name, wxJSONValue params, int evtId);
 
@@ -72,7 +76,8 @@ protected:
 	 * Finally auth["data"] will be filled in appropriately.
 	 * Otherwise token will be assembled and passed as a query variable.
 	 */
-	wxJSONValue GetAuth(wxString &server);
+	wxJSONValue GetAuth(wxString &server, 
+		const wxString &address = wxEmptyString);
 
 	/* Given an API identifier, this function will return a JSON propery with
 	 * the required REQUEST parameters (including verb, object, servername.
@@ -91,7 +96,8 @@ private:
 class AuthDialog : public wxDialog
 {
 public:
-    AuthDialog(wxString &server);
+    AuthDialog(const wxString &server, 
+		const wxString &address = wxEmptyString, int selected = 0);
 
 	/* Return the address/password pair. */
 	wxJSONValue GetValues();
@@ -101,7 +107,9 @@ public:
 	 */
 
 private:
-	wxTextCtrl *address_control;
+	//bool is_list;
+	wxChoice *address_control;
+	//wxChoice *address_list_control;
 	wxTextCtrl *password_control;
 };
 
@@ -113,7 +121,7 @@ private:
 class DecryptDialog : public wxDialog
 {
 public:
-	DecryptDialog(wxString &method);
+	DecryptDialog(const wxString &method);
 
 	/* Return the entered password. */
 	wxString GetValue();

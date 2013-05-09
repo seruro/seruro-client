@@ -58,11 +58,11 @@ void SeruroConfig::LoadConfig()
         return;
     }
 
-	this->configData = &tmpConfigData;
+	this->configData = tmpConfigData;
     
 	/* Config must have an array of "servers". */
-	if (! configData->HasMember("servers") || ! (*configData)["servers"].IsArray()) {
-		wxLogStatus(wxT("Config: could not find a 'servers' array."));
+	if (! configData.HasMember("servers") || ! configData["servers"].IsObject()) {
+		wxLogStatus(wxT("Config: could not find a 'servers' object."));
 		return;
 	}
 
@@ -70,13 +70,88 @@ void SeruroConfig::LoadConfig()
     this->configValid = true;
 }
 
+wxJSONValue SeruroConfig::GetServers()
+{
+	wxJSONValue servers;
+
+	/* If they don't have a config, return an empty list. */
+	if (! HasConfig()) {
+		return servers;
+	}
+
+	/* Iterate through configured servers */
+	//wxJSONValue server;
+	/*for (int i = 0; i < (*configData)["servers"].Size(); i++) {
+		wxJSONValue server;
+		server["name"] = (*configData)["servers"][i].AsString();
+		server["host"] = (*configData)["servers"][i]["host"];]
+		if ((*configData)["servers"][i].HasMember("port")) {
+			server["port"] = (*configData)["servers"][i]["port"];
+		} else {
+			server["port"] = wxT(SERURO_DEFAULT_PORT);
+		}
+		servers.Append(server);
+	}*/
+	servers = configData["servers"];
+
+	return servers;
+}
+
+wxJSONValue SeruroConfig::GetServer(wxString &server)
+{
+	wxJSONValue server_info;
+
+	if (! HasConfig() || ! configData["servers"].HasMember(server)) {
+		return server_info;
+	}
+
+	server_info = configData["servers"][server];
+	/* Helper reference for those confused by wxJSONValue. */
+	server_info["name"] = server;
+
+	return server_info;
+}
+
+wxString SeruroConfig::GetServerString(wxJSONValue server)
+{
+	wxString server_name;
+	//wxString port;
+
+	/* Expext a "name" and "host", port can be the default value. */ 
+	if (SERURO_DISPLAY_SERVER_INFO) {
+		server_name = server.AsString() + wxT(" (") + server["host"].AsString() + wxT(":");
+		server_name = server_name + server["port"].AsString();
+		server_name = server_name + wxT(")");
+	} else {
+		server_name = server.AsString();
+	}
+
+	return server_name;
+}
+
+wxArrayString SeruroConfig::GetAddresses(const wxString &server)
+{
+	wxArrayString addresses;
+
+	if (! HasConfig() || ! configData["servers"].HasMember(server)) {
+		return addresses;
+	}
+
+	for (int i = 0; i < configData["servers"][server]["addresses"].Size(); i++) {
+		addresses.Add(configData["servers"][server]["addresses"][i].AsString());
+	}
+
+	/* If the server name does not exist in the configured list, return an empty array. */
+	return addresses;
+}
+
 wxArrayString SeruroConfig::GetMemberArray(const wxString &member)
 {
 	/* Semi pointless check. */
 	wxArrayString values;
 	if (HasConfig()) {
-		for (int i = 0; i < (*configData)[member].Size(); i++) {
-			values.Add((*configData)[member][i].AsString());
+		for (int i = 0; i < configData[member].Size(); i++) {
+			values.Add(configData[member][i].AsString());
 		}
 	}
 	return values;

@@ -74,7 +74,7 @@ wxString SeruroCryptoMSW::TLSRequest(wxJSONValue params)
 	BSTR userAgent = AsLongString(SERURO_DEFAULT_USER_AGENT);
 
 	/* Get the server address from config */
-	BSTR serverAddress = AsLongString(params["server"].AsString());
+	BSTR serverAddress = AsLongString(params["server"]["host"].AsString());
 	BSTR verb = AsLongString(params["verb"].AsString());
 	BSTR object = AsLongString(params["object"].AsString());
 	wxString data_string = params["data_string"].AsString();
@@ -87,7 +87,7 @@ wxString SeruroCryptoMSW::TLSRequest(wxJSONValue params)
 	::SysFreeString(userAgent);
 
 	/* Create connection. */
-	hConnect = WinHttpConnect(hSession, serverAddress, SERURO_DEFAULT_PORT, 0);
+	hConnect = WinHttpConnect(hSession, serverAddress, params["server"]["port"].AsInt(), 0);
 	::SysFreeString(serverAddress);
 
 	wxLogMessage(wxT("SeruroCrypto::TLS> Received, options: %d."), params["flags"].AsInt());

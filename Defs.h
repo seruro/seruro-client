@@ -9,24 +9,30 @@
 #define NDEBUG 1
 #endif
 
-#define SERURO_DEFAULT_PORT 443 /* Todo: maybe a string representation.*/
-#define SERURO_CONFIG_NAME  "SeruroClient.config"
-#define SERURO_TOKENS_FILE	"tokens"
 #define SERURO_APP_NAME     "Seruro Client"
 
-//#define SERURO_DEFAULT_PORT 443
-#define SERURO_DEFAULT_USER_AGENT "Client/1.0"
-//#define SERURO_AUTH_API_SYNC " sync"
+/* When a server name is displayed, display the host and port as well. */
+#define SERURO_DISPLAY_SERVER_INFO true
 
+#define SERURO_DEFAULT_PORT "443" /* Todo: maybe a string representation.*/
+/* File name to store and fetch user configuration data from. */
+#define SERURO_CONFIG_NAME  "SeruroClient.config"
+/* File name to store and fetch user authentication tokens from. */
+#define SERURO_TOKENS_FILE	"tokens"
+/* User agent to use for Server API requests. */
+#define SERURO_DEFAULT_USER_AGENT "Client/1.0"
+
+/* Bit settings for TLS requests. */
 #define SERURO_SECURITY_OPTIONS_NONE    0x00
 #define SERURO_SECURITY_OPTIONS_TLS12	0x01
 #define SERURO_SECURITY_OPTIONS_STRONG	0x02
 #define SERURO_SECURITY_OPTIONS_CLIENT  0x04
 #define SERURO_SECURITY_OPTIONS_DATA	0x08
 
-/* Used in SeruroServerAPI. */
+/* Used in the Server API to determine an expired or invalid token. */
 #define SERURO_API_ERROR_INVALID_AUTH	"Invalid authentication token."
 
+/* Server API routes, or in HTTP diction "objects". */
 #define SERURO_API_OBJECT_SESSION_CREATE "/api/sessions/create"
 #define SERURO_API_OBJECT_GETP12 "/api/seruro/getP12"
 #define SERURO_API_OBJECT_GETCA "/api/seruro/getCA"
@@ -34,12 +40,14 @@
 #define SERURO_API_OBJECT_SEARCH "/api/seruro/search"
 #define SERURO_API_OBJECT_GETCRL "/api/seruro/getCRL"
 
+/* Seruro API authentication POST fields. */
 #define SERURO_API_AUTH_FIELD_EMAIL "user_login[email]"
 #define SERURO_API_AUTH_FIELD_PASSWORD "user_login[password]"
+#define SERURO_API_AUTH_TOKEN_PARAMETER "token"
 
+/* Textual data, stored here to allow easy 'future' translation. */
 #define TEXT_ACCOUNT_LOGIN "Please enter your Account Information \
 to log into the Seruro Server: "
-//#define TEXT_ACCOUNT_LOGIN_LABEL "Account Information"
 #define TEXT_DECRYPT_METHOD_EMAIL "Please enter the 'password' you \
 received via email."
 #define TEXT_DECRYPT_METHOD_SMS "Please enter the 'password' you \

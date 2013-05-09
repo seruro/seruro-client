@@ -32,15 +32,21 @@ public:
 	bool WriteToken(const wxString &server, const wxString &address, 
 		const wxString &token);
 
-	wxArrayString GetServers() { return GetMemberArray("servers"); }
+	wxJSONValue GetServers();
+	wxJSONValue GetServer(wxString &server);
+	wxArrayString GetAddresses(const wxString &server);
+
+	/* Does not have to be part of the config. */
+	wxString GetServerString(wxJSONValue server);
 
 protected:
+	/* Used in previous 'testing builds'. */
 	wxArrayString GetMemberArray(const wxString &member);
 
 private:
     bool configValid;
     wxTextFile *configFile;
-	wxJSONValue *configData;
+	wxJSONValue configData;
 };
 
 #endif
