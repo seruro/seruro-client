@@ -418,7 +418,8 @@ SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue param
 {
 	/* Add to params with GetAuth / GetRequest */
     wxString server = params["server"]["name"].AsString();
-	params["auth"] = GetAuth(server);
+	wxString address = (params.HasMember("address")) ? params["address"].AsString() : wxEmptyString;
+	params["auth"] = GetAuth(server, address);
 
 	/* GetRequest will expect auth to exist. */
 	params["request"] = GetRequest(name, params);
@@ -480,6 +481,9 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 	request["flags"] = SERURO_SECURITY_OPTIONS_NONE;
 	/* Set multi-value (dict) "data" to a JSON Value/ */
 	request["data"] = data; 
+
+	/* Allow address pinning, for authentication */
+	request["address"] = (params.HasMember("address")) ? params["address"] : wxEmptyString;
 
 	/* Debug log. */
 	wxLogMessage(wxT("SeruroServerAPI::GetRequest> Current auth token (%s)."), 
