@@ -92,7 +92,6 @@ class AuthDialog : public wxDialog
 {
 public:
     AuthDialog(wxString &server);
-	//~AuthDialog();
 
 	/* Return the address/password pair. */
 	wxJSONValue GetValues();
@@ -102,9 +101,23 @@ public:
 	 */
 
 private:
-	//wxString address;
-	//wxString password;
 	wxTextCtrl *address_control;
+	wxTextCtrl *password_control;
+};
+
+/* DecryptDialog will accept a "method", meaning the method the decryption key 
+ * should have been communicated to the user.
+ *
+ * See Defs.h for TEXT_DECRYPT_METHOD_... for various textual messages.
+ */
+class DecryptDialog : public wxDialog
+{
+public:
+	DecryptDialog(wxString &method);
+
+	/* Return the entered password. */
+	wxString GetValue();
+private:
 	wxTextCtrl *password_control;
 };
 

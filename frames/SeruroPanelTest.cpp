@@ -90,7 +90,7 @@ void SeruroPanelTest::OnGetP12Result(wxCommandEvent &event)
 	wxString responseString = event.GetString();
 	reader.Parse(responseString, &response);
 
-	if (! response.HasMember("result") || ! response["result"].AsBool()) {
+	if (! response.HasMember("success") || ! response["success"].AsBool()) {
 		wxLogMessage(wxT("SeruroPanelTest> (GetP12) Bad Result."));
 		return;
 	}
@@ -106,14 +106,14 @@ void SeruroPanelTest::OnGetP12Result(wxCommandEvent &event)
 
 	/* Get password from user for p12 containers. */
 	wxString p12_key;
-	wxPasswordEntryDialog *get_key = new wxPasswordEntryDialog(this, wxT("Enter decryption key"));
-	if (get_key->ShowModal() == wxID_OK) {
-		p12_key = get_key->GetValue();
+	DecryptDialog *decrypt_dialog = new DecryptDialog(response["method"].AsString());
+	if (decrypt_dialog->ShowModal() == wxID_OK) {
+		p12_key = decrypt_dialog->GetValue();
 	} else {
 		return;
 	}
 	/* Remove the modal from memory. */
-	get_key->Destroy();
+	decrypt_dialog->Destroy();
 
 	SeruroCrypto *cryptoHelper = new SeruroCrypto();
 
