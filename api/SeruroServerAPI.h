@@ -2,10 +2,13 @@
 #ifndef H_SeruroServerAPI
 #define H_SeruroServerAPI
 
+#include "../Defs.h"
+
 #include <wx/socket.h>
 #include "../wxJSON/wx/jsonval.h"
-
-#include "../Defs.h"
+#include <wx/textctrl.h>
+#include <wx/choice.h>
+#include <wx/dialog.h>
 
 /* API commands are identified by enum macro, and the API params are manually
  * parsed and assembled by the call handler.

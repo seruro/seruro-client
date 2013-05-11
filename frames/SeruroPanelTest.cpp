@@ -70,7 +70,8 @@ SeruroPanelTest::SeruroPanelTest(wxBookCtrlBase *book) : SeruroPanel(book, wxT("
 
 void SeruroPanelTest::OnSearch(wxCommandEvent &event)
 {
-	wxJSONValue server = api->GetServer(m_server_box->GetValue());
+    wxString server_name = m_server_box->GetValue();
+	wxJSONValue server = api->GetServer(server_name);
 	wxString address = m_user_box->GetValue();
 
 	wxString query = m_search_box->GetValue();
@@ -116,8 +117,8 @@ void SeruroPanelTest::OnGetP12(wxCommandEvent &event)
 	wxJSONValue params; /* no params */
 	//wxString server_name = wxT("Open Seruro");
 	//wxString server_name = m_server_box->GetValue();
-
-	params["server"] = api->GetServer(m_server_box->GetValue());
+    wxString server_name = m_server_box->GetValue();
+	params["server"] = api->GetServer(server_name);
 	/* Todo, revisit an explicit auth. */
 	params["address"] = m_user_box->GetValue();
 

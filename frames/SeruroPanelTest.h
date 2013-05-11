@@ -6,6 +6,8 @@
 
 #include "../api/SeruroServerAPI.h"
 
+#include <wx/textctrl.h>
+
 enum api_actions_t
 {
 	BUTTON_GET_CA,

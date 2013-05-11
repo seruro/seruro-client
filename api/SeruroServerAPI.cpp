@@ -351,15 +351,16 @@ wxString SeruroRequest::GetAuthToken()
 	auth_params["verb"] = wxT("POST");
 
 	/* If there was an explicit address set in the request parameters. */
-	address = (params.HasMember("address")) ? params["address"].AsString() : wxEmptyString;
+	address = (params.HasMember("address")) ? params["address"].AsString() : wxString(wxEmptyString);
 
 	/* Loop until they get a 'good' token, or cancel this madness. */
 	int selected_address = 0;
 	wxJSONValue data_string;
+    wxString server_name;
 
 	while (! response.HasMember("success") || response["success"].AsBool() == false) {
-		
-		wxJSONValue data_string = getAuthFromPrompt(this->params["server"]["name"].AsString(),
+		server_name = this->params["server"]["name"].AsString();
+		wxJSONValue data_string = getAuthFromPrompt(server_name,
 			address, selected_address);
 		if (! data_string.HasMember(SERURO_API_AUTH_FIELD_EMAIL)) {
 			/* The user canceled the request for auth. */
@@ -418,7 +419,7 @@ SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue param
 {
 	/* Add to params with GetAuth / GetRequest */
     wxString server = params["server"]["name"].AsString();
-	wxString address = (params.HasMember("address")) ? params["address"].AsString() : wxEmptyString;
+	wxString address = (params.HasMember("address")) ? params["address"].AsString() : wxString(wxEmptyString);
 	params["auth"] = GetAuth(server, address);
 
 	/* GetRequest will expect auth to exist. */
@@ -476,15 +477,18 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 	wxJSONValue request;
 	wxJSONValue data;
 
-	wxJSONValue querys;
-	wxString query_string;
+	wxJSONValue query;
+    //wxString query_string;
 
-	/* All calls to the server are currently GETs. */
+	/* All calls to the server are currently POSTs. */
 	request["verb"] = wxT("POST");
 	request["flags"] = SERURO_SECURITY_OPTIONS_NONE;
-	/* Set multi-value (dict) "data" to a JSON Value/ */
-	request["data"] = data; 
-
+    
+	/* (POST-DATA) Set multi-value (dict) "data" to a JSON Value. */
+	request["data"] = data;
+    /* (QUERY-STRING) Set multi-value (dict) "query" to a JSON value. */
+    request["query"] = query;
+    
 	/* Allow address pinning, for authentication */
 	request["address"] = (params.HasMember("address")) ? params["address"] : wxEmptyString;
 
@@ -506,7 +510,9 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 		if (! params.HasMember(wxT("query"))) {
 			/* Return some error (not event, we are not in a thread yet) and stop. */
 		}
-		request["object"] = wxString(wxT("search/") + params["query"].AsString();
+        request["verb"] = wxT("GET");
+        request["object"] = wxString(wxT("search"));// + params["query"].AsString();
+        request["query"]["query"] = params["query"];
 		//request["verb"] = wxT("GET");
 		/* Create query string for query parameter. */
 		//wxJSONValue query;
