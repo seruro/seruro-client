@@ -17,6 +17,11 @@ public:
 	wxString TLSRequest(wxJSONValue params);
 
 	bool InstallP12(wxMemoryBuffer &p12, wxString &password);
+	bool InstallCA(wxMemoryBuffer &ca);
+	bool InstallCert(wxMemoryBuffer &cert);
+
+	/* Todo: consider using Install Cert with an optional store name. */
+	//bool InstallTLSCert(wxMemoryBuffer &cert);
 };
 
 #endif 

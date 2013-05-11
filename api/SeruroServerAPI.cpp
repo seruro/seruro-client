@@ -476,6 +476,9 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 	wxJSONValue request;
 	wxJSONValue data;
 
+	wxJSONValue querys;
+	wxString query_string;
+
 	/* All calls to the server are currently GETs. */
 	request["verb"] = wxT("POST");
 	request["flags"] = SERURO_SECURITY_OPTIONS_NONE;
@@ -500,10 +503,17 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 		//}
 		break;
 	case SERURO_API_SEARCH:
-		if (! params.HasMember(wxT("search_string"))) {
+		if (! params.HasMember(wxT("query"))) {
 			/* Return some error (not event, we are not in a thread yet) and stop. */
 		}
-		request["object"] = wxString(wxT("search/")) + params["search_string"].AsString();
+		request["object"] = wxString(wxT("search/") + params["query"].AsString();
+		//request["verb"] = wxT("GET");
+		/* Create query string for query parameter. */
+		//wxJSONValue query;
+		//querys["query"] = params["query"];
+		//query_string = encodeData(querys);
+		//request["object"] = request["object"].AsString() + query_string;
+
 		break;
 	case SERURO_API_GET_CERT:
 		if (! params.HasMember(wxT("request_address"))) {

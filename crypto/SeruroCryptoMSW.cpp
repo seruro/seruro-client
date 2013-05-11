@@ -198,6 +198,16 @@ finished:
 
 
 
+bool SeruroCryptoMSW::InstallCA(wxMemoryBuffer &ca)
+{
+	return true;
+}
+
+bool SeruroCryptoMSW::InstallCert(wxMemoryBuffer &cert)
+{
+	return true;
+}
+
 bool SeruroCryptoMSW::InstallP12(wxMemoryBuffer &p12, wxString &p_password)
 {
 	CRYPT_DATA_BLOB blob;
@@ -207,7 +217,8 @@ bool SeruroCryptoMSW::InstallP12(wxMemoryBuffer &p12, wxString &p_password)
 
 	/* Test input P12. */
 	if (! PFXIsPFXBlob(&blob)) {
-		wxLogMessage(wxT("SeruroCrypto::InstallP12> p12 (size: %d) is not a recognized PFX."), p12.GetDataLen());
+		wxLogMessage(wxT("SeruroCrypto::InstallP12> p12 (size: %d) is not a recognized PFX."), 
+			p12.GetDataLen());
 		return false;
 	}
 

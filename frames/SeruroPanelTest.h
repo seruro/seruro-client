@@ -11,7 +11,8 @@ enum api_actions_t
 	BUTTON_GET_CA,
 	BUTTON_GET_P12,
 
-	BUTTON_WRITE_TOKEN
+	BUTTON_WRITE_TOKEN,
+	BUTTON_SEARCH
 };
 
 enum api_result_handlers_t
@@ -41,8 +42,15 @@ public:
 
 	void OnWriteToken(wxCommandEvent &event);
 
+	void OnSearch(wxCommandEvent &event);
+	void OnSearchResult(wxCommandEvent &event);
+
 private:
 	SeruroServerAPI *api;
+
+	wxTextCtrl *m_server_box;
+	wxTextCtrl *m_user_box;
+	wxTextCtrl *m_search_box;
 	
 	DECLARE_EVENT_TABLE();
 };
