@@ -402,9 +402,17 @@ finished:
 wxJSONValue SeruroRequest::DoRequest()
 {
 	wxJSONValue request_params = this->params;
+    wxString query_string;
+    
 	request_params["object"] = params["object"].AsString() + 
 		wxT("?") + wxT(SERURO_API_AUTH_TOKEN_PARAMETER) + wxT("=") +
 		params["auth"]["token"].AsString();
+    
+    if (request_params.HasMember("query")) {
+        query_string = encodeData(request_params["query"]);
+        request_params["object"] = request_params["object"].AsString() + wxT("&") + query_string;
+    }
+    
 	return performRequest(request_params);
 }
 
@@ -511,7 +519,7 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 			/* Return some error (not event, we are not in a thread yet) and stop. */
 		}
         request["verb"] = wxT("GET");
-        request["object"] = wxString(wxT("search"));// + params["query"].AsString();
+        request["object"] = wxString(wxT("findCerts"));// + params["query"].AsString();
         request["query"]["query"] = params["query"];
 		//request["verb"] = wxT("GET");
 		/* Create query string for query parameter. */

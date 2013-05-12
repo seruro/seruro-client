@@ -111,7 +111,8 @@ wxString SeruroCryptoMAC::TLSRequest(wxJSONValue params)
     CFHTTPMessageRef http_response;
     
     /* Set TLS version (hopfully TLS1.2 (fallback to TLS1), fail if not that (???). */
-    wxString url_string = wxString(wxT("https://") + params["server"].AsString() + wxT(":") + wxT("443") + 
+    wxString url_string = wxString(wxT("https://") + params["server"]["host"].AsString() +
+        wxT(":") + params["server"]["port"].AsString() +
 		params["object"].AsString());
     /* Todo: fix static port */
     CFStringRef url_cfstring = CFStringCreateWithCString(kCFAllocatorDefault, 
@@ -127,12 +128,17 @@ wxString SeruroCryptoMAC::TLSRequest(wxJSONValue params)
 		AsChar(verb), kCFStringEncodingMacRoman);
     CFHTTPMessageRef request = CFHTTPMessageCreateRequest(kCFAllocatorDefault, cfverb, url, kCFHTTPVersion1_1);
     
-    /* Todo: consider adding Content-Type: x-form-encoded (application/json)?... */
+    wxString post_data_string;
+    CFDataRef post_data;
     if (params["flags"].AsInt() & SERURO_SECURITY_OPTIONS_DATA) {
         wxLogMessage(wxT("SeruroCrypto::TLS> POST, must add headers."));
-        CFHTTPMessageSetHeaderFieldValue(request, CFSTR("Content-Type"), CFSTR("application/json"));
+        CFHTTPMessageSetHeaderFieldValue(request, CFSTR("Content-Type"), CFSTR("application/x-www-form-urlencoded"));
         /* Todo: cleanup possible auth data in p_data parameter. */
-        //CFHTTPMessageSetBody(<#CFHTTPMessageRef message#>, <#CFDataRef bodyData#>);
+        post_data_string = params["data_string"].AsString();
+        //read_buffer = (UInt8 *) malloc(sizeof(UInt8) * params["data_string"].AsString().length());
+        post_data = CFDataCreate(kCFAllocatorDefault,
+            (UInt8 *) AsChar(post_data_string), post_data_string.length());
+        CFHTTPMessageSetBody(request, post_data);
     }
     
     /* Add request headers "Accept: application/json", calculate length. */
