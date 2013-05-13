@@ -4,6 +4,8 @@
 
 #include "SeruroFrame.h"
 
+#define SERURO_SETTINGS_MIN_WIDTH 150
+
 // Define a new frame type: this is going to be our main frame
 class SeruroPanelSettings : public SeruroPanel
 {
@@ -15,13 +17,13 @@ public:
 class SettingsPanel : public wxPanel
 {
 public:
-	SettingsPanel(SeruroPanelSettings *parent);
+	SettingsPanel(wxWindow *parent);
 };
 
-class SettingsPanelTree : public SettingsPanel
+class SettingsPanelTree : public wxPanel
 {
 public:
-	SettingsPanelTree(SeruroPanelSettings *parent);
+	SettingsPanelTree(wxWindow *parent);
 };
 
 
