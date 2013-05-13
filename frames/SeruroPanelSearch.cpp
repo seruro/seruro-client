@@ -86,6 +86,7 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	/* For some reason we cannot align right without a spacer. */
 	buttons_sizer->AddStretchSpacer();
 	buttons_sizer->Add(search_button, 0, wxRIGHT, 5);
+	/* Todo: add a 'clear' button which removes all results. */
 	//buttons_sizer->Add(clear_button, 0, wxRIGHT, 5);
 
 	/* All them all into the components sizer. */
@@ -170,6 +171,7 @@ void SeruroPanelSearch::OnKey(wxKeyEvent &event)
 		return;
 	}
 
+	/* Todo: when search control is active, the enter key should 'search'. */
 	if (event.GetKeyCode() == WXK_RETURN) {
 
 	}

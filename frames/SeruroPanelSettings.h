@@ -11,4 +11,18 @@ public:
     SeruroPanelSettings(wxBookCtrlBase *book);
 };
 
+
+class SettingsPanel : public wxPanel
+{
+public:
+	SettingsPanel(SeruroPanelSettings *parent);
+};
+
+class SettingsPanelTree : public SettingsPanel
+{
+public:
+	SettingsPanelTree(SeruroPanelSettings *parent);
+};
+
+
 #endif
