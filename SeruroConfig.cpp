@@ -79,19 +79,6 @@ wxJSONValue SeruroConfig::GetServers()
 		return servers;
 	}
 
-	/* Iterate through configured servers */
-	//wxJSONValue server;
-	/*for (int i = 0; i < (*configData)["servers"].Size(); i++) {
-		wxJSONValue server;
-		server["name"] = (*configData)["servers"][i].AsString();
-		server["host"] = (*configData)["servers"][i]["host"];]
-		if ((*configData)["servers"][i].HasMember("port")) {
-			server["port"] = (*configData)["servers"][i]["port"];
-		} else {
-			server["port"] = wxT(SERURO_DEFAULT_PORT);
-		}
-		servers.Append(server);
-	}*/
 	servers = configData["servers"];
 
 	return servers;
@@ -129,7 +116,19 @@ wxString SeruroConfig::GetServerString(wxJSONValue server)
 	return server_name;
 }
 
-wxArrayString SeruroConfig::GetAddresses(const wxString &server)
+wxArrayString SeruroConfig::GetServerList()
+{
+	wxArrayString servers;
+
+	if (! HasConfig())
+		return servers;
+
+	servers = configData["servers"].GetMemberNames();
+
+	return servers;
+}
+
+wxArrayString SeruroConfig::GetAddressList(const wxString &server)
 {
 	wxArrayString addresses;
 

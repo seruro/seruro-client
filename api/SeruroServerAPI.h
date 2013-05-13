@@ -23,6 +23,16 @@ enum api_name_t
 	SERURO_API_GET_P12
 };
 
+/* Used by Create Request to bind result to callback method. */
+enum seruro_api_callbacks_t
+{
+	SERURO_API_CALLBACK_GET_CA,
+	SERURO_API_CALLBACK_GET_P12,
+	SERURO_API_CALLBACK_GET_CERT,
+	SERURO_API_CALLBACK_GET_CRL,
+	SERURO_API_CALLBACK_SEARCH
+};
+
 /* Define the API routes (all prefixed with /api) */
 
 /* When an API command finished it will add a SERURO_API_RESULT event.

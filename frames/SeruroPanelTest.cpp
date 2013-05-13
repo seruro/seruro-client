@@ -1,5 +1,6 @@
 
 #include "SeruroPanelTest.h"
+
 #include "../crypto/SeruroCrypto.h"
 #include "../SeruroClient.h"
 
@@ -25,9 +26,9 @@ BEGIN_EVENT_TABLE(SeruroPanelTest, wxPanel)
 	EVT_BUTTON(BUTTON_SEARCH, SeruroPanelTest::OnSearch)
 
 	/* Request events */
-	EVT_COMMAND(CALLBACK_GET_CA, SERURO_API_RESULT, SeruroPanelTest::OnGetCAResult)
-	EVT_COMMAND(CALLBACK_GET_P12, SERURO_API_RESULT, SeruroPanelTest::OnGetP12Result)
-	EVT_COMMAND(CALLBACK_SEARCH, SERURO_API_RESULT, SeruroPanelTest::OnSearchResult)
+	EVT_COMMAND(SERURO_API_CALLBACK_GET_CA, SERURO_API_RESULT, SeruroPanelTest::OnGetCAResult)
+	EVT_COMMAND(SERURO_API_CALLBACK_GET_P12, SERURO_API_RESULT, SeruroPanelTest::OnGetP12Result)
+	EVT_COMMAND(SERURO_API_CALLBACK_SEARCH, SERURO_API_RESULT, SeruroPanelTest::OnSearchResult)
 END_EVENT_TABLE()
 
 SeruroPanelTest::SeruroPanelTest(wxBookCtrlBase *book) : SeruroPanel(book, wxT("API Test"))
@@ -81,7 +82,7 @@ void SeruroPanelTest::OnSearch(wxCommandEvent &event)
 	params["server"] = server;
 	//params["address"] = address;
 
-	SeruroRequest *request = api->CreateRequest(SERURO_API_SEARCH, params, CALLBACK_SEARCH);
+	SeruroRequest *request = api->CreateRequest(SERURO_API_SEARCH, params, SERURO_API_CALLBACK_SEARCH);
 	request->Run();
 }
 
@@ -122,7 +123,7 @@ void SeruroPanelTest::OnGetP12(wxCommandEvent &event)
 	/* Todo, revisit an explicit auth. */
 	params["address"] = m_user_box->GetValue();
 
-	SeruroRequest *request = api->CreateRequest(SERURO_API_GET_P12, params, CALLBACK_GET_P12);
+	SeruroRequest *request = api->CreateRequest(SERURO_API_GET_P12, params, SERURO_API_CALLBACK_GET_P12);
 	request->Run();
 	/* Todo: Cannot delete the request because the thread still exists, who cleans up this memory? */
 	//delete [] request;
@@ -197,7 +198,7 @@ void SeruroPanelTest::OnGetCA(wxCommandEvent &event)
 	wxString server_name = wxT("Open Seruro");
 	params["server"] = api->GetServer(server_name);//wxT("open.seruro.com");
 
-	SeruroRequest *request = api->CreateRequest(SERURO_API_GET_CA, params, CALLBACK_GET_CA);
+	SeruroRequest *request = api->CreateRequest(SERURO_API_GET_CA, params, SERURO_API_CALLBACK_GET_CA);
 	request->Run();
 	//delete [] request;
 }

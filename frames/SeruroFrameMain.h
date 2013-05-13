@@ -22,7 +22,10 @@ class SeruroTray;
 class SeruroFrameMain : public SeruroFrame
 {
 public:
-	SeruroFrameMain(const wxString &title);
+	SeruroFrameMain(const wxString &title, 
+		int width, int height);
+
+	void AddPanels();
 
 	void OnIconize(wxIconizeEvent& event);
 	void OnQuit(wxCommandEvent &event);

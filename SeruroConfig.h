@@ -34,7 +34,8 @@ public:
 
 	wxJSONValue GetServers();
 	wxJSONValue GetServer(wxString &server);
-	wxArrayString GetAddresses(const wxString &server);
+	wxArrayString GetAddressList(const wxString &server);
+	wxArrayString GetServerList();
 
 	/* Does not have to be part of the config. */
 	wxString GetServerString(wxJSONValue server);

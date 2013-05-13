@@ -25,13 +25,18 @@ bool SeruroClient::OnInit()
     if ( !wxApp::OnInit() )
         return false;
 
-	mainFrame = new SeruroFrameMain(wxT("Seruro Client"));
+	/* Create a frame, but do not start sub frames, which may depend on config. */
+	mainFrame = new SeruroFrameMain(wxT("Seruro Client"), 
+		SERURO_APP_DEFAULT_WIDTH, SERURO_APP_DEFAULT_HEIGHT);
 
 	/* Start logger */
 	InitLogger();
 
 	/* User config instance */
     this->config = new SeruroConfig();
+
+	/* Now safe to start sub-frames (panels). */
+	mainFrame->AddPanels();
 
 	//wxArrayString servers = config->GetServers();
 	//wxLogStatus(servers[0]);

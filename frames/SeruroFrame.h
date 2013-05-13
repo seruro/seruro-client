@@ -36,18 +36,19 @@ public:
 		parent->AddPage(this, title, false, 0);
 
 		/* All panels should use a default vertical sizer. */
-		wxBoxSizer *vertSizer = new wxBoxSizer(wxVERTICAL);
+		mainSizer = new wxBoxSizer(wxVERTICAL);
 		
 		/* This may be taken out later. */
-		mainSizer = new wxBoxSizer(wxHORIZONTAL);
-		vertSizer->Add(mainSizer, 1, wxEXPAND, 5);
+		//mainSizer = new wxBoxSizer(wxHORIZONTAL);
+		//_mainSizer->Add(mainSizer, 1, wxLEFT | wxRIGHT | wxTOP | wxEXPAND, 5);
 
-		this->SetSizer(vertSizer);
+		this->SetSizer(mainSizer);
 	}
 
 protected:
 	/* All the derived classes to use an already existing mainSizer. */
 	wxBoxSizer *mainSizer;
+	wxBoxSizer *_mainSizer;
 };
 
 

@@ -198,9 +198,10 @@ AuthDialog::AuthDialog(const wxString &server, const wxString &address, int sele
 	/* Get available addresses: */
 	//this->is_list = false;
 
+	/* Create list of email addresses. */
 	wxArrayString address_list;
 	if (address.compare(wxEmptyString) == 0) {
-		address_list = wxGetApp().config->GetAddresses(server);
+		address_list = wxGetApp().config->GetAddressList(server);
 		//this->is_list = address_list.size() > 1;
 		if (address_list.size() == 0) {
 			/* There is something very wrong here! */
@@ -459,7 +460,7 @@ wxJSONValue SeruroServerAPI::GetAuth(wxString &server, const wxString &address)
 	 */
 	if (address.compare(wxEmptyString) == 0) {
 		wxString token;
-		wxArrayString address_list = wxGetApp().config->GetAddresses(server);
+		wxArrayString address_list = wxGetApp().config->GetAddressList(server);
 		for (size_t i = 0; i < address_list.size(); i++) {
 			token = wxGetApp().config->GetToken(server, address_list[i]);
 			if (token.compare(wxEmptyString) != 0) {

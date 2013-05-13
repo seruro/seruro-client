@@ -10,6 +10,8 @@
 #endif
 
 #define SERURO_APP_NAME     "Seruro Client"
+#define SERURO_APP_DEFAULT_WIDTH  500
+#define SERURO_APP_DEFAULT_HEIGHT 500
 
 /* When a server name is displayed, display the host and port as well. */
 #define SERURO_DISPLAY_SERVER_INFO true

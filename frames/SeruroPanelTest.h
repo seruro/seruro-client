@@ -17,14 +17,6 @@ enum api_actions_t
 	BUTTON_SEARCH
 };
 
-enum api_result_handlers_t
-{
-	CALLBACK_GET_CA,
-	CALLBACK_GET_P12,
-	CALLBACK_GET_CERT,
-	CALLBACK_GET_CRL,
-	CALLBACK_SEARCH
-};
 
 // Define a new frame type: this is going to be our main frame
 class SeruroPanelTest : public SeruroPanel

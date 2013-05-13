@@ -28,8 +28,11 @@ BEGIN_EVENT_TABLE(SeruroFrameMain, wxFrame)
     EVT_WIZARD_FINISHED(wxID_ANY, SeruroFrameMain::OnSetupFinished)	
 END_EVENT_TABLE()
 
-SeruroFrameMain::SeruroFrameMain(const wxString& title) : SeruroFrame(title)
+SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) : SeruroFrame(title)
 {
+	/* Set the default size of the entire application. */
+	this->SetSize(width, height);
+
 	/* Set tray icon data */
 	tray = new SeruroTray();
 	tray->SetMainFrame(this);
@@ -53,17 +56,6 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title) : SeruroFrame(title)
 	book = new wxNotebook(panel, wxID_ANY, wxPoint(-1, -1), wxSize(-1, -1), wxNB_TOP);
 	//book->SetImageList(list);
 
-	/* Add content */
-	SeruroPanelSearch	 *search	= new SeruroPanelSearch(book);
-	SeruroPanelEncrypt	 *encrypt	= new SeruroPanelEncrypt(book);
-	SeruroPanelDecrypt	 *decrypt	= new SeruroPanelDecrypt(book);
-	SeruroPanelSettings  *settings  = new SeruroPanelSettings(book);
-	//SeruroPanelUpdate	 *update	= new SeruroPanelUpdate(book);
-
-#if defined(DEBUG) || defined(__WXDEBUG__)
-	SeruroPanelTest		*test1 = new SeruroPanelTest(book);
-#endif
-
 	//wxPanel *page1 = new wxPanel(book, wxID_ANY);
 	//wxStaticText *page1_t = new wxStaticText(page1, wxID_ANY, wxT("This is a page1."));
 
@@ -81,6 +73,23 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title) : SeruroFrame(title)
 	SeruroFrameConfigure	*configure	= new SeruroFrameConfigure(wxT("Seruro Client: Configure"));
 	SeruroFrameSearch		*search		= new SeruroFrameSearch(wxT("Seruro Client: Search"));
 	*/
+}
+
+/* The frame's (book's) panels may depend on objects created after the first frame,
+ * for example: the configuration and loggin facilities.
+ */
+void SeruroFrameMain::AddPanels()
+{
+	/* Add content */
+	SeruroPanelSearch	 *search	= new SeruroPanelSearch(book);
+	SeruroPanelEncrypt	 *encrypt	= new SeruroPanelEncrypt(book);
+	SeruroPanelDecrypt	 *decrypt	= new SeruroPanelDecrypt(book);
+	SeruroPanelSettings  *settings  = new SeruroPanelSettings(book);
+	//SeruroPanelUpdate	 *update	= new SeruroPanelUpdate(book);
+
+#if defined(DEBUG) || defined(__WXDEBUG__)
+	SeruroPanelTest		*test1 = new SeruroPanelTest(book);
+#endif
 }
 
 /* The tray menu generates events based on IDs, these IDs correspond to pages. 
