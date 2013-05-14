@@ -46,6 +46,48 @@ void SettingsPanelTree::OnSelectItem(wxTreeEvent &event)
 	wxTreeItemId item = event.GetItem();
 	SettingsTreeItem *data = (SettingsTreeItem*) this->settings_tree->GetItemData(item);
 
+	/* Based on the type in the data object, show the corresponding view, some of which
+	 * require the item index to present the right view.
+	 */
+	switch (data->item_type) {
+	case SETTINGS_VIEW_TYPE_SERVER: this->ShowView_Server(item); break;
+	case SETTINGS_VIEW_TYPE_ADDRESS: this->ShowView_Address(item); break;
+	case SETTINGS_VIEW_TYPE_APPLICATION: this->ShowView_Application(item); break;
+
+	case SETTINGS_VIEW_TYPE_ROOT_GENERAL: this->ShowView_RootGeneral(); break;
+	case SETTINGS_VIEW_TYPE_ROOT_SERVERS: this->ShowView_RootServers(); break;
+	case SETTINGS_VIEW_TYPE_ROOT_APPLICATIONS: this->ShowView_RootApplications(); break;
+	}
+}
+
+void SettingsPanelTree::ShowView_Server(wxTreeItemId item)
+{
+
+}
+
+void SettingsPanelTree::ShowView_Address(wxTreeItemId item)
+{
+
+}
+
+void SettingsPanelTree::ShowView_Application(wxTreeItemId item)
+{
+
+}
+
+void SettingsPanelTree::ShowView_RootGeneral()
+{
+
+}
+
+void SettingsPanelTree::ShowView_RootServers()
+{
+
+}
+
+void SettingsPanelTree::ShowView_RootApplications()
+{
+
 }
 
 SettingsPanelTree::SettingsPanelTree(wxWindow *parent) : wxPanel(parent)

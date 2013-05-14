@@ -34,6 +34,15 @@ public:
 	void OnSelectItem(wxTreeEvent &event);
 
 private:
+	void ShowView_Server(wxTreeItemId item);
+	void ShowView_Address(wxTreeItemId item);
+	void ShowView_Application(wxTreeItemId item);
+
+	void ShowView_RootServers();
+	void ShowView_RootGeneral();
+	void ShowView_RootApplications();
+
+private:
 	wxTreeCtrl *settings_tree;
 
 	DECLARE_EVENT_TABLE()
