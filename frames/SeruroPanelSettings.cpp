@@ -5,6 +5,7 @@
 #include <wx/stattext.h>
 #include <wx/treectrl.h>
 #include <wx/splitter.h>
+#include <wx/button.h>
 
 /* Todo: catch some custom SeruroRequestEvents (error, timeout, data) */
 
@@ -17,7 +18,8 @@ SeruroPanelSettings::SeruroPanelSettings(wxBookCtrlBase *book) : SeruroPanel(boo
 	//container_sizer->Add(test_panel, 0, wxEXPAND, 5);
 
 	/* Create a resizeable window for the navigation pane (panel) and it's controlling view. */
-	wxSplitterWindow *splitter = new wxSplitterWindow(this);
+	wxSplitterWindow *splitter = new wxSplitterWindow(this, wxID_ANY,
+        wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxSP_3DSASH | wxSP_BORDER);
 	splitter->SetSize(GetClientSize());
 	splitter->SetSashGravity(1.0);
 	splitter->SetMinimumPaneSize(SERURO_SETTINGS_MIN_WIDTH);
@@ -28,7 +30,7 @@ SeruroPanelSettings::SeruroPanelSettings(wxBookCtrlBase *book) : SeruroPanel(boo
 
 	splitter->SplitVertically(settings_tree, test_panel, 1);
 
-	container_sizer->Add(splitter, 1, wxEXPAND, 5);
+	container_sizer->Add(splitter, 1, wxEXPAND | wxALL, 10);
 	this->SetSizer(container_sizer);
 }
 
@@ -37,7 +39,9 @@ SettingsPanelTree::SettingsPanelTree(wxWindow *parent) : wxPanel(parent)
 	wxBoxSizer *vert_sizer = new wxBoxSizer(wxVERTICAL);
 
 	/* Create a nice left-hand-side tree for all the setting views. */
-	wxTreeCtrl *settings_tree = new wxTreeCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxTR_HIDE_ROOT);
+	wxTreeCtrl *settings_tree = new wxTreeCtrl(this, wxID_ANY,
+        wxDefaultPosition, wxDefaultSize, wxTR_HIDE_ROOT | wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES);
+    settings_tree->SetIndent(5);
 	/* We want a multi-root tree, so create a hidden tree root. */
 	wxTreeItemId root = settings_tree->AddRoot(wxT("_"));
 
@@ -61,7 +65,7 @@ SettingsPanelTree::SettingsPanelTree(wxWindow *parent) : wxPanel(parent)
 	/* Let the tree decide the best width? */
 	settings_tree->SetQuickBestSize(false);
 
-	vert_sizer->Add(settings_tree, 1, wxEXPAND | wxLEFT | wxTOP | wxBOTTOM, 10);
+	vert_sizer->Add(settings_tree, 1, wxEXPAND | wxRIGHT, 0);
 	this->SetSizer(vert_sizer);
 }
 
@@ -70,6 +74,7 @@ SettingsPanel::SettingsPanel(wxWindow *parent) : wxPanel(parent, wxID_ANY)
 	wxBoxSizer *vert_sizer = new wxBoxSizer(wxVERTICAL);
 	wxButton *test_button = new wxButton(this, wxID_ANY, wxT("Test"));
 
-	vert_sizer->Add(test_button, 1, wxTOP | wxBOTTOM | wxRIGHT, 10);
+	vert_sizer->Add(test_button, 1, wxLEFT, 0);
 	this->SetSizer(vert_sizer);
 }
+

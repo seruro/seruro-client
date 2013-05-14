@@ -155,7 +155,7 @@ DecryptDialog::DecryptDialog(const wxString &method) :
 	wxStaticText *msg = new wxStaticText(this, wxID_ANY,
 		wxString(method_text + wxT(" ") + wxT(TEXT_DECRYPT_EXPLAINATION)));
 	msg->Wrap(300);
-	sizer_top->Add(msg, wxSizerFlags().Expand().Border(wxTOP | wxLEFT | wxRIGHT, 10));
+	sizer_top->Add(msg, wxSizerFlags().Expand().Border(wxALL, 5));
 
 	wxSizer* const sizer_info = new wxStaticBoxSizer(wxVERTICAL, this, "&Certificates Password");
 	/* Password selection. */
@@ -166,7 +166,7 @@ DecryptDialog::DecryptDialog(const wxString &method) :
 	sizer_info->Add(password_control, wxSizerFlags().Expand().Border(wxBOTTOM));
 
 	/* Default buttons. */
-	sizer_top->Add(sizer_info, wxSizerFlags().Expand().Border(wxALL, 10));
+	sizer_top->Add(sizer_info, wxSizerFlags().Expand().Border(wxTOP | wxLEFT | wxRIGHT, 5));
 	/* Note, the standard buttons allow us to use this dialog as a modal. Do not change
 	 * the button selections or the modal will no longer respond.
 	 */
@@ -189,7 +189,7 @@ AuthDialog::AuthDialog(const wxString &server, const wxString &address, int sele
 	wxStaticText *msg = new wxStaticText(this, wxID_ANY, 
 		wxString(wxT(TEXT_ACCOUNT_LOGIN) + server));
 	msg->Wrap(300);
-	sizerTop->Add(msg, wxSizerFlags().Expand().Border(wxTOP | wxLEFT | wxRIGHT, 10));
+	sizerTop->Add(msg, wxSizerFlags().Expand().Border(wxALL, 5));
 
 	wxSizer* const sizerInfo = new wxStaticBoxSizer(wxVERTICAL, this, "&Account Information");
 
@@ -236,7 +236,7 @@ AuthDialog::AuthDialog(const wxString &server, const wxString &address, int sele
 	sizerInfo->Add(password_control, wxSizerFlags().Expand().Border(wxBOTTOM));
 
 	/* Default buttons. */
-	sizerTop->Add(sizerInfo, wxSizerFlags().Expand().Border(wxALL, 10));
+	sizerTop->Add(sizerInfo, wxSizerFlags().Expand().Border(wxTOP | wxRIGHT | wxLEFT, 5));
 	/* Note, the standard buttons allow us to use this dialog as a modal. Do not change
 	 * the button selections or the modal will no longer respond.
 	 */

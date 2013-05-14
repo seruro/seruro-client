@@ -148,7 +148,7 @@ void SeruroPanelSearch::OnSearchResult(wxCommandEvent &event)
 	wxLogMessage(wxT("SeruroPanelTest> (Search) API valid response."));
 
 	/* From the wxWidgets samples, should speed up adding. */
-	this->list_control->Hide();
+	//this->list_control->Hide();
 	this->list_control->DeleteAllItems();
 
 	/* Add results to UI. */
@@ -159,7 +159,7 @@ void SeruroPanelSearch::OnSearchResult(wxCommandEvent &event)
 		list_control->SetItem(item_index, 2, response["results"][i]["last_name"].AsString());
 	}
 
-	this->list_control->Show();
+	//this->list_control->Show();
 
 }
 
