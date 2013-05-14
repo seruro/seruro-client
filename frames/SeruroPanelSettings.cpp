@@ -1,13 +1,18 @@
 
 #include "SeruroPanelSettings.h"
 #include "../api/SeruroServerAPI.h"
+#include "../SeruroClient.h"
 
 #include <wx/stattext.h>
 #include <wx/treectrl.h>
 #include <wx/splitter.h>
 #include <wx/button.h>
 
-/* Todo: catch some custom SeruroRequestEvents (error, timeout, data) */
+DECLARE_APP(SeruroClient);
+
+BEGIN_EVENT_TABLE(SettingsPanelTree, wxTreeCtrl)
+	EVT_TREE_SEL_CHANGED(SERURO_SETTINGS_TREE_ID, SettingsPanelTree::OnSelectItem)
+END_EVENT_TABLE()
 
 SeruroPanelSettings::SeruroPanelSettings(wxBookCtrlBase *book) : SeruroPanel(book, wxT("Settings"))
 {
@@ -34,38 +39,63 @@ SeruroPanelSettings::SeruroPanelSettings(wxBookCtrlBase *book) : SeruroPanel(boo
 	this->SetSizer(container_sizer);
 }
 
+/* SETTINGS PANEL TREE */
+
+void SettingsPanelTree::OnSelectItem(wxTreeEvent &event)
+{
+	wxTreeItemId item = event.GetItem();
+	SettingsTreeItem *data = (SettingsTreeItem*) this->settings_tree->GetItemData(item);
+
+}
+
 SettingsPanelTree::SettingsPanelTree(wxWindow *parent) : wxPanel(parent)
 {
 	wxBoxSizer *vert_sizer = new wxBoxSizer(wxVERTICAL);
 
-	/* Create a nice left-hand-side tree for all the setting views. */
-	wxTreeCtrl *settings_tree = new wxTreeCtrl(this, wxID_ANY,
-        wxDefaultPosition, wxDefaultSize, wxTR_HIDE_ROOT | wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES);
-    settings_tree->SetIndent(5);
+	/* Create a nice left-hand-side tree for all the setting views (use static ID for events). */
+	this->settings_tree = new wxTreeCtrl(this, SERURO_SETTINGS_TREE_ID,
+        wxDefaultPosition, wxDefaultSize, 
+		wxTR_HIDE_ROOT | wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_LINES_AT_ROOT);
+    this->settings_tree->SetIndent(12);
 	/* We want a multi-root tree, so create a hidden tree root. */
-	wxTreeItemId root = settings_tree->AddRoot(wxT("_"));
+	wxTreeItemId root = this->settings_tree->AddRoot(wxT("_"));
 
-	wxTreeItemId general_item = settings_tree->AppendItem(root, wxT("General"));
-	wxTreeItemId servers_item = settings_tree->AppendItem(root, wxT("Accounts and Servers"));
-	wxTreeItemId applications_item = settings_tree->AppendItem(root, wxT("Applications"));
+	/* The basic controls are called general. */
+	wxTreeItemId root_general_item = this->settings_tree->AppendItem(root, wxT("General"), -1, -1,
+		new SettingsTreeItem(SETTINGS_VIEW_TYPE_ROOT_GENERAL));
 
-	wxTreeItemId server1, server2;
-	server1 = settings_tree->AppendItem(servers_item, wxT("Open Seruro"));
-	server2 = settings_tree->AppendItem(servers_item, wxT("Seruro Test Server 1"));
+	/* List each server, which has settings, and each account within that server. */
+	/* Todo: consider adding servers from this 'root', then adding accounts from each server. */
+	wxTreeItemId root_servers_item = this->settings_tree->AppendItem(root, wxT("Accounts and Servers"), -1, -1,
+		new SettingsTreeItem(SETTINGS_VIEW_TYPE_ROOT_SERVERS));
+	wxArrayString servers_list = wxGetApp().config->GetServerList();
+	wxArrayString addresses_list;
+	wxTreeItemId server_item, address_item;
+	for (size_t i = 0; i < servers_list.size(); i++) {
+		server_item = this->settings_tree->AppendItem(root_servers_item, servers_list[i], -1, -1, 
+			new SettingsTreeItem(SETTINGS_VIEW_TYPE_SERVER, servers_list[i]));
+		addresses_list = wxGetApp().config->GetAddressList(servers_list[i]);
+		for (size_t j = 0; j < addresses_list.size(); j++) {
+			/* Add the address, note: in the settings-tree-item set the parent to the server. */
+			address_item = this->settings_tree->AppendItem(server_item, addresses_list[j], -1, -1,
+				new SettingsTreeItem(SETTINGS_VIEW_TYPE_ADDRESS, addresses_list[j], servers_list[i]));
+		}
+	}
 
-	wxTreeItemId account;
-	account = settings_tree->AppendItem(server1, wxT("ted@valdrea.com"));
-	account = settings_tree->AppendItem(server1, wxT("teddy.reed@gmail.com"));
-	account = settings_tree->AppendItem(server2, wxT("teddy@prosauce.org"));
+	/* Applications include mail apps which may benefit from auto configuration. */
+	wxTreeItemId root_applications_item = this->settings_tree->AppendItem(root, wxT("Applications"), -1, -1,
+		new SettingsTreeItem(SETTINGS_VIEW_TYPE_ROOT_APPLICATIONS));
 
 	wxTreeItemId app;
-	app = settings_tree->AppendItem(applications_item, wxT("Microsoft Outlook"));
-	app = settings_tree->AppendItem(applications_item, wxT("Mozilla Thunderbird"));
+	app = this->settings_tree->AppendItem(root_applications_item, wxT("Microsoft Outlook"), -1, -1,
+		new SettingsTreeItem(SETTINGS_VIEW_TYPE_APPLICATION, wxT("Microsoft Outlook")));
+	app = this->settings_tree->AppendItem(root_applications_item, wxT("Mozilla Thunderbird"), -1, -1,
+		new SettingsTreeItem(SETTINGS_VIEW_TYPE_APPLICATION, wxT("Mozilla Thunderbird")));
 
 	/* Let the tree decide the best width? */
-	settings_tree->SetQuickBestSize(false);
+	this->settings_tree->SetQuickBestSize(false);
 
-	vert_sizer->Add(settings_tree, 1, wxEXPAND | wxRIGHT, 0);
+	vert_sizer->Add(this->settings_tree, 1, wxEXPAND | wxRIGHT, 0);
 	this->SetSizer(vert_sizer);
 }
 
