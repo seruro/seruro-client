@@ -29,14 +29,28 @@ SeruroPanelSettings::SeruroPanelSettings(wxBookCtrlBase *book) : SeruroPanel(boo
 
 	/* Create a tree control as well as the first settings view (general). */
 	SettingsPanelTree *settings_tree = new SettingsPanelTree(this);
-	SettingsPanel *root_general_panel = new SettingsPanel_RootGeneral(this);
+	this->AddFirstPanel();
 
-	splitter->SplitVertically(settings_tree, root_general_panel, 1);
+	splitter->SplitVertically(settings_tree, this->current_panel, 1);
 	/* Seed the current panel with the Root panel: general. */
-	this->current_panel = root_general_panel;
-
+	
 	container_sizer->Add(this->splitter, 1, wxEXPAND | wxALL, 10);
 	this->SetSizer(container_sizer);
+}
+
+/* To help with organization, perform the initialization of the first panel as it's own method.
+ * In most cases, this is the 'General' root panel. 
+ */
+void SeruroPanelSettings::AddFirstPanel()
+{
+    /* The initial view, general settings, must be set as the current_panel as well as added
+	 * to the list of 'instanciated' panels.
+	 */
+	SettingsPanel *root_general_panel = new SettingsPanel_RootGeneral(this);
+
+	//wxString panel_name = wxT("root_general");
+	this->AddPanel((int) root_general_panel, SETTINGS_VIEW_TYPE_ROOT_GENERAL);
+	this->current_panel = root_general_panel;
 }
 
 wxWindow* SeruroPanelSettings::GetViewer()
@@ -45,30 +59,39 @@ wxWindow* SeruroPanelSettings::GetViewer()
 }
 
 /* Return the existance of a multi-layered datum within the panels member. */
-bool SeruroPanelSettings::HasPanel(const wxString &name, const wxString &parent)
+bool SeruroPanelSettings::HasPanel(settings_view_type_t type, 
+	const wxString &name, const wxString &parent)
 {
 	/* If a parent is given. */
 	if (parent.compare(wxEmptyString) != 0) {
-		return (this->panels.HasMember(parent) && this->panels[parent].HasMember(name));
+		return (this->panels.HasMember(type) && 
+			(this->panels[type].HasMember(parent) && this->panels[type][parent].HasMember(name)));
 	}
 
 	/* If only a name was given. */
-	return (this->panels.HasMember(name));
+	return (this->panels.HasMember(type) && this->panels[type].HasMember(name));
 }
 
 /* Record an int as name or parent/name. */
-void SeruroPanelSettings::AddPanel(int panel_ptr, const wxString &name, const wxString &parent)
+void SeruroPanelSettings::AddPanel(int panel_ptr, settings_view_type_t type,
+	const wxString &name, const wxString &parent)
 {
+	wxJSONValue type_value;
+	if (! this->panels.HasMember(type)) {
+		/* See the JSON value with this type of panel. */
+		this->panels[type] = type_value;
+	}
+
 	if (parent.compare(wxEmptyString) != 0) {
-		if (! this->panels.HasMember(parent)) {
+		if (! this->panels[type].HasMember(parent)) {
 			wxJSONValue parent_value;
-			this->panels[parent] = parent_value;
+			this->panels[type][parent] = parent_value;
 		}
-		this->panels[parent][name] = panel_ptr;
+		this->panels[type][parent][name] = panel_ptr;
 		return;
 	}
 
-	this->panels[name] = panel_ptr;
+	this->panels[type][name] = panel_ptr;
 	return;
 }
 
@@ -79,24 +102,26 @@ void SeruroPanelSettings::AddPanel(int panel_ptr, const wxString &name, const wx
  *  (4) Use the view splitter to swap the current shown panel with the newly 'found' panel.
  * Done.
  */
-void SeruroPanelSettings::ShowPanel(const wxString &name, const wxString &parent)
+void SeruroPanelSettings::ShowPanel(settings_view_type_t type,
+	const wxString &name, const wxString &parent)
 {
 	int panel_ptr;
 
 	if (parent.compare(wxEmptyString) != 0) {
-		if (! this->panels.HasMember(parent) || ! this->panels[parent].HasMember(name)) {
+		if (! this->panels.HasMember(type) || 
+			! this->panels[type].HasMember(parent) || ! this->panels[type][parent].HasMember(name)) {
 			wxLogMessage(wxT("SeruroPanelSettings> Could not change views, unknown name or parent."));
 			/* Calling ShowPanel without first calling AddPanel, very bad. */
 			return;
 		}
-		panel_ptr = this->panels[parent][name].AsInt();
+		panel_ptr = this->panels[type][parent][name].AsInt();
 	} else {
-		if (! this->panels.HasMember(name)) {
+		if (! this->panels.HasMember(type) || ! this->panels[type].HasMember(name)) {
 			wxLogMessage(wxT("SeruroPanelSettings> Could not change views, unknown name."));
 			/* Calling ShowPanel without first calling AddPanel, very bad. */
 			return;
 		}
-		panel_ptr = this->panels[name].AsInt();
+		panel_ptr = this->panels[type][name].AsInt();
 	}
 
 	if (panel_ptr == 0) {
@@ -151,60 +176,40 @@ void SettingsPanelTree::OnSelectItem(wxTreeEvent &event)
 	wxTreeItemId item = event.GetItem();
 	SettingsTreeItem *data = (SettingsTreeItem*) this->settings_tree->GetItemData(item);
 
-	/* Based on the type in the data object, show the corresponding view, some of which
-	 * require the item index to present the right view.
-	 */
+	wxLogMessage(wxT("SeruroSettingsPanel> Selected (type= %d) (parent= %s): %s."), 
+		data->item_type, data->item_parent, data->item_name); 
+
+	/* Using the item type check or create the view (initially, lazily) */
 	switch (data->item_type) {
-	case SETTINGS_VIEW_TYPE_SERVER: this->ShowView_Server(data); break;
-	case SETTINGS_VIEW_TYPE_ADDRESS: this->ShowView_Address(data); break;
-	case SETTINGS_VIEW_TYPE_APPLICATION: this->ShowView_Application(data); break;
+	case SETTINGS_VIEW_TYPE_SERVER: 
+		//this->ShowView_Server(data);
+		break;
+	case SETTINGS_VIEW_TYPE_ADDRESS: 
+		//this->ShowView_Address(data); 
+		if (! this->main_panel->HasPanel(SETTINGS_VIEW_TYPE_ADDRESS, data->item_name,  data->item_parent)) {
+			SettingsPanel_Address *address_panel = new SettingsPanel_Address(this->main_panel,  
+				data->item_name, data->item_parent);
+			this->main_panel->AddPanel((int) address_panel, SETTINGS_VIEW_TYPE_ADDRESS,
+				data->item_name, data->item_parent);
+		}
+		break;
+	case SETTINGS_VIEW_TYPE_APPLICATION: 
+		//this->ShowView_Application(data); 
+		break;
 
-	case SETTINGS_VIEW_TYPE_ROOT_GENERAL: this->ShowView_RootGeneral(); break;
-	case SETTINGS_VIEW_TYPE_ROOT_SERVERS: this->ShowView_RootServers(); break;
-	case SETTINGS_VIEW_TYPE_ROOT_APPLICATIONS: this->ShowView_RootApplications(); break;
+	case SETTINGS_VIEW_TYPE_ROOT_GENERAL: 
+		//this->ShowView_RootGeneral(); 
+		break;
+	case SETTINGS_VIEW_TYPE_ROOT_SERVERS: 
+		//this->ShowView_RootServers(); 
+		break;
+	case SETTINGS_VIEW_TYPE_ROOT_APPLICATIONS: 
+		//this->ShowView_RootApplications(); 
+		break;
 	}
-}
 
-void SettingsPanelTree::ShowView_Server(const SettingsTreeItem *data)
-{
-
-}
-
-void SettingsPanelTree::ShowView_Address(const SettingsTreeItem *data)
-{
-	wxString server = data->item_parent;
-	wxString address = data->item_name;
-
-	wxLogMessage(wxT("SeruroSettingsPanel> Selected (server= %s): %s address."), server, address); 
-
-	if (! this->main_panel->HasPanel(address, server)) {
-		SettingsPanel_Address *address_panel = new SettingsPanel_Address(this->main_panel, address, server);
-		this->main_panel->AddPanel((int) address_panel, address, server);
-		wxLogMessage(wxT("SeruroSettingsPanel> Created address panel (server= %s) (%s)."), server, address);
-	}
-
-	this->main_panel->ShowPanel(address, server);
-}
-
-void SettingsPanelTree::ShowView_Application(const SettingsTreeItem *data)
-{
-
-}
-
-void SettingsPanelTree::ShowView_RootGeneral()
-{
-
-}
-
-void SettingsPanelTree::ShowView_RootServers()
-{
-
-}
-
-void SettingsPanelTree::ShowView_RootApplications()
-{
-	//wxJSONValue panel;
-	//panel["string"].As
+	/* Finally show the requested view. */
+	this->main_panel->ShowPanel(data->item_type, data->item_name, data->item_parent);
 }
 
 SettingsPanelTree::SettingsPanelTree(SeruroPanelSettings *parent) : SettingsPanel(parent)
@@ -241,6 +246,7 @@ SettingsPanelTree::SettingsPanelTree(SeruroPanelSettings *parent) : SettingsPane
 		}
 	}
 
+#if 0
 	/* Applications include mail apps which may benefit from auto configuration. */
 	wxTreeItemId root_applications_item = this->settings_tree->AppendItem(root, wxT("Applications"), -1, -1,
 		new SettingsTreeItem(SETTINGS_VIEW_TYPE_ROOT_APPLICATIONS));
@@ -250,6 +256,7 @@ SettingsPanelTree::SettingsPanelTree(SeruroPanelSettings *parent) : SettingsPane
 		new SettingsTreeItem(SETTINGS_VIEW_TYPE_APPLICATION, wxT("Microsoft Outlook")));
 	app = this->settings_tree->AppendItem(root_applications_item, wxT("Mozilla Thunderbird"), -1, -1,
 		new SettingsTreeItem(SETTINGS_VIEW_TYPE_APPLICATION, wxT("Mozilla Thunderbird")));
+#endif 
 
 	/* Let the tree decide the best width? */
 	this->settings_tree->SetQuickBestSize(false);

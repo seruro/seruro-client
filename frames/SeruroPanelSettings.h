@@ -14,6 +14,19 @@
 /* The tree event control id. */
 #define SERURO_SETTINGS_TREE_ID 1009
 
+/* Define the various types/classes of views in the settings. */
+enum settings_view_type_t
+{
+	SETTINGS_VIEW_TYPE_SERVER			 = 0x01,
+	SETTINGS_VIEW_TYPE_ADDRESS			 = 0x02,
+	SETTINGS_VIEW_TYPE_APPLICATION		 = 0x03,
+
+	/* Each root item has configuration settings too. */
+	SETTINGS_VIEW_TYPE_ROOT_GENERAL		 = 0x04,
+	SETTINGS_VIEW_TYPE_ROOT_SERVERS		 = 0x05,
+	SETTINGS_VIEW_TYPE_ROOT_APPLICATIONS = 0x06
+};
+
 class SettingsTreeItem;
 class SettingsPanel;
 
@@ -24,12 +37,19 @@ public:
     SeruroPanelSettings(wxBookCtrlBase *book);
 
 	wxWindow* GetViewer();
-	bool HasPanel(const wxString &name, 
+	/* Each of the following includes a type of panel,
+	 * An optional name, and optional parent. */
+	bool HasPanel(settings_view_type_t type,
+		const wxString &name   = wxString(wxEmptyString), 
 		const wxString &parent = wxString(wxEmptyString));
-	void AddPanel(int panel_ptr, const wxString &name, 
+	void AddPanel(int panel_ptr, settings_view_type_t type,
+		const wxString &name   = wxString(wxEmptyString), 
 		const wxString &parent = wxString(wxEmptyString));
-	void ShowPanel(const wxString &name, 
+	void ShowPanel(settings_view_type_t type,
+		const wxString &name   = wxString(wxEmptyString), 
 		const wxString &parent = wxString(wxEmptyString));
+
+	void AddFirstPanel();
 
 private:
 	/* Keep all panels (lazily created) for easy switching.
@@ -75,10 +95,26 @@ public:
 		const wxString &address, const wxString &server);
 };
 
+/* SERVER SETTINGS */
+class SettingsPanel_Server : public SettingsPanel
+{
+public:
+	SettingsPanel_Server(SeruroPanelSettings *parent,
+		const wxString &server);
+};
+
+/* GENERAL SETTINGS */
 class SettingsPanel_RootGeneral : public SettingsPanel
 {
 public:
 	SettingsPanel_RootGeneral(SeruroPanelSettings *parent);
+};
+
+/* ACCOUNTS / SERVER SETTINGS */
+class SettingsPanel_RootServers : public SettingsPanel
+{
+public:
+	SettingsPanel_RootServers(SeruroPanelSettings *parent);
 };
 
 /* Show a tree-view for selecting various parts of the settings. */
@@ -91,31 +127,9 @@ public:
 	void OnSelectItem(wxTreeEvent &event);
 
 private:
-	void ShowView_Server(const SettingsTreeItem *data);
-	void ShowView_Address(const SettingsTreeItem *data);
-	void ShowView_Application(const SettingsTreeItem *data);
-
-	void ShowView_RootServers();
-	void ShowView_RootGeneral();
-	void ShowView_RootApplications();
-
-private:
 	wxTreeCtrl *settings_tree;
 
 	DECLARE_EVENT_TABLE()
-};
-
-/* Define the various types/classes of views in the settings. */
-enum settings_view_type_t
-{
-	SETTINGS_VIEW_TYPE_SERVER,
-	SETTINGS_VIEW_TYPE_ADDRESS,
-	SETTINGS_VIEW_TYPE_APPLICATION,
-
-	/* Each root item has configuration settings too. */
-	SETTINGS_VIEW_TYPE_ROOT_GENERAL,
-	SETTINGS_VIEW_TYPE_ROOT_SERVERS,
-	SETTINGS_VIEW_TYPE_ROOT_APPLICATIONS
 };
 
 /* Selecting a tree item will change the settings view, meaning the
