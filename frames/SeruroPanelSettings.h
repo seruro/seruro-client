@@ -4,39 +4,96 @@
 
 #include "SeruroFrame.h"
 
+#include "../wxJSON/wx/jsonval.h"
+
+#include <wx/splitter.h>
+#include <wx/treectrl.h>
 #include <wx/treebase.h>
 
 #define SERURO_SETTINGS_MIN_WIDTH 150
 /* The tree event control id. */
 #define SERURO_SETTINGS_TREE_ID 1009
 
+class SettingsTreeItem;
+class SettingsPanel;
+
 // Define a new frame type: this is going to be our main frame
 class SeruroPanelSettings : public SeruroPanel
 {
 public:
     SeruroPanelSettings(wxBookCtrlBase *book);
+
+	wxWindow* GetViewer();
+	bool HasPanel(const wxString &name, 
+		const wxString &parent = wxString(wxEmptyString));
+	void AddPanel(int panel_ptr, const wxString &name, 
+		const wxString &parent = wxString(wxEmptyString));
+	void ShowPanel(const wxString &name, 
+		const wxString &parent = wxString(wxEmptyString));
+
+private:
+	/* Keep all panels (lazily created) for easy switching.
+	 * This also allows "non-saved" settings to persist in the UI.
+	 */
+	/* Warning: this may be hackish, to save pointers in JSON. */
+	wxJSONValue panels;
+
+	/* The splitter create the dual-view construct. */
+	wxSplitterWindow *splitter;
+	SettingsPanel *current_panel;
 };
 
 /* A default panel (view) for settings. */
 class SettingsPanel : public wxPanel
 {
 public:
-	SettingsPanel(wxWindow *parent);
+	/* We construct each settings panel with the calling panel
+	 * this caller is a panel belonging to the application.
+	 * This panel may implement a 'splitting' or 'sashing' window
+	 * which will be the parent of all settings panels. 
+	 */
+	SettingsPanel(SeruroPanelSettings *instance_panel) :
+	  wxPanel(instance_panel->GetViewer(), wxID_ANY),
+	  main_panel(instance_panel) {}
+
+protected:
+	/* Save a reference to the creating panel, to add additional
+	 * sub-panels and update the current view.
+	 */
+	SeruroPanelSettings *main_panel;
+};
+
+/* Given the above abstract class which provides a main_panel
+ * object as the calling panel: child classes can call into
+ * this main_panel to perform view changes or access configuration
+ * settings.
+ */
+class SettingsPanel_Address : public SettingsPanel
+{
+public:
+	SettingsPanel_Address(SeruroPanelSettings *parent,
+		const wxString &address, const wxString &server);
+};
+
+class SettingsPanel_RootGeneral : public SettingsPanel
+{
+public:
+	SettingsPanel_RootGeneral(SeruroPanelSettings *parent);
 };
 
 /* Show a tree-view for selecting various parts of the settings. */
-class SettingsPanelTree : public wxPanel
+class SettingsPanelTree : public SettingsPanel
 {
 public:
-	SettingsPanelTree(wxWindow *parent);
+	SettingsPanelTree(SeruroPanelSettings *parent);
 
 	/* Event handler for selecting a panel item. */
 	void OnSelectItem(wxTreeEvent &event);
 
 private:
-	void ShowView_Server(wxTreeItemId item);
-	void ShowView_Address(wxTreeItemId item);
-	void ShowView_Application(wxTreeItemId item);
+	void ShowView_Server(const SettingsTreeItem *data);
+	void ShowView_Address(const SettingsTreeItem *data);
+	void ShowView_Application(const SettingsTreeItem *data);
 
 	void ShowView_RootServers();
 	void ShowView_RootGeneral();
