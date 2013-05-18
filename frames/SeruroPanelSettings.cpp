@@ -9,7 +9,7 @@
 DECLARE_APP(SeruroClient);
 
 BEGIN_EVENT_TABLE(SettingsTree, wxTreeCtrl)
-	EVT_TREE_SEL_CHANGED(SERURO_SETTINGS_TREE_ID, SettingsPanelTree::OnSelectItem)
+	EVT_TREE_SEL_CHANGED(SERURO_SETTINGS_TREE_ID, SettingsTree::OnSelectItem)
 END_EVENT_TABLE()
 
 SettingsPanel *panel_list[32];
@@ -96,17 +96,12 @@ void SeruroPanelSettings::AddPanel(SettingsPanel *panel_ptr, settings_view_type_
 		return;
 	}
 
-	this->panels[type][name] = panel_ptr;
+	panel_list[panel_list_size++] = panel_ptr;
+	this->panels[type][name] = panel_list_size;
 	return;
 }
 
-/* This is where the magic hackery happens:
- *  (1) Cast an int as a SettingsPanel pointer.
- *  (2) Hope that the pointer is a valid panel.
- *  (3) Hold on to your butts.
- *  (4) Use the view splitter to swap the current shown panel with the newly 'found' panel.
- * Done.
- */
+/* Search the JSON map for a panel index, then access via the indexes array. */
 void SeruroPanelSettings::ShowPanel(settings_view_type_t type,
 	const wxString &name, const wxString &parent)
 {
@@ -135,7 +130,8 @@ void SeruroPanelSettings::ShowPanel(settings_view_type_t type,
 		return;
 	}
 
-	SettingsPanel *new_panel(panel_list[panel_ptr]);
+	/* Subtract 1, since the "index store" avoids using 0. */
+	SettingsPanel *new_panel(panel_list[panel_ptr-1]);
 
 	bool changed = this->splitter->ReplaceWindow(this->current_panel, new_panel);
 	if (! changed) {
@@ -176,10 +172,16 @@ SettingsPanel_Address::SettingsPanel_Address(SeruroPanelSettings *parent,
 
 /* SETTINGS PANEL TREE */
 
-void SettingsPanelTree::OnSelectItem(wxTreeEvent &event)
+SettingsTree::SettingsTree(SettingsPanelTree *parent) 
+	: wxTreeCtrl ((wxWindow *) parent, SERURO_SETTINGS_TREE_ID,
+	wxDefaultPosition, wxDefaultSize,
+	wxTR_HIDE_ROOT | wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_LINES_AT_ROOT),
+	main_panel(parent->MainPanel()) {}
+
+void SettingsTree::OnSelectItem(wxTreeEvent &event)
 {
 	wxTreeItemId item = event.GetItem();
-	SettingsTreeItem *data = (SettingsTreeItem*) this->settings_tree->GetItemData(item);
+	SettingsTreeItem *data = (SettingsTreeItem*) this->GetItemData(item);
 
 	wxLogMessage(wxT("SeruroSettingsPanel> Selected (type= %d) (parent= %s): %s."), 
 		data->item_type, data->item_parent, data->item_name); 

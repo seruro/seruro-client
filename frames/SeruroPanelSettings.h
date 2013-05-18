@@ -77,10 +77,12 @@ public:
 	  wxPanel(instance_panel->GetViewer(), wxID_ANY),
 	  main_panel(instance_panel) {}
 
-protected:
-	/* Save a reference to the creating panel, to add additional
+	 /* Save a reference to the creating panel, to add additional
 	 * sub-panels and update the current view.
 	 */
+	  SeruroPanelSettings* MainPanel() { return main_panel; }
+
+protected:
 	SeruroPanelSettings *main_panel;
 };
 
@@ -121,12 +123,15 @@ public:
 class SettingsTree : public wxTreeCtrl
 {
 public:
-    SettingsTree (SettingsPanelTree *panel) : wxTreeCtrl ((wxWindow *) panel, SERURO_SETTINGS_TREE_ID,
-        wxDefaultPosition, wxDefaultSize,
-        wxTR_HIDE_ROOT | wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES |
-        wxTR_LINES_AT_ROOT) {}
+    SettingsTree (SettingsPanelTree *panel);
     
+	/* Event handler for selecting a panel item. */
+	void OnSelectItem(wxTreeEvent &event);
+
 private:
+	/* Save reference to parent (panel) to use it's
+	 * main_panel member. */
+	SeruroPanelSettings *main_panel;
     DECLARE_EVENT_TABLE()
 };
 
@@ -135,9 +140,6 @@ class SettingsPanelTree : public SettingsPanel
 {
 public:
 	SettingsPanelTree(SeruroPanelSettings *parent);
-
-	/* Event handler for selecting a panel item. */
-	void OnSelectItem(wxTreeEvent &event);
     
 private:
 	wxTreeCtrl *settings_tree;
