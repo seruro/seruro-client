@@ -26,9 +26,7 @@ public:
 	 */
     
 private:
-	//bool is_list;
 	wxChoice *address_control;
-	//wxChoice *address_list_control;
 	wxTextCtrl *password_control;
 };
 

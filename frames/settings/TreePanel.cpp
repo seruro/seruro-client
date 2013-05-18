@@ -31,6 +31,10 @@ void SettingsTree::OnSelectItem(wxTreeEvent &event)
 	switch (data->item_type) {
 	case SETTINGS_VIEW_TYPE_SERVER: 
 		//this->ShowView_Server(data);
+        if (! this->main_panel->HasPanel(SETTINGS_VIEW_TYPE_SERVER, data->item_name)) {
+            SettingsPanel_Server *server_panel = new SettingsPanel_Server(this->main_panel, data->item_name);
+            this->main_panel->AddPanel(server_panel, SETTINGS_VIEW_TYPE_SERVER, data->item_name);
+        }
 		break;
 	case SETTINGS_VIEW_TYPE_ADDRESS: 
 		//this->ShowView_Address(data); 

@@ -3,9 +3,10 @@
 
 #include <wx/sizer.h>
 #include <wx/button.h>
+#include <wx/stattext.h>
 
 SettingsPanel_Server::SettingsPanel_Server(SeruroPanelSettings *parent,
-    const wxString &settings) : SettingsPanel(parent)
+    const wxString &server) : SettingsPanel(parent)
 {
 	wxBoxSizer *vert_sizer = new wxBoxSizer(wxVERTICAL);
     
@@ -14,7 +15,11 @@ SettingsPanel_Server::SettingsPanel_Server(SeruroPanelSettings *parent,
 	//vert_sizer->Add(address_button, 0, wxRIGHT, 5);
 	//vert_sizer->Add(server_button, 0, wxRIGHT, 5);
     
+    wxStaticText *msg = new wxStaticText(this, wxID_ANY,
+        wxString(wxT("View and change the configuration settings for: ") + server));
+	msg->Wrap(300);
     
+    vert_sizer->Add(msg, wxSizerFlags().Expand().Border(wxALL, 5));
     
 	this->SetSizer(vert_sizer);
 }
