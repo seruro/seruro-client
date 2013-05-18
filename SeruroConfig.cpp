@@ -84,7 +84,7 @@ wxJSONValue SeruroConfig::GetServers()
 	return servers;
 }
 
-wxJSONValue SeruroConfig::GetServer(wxString &server)
+wxJSONValue SeruroConfig::GetServer(const wxString &server)
 {
 	wxJSONValue server_info;
 

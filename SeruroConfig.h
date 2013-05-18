@@ -33,7 +33,7 @@ public:
 		const wxString &token);
 
 	wxJSONValue GetServers();
-	wxJSONValue GetServer(wxString &server);
+	wxJSONValue GetServer(const wxString &server);
 	wxArrayString GetAddressList(const wxString &server);
 	wxArrayString GetServerList();
 

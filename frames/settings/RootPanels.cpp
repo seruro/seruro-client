@@ -3,9 +3,10 @@
 #include "../SeruroPanelSettings.h"
 
 #include <wx/button.h>
+#include <wx/scrolwin.h>
 
 SettingsPanel::SettingsPanel(SeruroPanelSettings *instance_panel)
-	: wxPanel(instance_panel->GetViewer(), wxID_ANY), main_panel(instance_panel) {}
+	: wxScrolledWindow(instance_panel->GetViewer(), wxID_ANY), main_panel(instance_panel) {}
 
 SettingsPanel_RootGeneral::SettingsPanel_RootGeneral(SeruroPanelSettings *parent) : SettingsPanel(parent)
 {

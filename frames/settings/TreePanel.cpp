@@ -13,6 +13,13 @@ BEGIN_EVENT_TABLE(SettingsTree, wxTreeCtrl)
 	EVT_TREE_SEL_CHANGED(SERURO_SETTINGS_TREE_ID, SettingsTree::OnSelectItem)
 END_EVENT_TABLE()
 
+#if 0
+/* For all text used within panels. */
+BEGIN_EVENT_TABLE(Text, wxStaticText)
+	EVT_SIZE(Text::OnSize)
+END_EVENT_TABLE()
+#endif
+
 SettingsTree::SettingsTree(SettingsPanelTree *parent) 
 	: wxTreeCtrl ((wxWindow *) parent, SERURO_SETTINGS_TREE_ID,
 	wxDefaultPosition, wxDefaultSize,
@@ -114,3 +121,52 @@ SettingsPanelTree::SettingsPanelTree(SeruroPanelSettings *parent) : SettingsPane
 	vert_sizer->Add(this->settings_tree, 1, wxEXPAND | wxRIGHT, 0);
 	this->SetSizer(vert_sizer);
 }
+
+/* Wrap the text to the size of the parent. */
+#if 0
+void Text::OnSize(wxSizeEvent &event) {
+	int new_width = parent->GetClientSize().x;
+	int last_break = 0;
+	bool reset_text = false;
+		
+	wxString previous_text;
+	if (new_width < this->previous_width) {
+		/* (If shrinking) Keep track of the string before the change occurs. */
+			previous_text = this->GetLabelText();
+	} else {
+		while (this->breaks.size() > 0 && this->breaks.back() < new_width) {
+			last_break = this->breaks.back();
+			wxLogMessage(wxT("growing: %d is greater than last break: %d"), 
+				new_width, last_break);
+			this->breaks.pop_back();
+			reset_text = true;
+		}
+	}
+
+	this->Freeze();
+
+	this->Wrap(parent->GetClientSize().x);
+	wxLogMessage(wxT("compare: %d"), previous_text.compare(this->GetLabelText()));
+
+	if (previous_text.compare(this->GetLabelText()) == 1) {
+		/* A break was added. */
+		wxLogMessage(wxT("broke at: %d"), new_width);
+		this->breaks.push_back(new_width);
+	} else if (reset_text) {
+		/* The text has grown such that an inserted break should be removed. */
+		this->SetLabelText(this->original_text);
+	} else if (new_width > this->previous_width) {
+		/* Final case: if multiple breaks we munged, check against original text. */
+		wxLogMessage(wxT("og compare: %d"), this->original_text.compare(this->GetLabelText()));
+		if (this->original_text.compare(this->GetLabelText()) == 1) {
+			this->SetLabelText(this->original_text);
+		}
+	}
+
+	this->Thaw();
+	this->parent->Refresh();
+	//}
+
+	this->previous_width = new_width;
+}
+#endif

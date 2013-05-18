@@ -94,6 +94,9 @@ void SeruroPanelSettings::AddPanel(SettingsPanel *panel_ptr, settings_view_type_
 		return;
 	}
 
+	/* Show scrollbars for panel. */
+	panel_ptr->InitSizer();
+
 	panel_list[panel_list_size++] = panel_ptr;
 	this->panels[type][name] = panel_list_size;
 	return;

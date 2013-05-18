@@ -7,6 +7,8 @@
 
 #include <wx/string.h>
 
+#include "../wxJSON/wx/jsonval.h"
+
 class SeruroCryptoMSW
 {
 public:

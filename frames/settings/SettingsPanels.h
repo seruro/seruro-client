@@ -5,6 +5,11 @@
 #include <wx/treectrl.h>
 #include <wx/treebase.h>
 #include <wx/panel.h>
+#include <wx/stattext.h>
+//#include <wx/log.h>
+#include <wx/scrolwin.h>
+
+//#include <vector>
 
 class SettingsPanelTree;
 class SeruroPanelSettings;
@@ -25,7 +30,7 @@ enum settings_view_type_t
 //extern enum settings_view_type settings_view_type_t;
 
 /* A default panel (view) for settings. */
-class SettingsPanel : public wxPanel
+class SettingsPanel : public wxScrolledWindow
 {
 public:
 	/* We construct each settings panel with the calling panel
@@ -38,7 +43,13 @@ public:
 	 /* Save a reference to the creating panel, to add additional
 	 * sub-panels and update the current view.
 	 */
-	  SeruroPanelSettings* MainPanel() { return main_panel; }
+	SeruroPanelSettings* MainPanel() { return main_panel; }
+	
+	void InitSizer() {
+		/* Use this for scrollbars. */
+		this->FitInside();
+		this->SetScrollRate(5, 5);
+	}
 
 protected:
 	SeruroPanelSettings *main_panel;
@@ -130,6 +141,33 @@ public:
 	wxString item_name;
 	/* This might not be needed. */
 	wxString item_parent;
+};
+
+/* Helper class for text within panels, which will auto wrap to fit
+ * the size of the second panel. (in TreePanel)
+ */
+class Text : public wxStaticText
+{
+public:
+	Text(wxWindow *parent_ctrl, const wxString &text) : 
+		wxStaticText(parent_ctrl, wxID_ANY, text, 
+			wxDefaultPosition, wxDefaultSize)
+		//original_text(text), parent(parent_ctrl),
+		//previous_width(parent_ctrl->GetClientSize().x) 
+		{}
+
+	//void OnSize(wxSizeEvent &event);
+
+private:
+	//wxWindow *parent;
+	//int previous_width;
+	/* Array of widths at which breaks occur. */
+	//int *breaks[];
+	//std::vector<int> breaks;
+	//int break_index;
+	//wxString original_text;
+
+	//DECLARE_EVENT_TABLE()
 };
 
 #endif 
