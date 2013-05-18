@@ -8,9 +8,12 @@
 
 DECLARE_APP(SeruroClient);
 
-BEGIN_EVENT_TABLE(SettingsPanelTree, wxTreeCtrl)
+BEGIN_EVENT_TABLE(SettingsTree, wxTreeCtrl)
 	EVT_TREE_SEL_CHANGED(SERURO_SETTINGS_TREE_ID, SettingsPanelTree::OnSelectItem)
 END_EVENT_TABLE()
+
+SettingsPanel *panel_list[32];
+int panel_list_size = 0;
 
 SeruroPanelSettings::SeruroPanelSettings(wxBookCtrlBase *book) : SeruroPanel(book, wxT("Settings"))
 {
@@ -49,7 +52,7 @@ void SeruroPanelSettings::AddFirstPanel()
 	SettingsPanel *root_general_panel = new SettingsPanel_RootGeneral(this);
 
 	//wxString panel_name = wxT("root_general");
-	this->AddPanel((int) root_general_panel, SETTINGS_VIEW_TYPE_ROOT_GENERAL);
+	this->AddPanel(root_general_panel, SETTINGS_VIEW_TYPE_ROOT_GENERAL);
 	this->current_panel = root_general_panel;
 }
 
@@ -73,7 +76,7 @@ bool SeruroPanelSettings::HasPanel(settings_view_type_t type,
 }
 
 /* Record an int as name or parent/name. */
-void SeruroPanelSettings::AddPanel(int panel_ptr, settings_view_type_t type,
+void SeruroPanelSettings::AddPanel(SettingsPanel *panel_ptr, settings_view_type_t type,
 	const wxString &name, const wxString &parent)
 {
 	wxJSONValue type_value;
@@ -87,7 +90,9 @@ void SeruroPanelSettings::AddPanel(int panel_ptr, settings_view_type_t type,
 			wxJSONValue parent_value;
 			this->panels[type][parent] = parent_value;
 		}
-		this->panels[type][parent][name] = panel_ptr;
+        /* Store the index + 1, when retreiving a 0 is a failure, the minimum is 1. */
+        panel_list[panel_list_size++] = panel_ptr;
+		this->panels[type][parent][name] = panel_list_size;
 		return;
 	}
 
@@ -130,7 +135,7 @@ void SeruroPanelSettings::ShowPanel(settings_view_type_t type,
 		return;
 	}
 
-	SettingsPanel *new_panel((SettingsPanel*) panel_ptr);
+	SettingsPanel *new_panel(panel_list[panel_ptr]);
 
 	bool changed = this->splitter->ReplaceWindow(this->current_panel, new_panel);
 	if (! changed) {
@@ -189,7 +194,7 @@ void SettingsPanelTree::OnSelectItem(wxTreeEvent &event)
 		if (! this->main_panel->HasPanel(SETTINGS_VIEW_TYPE_ADDRESS, data->item_name,  data->item_parent)) {
 			SettingsPanel_Address *address_panel = new SettingsPanel_Address(this->main_panel,  
 				data->item_name, data->item_parent);
-			this->main_panel->AddPanel((int) address_panel, SETTINGS_VIEW_TYPE_ADDRESS,
+			this->main_panel->AddPanel(address_panel, SETTINGS_VIEW_TYPE_ADDRESS,
 				data->item_name, data->item_parent);
 		}
 		break;
@@ -217,9 +222,7 @@ SettingsPanelTree::SettingsPanelTree(SeruroPanelSettings *parent) : SettingsPane
 	wxBoxSizer *vert_sizer = new wxBoxSizer(wxVERTICAL);
 
 	/* Create a nice left-hand-side tree for all the setting views (use static ID for events). */
-	this->settings_tree = new wxTreeCtrl(this, SERURO_SETTINGS_TREE_ID,
-        wxDefaultPosition, wxDefaultSize, 
-		wxTR_HIDE_ROOT | wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES | wxTR_LINES_AT_ROOT);
+	this->settings_tree = new SettingsTree(this);
     this->settings_tree->SetIndent(12);
 	/* We want a multi-root tree, so create a hidden tree root. */
 	wxTreeItemId root = this->settings_tree->AddRoot(wxT("_"));

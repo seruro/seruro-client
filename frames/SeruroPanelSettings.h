@@ -28,6 +28,7 @@ enum settings_view_type_t
 };
 
 class SettingsTreeItem;
+class SettingsPanelTree;
 class SettingsPanel;
 
 // Define a new frame type: this is going to be our main frame
@@ -42,7 +43,7 @@ public:
 	bool HasPanel(settings_view_type_t type,
 		const wxString &name   = wxString(wxEmptyString), 
 		const wxString &parent = wxString(wxEmptyString));
-	void AddPanel(int panel_ptr, settings_view_type_t type,
+	void AddPanel(SettingsPanel *panel_ptr, settings_view_type_t type,
 		const wxString &name   = wxString(wxEmptyString), 
 		const wxString &parent = wxString(wxEmptyString));
 	void ShowPanel(settings_view_type_t type,
@@ -117,6 +118,18 @@ public:
 	SettingsPanel_RootServers(SeruroPanelSettings *parent);
 };
 
+class SettingsTree : public wxTreeCtrl
+{
+public:
+    SettingsTree (SettingsPanelTree *panel) : wxTreeCtrl ((wxWindow *) panel, SERURO_SETTINGS_TREE_ID,
+        wxDefaultPosition, wxDefaultSize,
+        wxTR_HIDE_ROOT | wxTR_TWIST_BUTTONS | wxTR_HAS_BUTTONS | wxTR_NO_LINES |
+        wxTR_LINES_AT_ROOT) {}
+    
+private:
+    DECLARE_EVENT_TABLE()
+};
+
 /* Show a tree-view for selecting various parts of the settings. */
 class SettingsPanelTree : public SettingsPanel
 {
@@ -125,11 +138,9 @@ public:
 
 	/* Event handler for selecting a panel item. */
 	void OnSelectItem(wxTreeEvent &event);
-
+    
 private:
 	wxTreeCtrl *settings_tree;
-
-	DECLARE_EVENT_TABLE()
 };
 
 /* Selecting a tree item will change the settings view, meaning the
