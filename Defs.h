@@ -24,6 +24,11 @@
 /* User agent to use for Server API requests. */
 #define SERURO_DEFAULT_USER_AGENT "Client/1.0"
 
+/* Settings view related definitions. */
+#define SERURO_SETTINGS_MIN_WIDTH 150
+/* The settings tree event control id. */
+#define SERURO_SETTINGS_TREE_ID 1009
+
 /* Bit settings for TLS requests. */
 #define SERURO_SECURITY_OPTIONS_NONE    0x00
 #define SERURO_SECURITY_OPTIONS_TLS12	0x01
