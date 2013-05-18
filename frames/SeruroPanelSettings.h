@@ -3,6 +3,7 @@
 #define H_SeruroPanelSettings
 
 #include "SeruroFrame.h"
+#include "settings/SettingsPanels.h"
 
 #include "../wxJSON/wx/jsonval.h"
 
@@ -10,7 +11,7 @@
 
 /* Provided by settings/SettingsPanels.h. */
 class SettingsPanel;
-extern enum settings_view_type_t;
+//extern enum settings_view_type settings_view_type_t;
 
 // Define a new frame type: this is going to be our main frame
 class SeruroPanelSettings : public SeruroPanel

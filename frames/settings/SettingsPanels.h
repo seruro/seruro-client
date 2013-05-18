@@ -22,6 +22,8 @@ enum settings_view_type_t
 	SETTINGS_VIEW_TYPE_ROOT_APPLICATIONS = 0x06
 };
 
+//extern enum settings_view_type settings_view_type_t;
+
 /* A default panel (view) for settings. */
 class SettingsPanel : public wxPanel
 {

@@ -7,6 +7,7 @@
 #include "../api/SeruroServerAPI.h"
 
 #include <wx/listctrl.h>
+#include <wx/choice.h>
 
 enum search_actions_t
 {

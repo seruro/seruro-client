@@ -3,6 +3,7 @@
 
 #include "../crypto/SeruroCrypto.h"
 #include "../SeruroClient.h"
+#include "dialogs/DecryptDialog.h"
 
 #include "../wxJSON/wx/jsonval.h"
 #include "../wxJSON/wx/jsonreader.h"

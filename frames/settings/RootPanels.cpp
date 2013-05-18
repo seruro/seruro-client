@@ -2,6 +2,8 @@
 #include "SettingsPanels.h"
 #include "../SeruroPanelSettings.h"
 
+#include <wx/button.h>
+
 SettingsPanel::SettingsPanel(SeruroPanelSettings *instance_panel)
 	: wxPanel(instance_panel->GetViewer(), wxID_ANY), main_panel(instance_panel) {}
 

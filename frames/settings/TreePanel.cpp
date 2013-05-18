@@ -7,6 +7,8 @@
 /* Required for Configuration checking. */
 DECLARE_APP(SeruroClient);
 
+//enum settings_view_type settings_view_type_t;
+
 BEGIN_EVENT_TABLE(SettingsTree, wxTreeCtrl)
 	EVT_TREE_SEL_CHANGED(SERURO_SETTINGS_TREE_ID, SettingsTree::OnSelectItem)
 END_EVENT_TABLE()

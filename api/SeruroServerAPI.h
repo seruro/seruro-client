@@ -3,12 +3,9 @@
 #define H_SeruroServerAPI
 
 #include "../Defs.h"
+#include "SeruroRequest.h"
 
-#include <wx/socket.h>
 #include "../wxJSON/wx/jsonval.h"
-#include <wx/textctrl.h>
-#include <wx/choice.h>
-#include <wx/dialog.h>
 
 /* API commands are identified by enum macro, and the API params are manually
  * parsed and assembled by the call handler.
@@ -33,43 +30,13 @@ enum seruro_api_callbacks_t
 	SERURO_API_CALLBACK_SEARCH
 };
 
-/* Define the API routes (all prefixed with /api) */
-
-/* When an API command finished it will add a SERURO_API_RESULT event.
- * This event should be caught by a single function and the event object
- * should be inspected to determine which API call returned, and the resultant
- * response parameters. 
- */
-DECLARE_EVENT_TYPE(SERURO_API_RESULT, -1);
+//extern enum api_name api_name_t;
+//extern enum seruro_api_callbacks seruro_api_callbacks_t;
 
 /* The SeruroServerAPI is a socket-based RESTful client for the SeruroServer.
  * When the SeruroClient must make an API call a thread is spawned (or run)
  * which takes the call command and optional parameters and data.
  */
-
-class SeruroRequest : public wxThread
-{
-public:
-	SeruroRequest(wxJSONValue params, wxEvtHandler *parent, int parentEvtId);
-	virtual ~SeruroRequest();
-
-	virtual void *Entry(); /* thread execution starts */
-	/* Todo: consider an OnExit() is the thread can be terminated by user action. */
-
-protected:
-    /* Creates a TLS Request (as an attempt) to create an authentication token. */
-	wxString GetAuthToken();
-    /* Performs the TLS Request (all of which require an authentication token. */
-	wxJSONValue DoRequest();
-
-private:
-	wxJSONValue params;
-
-	wxEvtHandler *evtHandler;
-	int evtId;
-	/* Todo: consider naming the frame that spawns the request.
-	 * to provide a progress update? */
-};
 
 class SeruroServerAPI
 {
@@ -100,46 +67,6 @@ protected:
 private:
 	//SeruroRequest *thread;
 	wxEvtHandler *evtHandler;
-};
-
-/* The auth dialog is a beefed up password dialog with an added selection for
- * username (or email address). Since a single server may have multiple addresses
- * configured. 
- */
-class AuthDialog : public wxDialog
-{
-public:
-    AuthDialog(const wxString &server, 
-		const wxString &address = wxEmptyString, int selected = 0);
-
-	/* Return the address/password pair. */
-	wxJSONValue GetValues();
-
-	/* Note: there are no events registered, since the auth dialog should
-	 * only be used as a modal. 
-	 */
-
-private:
-	//bool is_list;
-	wxChoice *address_control;
-	//wxChoice *address_list_control;
-	wxTextCtrl *password_control;
-};
-
-/* DecryptDialog will accept a "method", meaning the method the decryption key 
- * should have been communicated to the user.
- *
- * See Defs.h for TEXT_DECRYPT_METHOD_... for various textual messages.
- */
-class DecryptDialog : public wxDialog
-{
-public:
-	DecryptDialog(const wxString &method);
-
-	/* Return the entered password. */
-	wxString GetValue();
-private:
-	wxTextCtrl *password_control;
 };
 
 

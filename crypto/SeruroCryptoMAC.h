@@ -5,6 +5,8 @@
 #ifndef H_SeruroCryptoMAC
 #define H_SeruroCryptoMAC
 
+#include "../wxJSON/wx/jsonval.h"
+
 #include <wx/string.h>
 
 class SeruroCryptoMAC

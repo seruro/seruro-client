@@ -6,6 +6,7 @@
 
 #include <wx/stattext.h>
 #include <wx/button.h>
+#include <wx/log.h>
 
 /* Keep a list of panel pointers, which should not be stored as JSON ints. */
 SettingsPanel *panel_list[32];
