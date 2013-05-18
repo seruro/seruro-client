@@ -94,21 +94,17 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	controls_sizer->Add(search_sizer, 1, wxALL | wxEXPAND, 5);
 	controls_sizer->Add(buttons_sizer, 1, wxALL | wxEXPAND, 5);
 	components_sizer->Add(controls_sizer, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 5);
-	//components_sizer->Add(search_control_sizer, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, 10);
 
 	/* Add the components to the main view. */
-	//this->mainSizer->Add(components_sizer, wxALL| wxEXPAND, 5);
 	this->SetSizer(components_sizer);
 
 	/* Testing: setting even column widths. */
-	//wxSize list_size = this->list_control->GetSize();
 	int list_column_size = (SERURO_APP_DEFAULT_WIDTH - 60) / 3;
-	this->list_control->SetColumnWidth(0, list_column_size); // int(list_size.y / 3)
-	this->list_control->SetColumnWidth(1, list_column_size); // int(list_size.y / 3)
-	this->list_control->SetColumnWidth(2, list_column_size); // int(list_size.y / 3)
+	this->list_control->SetColumnWidth(0, list_column_size);
+	this->list_control->SetColumnWidth(1, list_column_size);
+	this->list_control->SetColumnWidth(2, list_column_size);
 
 	/* Testing default focus */
-	//this->servers_control->SetFocus();
 	this->search_control->SetFocus();
 }
 

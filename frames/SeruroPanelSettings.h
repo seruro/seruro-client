@@ -25,7 +25,8 @@ public:
 	bool HasPanel(settings_view_type_t type,
 		const wxString &name   = wxString(wxEmptyString), 
 		const wxString &parent = wxString(wxEmptyString));
-	void AddPanel(SettingsPanel *panel_ptr, settings_view_type_t type,
+	void AddPanel(SettingsPanelView *panel_ptr, 
+		settings_view_type_t type,
 		const wxString &name   = wxString(wxEmptyString), 
 		const wxString &parent = wxString(wxEmptyString));
 	void ShowPanel(settings_view_type_t type,

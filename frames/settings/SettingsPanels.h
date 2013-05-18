@@ -40,19 +40,25 @@ public:
 	 */
 	SettingsPanel(SeruroPanelSettings *instance_panel);
 
-	 /* Save a reference to the creating panel, to add additional
+	/* Save a reference to the creating panel, to add additional
 	 * sub-panels and update the current view.
 	 */
 	SeruroPanelSettings* MainPanel() { return main_panel; }
+
+protected:
+	SeruroPanelSettings *main_panel;
+};
+
+class SettingsPanelView : public SettingsPanel
+{
+public:
+	SettingsPanelView(SeruroPanelSettings *instance_panel);
 	
 	void InitSizer() {
 		/* Use this for scrollbars. */
 		this->FitInside();
 		this->SetScrollRate(5, 5);
 	}
-
-protected:
-	SeruroPanelSettings *main_panel;
 };
 
 /* Given the above abstract class which provides a main_panel
@@ -60,7 +66,7 @@ protected:
  * this main_panel to perform view changes or access configuration
  * settings.
  */
-class SettingsPanel_Address : public SettingsPanel
+class SettingsPanel_Address : public SettingsPanelView
 {
 public:
 	SettingsPanel_Address(SeruroPanelSettings *parent,
@@ -68,22 +74,27 @@ public:
 };
 
 /* SERVER SETTINGS */
-class SettingsPanel_Server : public SettingsPanel
+class SettingsPanel_Server : public SettingsPanelView
 {
 public:
 	SettingsPanel_Server(SeruroPanelSettings *parent,
 		const wxString &server);
+	void OnUpdate(wxCommandEvent &event);
+	void OnEdit(wxCommandEvent &event);
+	void OnDelete(wxCommandEvent &event);
+private:
+	DECLARE_EVENT_TABLE()
 };
 
 /* GENERAL SETTINGS */
-class SettingsPanel_RootGeneral : public SettingsPanel
+class SettingsPanel_RootGeneral : public SettingsPanelView
 {
 public:
 	SettingsPanel_RootGeneral(SeruroPanelSettings *parent);
 };
 
 /* ACCOUNTS / SERVER SETTINGS */
-class SettingsPanel_RootServers : public SettingsPanel
+class SettingsPanel_RootServers : public SettingsPanelView
 {
 public:
 	SettingsPanel_RootServers(SeruroPanelSettings *parent);

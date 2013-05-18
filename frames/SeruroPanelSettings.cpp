@@ -9,7 +9,7 @@
 #include <wx/log.h>
 
 /* Keep a list of panel pointers, which should not be stored as JSON ints. */
-SettingsPanel *panel_list[32];
+SettingsPanelView *panel_list[32];
 /* The JSON mapping stores the panel pointer as an integer index into the list (+1). */
 int panel_list_size = 0;
 
@@ -47,7 +47,7 @@ void SeruroPanelSettings::AddFirstPanel()
     /* The initial view, general settings, must be set as the current_panel as well as added
 	 * to the list of 'instanciated' panels.
 	 */
-	SettingsPanel *root_general_panel = new SettingsPanel_RootGeneral(this);
+	SettingsPanelView *root_general_panel = new SettingsPanel_RootGeneral(this);
 
 	//wxString panel_name = wxT("root_general");
 	this->AddPanel(root_general_panel, SETTINGS_VIEW_TYPE_ROOT_GENERAL);
@@ -74,7 +74,7 @@ bool SeruroPanelSettings::HasPanel(settings_view_type_t type,
 }
 
 /* Record an int as name or parent/name. */
-void SeruroPanelSettings::AddPanel(SettingsPanel *panel_ptr, settings_view_type_t type,
+void SeruroPanelSettings::AddPanel(SettingsPanelView *panel_ptr, settings_view_type_t type,
 	const wxString &name, const wxString &parent)
 {
 	wxJSONValue type_value;
@@ -132,7 +132,7 @@ void SeruroPanelSettings::ShowPanel(settings_view_type_t type,
 	}
 
 	/* Subtract 1, since the "index store" avoids using 0. */
-	SettingsPanel *new_panel(panel_list[panel_ptr-1]);
+	SettingsPanelView *new_panel(panel_list[panel_ptr-1]);
 
 	bool changed = this->splitter->ReplaceWindow(this->current_panel, new_panel);
 	if (! changed) {

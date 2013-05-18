@@ -73,6 +73,8 @@ void SettingsTree::OnSelectItem(wxTreeEvent &event)
 
 SettingsPanelTree::SettingsPanelTree(SeruroPanelSettings *parent) : SettingsPanel(parent)
 {
+	//parent->SetWindowStyle(0);
+
 	wxBoxSizer *vert_sizer = new wxBoxSizer(wxVERTICAL);
 
 	/* Create a nice left-hand-side tree for all the setting views (use static ID for events). */

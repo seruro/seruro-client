@@ -5,7 +5,7 @@
 #include <wx/button.h>
 
 SettingsPanel_Address::SettingsPanel_Address(SeruroPanelSettings *parent,
-	const wxString &address, const wxString &server) : SettingsPanel(parent)
+	const wxString &address, const wxString &server) : SettingsPanelView(parent)
 {
 	wxBoxSizer *vert_sizer = new wxBoxSizer(wxVERTICAL);
 
