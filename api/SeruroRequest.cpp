@@ -97,7 +97,7 @@ wxString SeruroRequest::GetAuthToken()
     
 	auth_params["flags"] = SERURO_SECURITY_OPTIONS_DATA;
 	auth_params["server"] = this->params["server"];
-	auth_params["object"] = wxT(SERURO_API_OBJECT_SESSION_CREATE);
+	auth_params["object"] = wxT(SERURO_API_OBJECT_LOGIN);
 	auth_params["verb"] = wxT("POST");
     
 	/* If there was an explicit address set in the request parameters. */

@@ -13,14 +13,14 @@
 #if defined(__WXMAC__)
 #define SERURO_APP_DEFAULT_WIDTH  675
 #else
-#define SERURO_APP_DEFAULT_WIDTH  550
+#define SERURO_APP_DEFAULT_WIDTH  600
 #endif
 #define SERURO_APP_DEFAULT_HEIGHT 500
 
 /* When a server name is displayed, display the host and port as well. */
 #define SERURO_DISPLAY_SERVER_INFO true
 
-#define SERURO_DEFAULT_PORT "443" /* Todo: maybe a string representation.*/
+#define SERURO_DEFAULT_PORT "443"
 /* File name to store and fetch user configuration data from. */
 #define SERURO_CONFIG_NAME  "SeruroClient.config"
 /* File name to store and fetch user authentication tokens from. */
@@ -58,12 +58,12 @@
 #define SERURO_API_ERROR_INVALID_AUTH	"Invalid authentication token."
 
 /* Server API routes, or in HTTP diction "objects". */
-#define SERURO_API_OBJECT_SESSION_CREATE "/api/sessions/create"
-#define SERURO_API_OBJECT_GETP12 "/api/seruro/getP12"
-#define SERURO_API_OBJECT_GETCA "/api/seruro/getCA"
+#define SERURO_API_OBJECT_LOGIN	  "/api/sessions/create"
+#define SERURO_API_OBJECT_GETP12  "/api/seruro/getP12"
+#define SERURO_API_OBJECT_GETCA	  "/api/seruro/getCA"
 #define SERURO_API_OBJECT_GETCERT "/api/seruro/getCert"
-#define SERURO_API_OBJECT_SEARCH "/api/seruro/search"
-#define SERURO_API_OBJECT_GETCRL "/api/seruro/getCRL"
+#define SERURO_API_OBJECT_SEARCH  "/api/seruro/search"
+#define SERURO_API_OBJECT_GETCRL  "/api/seruro/getCRL"
 
 /* Seruro API authentication POST fields. */
 #define SERURO_API_AUTH_FIELD_EMAIL "user_login[email]"
