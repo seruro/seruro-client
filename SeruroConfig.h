@@ -38,7 +38,7 @@ public:
 	wxArrayString GetServerList();
 
 	/* Does not have to be part of the config. */
-	wxString GetServerString(wxJSONValue server);
+	wxString GetServerString(wxString server);
 
 protected:
 	/* Used in previous 'testing builds'. */

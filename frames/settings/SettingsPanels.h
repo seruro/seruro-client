@@ -10,6 +10,7 @@
 #include <wx/stattext.h>
 //#include <wx/log.h>
 #include <wx/scrolwin.h>
+#include <wx/sizer.h>
 
 //#include <vector>
 
@@ -61,6 +62,35 @@ class SettingsPanelView : public SettingsPanel
 public:
 	SettingsPanelView(SeruroPanelSettings *instance_panel);
 	
+	/* Perform an abstract check against the data displayed
+	 * inside the settings view, if the data has changed, then
+	 * the caller should know how to refresh the view.
+	 * Changed is similar to the controller in a MVC.
+	 *
+	 * Changed could be avoided if the view was just rendered
+	 * every time, while refreshing data from the configuration
+	 * put this would be UI intensive, and would possibly 
+	 * cause flickering.
+	 */
+	virtual bool Changed() { return false; }
+	/* The UI drawing takes place in Render. This is similar to
+	 * a View in the MVC framework. 
+	 */
+	virtual void Render() {}
+
+	/* Used once a panel view has been created. 
+	 * This is mainly a helper to reduce code. 
+	 */
+	void ReRender() {
+		this->Freeze();
+		/* Free memory. */
+		this->GetSizer()->Clear(true);
+		/* Perform panel-specific (virtual) render. */
+		this->Render();
+		this->Layout();
+		this->Thaw();
+	}
+
 	void InitSizer() {
 		/* Use this for scrollbars. */
 		this->FitInside();
@@ -78,6 +108,8 @@ class SettingsPanel_Address : public SettingsPanelView
 public:
 	SettingsPanel_Address(SeruroPanelSettings *parent,
 		const wxString &address, const wxString &server);
+	bool Changed();
+	void Render();
     
     /* Button actions (no edit). */
     void OnUpdate(wxCommandEvent &event);
@@ -96,6 +128,8 @@ class SettingsPanel_Server : public SettingsPanelView
 public:
 	SettingsPanel_Server(SeruroPanelSettings *parent,
 		const wxString &server);
+	bool Changed();
+	void Render();
     
     /* Button actions. */
 	void OnUpdate(wxCommandEvent &event);
@@ -112,7 +146,9 @@ private:
 class SettingsPanel_RootGeneral : public SettingsPanelView
 {
 public:
-	SettingsPanel_RootGeneral(SeruroPanelSettings *parent);
+	SettingsPanel_RootGeneral(SeruroPanelSettings *parent) :
+	  SettingsPanelView(parent) {}
+	void Render();
 };
 
 /* ACCOUNTS / SERVER SETTINGS */
@@ -120,6 +156,8 @@ class SettingsPanel_RootAccounts : public SettingsPanelView
 {
 public:
 	SettingsPanel_RootAccounts(SeruroPanelSettings *parent);
+	bool Changed();
+	void Render();
 };
 
 class SettingsTree : public wxTreeCtrl

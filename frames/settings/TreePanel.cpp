@@ -71,15 +71,15 @@ void SettingsTree::OnSelectItem(wxTreeEvent &event)
 	this->main_panel->ShowPanel(data->item_type, data->item_name, data->item_parent);
 }
 
-SettingsPanelTree::SettingsPanelTree(SeruroPanelSettings *parent) : SettingsPanel(parent)
+SettingsPanelTree::SettingsPanelTree(SeruroPanelSettings *parent) : 
+	SettingsPanel(parent)
 {
-	//parent->SetWindowStyle(0);
-
 	wxBoxSizer *vert_sizer = new wxBoxSizer(wxVERTICAL);
 
 	/* Create a nice left-hand-side tree for all the setting views (use static ID for events). */
 	this->settings_tree = new SettingsTree(this);
     this->settings_tree->SetIndent(SERURO_SETTINGS_TREE_INDENT);
+
 	/* We want a multi-root tree, so create a hidden tree root. */
 	wxTreeItemId root = this->settings_tree->AddRoot(wxT("_"));
 
@@ -88,12 +88,13 @@ SettingsPanelTree::SettingsPanelTree(SeruroPanelSettings *parent) : SettingsPane
 		new SettingsTreeItem(SETTINGS_VIEW_TYPE_ROOT_GENERAL));
 
 	/* List each server, which has settings, and each account within that server. */
-	/* Todo: consider adding servers from this 'root', then adding accounts from each server. */
 	wxTreeItemId root_servers_item = this->settings_tree->AppendItem(root, wxT("Accounts and Servers"), -1, -1,
 		new SettingsTreeItem(SETTINGS_VIEW_TYPE_ROOT_ACCOUNTS));
+	
 	wxArrayString servers_list = wxGetApp().config->GetServerList();
 	wxArrayString addresses_list;
 	wxTreeItemId server_item, address_item;
+	
 	for (size_t i = 0; i < servers_list.size(); i++) {
 		server_item = this->settings_tree->AppendItem(root_servers_item, servers_list[i], -1, -1, 
 			new SettingsTreeItem(SETTINGS_VIEW_TYPE_SERVER, servers_list[i]));

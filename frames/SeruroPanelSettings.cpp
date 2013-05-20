@@ -13,6 +13,30 @@ SettingsPanelView *panel_list[32];
 /* The JSON mapping stores the panel pointer as an integer index into the list (+1). */
 int panel_list_size = 0;
 
+#if 0
+void DestoryAll(wxSizer *sizer)
+{
+	//wxSizerItemList children = sizer->GetChildren();
+	//size_t num_items = sizer->GetItemCount();
+
+	wxSizerItem *item;
+	wxWindow *window;
+	//for (size_t i = ; i < num_items; i++) {
+	/*while (item = sizer->GetItem((size_t) 0)) {
+		//item = sizer->GetItem(i);
+		if (item->IsWindow()) {
+			window = item->GetWindow();
+			window->DestroyChildren();
+			window->Destroy();
+			//delete window;
+		}
+		sizer->Detach(0);
+		//if (item) delete item;
+	}*/
+	sizer->Clear(true);
+}
+#endif
+
 SeruroPanelSettings::SeruroPanelSettings(wxBookCtrlBase *book) : SeruroPanel(book, wxT("Settings"))
 {
 	/* Override default sizer. */
@@ -84,6 +108,10 @@ void SeruroPanelSettings::AddPanel(SettingsPanelView *panel_ptr, settings_view_t
 		this->panels[type] = type_value;
 	}
 
+	/* Show scrollbars for panel. (But be called when created for the "first panel" edge case.) */
+	panel_ptr->InitSizer();
+	panel_ptr->Render();
+
 	if (parent.compare(wxEmptyString) != 0) {
 		if (! this->panels[type].HasMember(parent)) {
 			wxJSONValue parent_value;
@@ -124,7 +152,7 @@ void SeruroPanelSettings::ShowPanel(settings_view_type_t type,
 	}
 
 	if (panel_ptr == 0) {
-		/* Very odd state. */
+		/* Very odd state (something added a null pointer, which they thought was a panel). */
 		wxLogMessage(wxT("SeruroPanelSettings> Something is terribly wrong, got a NULL pointer from panels."));
 		return;
 	}
@@ -134,14 +162,20 @@ void SeruroPanelSettings::ShowPanel(settings_view_type_t type,
 
 	bool changed = this->splitter->ReplaceWindow(this->current_panel, new_panel);
 	if (! changed) {
+		/* The UI parent was unable to replace the current panel with the requested panel */
 		wxLogMessage(wxT("SeruroPanelSettings> Something is terribly wrong, could not replace view."));
 		return;
 	}
-    
-    /* Show scrollbars for panel. */
-	new_panel->InitSizer();
 
-	wxLogMessage(wxT("SeruroPanelSettings> View changed!"));
+	if (new_panel->Changed()) {
+		/* Ask the panel to compare it's UI to the current application state, if the view
+		 * has changed then ask the panel to re-render the UI.
+		 */
+		new_panel->ReRender();
+	}
+
+	/* Hide the previously shown panel, and show the requested view, finally record the pointer as current. */
+	wxLogMessage(wxT("SeruroPanelSettings> View is switching."));
 	this->current_panel->Show(false);
 	new_panel->Show(true);
 	this->current_panel = new_panel;

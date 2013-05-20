@@ -17,6 +17,10 @@ BEGIN_EVENT_TABLE(SettingsPanel_Address, SettingsPanel)
     EVT_BUTTON(BUTTON_REMOVE, SettingsPanel_Address::OnDelete)
 END_EVENT_TABLE()
 
+bool SettingsPanel_Address::Changed() { return false; }
+
+void SettingsPanel_Address::Render() {}
+
 SettingsPanel_Address::SettingsPanel_Address(SeruroPanelSettings *parent,
 	const wxString &address, const wxString &server) :
     SettingsPanelView(parent), address(address), server_name(server)

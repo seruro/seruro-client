@@ -25,6 +25,10 @@ BEGIN_EVENT_TABLE(SettingsPanel_Server, SettingsPanel)
 	EVT_BUTTON(BUTTON_DELETE, SettingsPanel_Server::OnDelete)
 END_EVENT_TABLE()
 
+bool SettingsPanel_Server::Changed() { return false; }
+
+void SettingsPanel_Server::Render() {}
+
 SettingsPanel_Server::SettingsPanel_Server(SeruroPanelSettings *parent,
     const wxString &server) : SettingsPanelView(parent), server_name(server)
 {
