@@ -47,11 +47,12 @@ void SeruroPanelSettings::AddFirstPanel()
     /* The initial view, general settings, must be set as the current_panel as well as added
 	 * to the list of 'instanciated' panels.
 	 */
-	SettingsPanelView *root_general_panel = new SettingsPanel_RootGeneral(this);
+	SettingsPanelView *root_panel = new SettingsPanel_RootGeneral(this);
 
 	//wxString panel_name = wxT("root_general");
-	this->AddPanel(root_general_panel, SETTINGS_VIEW_TYPE_ROOT_GENERAL);
-	this->current_panel = root_general_panel;
+	this->AddPanel(root_panel, SETTINGS_VIEW_TYPE_ROOT_GENERAL);
+    this->AddPanel(new SettingsPanel_RootAccounts(this), SETTINGS_VIEW_TYPE_ROOT_ACCOUNTS);
+	this->current_panel = root_panel;
 }
 
 wxWindow* SeruroPanelSettings::GetViewer()

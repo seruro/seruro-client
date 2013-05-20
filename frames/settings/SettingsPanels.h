@@ -13,6 +13,11 @@
 
 //#include <vector>
 
+#define SETTINGS_PANEL_SIZER_OPTIONS \
+wxSizerFlags().Expand().Border(wxALL, 5)
+#define SETTINGS_PANEL_BOXSIZER_OPTIONS \
+wxSizerFlags().Expand().Border(wxBOTTOM)
+
 class SettingsPanelTree;
 class SeruroPanelSettings;
 
@@ -25,7 +30,7 @@ enum settings_view_type_t
 
 	/* Each root item has configuration settings too. */
 	SETTINGS_VIEW_TYPE_ROOT_GENERAL		 = 0x04,
-	SETTINGS_VIEW_TYPE_ROOT_SERVERS		 = 0x05,
+	SETTINGS_VIEW_TYPE_ROOT_ACCOUNTS	 = 0x05,
 	SETTINGS_VIEW_TYPE_ROOT_APPLICATIONS = 0x06
 };
 
@@ -74,10 +79,15 @@ public:
 	SettingsPanel_Address(SeruroPanelSettings *parent,
 		const wxString &address, const wxString &server);
     
+    /* Button actions (no edit). */
+    void OnUpdate(wxCommandEvent &event);
+    void OnDelete(wxCommandEvent &event);
+    
 private:
     wxString address;
     wxString server_name;
     
+    DECLARE_EVENT_TABLE()
 };
 
 /* SERVER SETTINGS */
@@ -86,6 +96,8 @@ class SettingsPanel_Server : public SettingsPanelView
 public:
 	SettingsPanel_Server(SeruroPanelSettings *parent,
 		const wxString &server);
+    
+    /* Button actions. */
 	void OnUpdate(wxCommandEvent &event);
 	void OnEdit(wxCommandEvent &event);
 	void OnDelete(wxCommandEvent &event);
@@ -104,10 +116,10 @@ public:
 };
 
 /* ACCOUNTS / SERVER SETTINGS */
-class SettingsPanel_RootServers : public SettingsPanelView
+class SettingsPanel_RootAccounts : public SettingsPanelView
 {
 public:
-	SettingsPanel_RootServers(SeruroPanelSettings *parent);
+	SettingsPanel_RootAccounts(SeruroPanelSettings *parent);
 };
 
 class SettingsTree : public wxTreeCtrl

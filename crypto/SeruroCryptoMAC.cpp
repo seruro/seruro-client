@@ -172,6 +172,9 @@ wxString SeruroCryptoMAC::TLSRequest(wxJSONValue params)
         bzero(read_buffer, 256);
         bytes_read = CFReadStreamRead(read_stream, read_buffer, 246);
         
+        /* A problem occured. */
+        if (bytes_read < 0) break;
+        
         response = response + wxString::FromAscii(read_buffer, bytes_read);
         /* Free allocated data. */
         delete read_buffer;

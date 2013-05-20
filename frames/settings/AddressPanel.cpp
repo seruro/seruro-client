@@ -1,5 +1,8 @@
 
 #include "SettingsPanels.h"
+#include "../../api/SeruroServerAPI.h"
+
+#include "../../wxJSON/wx/jsonval.h"
 
 #include <wx/sizer.h>
 #include <wx/button.h>
@@ -8,6 +11,11 @@ enum button_actions {
     BUTTON_UPDATE,
     BUTTON_REMOVE
 };
+
+BEGIN_EVENT_TABLE(SettingsPanel_Address, SettingsPanel)
+    EVT_BUTTON(BUTTON_UPDATE, SettingsPanel_Address::OnUpdate)
+    EVT_BUTTON(BUTTON_REMOVE, SettingsPanel_Address::OnDelete)
+END_EVENT_TABLE()
 
 SettingsPanel_Address::SettingsPanel_Address(SeruroPanelSettings *parent,
 	const wxString &address, const wxString &server) :
@@ -53,4 +61,28 @@ SettingsPanel_Address::SettingsPanel_Address(SeruroPanelSettings *parent,
     vert_sizer->Add(buttons_sizer, wxSizerFlags().Expand().Border(wxALL, 5));
 
 	this->SetSizer(vert_sizer);
+}
+
+/* Todo: consider having the API call use a global callback function defined in API perhaps.
+ * This prevents code duplication and allows maintainence of API handleing. 
+ * This would also prevent custom call-back handling (such as alerts).
+ */
+void SettingsPanel_Address::OnUpdate(wxCommandEvent &event)
+{
+    wxJSONValue params; /* no params */
+    
+    SeruroServerAPI *api = new SeruroServerAPI(this->GetEventHandler());
+    
+	params["server"] = api->GetServer(this->server_name);
+	params["address"] = this->address;
+    
+	SeruroRequest *request = api->CreateRequest(SERURO_API_GET_P12, params, SERURO_API_CALLBACK_GET_P12);
+	request->Run();
+	/* Todo: Cannot delete the request because the thread still exists, who cleans up this memory? */
+
+}
+
+void SettingsPanel_Address::OnDelete(wxCommandEvent &event)
+{
+    
 }

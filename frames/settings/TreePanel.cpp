@@ -59,7 +59,7 @@ void SettingsTree::OnSelectItem(wxTreeEvent &event)
 	case SETTINGS_VIEW_TYPE_ROOT_GENERAL: 
 		//this->ShowView_RootGeneral(); 
 		break;
-	case SETTINGS_VIEW_TYPE_ROOT_SERVERS: 
+	case SETTINGS_VIEW_TYPE_ROOT_ACCOUNTS:
 		//this->ShowView_RootServers(); 
 		break;
 	case SETTINGS_VIEW_TYPE_ROOT_APPLICATIONS: 
@@ -90,7 +90,7 @@ SettingsPanelTree::SettingsPanelTree(SeruroPanelSettings *parent) : SettingsPane
 	/* List each server, which has settings, and each account within that server. */
 	/* Todo: consider adding servers from this 'root', then adding accounts from each server. */
 	wxTreeItemId root_servers_item = this->settings_tree->AppendItem(root, wxT("Accounts and Servers"), -1, -1,
-		new SettingsTreeItem(SETTINGS_VIEW_TYPE_ROOT_SERVERS));
+		new SettingsTreeItem(SETTINGS_VIEW_TYPE_ROOT_ACCOUNTS));
 	wxArrayString servers_list = wxGetApp().config->GetServerList();
 	wxArrayString addresses_list;
 	wxTreeItemId server_item, address_item;

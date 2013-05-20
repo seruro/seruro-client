@@ -11,7 +11,7 @@
 
 #define SERURO_APP_NAME     "Seruro Client"
 #if defined(__WXMAC__)
-#define SERURO_APP_DEFAULT_WIDTH  650
+#define SERURO_APP_DEFAULT_WIDTH  675
 #else
 #define SERURO_APP_DEFAULT_WIDTH  550
 #endif
