@@ -1,6 +1,7 @@
 
 #include "SettingsPanels.h"
 #include "../../SeruroClient.h"
+#include "../../api/SeruroServerAPI.h"
 //#include "../../SeruroConfig.h"
 
 #include "../../wxJSON/wx/jsonval.h"
@@ -25,7 +26,7 @@ BEGIN_EVENT_TABLE(SettingsPanel_Server, SettingsPanel)
 END_EVENT_TABLE()
 
 SettingsPanel_Server::SettingsPanel_Server(SeruroPanelSettings *parent,
-    const wxString &server) : SettingsPanelView(parent)
+    const wxString &server) : SettingsPanelView(parent), server_name(server)
 {
 	wxBoxSizer *vert_sizer = new wxBoxSizer(wxVERTICAL);
     
@@ -88,7 +89,15 @@ SettingsPanel_Server::SettingsPanel_Server(SeruroPanelSettings *parent,
 
 void SettingsPanel_Server::OnUpdate(wxCommandEvent &event)
 {
-
+	wxJSONValue params; /* no params */
+	//wxString server_name = wxT("Open Seruro");
+    
+    SeruroServerAPI *api = new SeruroServerAPI(this->GetEventHandler());
+    
+    params["server"] = api->GetServer(this->server_name);
+    
+	SeruroRequest *request = api->CreateRequest(SERURO_API_GET_CA, params, SERURO_API_CALLBACK_GET_CA);
+	request->Run();
 }
 
 void SettingsPanel_Server::OnEdit(wxCommandEvent &event)

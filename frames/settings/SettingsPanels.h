@@ -2,6 +2,8 @@
 #ifndef H_SettingsPanels
 #define H_SettingsPanels
 
+#include "../../Defs.h"
+
 #include <wx/treectrl.h>
 #include <wx/treebase.h>
 #include <wx/panel.h>
@@ -71,6 +73,11 @@ class SettingsPanel_Address : public SettingsPanelView
 public:
 	SettingsPanel_Address(SeruroPanelSettings *parent,
 		const wxString &address, const wxString &server);
+    
+private:
+    wxString address;
+    wxString server_name;
+    
 };
 
 /* SERVER SETTINGS */
@@ -82,7 +89,10 @@ public:
 	void OnUpdate(wxCommandEvent &event);
 	void OnEdit(wxCommandEvent &event);
 	void OnDelete(wxCommandEvent &event);
+
 private:
+    wxString server_name;
+    
 	DECLARE_EVENT_TABLE()
 };
 
@@ -165,7 +175,10 @@ public:
 			wxDefaultPosition, wxDefaultSize)
 		//original_text(text), parent(parent_ctrl),
 		//previous_width(parent_ctrl->GetClientSize().x) 
-		{}
+    {
+        int soft_wrap = SERURO_APP_DEFAULT_WIDTH - SERURO_SETTINGS_TREE_MIN_WIDTH;
+        this->Wrap(soft_wrap);
+    }
 
 	//void OnSize(wxSizeEvent &event);
 

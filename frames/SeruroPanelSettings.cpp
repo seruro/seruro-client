@@ -26,7 +26,7 @@ SeruroPanelSettings::SeruroPanelSettings(wxBookCtrlBase *book) : SeruroPanel(boo
         wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxSP_3DSASH | wxSP_BORDER);
 	this->splitter->SetSize(GetClientSize());
 	this->splitter->SetSashGravity(1.0);
-	this->splitter->SetMinimumPaneSize(SERURO_SETTINGS_MIN_WIDTH);
+	this->splitter->SetMinimumPaneSize(SERURO_SETTINGS_TREE_MIN_WIDTH);
 
 	/* Create a tree control as well as the first settings view (general). */
 	SettingsPanelTree *settings_tree = new SettingsPanelTree(this);
@@ -94,9 +94,6 @@ void SeruroPanelSettings::AddPanel(SettingsPanelView *panel_ptr, settings_view_t
 		return;
 	}
 
-	/* Show scrollbars for panel. */
-	panel_ptr->InitSizer();
-
 	panel_list[panel_list_size++] = panel_ptr;
 	this->panels[type][name] = panel_list_size;
 	return;
@@ -139,6 +136,9 @@ void SeruroPanelSettings::ShowPanel(settings_view_type_t type,
 		wxLogMessage(wxT("SeruroPanelSettings> Something is terribly wrong, could not replace view."));
 		return;
 	}
+    
+    /* Show scrollbars for panel. */
+	new_panel->InitSizer();
 
 	wxLogMessage(wxT("SeruroPanelSettings> View changed!"));
 	this->current_panel->Show(false);

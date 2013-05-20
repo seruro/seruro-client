@@ -10,7 +10,11 @@
 #endif
 
 #define SERURO_APP_NAME     "Seruro Client"
-#define SERURO_APP_DEFAULT_WIDTH  500
+#if defined(__WXMAC__)
+#define SERURO_APP_DEFAULT_WIDTH  650
+#else
+#define SERURO_APP_DEFAULT_WIDTH  550
+#endif
 #define SERURO_APP_DEFAULT_HEIGHT 500
 
 /* When a server name is displayed, display the host and port as well. */
@@ -25,9 +29,23 @@
 #define SERURO_DEFAULT_USER_AGENT "Client/1.0"
 
 /* Settings view related definitions. */
-#define SERURO_SETTINGS_MIN_WIDTH 150
+#if defined(__WXMAC__)
+#define SERURO_SETTINGS_TREE_MIN_WIDTH 175
+#else
+#define SERURO_SETTINGS_TREE_MIN_WIDTH 150
+#endif
 /* The settings tree event control id. */
 #define SERURO_SETTINGS_TREE_ID 1009
+
+/* OSX has larger indents. */
+#if defined(__WXMAC__)
+#define SERURO_SETTINGS_TREE_INDENT 8
+#else
+#define SERURO_SETTINGS_TREE_INDENT 12
+#endif
+
+/* Width to wrap message text in setting views. (WIDTH-TREE_MIN) */
+//#define SERURO_SETTINGS_VIEW_SOFT_WRAP
 
 /* Bit settings for TLS requests. */
 #define SERURO_SECURITY_OPTIONS_NONE    0x00

@@ -79,7 +79,7 @@ SettingsPanelTree::SettingsPanelTree(SeruroPanelSettings *parent) : SettingsPane
 
 	/* Create a nice left-hand-side tree for all the setting views (use static ID for events). */
 	this->settings_tree = new SettingsTree(this);
-    this->settings_tree->SetIndent(12);
+    this->settings_tree->SetIndent(SERURO_SETTINGS_TREE_INDENT);
 	/* We want a multi-root tree, so create a hidden tree root. */
 	wxTreeItemId root = this->settings_tree->AddRoot(wxT("_"));
 
