@@ -138,6 +138,9 @@ void SeruroPanelTest::OnGetP12Result(wxCommandEvent &event)
 	wxString responseString = event.GetString();
 	reader.Parse(responseString, &response);
 
+	api->InstallP12(response);
+
+#if 0
 	if (! response.HasMember("success") || ! response["success"].AsBool()) {
 		wxLogMessage(wxT("SeruroPanelTest> (GetP12) Bad Result."));
 		return;
@@ -189,6 +192,7 @@ void SeruroPanelTest::OnGetP12Result(wxCommandEvent &event)
 	/* Cleanup. */
 	delete cryptoHelper;
 	p12_key.Empty();
+#endif
 
 	return;
 }

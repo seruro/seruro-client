@@ -41,14 +41,21 @@ enum seruro_api_callbacks_t
 class SeruroServerAPI
 {
 public:
-	SeruroServerAPI(wxEvtHandler *caller) : evtHandler(caller) {}
+	SeruroServerAPI(wxEvtHandler *caller) : 
+	  evtHandler(caller) {}
 
 	/* Helper functions for those who do not want to DECLARE_APP 
 	 * for access to the config methods. 
 	 */
 	wxJSONValue GetServer(wxString &server);
 	/* Must provide the API name, params, and callback event ID */
-	SeruroRequest *CreateRequest(api_name_t name, wxJSONValue params, int evtId);
+	SeruroRequest *CreateRequest(api_name_t name, 
+		wxJSONValue params, int evtId);
+
+	/* API callbacks */
+	bool InstallP12(wxJSONValue response);
+	bool InstallCA(wxJSONValue response);
+	bool InstallCert(wxJSONValue response);
 
 protected:
 	/* Return an auth object {"auth": {"token": "", "have_token": bool}}.

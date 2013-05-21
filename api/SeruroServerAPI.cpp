@@ -5,15 +5,48 @@
 #include "../SeruroConfig.h"
 #include "../SeruroClient.h"
 #include "SeruroRequest.h"
-//#include "../crypto/SeruroCrypto.h"
+#include "../frames/dialogs/DecryptDialog.h"
+#include "../crypto/SeruroCrypto.h"
 
-//#include "../wxJSON/wx/jsonreader.h"
-//#include "../wxJSON/wx/jsonwriter.h"
+#include <wx/base64.h>
+#include <wx/buffer.h>
 
 DECLARE_APP(SeruroClient);
 
-//enum api_name api_name_t;
-//enum seruro_api_callbacks seruro_api_callbacks_t;
+bool CheckResponse(wxJSONValue response, wxString required_key)
+{
+	if (! response.HasMember("success") || ! response["success"].AsBool()) {
+		wxLogMessage(wxT("SeruroServerAPI> Bad Result."));
+		return false;
+	}
+
+	/* The getP12 API call should respond with up to 3 P12s. */
+	if (! response.HasMember(required_key)) {
+		wxLogMessage(wxT("SeruroServerAPI> Response does not include '%s' data."), required_key);
+		return false;
+	}
+
+	return true;
+}
+
+bool DecodeBase64(wxString &encoded, wxMemoryBuffer *decode)
+{
+	//wxString ca_encoded;
+	size_t decode_error;
+	//wxMemoryBuffer internal_decoded;
+
+	//ca_encoded = response["ca"].AsString();
+	decode_error = 0;
+	(*decode) = wxBase64Decode(encoded, wxBase64DecodeMode_Relaxed, &decode_error);
+
+	if (decode_error != 0) {
+		wxLogMessage(wxT("ServerAPI> (Decode) Could not decode position %d in ca blob '%s'."), 
+				decode_error, encoded);
+		return false;
+	}
+
+	return true;
+}
 
 wxJSONValue SeruroServerAPI::GetServer(wxString &server)
 {
@@ -100,7 +133,7 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 	request["address"] = (params.HasMember("address")) ? params["address"] : wxEmptyString;
 
 	/* Debug log. */
-	wxLogMessage(wxT("SeruroServerAPI::GetRequest> Current auth token (%s)."), 
+	wxLogMessage(wxT("ServerAPI::GetRequest> Current auth token (%s)."), 
 		params["auth"]["token"].AsString());
 
 	/* Switch over each API call and set it's URL */
@@ -109,9 +142,6 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 	case SERURO_API_GET_P12:
 		request["object"] = wxT("getP12s");
 		/* Include support for optional explicit address to retreive from. */
-		//if (params.HasMember("address")) {
-		//	request["data"]["address"] = params["address"];
-		//}
 		break;
 	case SERURO_API_SEARCH:
 		if (! params.HasMember(wxT("query"))) {
@@ -120,13 +150,6 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
         request["verb"] = wxT("GET");
         request["object"] = wxString(wxT("findCerts"));// + params["query"].AsString();
         request["query"]["query"] = params["query"];
-		//request["verb"] = wxT("GET");
-		/* Create query string for query parameter. */
-		//wxJSONValue query;
-		//querys["query"] = params["query"];
-		//query_string = encodeData(querys);
-		//request["object"] = request["object"].AsString() + query_string;
-
 		break;
 	case SERURO_API_GET_CERT:
 		if (! params.HasMember(wxT("request_address"))) {
@@ -148,3 +171,83 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 	request["object"] = wxString(wxT("/api/seruro/")) + request["object"].AsString();
 	return request;
 }
+
+bool SeruroServerAPI::InstallCA(wxJSONValue response)
+{
+	if (! CheckResponse(response, "ca")) return false;
+
+	wxString ca_encoded;
+	wxMemoryBuffer ca_decoded;
+
+	ca_encoded = response["ca"].AsString();
+	if (! DecodeBase64(ca_encoded, &ca_decoded)) return false;
+
+	bool result;
+	SeruroCrypto *cryptoHelper = new SeruroCrypto();
+	result = cryptoHelper->InstallCA(ca_decoded);
+	delete cryptoHelper;
+
+	return result;
+}
+
+bool SeruroServerAPI::InstallCert(wxJSONValue response)
+{
+	if (! CheckResponse(response, "certs")) return false;
+
+	wxString cert_encoded;
+	wxMemoryBuffer cert_decoded;
+
+	SeruroCrypto *cryptoHelper = new SeruroCrypto();
+
+	bool result;
+	wxArrayString cert_blobs = response["certs"].GetMemberNames();
+	for (size_t i = 0; i < cert_blobs.size(); i++) {
+		cert_encoded = response["certs"][cert_blobs[i]].AsString();
+
+		if (! DecodeBase64(cert_encoded, &cert_decoded)) continue;
+
+		result = cryptoHelper->InstallCert(cert_decoded);
+	}
+
+	delete cryptoHelper;
+	return result;
+}
+
+bool SeruroServerAPI::InstallP12(wxJSONValue response)
+{
+	if (! CheckResponse(response, "p12")) return false;
+
+	/* Get password from user for p12 containers. */
+	wxString p12_key;
+	DecryptDialog *decrypt_dialog = new DecryptDialog(response["method"].AsString());
+	if (decrypt_dialog->ShowModal() == wxID_OK) {
+		p12_key = decrypt_dialog->GetValue();
+	} else {
+		return false;
+	}
+	/* Remove the modal from memory. */
+	decrypt_dialog->Destroy();
+
+	SeruroCrypto *cryptoHelper = new SeruroCrypto();
+
+	/* Install all P12 b64 blobs. */
+	wxArrayString p12_blobs = response["p12"].GetMemberNames();
+	wxString p12_encoded;
+	wxMemoryBuffer p12_decoded;
+
+	bool result;
+	for (size_t i = 0; i < p12_blobs.size(); i++) {
+		p12_encoded = response["p12"][p12_blobs[i]].AsString();
+
+		if (! DecodeBase64(p12_encoded, &p12_decoded)) continue;
+
+		result = cryptoHelper->InstallP12(p12_decoded, p12_key);
+	}
+
+	/* Cleanup. */
+	delete cryptoHelper;
+	p12_key.Empty();
+
+	return result;
+}
+
