@@ -5,6 +5,7 @@
 //#include "../../SeruroConfig.h"
 
 #include "../../wxJSON/wx/jsonval.h"
+#include "../../wxJSON/wx/jsonreader.h"
 
 #include <wx/sizer.h>
 #include <wx/button.h>
@@ -23,6 +24,8 @@ BEGIN_EVENT_TABLE(SettingsPanel_Server, SettingsPanel)
 	EVT_BUTTON(BUTTON_UPDATE, SettingsPanel_Server::OnUpdate)
 	EVT_BUTTON(BUTTON_EDIT_INFO, SettingsPanel_Server::OnEdit)
 	EVT_BUTTON(BUTTON_DELETE, SettingsPanel_Server::OnDelete)
+
+	EVT_COMMAND(SERURO_API_CALLBACK_GET_CA, SERURO_API_RESULT, SettingsPanel_Server::OnUpdateResult)
 END_EVENT_TABLE()
 
 bool SettingsPanel_Server::Changed() { return false; }
@@ -102,6 +105,18 @@ void SettingsPanel_Server::OnUpdate(wxCommandEvent &event)
     
 	SeruroRequest *request = api->CreateRequest(SERURO_API_GET_CA, params, SERURO_API_CALLBACK_GET_CA);
 	request->Run();
+}
+
+void SettingsPanel_Server::OnUpdateResult(wxCommandEvent &event)
+{
+	wxJSONReader reader;
+	wxJSONValue response;
+	wxString responseString = event.GetString();
+	
+	reader.Parse(responseString, &response);
+
+	SeruroServerAPI *api = new SeruroServerAPI(this->GetEventHandler());
+	api->InstallCA(response);
 }
 
 void SettingsPanel_Server::OnEdit(wxCommandEvent &event)

@@ -133,6 +133,7 @@ public:
     
     /* Button actions. */
 	void OnUpdate(wxCommandEvent &event);
+	void OnUpdateResult(wxCommandEvent &event);
 	void OnEdit(wxCommandEvent &event);
 	void OnDelete(wxCommandEvent &event);
 

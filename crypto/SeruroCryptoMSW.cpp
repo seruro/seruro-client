@@ -200,11 +200,87 @@ finished:
 
 bool SeruroCryptoMSW::InstallCA(wxMemoryBuffer &ca)
 {
+	/* Store name: AuthRoot or Root */
+	//CRYPT_DATA_BLOB blob;
+
+	//blob.cbData = ca.GetDataLen();
+	//blob.pbData = (BYTE*) ca.GetData();
+
+	BOOL bResult;
+	DWORD error;
+
+	HCERTSTORE root_store;
+
+	root_store = CertOpenStore(CERT_STORE_PROV_SYSTEM, 0, 0, 
+		CERT_STORE_OPEN_EXISTING_FLAG | CERT_SYSTEM_STORE_CURRENT_USER, L"Root");
+
+	if (root_store == NULL) {
+		error = GetLastError();
+		wxLogMessage(wxT("SeruroCrypto::InstallCA> could not open CURRENT_USER/'Root' store (%u)."), error); 
+		//CertCloseStore(pfxStore, 0);
+		return false;
+	}
+
+	//PCCERT_CONTEXT cert = CertCreateCertificateContext(X509_ASN_ENCODING,
+		//(BYTE *) ca.GetData(), ca.GetDataLen());
+	BYTE *data = (BYTE *) ca.GetData();
+	DWORD len = ca.GetDataLen();
+
+	bResult = CertAddEncodedCertificateToStore(root_store, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+		data, len, CERT_STORE_ADD_REPLACE_EXISTING, NULL);
+
+	if (bResult == false) {
+		error = GetLastError();
+		wxLogMessage(wxT("SeruroCrypto::InstallCA> could not decode ca (%u)."), error);
+		return false;
+	}
+
+#if 0
+	wchar_t certName[256];
+	/* Iterate through certificates within P12 cert store, using the current cert as a "previous" iterator. */
+	//while (NULL != (cert = CertEnumCertificatesInStore(pfxStore, cert))) {
+	bResult = CertGetNameString(cert, CERT_NAME_FRIENDLY_DISPLAY_TYPE, 0, 0, certName, 256);
+	if (! bResult) {
+		wxLogMessage(wxT("SeruroCrypto::InstallCA> could not get ca display name."));
+	} else {
+		wxLogMessage(wxT("SeruroCrypto::InstallCA> found ca: %s"), certName);
+	}
+
+	bResult = CertAddCertificateContextToStore(root_store, cert, CERT_STORE_ADD_NEW, 0);
+	if (! bResult && GetLastError() == CRYPT_E_EXISTS) {
+		wxLogMessage(wxT("SeruroCrypto::InstallCA> Warning! ca exists, replacing."));
+		bResult = CertAddCertificateContextToStore(root_store, cert, CERT_STORE_ADD_REPLACE_EXISTING, 0);
+		if (! bResult) {
+			/* At this point we should also backup and remove any certs added. */
+			wxLogMessage(wxT("SeruroCrypto::InstallCA> problem overwriting ca."));
+			//delete [] certName;
+			CertCloseStore(root_store, 0);
+			//CertCloseStore(pfxStore, 0);
+			return false;
+		}
+	} else if (! bResult) {
+		/* At this point we should also backup and remove any certs added. */
+		wxLogMessage(wxT("SeruroCrypto::InstallCA> unhandled error while adding ca."));
+		//delete [] certName;
+		CertCloseStore(root_store, 0);
+		//CertCloseStore(pfxStore, 0);
+		return false;
+	}
+	//}
+#endif
+
+	wxLogMessage(wxT("SeruroCrypto::InstallCA> ca installed."));
+
+	//delete [] certName;
+	CertCloseStore(root_store, 0);
+	//CertCloseStore(pfxStore, 0);
+
 	return true;
 }
 
 bool SeruroCryptoMSW::InstallCert(wxMemoryBuffer &cert)
 {
+	/* Store name: AddressBook */
 	return true;
 }
 
