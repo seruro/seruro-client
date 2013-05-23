@@ -1,5 +1,6 @@
 
 #include "AuthDialog.h"
+#include "../UIDefs.h"
 
 #include "../../SeruroClient.h"
 
@@ -12,16 +13,15 @@ AuthDialog::AuthDialog(const wxString &server, const wxString &address, int sele
 	wxSizer* const sizerTop = new wxBoxSizer(wxVERTICAL);
     
 	/* Show a textual message. */
-	wxStaticText *msg = new wxStaticText(this, wxID_ANY,
-        wxString(wxT(TEXT_ACCOUNT_LOGIN) + server));
+	Text *msg = new Text(this, wxString(wxT(TEXT_ACCOUNT_LOGIN) + server), false);
 	msg->Wrap(300);
     
-	sizerTop->Add(msg, wxSizerFlags().Expand().Border(wxALL, 5));
+	sizerTop->Add(msg, DIALOGS_SIZER_OPTIONS);
     
 	wxSizer* const sizerInfo = new wxStaticBoxSizer(wxVERTICAL, this, "&Account Information");
     
 	/* Email address selection */
-	sizerInfo->Add(new wxStaticText(this, wxID_ANY, "&Email Address:"));
+	sizerInfo->Add(new Text(this, "&Email Address:"));
     
 	/* Create list of email addresses. */
 	wxArrayString address_list;
@@ -35,24 +35,25 @@ AuthDialog::AuthDialog(const wxString &server, const wxString &address, int sele
 	}
     
     
-	address_control = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, address_list);
+	address_control = new wxChoice(this, wxID_ANY, 
+		wxDefaultPosition, wxDefaultSize, address_list);
 	address_control->SetSelection(selected);
     
-	sizerInfo->Add(address_control, wxSizerFlags().Expand().Border(wxBOTTOM));
+	sizerInfo->Add(address_control, DIALOGS_BOXSIZER_OPTIONS);
     
 	/* Password selection. */
-	sizerInfo->Add(new wxStaticText(this, wxID_ANY, "&Password:"));
+	sizerInfo->Add(new Text(this, "&Password:"));
 	password_control = new wxTextCtrl(this, wxID_ANY,
         wxEmptyString, wxDefaultPosition, wxDefaultSize,
         wxTE_PASSWORD);
-	sizerInfo->Add(password_control, wxSizerFlags().Expand().Border(wxBOTTOM));
+	sizerInfo->Add(password_control, DIALOGS_BOXSIZER_OPTIONS);
     
 	/* Default buttons. */
-	sizerTop->Add(sizerInfo, wxSizerFlags().Expand().Border(wxTOP | wxRIGHT | wxLEFT, 5));
+	sizerTop->Add(sizerInfo, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 	/* Note, the standard buttons allow us to use this dialog as a modal. Do not change
 	 * the button selections or the modal will no longer respond.
 	 */
-	sizerTop->Add(CreateStdDialogButtonSizer(wxOK | wxCANCEL), wxSizerFlags().Right().Border());
+	sizerTop->Add(CreateStdDialogButtonSizer(wxOK | wxCANCEL), DIALOGS_BUTTONS_OPTIONS);
 	SetSizerAndFit(sizerTop);
 }
 

@@ -3,10 +3,47 @@
 #include "../SeruroPanelSettings.h"
 #include "../../SeruroClient.h"
 
+#include "../dialogs/AddServerDialog.h"
+#include "../dialogs/AddAccountDialog.h"
+
 #include <wx/button.h>
 #include <wx/scrolwin.h>
 
 DECLARE_APP(SeruroClient);
+
+enum button_actions
+{
+	BUTTON_ADD_SERVER,
+	BUTTON_ADD_ACCOUNT
+};
+
+BEGIN_EVENT_TABLE(SettingsPanel_RootAccounts, SettingsPanel)
+	EVT_BUTTON(BUTTON_ADD_SERVER, SettingsPanel_RootAccounts::OnAddServer)
+END_EVENT_TABLE()
+
+/* Create the 'AddServer' dialog, and if the user does not cancle, return the values
+ * from the dialog's form.
+ */
+wxJSONValue AddServer()
+{
+	wxJSONValue server_info;
+
+	AddServerDialog *dialog = new AddServerDialog();
+	if (dialog->ShowModal() == wxID_OK) {
+		wxLogMessage(wxT("RootPanels::AddServer> OK"));
+		server_info = dialog->GetValues();
+	}
+	delete dialog;
+
+	return server_info;
+}
+
+wxJSONValue AddAddress()
+{
+	wxJSONValue address_info;
+
+	return address_info;
+}
 
 SettingsPanel::SettingsPanel(SeruroPanelSettings *instance_panel) : 
 	wxScrolledWindow(instance_panel->GetViewer(), wxID_ANY), 
@@ -25,9 +62,30 @@ SettingsPanelView::SettingsPanelView(SeruroPanelSettings *instance_panel) :
 }
 
 SettingsPanel_RootAccounts::SettingsPanel_RootAccounts(SeruroPanelSettings *parent) :
-	SettingsPanelView(parent)
+	SettingsPanelView(parent) {}
+
+void SettingsPanel_RootAccounts::OnAddAccount(wxCommandEvent &event)
 {
 
+}
+
+void SettingsPanel_RootAccounts::OnAddServer(wxCommandEvent &event)
+{
+    /* Todo: Get all users (emails) for given server. */
+    wxJSONValue server_info;
+	wxJSONValue account_info;
+    
+	do {
+		/* Loop until the user enters valid information into the 'AddServer' dialog.
+		 * If no fields are populated then the user canceled the form. 
+		 */
+		server_info = AddServer();
+		if (! server_info.HasMember("server_name")) {
+			/* Canceled. */
+			return;
+		}
+	} while (server_info["server_name"].Size() == 0 || 
+		server_info["server_address"].Size() == 0);
 }
 
 bool SettingsPanel_RootAccounts::Changed()
@@ -64,6 +122,17 @@ void SettingsPanel_RootAccounts::Render()
 		}
 	}
 
+	vert_sizer->Add(server_list_sizer, SETTINGS_PANEL_SIZER_OPTIONS);
+	
+	/* Add server button */
+	wxBoxSizer *servers_buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
+	wxButton *add_server_button = new wxButton(this, BUTTON_ADD_SERVER, wxT("Add Server"));
+
+	/* Add spacer, and button to horz sizer, then horz sizer to vert sizer. */
+	//servers_buttons_sizer->AddStretchSpacer();
+	servers_buttons_sizer->Add(add_server_button, SETTINGS_PANEL_BUTTONS_OPTIONS);
+	vert_sizer->Add(servers_buttons_sizer, SETTINGS_PANEL_SIZER_OPTIONS);
+
 	wxSizer *accounts_list_sizer = new wxStaticBoxSizer(wxVERTICAL, this, "&Address List");
 
 	for (size_t i = 0; i < all_address_list.size(); i++) {
@@ -71,7 +140,6 @@ void SettingsPanel_RootAccounts::Render()
 			SETTINGS_PANEL_BOXSIZER_OPTIONS);
 	}
 
-	vert_sizer->Add(server_list_sizer, SETTINGS_PANEL_SIZER_OPTIONS);
 	vert_sizer->Add(accounts_list_sizer, SETTINGS_PANEL_SIZER_OPTIONS);
 
     this->SetSizer(vert_sizer);

@@ -7,6 +7,7 @@
 
 #include "crypto/SeruroCrypto.h"
 
+#include "frames/UIDefs.h"
 #include "frames/SeruroFrameMain.h"
 
 #include <wx/log.h>
@@ -30,7 +31,9 @@ bool SeruroClient::OnInit()
 		SERURO_APP_DEFAULT_WIDTH, SERURO_APP_DEFAULT_HEIGHT);
 
 	/* Start logger */
+#if defined(__DEBUG__) || defined(__WXDEBUG__)
 	InitLogger();
+#endif
 
 	/* User config instance */
     this->config = new SeruroConfig();
