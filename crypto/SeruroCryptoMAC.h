@@ -19,6 +19,9 @@ public:
 	wxString TLSRequest(wxJSONValue params);
     
 	bool InstallP12(wxMemoryBuffer &p12, wxString &password);
+    
+    bool InstallCA(wxMemoryBuffer &ca);
+	bool InstallCert(wxMemoryBuffer &cert);
 };
 
 #endif 
