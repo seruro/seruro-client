@@ -3,6 +3,7 @@
 #define H_SettingsPanels
 
 #include "../../Defs.h"
+#include "../UIDefs.h"
 
 #include <wx/treectrl.h>
 #include <wx/treebase.h>
@@ -13,11 +14,6 @@
 #include <wx/sizer.h>
 
 //#include <vector>
-
-#define SETTINGS_PANEL_SIZER_OPTIONS \
-wxSizerFlags().Expand().Border(wxALL, 5)
-#define SETTINGS_PANEL_BOXSIZER_OPTIONS \
-wxSizerFlags().Expand().Border(wxBOTTOM)
 
 class SettingsPanelTree;
 class SeruroPanelSettings;
@@ -159,6 +155,12 @@ public:
 	SettingsPanel_RootAccounts(SeruroPanelSettings *parent);
 	bool Changed();
 	void Render();
+
+	void OnAddServer(wxCommandEvent &event);
+	void OnAddAccount(wxCommandEvent &event);
+
+private:
+	DECLARE_EVENT_TABLE();
 };
 
 class SettingsTree : public wxTreeCtrl
@@ -213,36 +215,6 @@ public:
 	wxString item_name;
 	/* This might not be needed. */
 	wxString item_parent;
-};
-
-/* Helper class for text within panels, which will auto wrap to fit
- * the size of the second panel. (in TreePanel)
- */
-class Text : public wxStaticText
-{
-public:
-	Text(wxWindow *parent_ctrl, const wxString &text) : 
-		wxStaticText(parent_ctrl, wxID_ANY, text, 
-			wxDefaultPosition, wxDefaultSize)
-		//original_text(text), parent(parent_ctrl),
-		//previous_width(parent_ctrl->GetClientSize().x) 
-    {
-        int soft_wrap = SERURO_APP_DEFAULT_WIDTH - SERURO_SETTINGS_TREE_MIN_WIDTH;
-        this->Wrap(soft_wrap);
-    }
-
-	//void OnSize(wxSizeEvent &event);
-
-private:
-	//wxWindow *parent;
-	//int previous_width;
-	/* Array of widths at which breaks occur. */
-	//int *breaks[];
-	//std::vector<int> breaks;
-	//int break_index;
-	//wxString original_text;
-
-	//DECLARE_EVENT_TABLE()
 };
 
 #endif 

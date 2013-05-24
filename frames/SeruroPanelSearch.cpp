@@ -1,6 +1,7 @@
 
 #include "SeruroPanelSearch.h"
 #include "../SeruroClient.h"
+#include "UIDefs.h"
 
 #include "../wxJSON/wx/jsonval.h"
 #include "../wxJSON/wx/jsonreader.h"
@@ -99,7 +100,7 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	this->SetSizer(components_sizer);
 
 	/* Testing: setting even column widths. */
-	int list_column_size = (SERURO_APP_DEFAULT_WIDTH - 60) / 3;
+	int list_column_size = SEARCH_PANEL_COLUMN_WIDTH;
 	this->list_control->SetColumnWidth(0, list_column_size);
 	this->list_control->SetColumnWidth(1, list_column_size);
 	this->list_control->SetColumnWidth(2, list_column_size);

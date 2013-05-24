@@ -43,7 +43,7 @@ SettingsPanel_Server::SettingsPanel_Server(SeruroPanelSettings *parent,
     wxStaticText *msg = new Text(this,
         wxString(wxT("View and change the configuration settings for: ")) + server);
     
-    vert_sizer->Add(msg, wxSizerFlags().Expand().Border(wxALL, 5)); 
+    vert_sizer->Add(msg, SETTINGS_PANEL_SIZER_OPTIONS); 
 
 	/* Create an info box to display and edit server settings. */
 	wxSizer* const info_box = new wxStaticBoxSizer(wxVERTICAL, this, "&Server Information");
@@ -53,11 +53,11 @@ SettingsPanel_Server::SettingsPanel_Server(SeruroPanelSettings *parent,
 	Text *server_host_info = new Text(this, wxString(wxT("Host: ") + server_info["host"].AsString()));
 	Text *server_port_info = new Text(this, wxString(wxT("Port: ") + server_info["port"].AsString()));
 
-	info_box->Add(server_name_info, wxSizerFlags().Expand().Border(wxBOTTOM));
-	info_box->Add(server_host_info, wxSizerFlags().Expand().Border(wxBOTTOM));
-	info_box->Add(server_port_info, wxSizerFlags().Expand().Border(wxBOTTOM));
+	info_box->Add(server_name_info, SETTINGS_PANEL_BOXSIZER_OPTIONS);
+	info_box->Add(server_host_info, SETTINGS_PANEL_BOXSIZER_OPTIONS);
+	info_box->Add(server_port_info, SETTINGS_PANEL_BOXSIZER_OPTIONS);
 
-	vert_sizer->Add(info_box, wxSizerFlags().Expand().Border(wxALL, 5));
+	vert_sizer->Add(info_box, SETTINGS_PANEL_SIZER_OPTIONS);
 
 	/* Edit server information button (use Horz sizer with spacer) */
 	wxBoxSizer *edit_button_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -65,8 +65,8 @@ SettingsPanel_Server::SettingsPanel_Server(SeruroPanelSettings *parent,
 
 	/* Add spacer, and button to horz sizer, then horz sizer to vert sizer. */
 	//edit_button_sizer->AddStretchSpacer();
-	edit_button_sizer->Add(edit_info_button, wxSizerFlags().Right().Expand());
-	vert_sizer->Add(edit_button_sizer, wxSizerFlags().Expand().Border(wxALL, 5));
+	edit_button_sizer->Add(edit_info_button, SETTINGS_PANEL_BUTTONS_OPTIONS);
+	vert_sizer->Add(edit_button_sizer, SETTINGS_PANEL_SIZER_OPTIONS);
 
 	/* Next: add status box. */
 	wxSizer * const status_box = new wxStaticBoxSizer(wxVERTICAL, this, "&Server Status");
@@ -75,10 +75,10 @@ SettingsPanel_Server::SettingsPanel_Server(SeruroPanelSettings *parent,
 	Text *server_updated_status = new Text(this, wxString(wxT("Last updated: Today")));
 	Text *server_checked_status = new Text(this, wxString(wxT("Last checked: Today")));
 	
-	status_box->Add(server_updated_status, wxSizerFlags().Expand().Border(wxBOTTOM));
-	status_box->Add(server_checked_status, wxSizerFlags().Expand().Border(wxBOTTOM));
+	status_box->Add(server_updated_status, SETTINGS_PANEL_BOXSIZER_OPTIONS);
+	status_box->Add(server_checked_status, SETTINGS_PANEL_BOXSIZER_OPTIONS);
 
-	vert_sizer->Add(status_box, wxSizerFlags().Expand().Border(wxALL, 5));
+	vert_sizer->Add(status_box, SETTINGS_PANEL_SIZER_OPTIONS);
 
 	/* Update/Delete server buttons with sizer and spacer. */
 	wxBoxSizer *status_buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -87,9 +87,9 @@ SettingsPanel_Server::SettingsPanel_Server(SeruroPanelSettings *parent,
 
 	/* Add spacer, and button to horz sizer, then horz sizer to vert sizer. */
 	//status_buttons_sizer->AddStretchSpacer();
-	status_buttons_sizer->Add(update_button, wxSizerFlags().Right().Expand());
-	status_buttons_sizer->Add(delete_button, wxSizerFlags().Right().Expand());
-	vert_sizer->Add(status_buttons_sizer, wxSizerFlags().Expand().Border(wxALL, 5));
+	status_buttons_sizer->Add(update_button, SETTINGS_PANEL_BUTTONS_OPTIONS);
+	status_buttons_sizer->Add(delete_button, SETTINGS_PANEL_BUTTONS_OPTIONS);
+	vert_sizer->Add(status_buttons_sizer, SETTINGS_PANEL_SIZER_OPTIONS);
 
 	this->SetSizer(vert_sizer);
 }

@@ -10,12 +10,6 @@
 #endif
 
 #define SERURO_APP_NAME     "Seruro Client"
-#if defined(__WXMAC__)
-#define SERURO_APP_DEFAULT_WIDTH  675
-#else
-#define SERURO_APP_DEFAULT_WIDTH  600
-#endif
-#define SERURO_APP_DEFAULT_HEIGHT 500
 
 /* When a server name is displayed, display the host and port as well. */
 #define SERURO_DISPLAY_SERVER_INFO true
@@ -28,21 +22,15 @@
 /* User agent to use for Server API requests. */
 #define SERURO_DEFAULT_USER_AGENT "Client/1.0"
 
-/* Settings view related definitions. */
-#if defined(__WXMAC__)
-#define SERURO_SETTINGS_TREE_MIN_WIDTH 175
-#else
-#define SERURO_SETTINGS_TREE_MIN_WIDTH 150
-#endif
-/* The settings tree event control id. */
-#define SERURO_SETTINGS_TREE_ID 1009
-
-/* OSX has larger indents. */
-#if defined(__WXMAC__)
-#define SERURO_SETTINGS_TREE_INDENT 8
-#else
-#define SERURO_SETTINGS_TREE_INDENT 12
-#endif
+#define SERURO_INPUT_MAX_LENGTH 256
+#define SERURO_BUFFER_SIZE 256
+#define SERURO_INPUT_WHITELIST \
+"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890.-_() "
+#define SERURO_INPUT_HOSTNAME_WHITELIST \
+"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890.-"
+/* Todo: consider non-ascii characters. */
+#define SERURO_INPUT_ADDRESS_WHITELIST \
+"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890._-@"
 
 /* Width to wrap message text in setting views. (WIDTH-TREE_MIN) */
 //#define SERURO_SETTINGS_VIEW_SOFT_WRAP
@@ -71,15 +59,6 @@
 #define SERURO_API_AUTH_TOKEN_PARAMETER "token"
 
 /* Textual data, stored here to allow easy 'future' translation. */
-#define TEXT_ACCOUNT_LOGIN "Please enter your Account Information \
-to log into the Seruro Server: "
-#define TEXT_DECRYPT_METHOD_EMAIL "Please enter the 'password' you \
-received via email."
-#define TEXT_DECRYPT_METHOD_SMS "Please enter the 'password' you \
-received as a text message."
-#define TEXT_DECRYPT_EXPLAINATION "This is NOT your Seruro Account 'password'. \
-This password will only be used to setup your personal certificates and does \
-not need to be remembered or saved. You may delete the password immediately \
-after you enter it: "
+#include "lang/en_US.h"
 
 #endif 
