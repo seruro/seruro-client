@@ -14,7 +14,7 @@
 #include "SeruroPanelTest.h"
 //#endif
 
-#include "../SeruroSetup.h"
+#include "../setup/SeruroSetup.h"
 
 BEGIN_EVENT_TABLE(SeruroFrameMain, wxFrame)
 	/* Events for Window interaction */
@@ -23,7 +23,7 @@ BEGIN_EVENT_TABLE(SeruroFrameMain, wxFrame)
 	EVT_ICONIZE	(				SeruroFrameMain::OnIconize)
 	EVT_CLOSE	(				SeruroFrameMain::OnClose)
 	/* Events for optional setup wizard */
-	EVT_MENU    (seruroID_SETUP_ALERT,  SeruroFrameMain::OnSetupRun)
+	//EVT_MENU    (seruroID_SETUP_ALERT,  SeruroFrameMain::OnSetupRun)
     EVT_WIZARD_CANCEL(wxID_ANY,   SeruroFrameMain::OnSetupCancel)
     EVT_WIZARD_FINISHED(wxID_ANY, SeruroFrameMain::OnSetupFinished)	
 END_EVENT_TABLE()

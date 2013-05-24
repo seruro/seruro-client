@@ -1,6 +1,50 @@
 
 #include "SeruroSetup.h"
+#include "../frames/UIDefs.h"
 
+/***** DEPRECATED ******/
+
+InitialPage::InitialPage(SeruroSetup *parent) : SetupPage(parent)
+{
+    /* Show welcome message, and overview of the workflow to follow. */
+    wxSizer *vert_sizer = new wxBoxSizer(wxVERTICAL);
+    
+    Text *msg = new Text(this, wxT("Welcome to Seruro! Let's take a moment and configure your client.\n"
+        "\n"
+        "If this is your first time installing the Seruro Client, please pay attention as some settings may"
+        "affect your privacy settings. This initial setup wizard will guide you through:\n"
+        "\n"
+            "\t 1. Connecting to your Seruro Server.\n"
+            "\t 2. Configuring your account and downloading your identity.\n"
+            "\t 3. Automatic setup of your email applications.\n"
+            "\t 4. Retreival and installation of contact identities.\n"
+        "\n"
+        "This setup may be canceled and restarted at a later time. After completing the setup you may"
+        "add additional servers and accounts as well as change any setting options."));
+    vert_sizer->Add(msg, DIALOGS_BOXSIZER_OPTIONS);
+    
+    this->SetSizer(vert_sizer);
+}
+
+SeruroSetup::SeruroSetup(wxFrame *parent)
+{
+    this->SetExtraStyle(wxWIZARD_EX_HELPBUTTON);
+    this->Create(parent, wxID_ANY, wxString(wxT(SERURO_APP_NAME)) + wxT(" Setup"),
+        /* Todo: replace icon */
+        wxIcon(icon_good), wxDefaultPosition,
+        wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+    
+    /* Page creation. */
+    this->initial_page  = new InitialPage(this);
+    this->server_page   = new ServerPage(this);
+    
+    initial_page->SetNext(server_page);
+    server_page->SetPrev(initial_page);
+    
+    this->GetPageAreaSizer()->Add(this->initial_page);
+}
+
+#if 0
 SeruroSetup::SeruroSetup(SeruroFrameMain *parent)
 {
 	this->SetExtraStyle(wxWIZARD_EX_HELPBUTTON);
@@ -11,6 +55,7 @@ SeruroSetup::SeruroSetup(SeruroFrameMain *parent)
 		wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
 
 	this->manualConfigPage = new SeruroSetupAlert(this);
+    
 	downloadP12Page = new SeruroSetupDownload(this);
 	/* Todo: does going backward make sense? */
 	manualConfigPage->SetNext(downloadP12Page);
@@ -67,4 +112,5 @@ bool SeruroSetupDecrypt::TransferDataFromWindow()
 {
 	return true;
 }
+#endif
 
