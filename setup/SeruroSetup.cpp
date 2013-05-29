@@ -2,7 +2,9 @@
 #include "SeruroSetup.h"
 #include "../frames/UIDefs.h"
 
-/***** DEPRECATED ******/
+BEGIN_EVENT_TABLE(SeruroSetup, wxWizard)
+    EVT_BUTTON(wxID_BACKWARD, SeruroSetup::GoBack)
+END_EVENT_TABLE()
 
 InitialPage::InitialPage(SeruroSetup *parent) : SetupPage(parent)
 {
@@ -38,10 +40,26 @@ SeruroSetup::SeruroSetup(wxFrame *parent)
     this->initial_page  = new InitialPage(this);
     this->server_page   = new ServerPage(this);
     
+    //initial_page->Chain(server_page);
     initial_page->SetNext(server_page);
     server_page->SetPrev(initial_page);
     
     this->GetPageAreaSizer()->Add(this->initial_page);
+}
+
+/* Implemented in wxWizard at: wxwidgets\src\generic */
+void SeruroSetup::GoBack(wxCommandEvent &event)
+{
+    wxWizardEvent eventPreChanged(wxEVT_WIZARD_BEFORE_PAGE_CHANGED, GetId(), false, m_page);
+    (void)m_page->GetEventHandler()->ProcessEvent(eventPreChanged);
+    
+    if (!eventPreChanged.IsAllowed())
+        return;
+    
+    wxWizardPage *page;
+    page = m_page->GetPrev();
+
+    (void)ShowPage(page, false);
 }
 
 #if 0

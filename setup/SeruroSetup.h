@@ -3,8 +3,14 @@
 #define H_SeruroSetup
 
 #include "wx/wizard.h"
+#include "wx/textctrl.h"
+
+#include "../wxJSON/wx/jsonval.h"
 
 #include "SeruroClient.h"
+
+/* The dialogs include the form mixin classes. */
+#include "../frames/dialogs/AddServerDialog.h"
 //#include "frames/SeruroFrameMain.h"
 
 enum seruro_setup_ids
@@ -22,6 +28,7 @@ class SetupPage : public wxWizardPageSimple
 {
 public:
     SetupPage (wxWizard *parent) : wxWizardPageSimple(parent) {}
+    //virtual wxJSONValue GetValues();
 };
 
 class SeruroSetup : public wxWizard
@@ -34,6 +41,9 @@ public:
 	//wxWizardPage *GetDownload() const { return downloadP12Page; }
 	//wxWizardPage *GetDecrypt() const { return decryptP12Page; }
     wxWizardPage *GetInitialPage() const { return initial_page; }
+    
+    /* Over write without validation for backbutton */
+    void GoBack(wxCommandEvent& event);
 
 private:
 	//wxWizardPageSimple *manualConfigPage;
@@ -45,6 +55,8 @@ private:
     SetupPage *account_page;
     SetupPage *applications_page;
     SetupPage *settings_page;
+    
+    DECLARE_EVENT_TABLE()
 };
 
 class InitialPage : public SetupPage
@@ -53,10 +65,23 @@ public:
     InitialPage (SeruroSetup *parent);
 };
 
-class ServerPage : public SetupPage
+/* Should be very similar to /frames/dialogs/AddServerDialog */
+class ServerPage : public SetupPage, public AddServerForm
 {
 public:
     ServerPage(SeruroSetup *parent);
+    
+};
+
+class AccountPage : public SetupPage
+{
+public:
+    AccountPage (SeruroSetup *parent);
+    wxJSONValue GetValues();
+    
+private:
+    wxTextCtrl *address;
+    wxTextCtrl *password;
 };
 
 /**** DEPRECATED ******/
