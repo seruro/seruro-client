@@ -6,12 +6,11 @@ ServerPage::ServerPage(SeruroSetup *parent) : SetupPage(parent), AddServerForm(t
 {
     wxSizer *const vert_sizer = new wxBoxSizer(wxVERTICAL);
     
-    Text *msg = new Text(this,
-        wxT("Please enter the information for your Seruro Server:"));
+    wxString msg_text = wxT("Please enter the information for your Seruro Server:");
+    Text *msg = new Text(this, msg_text);
     vert_sizer->Add(msg, DIALOGS_SIZER_OPTIONS);
     
-    wxSizer *const server_form = new wxStaticBoxSizer(wxVERTICAL, this,
-                                                      "&Server Information");
+    wxSizer *const server_form = new wxStaticBoxSizer(wxVERTICAL, this, "&Server Information");
     
     this->AddForm(server_form);
     

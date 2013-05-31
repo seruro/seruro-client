@@ -11,7 +11,7 @@
 
 #include "../../wxJSON/wx/jsonval.h"
 
-class AddServerForm
+class AddServerForm : public wxEvtHandler
 {
 public:
     AddServerForm(wxWindow *parent_obj) : parent(parent_obj) {}
@@ -19,6 +19,9 @@ public:
         const wxString &name = wxEmptyString, const wxString &host = wxEmptyString,
         const wxString &port = SERURO_DEFAULT_PORT);
     wxJSONValue GetValues();
+    
+    /* Handle the single checkbox click. */
+	void OnCustomPort(wxCommandEvent &event);
     
 protected:
     wxWindow *parent;
@@ -32,16 +35,13 @@ protected:
 	//DECLARE_EVENT_TABLE()
 };
 
-class AddServerDialog : public wxDialog, public AddServerForm
+class AddServerDialog : public AddServerForm, public wxDialog
 {
 public:
 	AddServerDialog(const wxString &name = wxEmptyString,
 		const wxString &host = wxEmptyString, 
 		const wxString &port = SERURO_DEFAULT_PORT);
 	//wxJSONValue GetValues();
-
-	/* Handle the single checkbox click. */
-	void OnCheck(wxCommandEvent &event);
 
 private:
 	//wxTextCtrl *server_name;

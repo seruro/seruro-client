@@ -33,9 +33,9 @@ bool SeruroClient::OnInit()
 		SERURO_APP_DEFAULT_WIDTH, SERURO_APP_DEFAULT_HEIGHT);
 
 	/* Start logger */
-#if defined(__DEBUG__) || defined(__WXDEBUG__)
+//#if defined(__DEBUG__) || defined(__WXDEBUG__)
 	InitLogger();
-#endif
+//#endif
 
 	/* User config instance */
     this->config = new SeruroConfig();

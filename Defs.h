@@ -1,6 +1,10 @@
 #ifndef H_SeruroDefs
 #define H_SeruroDefs
 
+/* Remove wxT warnings. */
+#pragma GCC diagnostic ignored "-Wwrite-strings"
+#pragma GCC diagnostic ignored "-Wconversion"
+
 /* Remove when finished developing. */
 #ifndef __WXDEBUG__
 #define __WXDEBUG__ 1

@@ -6,11 +6,12 @@
 
 #include <wx/grid.h>
 #include <wx/checkbox.h>
+#include <wx/log.h>
 
 DECLARE_APP(SeruroClient);
 
 BEGIN_EVENT_TABLE(AddServerDialog, wxDialog)
-	EVT_CHECKBOX(SERURO_ADD_SERVER_PORT_ID, AddServerDialog::OnCheck)
+	EVT_CHECKBOX(SERURO_ADD_SERVER_PORT_ID, AddServerForm::OnCustomPort)
 END_EVENT_TABLE()
 
 void AddServerForm::AddForm(wxSizer *sizer,
@@ -73,8 +74,9 @@ void AddServerForm::AddForm(wxSizer *sizer,
 	sizer->Add(grid_sizer, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 }
 
-void AddServerDialog::OnCheck(wxCommandEvent &event)
+void AddServerForm::OnCustomPort(wxCommandEvent &event)
 {
+    wxLogMessage(wxT("checkbox clicked."));
 	this->server_port->Enable(this->checkbox->IsChecked());
 	if (! this->checkbox->IsChecked()) {
 		/* If the checkbox becomes un-checked, reset the port value. */
