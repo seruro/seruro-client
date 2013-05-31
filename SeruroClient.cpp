@@ -12,7 +12,7 @@
 
 #include <wx/log.h>
 
-#define SERURO_DEBUG_SETUP 1
+#define SERURO_DEBUG_SETUP 0
 
 #if !defined(__VLD__)
     /* (Hack) If the Virtual Leak Detector is not enabled (a MSW DLL only) then create dummy

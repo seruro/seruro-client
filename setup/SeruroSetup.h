@@ -7,10 +7,11 @@
 
 #include "../wxJSON/wx/jsonval.h"
 
-#include "SeruroClient.h"
+#include "../SeruroClient.h"
 
 /* The dialogs include the form mixin classes. */
 #include "../frames/dialogs/AddServerDialog.h"
+#include "../frames/dialogs/AddAccountDialog.h"
 //#include "frames/SeruroFrameMain.h"
 
 enum seruro_setup_ids
@@ -70,10 +71,16 @@ class ServerPage : public SetupPage, public AddServerForm
 {
 public:
     ServerPage(SeruroSetup *parent);
+
+	/* Handle the single checkbox click. */
+	void OnCustomPort(wxCommandEvent &event);
+
+private:
+	DECLARE_EVENT_TABLE()
 };
 
 /* Should be very similar to /frames/dialogs/AddAccountDialog */
-class AccountPage : public SetupPage
+class AccountPage : public SetupPage, public AddAccountForm
 {
 public:
     AccountPage (SeruroSetup *parent);

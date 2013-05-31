@@ -17,4 +17,8 @@ after you enter it: "
 Seruro Server you would like to add. You may use any 'name', using \
 letters, numbers, hyphens, underscores and spaces."
 
+#define TEXT_ADD_ACCOUNT "Please enter your email address and passowrd \
+used to log into your Seruro Server account. WARNING: do NOT enter the password \
+used to log into your email account!."
+
 #endif

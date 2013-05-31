@@ -1,4 +1,4 @@
-
+﻿
 #include "SeruroPanelSearch.h"
 #include "../SeruroClient.h"
 #include "UIDefs.h"
@@ -8,12 +8,17 @@
 
 #include <wx/stattext.h>
 #include <wx/button.h>
+#include <wx/ustring.h>
 
 BEGIN_EVENT_TABLE(SeruroPanelSearch, wxPanel)
 	//EVT_SIZE(SeruroPanelSearch::OnSize)
-	EVT_CHAR_HOOK(SeruroPanelSearch::OnKey)
+	//EVT_CHAR_HOOK(SeruroPanelSearch::OnKey)
 	EVT_BUTTON(SEARCH_BUTTON_SEARCH, SeruroPanelSearch::OnSearch)
 	EVT_COMMAND(SERURO_API_CALLBACK_SEARCH, SERURO_API_RESULT, SeruroPanelSearch::OnSearchResult)
+END_EVENT_TABLE()
+
+BEGIN_EVENT_TABLE(SearchBox, wxSearchCtrl)
+	EVT_TEXT_ENTER(SERURO_SEARCH_TEXT_INPUT_ID, SearchBox::OnSearch)
 END_EVENT_TABLE()
 
 DECLARE_APP(SeruroClient);
@@ -36,18 +41,21 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	wxListItem list_column;
 
 	/* Create all of the column for the search results response. */
-	list_column.SetText(wxT("Email Address"));
+	list_column.SetText(wxUString(L"*")); /* A checkmark. */
 	list_control->InsertColumn(0, list_column);
-	list_column.SetText(wxT("First Name"));
+	list_column.SetText(wxT("Email Address"));
 	list_control->InsertColumn(1, list_column);
-	list_column.SetText(wxT("Last Name"));
+	list_column.SetText(wxT("First Name"));
 	list_control->InsertColumn(2, list_column);
+	list_column.SetText(wxT("Last Name"));
+	list_control->InsertColumn(3, list_column);
 
 	/* Debug for now, show a "nothing message" in the list. */
 	long item_index;
-	item_index = list_control->InsertItem(0, wxT("Nothing"));
-	list_control->SetItem(item_index, 1, wxT("No First Name"));
-	list_control->SetItem(item_index, 2, wxT("No Last Name"));
+	item_index = list_control->InsertItem(0, wxT(""));
+	list_control->SetItem(item_index, 1, wxT("No Email Address"));
+	list_control->SetItem(item_index, 2, wxT("No First Name"));
+	list_control->SetItem(item_index, 3, wxT("No Last Name"));
 
 	/* Add the list-control to the UI. */
 	results_sizer->Add(list_control, 1, wxALL | wxEXPAND, 5);
@@ -73,27 +81,28 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	}
 
 	/* Create search text-field. */
-	wxStaticText *search_text = new wxStaticText(this, wxID_ANY, wxT("Search:"));
-	this->search_control = new wxTextCtrl(this, wxID_ANY);
+	//wxStaticText *search_text = new wxStaticText(this, wxID_ANY, wxT("Search:"));
+	//this->search_control = new wxTextCtrl(this, SERURO_SEARCH_TEXT_INPUT_ID);
+	this->search_control = new SearchBox(this);
 
-	search_sizer->Add(search_text, 0, wxRIGHT, 5);
+	//search_sizer->Add(search_text, 0, wxRIGHT, 5);
 	search_sizer->Add(this->search_control, 1);
 
 	/* Create UI buttons. */
 	//wxButton *clear_button = new wxButton(this, SEARCH_BUTTON_CLEAR, wxT("Clear")); 
 	/* Todo: manually set focus here. */
-	wxButton *search_button = new wxButton(this, SEARCH_BUTTON_SEARCH, wxT("Search"));
+	//wxButton *search_button = new wxButton(this, SEARCH_BUTTON_SEARCH, wxT("Search"));
 
 	/* For some reason we cannot align right without a spacer. */
-	buttons_sizer->AddStretchSpacer();
-	buttons_sizer->Add(search_button, 0, wxRIGHT, 5);
+	//buttons_sizer->AddStretchSpacer();
+	//buttons_sizer->Add(search_button, 0, wxRIGHT, 5);
 	/* Todo: add a 'clear' button which removes all results. */
 	//buttons_sizer->Add(clear_button, 0, wxRIGHT, 5);
 
 	/* All them all into the components sizer. */
 	controls_sizer->Add(servers_sizer, 1, wxALL | wxEXPAND, 5);
 	controls_sizer->Add(search_sizer, 1, wxALL | wxEXPAND, 5);
-	controls_sizer->Add(buttons_sizer, 1, wxALL | wxEXPAND, 5);
+	//controls_sizer->Add(buttons_sizer, 1, wxALL | wxEXPAND, 5);
 	components_sizer->Add(controls_sizer, 0, wxEXPAND | wxLEFT | wxRIGHT | wxBOTTOM, 5);
 
 	/* Add the components to the main view. */
@@ -101,16 +110,24 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 
 	/* Testing: setting even column widths. */
 	int list_column_size = SEARCH_PANEL_COLUMN_WIDTH;
-	this->list_control->SetColumnWidth(0, list_column_size);
+	this->list_control->SetColumnWidth(0, 20);
 	this->list_control->SetColumnWidth(1, list_column_size);
 	this->list_control->SetColumnWidth(2, list_column_size);
+	this->list_control->SetColumnWidth(3, list_column_size);
 
 	/* Testing default focus */
 	this->search_control->SetFocus();
+	this->Layout();
 }
 
 void SeruroPanelSearch::OnSearch(wxCommandEvent &event)
 {
+	this->DoSearch();
+}
+
+void SeruroPanelSearch::DoSearch()
+{
+	/* Todo this should pick up the selected (or ONLY) server. */
     wxString server_name = wxT("Open Seruro"); //m_server_box->GetValue();
 	wxString query = this->search_control->GetValue();
 
@@ -151,15 +168,16 @@ void SeruroPanelSearch::OnSearchResult(wxCommandEvent &event)
 	/* Add results to UI. */
 	for (int i = 0; i < response["results"].Size(); i++) {
 		long item_index;
-		item_index = this->list_control->InsertItem(0, response["results"][i]["email"].AsString());
-		list_control->SetItem(item_index, 1, response["results"][i]["first_name"].AsString());
-		list_control->SetItem(item_index, 2, response["results"][i]["last_name"].AsString());
+		item_index = this->list_control->InsertItem(1, response["results"][i]["email"].AsString());
+		list_control->SetItem(item_index, 2, response["results"][i]["first_name"].AsString());
+		list_control->SetItem(item_index, 3, response["results"][i]["last_name"].AsString());
 	}
 
 	//this->list_control->Show();
 
 }
 
+#if 0
 void SeruroPanelSearch::OnKey(wxKeyEvent &event)
 {
 	wxWindow *win = FindFocus();
@@ -196,3 +214,4 @@ void SeruroPanelSearch::DoSize()
 	//list_control->SetSize(0, 0, size.x, y);
 	//_mainSizer->SetDimension(0, y, size.x, SEARCH_UI_COMPONENTS_HEIGHT);
 }
+#endif

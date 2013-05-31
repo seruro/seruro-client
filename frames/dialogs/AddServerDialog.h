@@ -11,7 +11,7 @@
 
 #include "../../wxJSON/wx/jsonval.h"
 
-class AddServerForm : public wxEvtHandler
+class AddServerForm
 {
 public:
     AddServerForm(wxWindow *parent_obj) : parent(parent_obj) {}
@@ -19,9 +19,6 @@ public:
         const wxString &name = wxEmptyString, const wxString &host = wxEmptyString,
         const wxString &port = SERURO_DEFAULT_PORT);
     wxJSONValue GetValues();
-    
-    /* Handle the single checkbox click. */
-	void OnCustomPort(wxCommandEvent &event);
     
 protected:
     wxWindow *parent;
@@ -41,15 +38,17 @@ public:
 	AddServerDialog(const wxString &name = wxEmptyString,
 		const wxString &host = wxEmptyString, 
 		const wxString &port = SERURO_DEFAULT_PORT);
-	//wxJSONValue GetValues();
+	
+	/* Handle the single checkbox click. */
+	/* Todo: find a better way to implement this event handler,
+	 * within the base abstract class would be great, tried inheriting
+	 * from wxEvtHandler, but this results in invalid access if the event
+	 * table is defined for the implementor, and no action if the event 
+	 * table is defined for the abstract.
+	 */
+	void OnCustomPort(wxCommandEvent &event);
 
 private:
-	//wxTextCtrl *server_name;
-	//wxTextCtrl *server_host;
-	//wxTextCtrl *server_port;
-	/* A checkbox to enable port editing. */
-	//wxCheckBox *checkbox;
-
 	DECLARE_EVENT_TABLE()
 };
 
