@@ -9,6 +9,7 @@
 #include <wx/stattext.h>
 #include <wx/button.h>
 #include <wx/ustring.h>
+#include <wx/checkbox.h>
 
 BEGIN_EVENT_TABLE(SeruroPanelSearch, wxPanel)
 	//EVT_SIZE(SeruroPanelSearch::OnSize)
@@ -51,11 +52,13 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	list_control->InsertColumn(3, list_column);
 
 	/* Debug for now, show a "nothing message" in the list. */
-	long item_index;
-	item_index = list_control->InsertItem(0, wxT(""));
-	list_control->SetItem(item_index, 1, wxT("No Email Address"));
-	list_control->SetItem(item_index, 2, wxT("No First Name"));
-	list_control->SetItem(item_index, 3, wxT("No Last Name"));
+	//long item_index;
+	//item_index = list_control->InsertItem(0, wxT(""));
+	//list_control->SetItem(item_index, 1, wxT("No Email Address"));
+	//list_control->SetItem(item_index, 2, wxT("No First Name"));
+	//list_control->SetItem(item_index, 3, wxT("No Last Name"));
+	this->AddResult(wxString("No Email Address"), 
+		wxString("No First Name"), wxString("No Last Name"));
 
 	/* Add the list-control to the UI. */
 	results_sizer->Add(list_control, 1, wxALL | wxEXPAND, 5);
@@ -120,6 +123,18 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	this->Layout();
 }
 
+void SeruroPanelSearch::AddResult(const wxString &address, 
+	const wxString &first_name, const wxString &last_name)
+{
+	long item_index;
+	/* place appropriately marked checkbox. */
+	item_index = this->list_control->InsertItem(0, wxT(""));
+	
+	list_control->SetItem(item_index, 1, address);
+	list_control->SetItem(item_index, 2, first_name);
+	list_control->SetItem(item_index, 3, last_name);
+}
+
 void SeruroPanelSearch::OnSearch(wxCommandEvent &event)
 {
 	this->DoSearch();
@@ -167,10 +182,13 @@ void SeruroPanelSearch::OnSearchResult(wxCommandEvent &event)
 
 	/* Add results to UI. */
 	for (int i = 0; i < response["results"].Size(); i++) {
-		long item_index;
-		item_index = this->list_control->InsertItem(1, response["results"][i]["email"].AsString());
-		list_control->SetItem(item_index, 2, response["results"][i]["first_name"].AsString());
-		list_control->SetItem(item_index, 3, response["results"][i]["last_name"].AsString());
+		//long item_index;
+		//item_index = this->list_control->InsertItem(1, response["results"][i]["email"].AsString());
+		//list_control->SetItem(item_index, 2, response["results"][i]["first_name"].AsString());
+		//list_control->SetItem(item_index, 3, response["results"][i]["last_name"].AsString());
+		this->AddResult(response["results"][i]["email"].AsString(),
+			response["results"][i]["first_name"].AsString(), 
+			response["results"][i]["last_name"].AsString());
 	}
 
 	//this->list_control->Show();

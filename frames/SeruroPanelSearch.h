@@ -39,6 +39,12 @@ public:
 	void OnSearch(wxCommandEvent &event);
 	void DoSearch();
 	void OnSearchResult(wxCommandEvent &event);
+	/* Searches if the address exists, and adds the result line to the
+	 * view list, with the appropriate checkbox depending on whether this
+	 * OS has the cert installed, and if the cert is updated.
+	 */
+	void AddResult(const wxString &address, 
+	const wxString &first_name, const wxString &last_name);
 
 	//void OnInstallCert(wxCommandEvent &event);
 	//void OnUninstallCerl(wxCommandEvent &event);
