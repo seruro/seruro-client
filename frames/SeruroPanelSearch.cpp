@@ -133,7 +133,21 @@ bool wxCheckedListCtrl::IsChecked(long item) const
 
 void wxCheckedListCtrl::Check(long item, bool checked)
 {
-    SetItemImage(item, (checked ? 1 : 0), -1);
+	if (this->IsChecked(item)) {
+		/* No uninstalling as of now. */
+		return;
+	}
+
+	//SeruroRequest *request = api->CreateRequest(SERURO_API_SEARCH, params, SERURO_API_CALLBACK_SEARCH);
+	//request->Run();
+
+    //SetItemImage(item, (checked ? 1 : 0), -1);
+}
+
+/* After the certificate is installed, update the UI. */
+void SeruroPanelSearch::OnInstallResult(wxCommandEvent &event)
+{
+	/* The event data should include the address which was updated. */
 }
 
 SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, wxT("Search"))

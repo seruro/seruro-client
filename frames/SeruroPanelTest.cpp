@@ -140,60 +140,6 @@ void SeruroPanelTest::OnGetP12Result(wxCommandEvent &event)
 
 	api->InstallP12(response);
 
-#if 0
-	if (! response.HasMember("success") || ! response["success"].AsBool()) {
-		wxLogMessage(wxT("SeruroPanelTest> (GetP12) Bad Result."));
-		return;
-	}
-
-	wxLogMessage(wxT("SeruroPanelTest> (GetP12) API valid response."));
-
-	/* The getP12 API call should respond with up to 3 P12s. */
-	if (! response.HasMember("p12"))
-	{
-		wxLogMessage(wxT("SeruroPanelTest> (GetP12) Response does not include P12 data."));
-		return;
-	}
-
-	/* Get password from user for p12 containers. */
-	wxString p12_key;
-	DecryptDialog *decrypt_dialog = new DecryptDialog(response["method"].AsString());
-	if (decrypt_dialog->ShowModal() == wxID_OK) {
-		p12_key = decrypt_dialog->GetValue();
-	} else {
-		return;
-	}
-	/* Remove the modal from memory. */
-	decrypt_dialog->Destroy();
-
-	SeruroCrypto *cryptoHelper = new SeruroCrypto();
-
-	/* Install all P12 b64 blobs. */
-	wxArrayString p12_blobs = response["p12"].GetMemberNames();
-	wxString p12_encoded;
-	size_t p12_decode_error;
-	wxMemoryBuffer p12_decoded;
-
-	for (size_t i = 0; i < p12_blobs.size(); i++) {
-		p12_encoded = response["p12"][p12_blobs[i]].AsString();
-		p12_decode_error = 0;
-		p12_decoded = wxBase64Decode(p12_encoded, wxBase64DecodeMode_Relaxed, &p12_decode_error);
-		
-		if (p12_decode_error != 0) {
-			/* posErr (the argument name) is the position in the encoded string of the non-decodable object. */
-			wxLogMessage(wxT("SeruroPanelTest> (GetP12) Could not decode position %d in p12 blob '%s'."), 
-				p12_decode_error, p12_blobs[i]);
-			continue;
-		}
-
-		cryptoHelper->InstallP12(p12_decoded, p12_key);
-	}
-
-	/* Cleanup. */
-	delete cryptoHelper;
-	p12_key.Empty();
-#endif
-
 	return;
 }
 

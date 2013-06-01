@@ -228,14 +228,13 @@ bool SeruroServerAPI::InstallP12(wxJSONValue response)
 	/* Remove the modal from memory. */
 	decrypt_dialog->Destroy();
 
-	SeruroCrypto *cryptoHelper = new SeruroCrypto();
-
 	/* Install all P12 b64 blobs. */
 	wxArrayString p12_blobs = response["p12"].GetMemberNames();
 	wxString p12_encoded;
 	wxMemoryBuffer p12_decoded;
 
 	bool result;
+	SeruroCrypto *cryptoHelper = new SeruroCrypto();
 	for (size_t i = 0; i < p12_blobs.size(); i++) {
 		p12_encoded = response["p12"][p12_blobs[i]].AsString();
 

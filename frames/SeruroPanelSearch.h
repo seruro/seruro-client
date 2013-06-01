@@ -44,6 +44,9 @@ public:
 	void OnSearch(wxCommandEvent &event);
 	void DoSearch();
 	void OnSearchResult(wxCommandEvent &event);
+
+	void OnInstallResult(wxCommandEvent &event);
+
 	/* Searches if the address exists, and adds the result line to the
 	 * view list, with the appropriate checkbox depending on whether this
 	 * OS has the cert installed, and if the cert is updated.

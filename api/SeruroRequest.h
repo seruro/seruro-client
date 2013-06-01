@@ -14,6 +14,36 @@
  */
 DECLARE_EVENT_TYPE(SERURO_API_RESULT, -1);
 
+/* Create a new event type which holds JSON data, to prevent reading and 
+ * writing JSON/string data for every request-response.
+ * http://wiki.wxwidgets.org/Custom_Events
+ */
+class SeruroRequestEvent : public wxCommandEvent
+{
+public:
+	SeruroRequestEvent(wxEventType command_type = SERURO_API_RESULT,
+		int id = 0) : wxCommandEvent(command_type, id) {}
+
+	SeruroRequestEvent(const SeruroRequestEvent &event) 
+		: wxCommandEvent(event) { this->SetResponse(event.GetResponse()); }
+	wxEvent* Clone() const { return new SeruroRequestEvent(*this); }
+
+	wxJSONValue GetResponse() const { return response_data; }
+	void SetResponse(wxJSONValue response) { response_data = response; }
+
+private:
+	wxJSONValue response_data;
+};
+
+/* Define a event type for API/Request responses. */
+typedef void (wxEvtHandler::*SeruroRequestEventFunction) (SeruroRequestEvent &);
+
+#define EVT_SERURO_API_RESPONSE(type, fn) \
+	DECLARE_EVENT_TYPE_ENTRY(SERURO_API_RESULT, type, -1, \
+	(wxObjectEventFunction) (wxEventFunction) (wxCommandEventFunction) \
+	wxStaticCastEvent (SeruroRequestEventFunction, &fn), \
+	(wxObject*) NULL);
+
 class SeruroRequest : public wxThread
 {
 public:
