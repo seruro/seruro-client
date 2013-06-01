@@ -4,7 +4,8 @@
 /* Remove wxT warnings. */
 #ifdef __WXMAC__
 #pragma GCC diagnostic ignored "-Wwrite-strings"
-#pragma GCC diagnostic ignored "-Wconversion"
+//#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wshorten-64-to-32"
 #endif
 
 /* Remove when finished developing. */

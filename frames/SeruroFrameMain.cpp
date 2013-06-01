@@ -81,14 +81,14 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
 void SeruroFrameMain::AddPanels()
 {
 	/* Add content */
-	SeruroPanelSearch	 *search	= new SeruroPanelSearch(book);
-	SeruroPanelEncrypt	 *encrypt	= new SeruroPanelEncrypt(book);
-	SeruroPanelDecrypt	 *decrypt	= new SeruroPanelDecrypt(book);
-	SeruroPanelSettings  *settings  = new SeruroPanelSettings(book);
+	search_panel = new SeruroPanelSearch(book);
+	//SeruroPanelEncrypt	 *encrypt	= new SeruroPanelEncrypt(book);
+	//SeruroPanelDecrypt	 *decrypt	= new SeruroPanelDecrypt(book);
+	settings_panel = new SeruroPanelSettings(book);
 	//SeruroPanelUpdate	 *update	= new SeruroPanelUpdate(book);
 
 #if defined(DEBUG) || defined(__WXDEBUG__)
-	SeruroPanelTest		*test1 = new SeruroPanelTest(book);
+	test_panel = new SeruroPanelTest(book);
 #endif
 }
 

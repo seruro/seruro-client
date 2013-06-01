@@ -11,6 +11,11 @@
 #include <wx/ustring.h>
 #include <wx/checkbox.h>
 
+#include <wx/imaglist.h>
+#include <wx/renderer.h>
+
+DECLARE_APP(SeruroClient);
+
 BEGIN_EVENT_TABLE(SeruroPanelSearch, wxPanel)
 	//EVT_SIZE(SeruroPanelSearch::OnSize)
 	//EVT_CHAR_HOOK(SeruroPanelSearch::OnKey)
@@ -19,14 +24,15 @@ BEGIN_EVENT_TABLE(SeruroPanelSearch, wxPanel)
 END_EVENT_TABLE()
 
 BEGIN_EVENT_TABLE(SearchBox, wxSearchCtrl)
-	EVT_TEXT_ENTER(SERURO_SEARCH_TEXT_INPUT_ID, SearchBox::OnSearch)
+	EVT_SEARCHCTRL_SEARCH_BTN(SERURO_SEARCH_TEXT_INPUT_ID, SearchBox::OnSearch)
 END_EVENT_TABLE()
 
+#define CHECKBOX_SIZE 18
+
+#if 0
 enum checkboxes_t {
 	SERURO_CERTIFICATE_CHECKBOX_ID
 };
-
-DECLARE_APP(SeruroClient);
 
 /* Todo: consider polling if the user manually removes a certificate for a user which is displauyed. */
 
@@ -71,6 +77,119 @@ BEGIN_EVENT_TABLE(CertificateCheckbox, wxCheckBox)
 	EVT_CHECKBOX(SERURO_CERTIFICATE_CHECKBOX_ID, CertificateCheckbox::OnAction)
 END_EVENT_TABLE()
 
+#endif 
+
+//IMPLEMENT_CLASS(wxCheckedListCtrl, wxListCtrl)
+
+class wxCheckedListCtrl : public wxListCtrl
+{
+public:
+    wxCheckedListCtrl(wxWindow* parent, wxWindowID id, const wxPoint& pt,
+                      const wxSize& sz, long style);
+    
+    void OnMouseEvent(wxMouseEvent &event);
+    bool Create(wxWindow* parent,
+                wxWindowID id, const wxPoint& pt, const wxSize& sz, long style,
+                const wxValidator& validator, const wxString& name);
+    bool IsChecked(long item) const;
+    void Check(long item, bool checked);
+    
+private:
+    wxImageList m_imageList;
+    
+    DECLARE_EVENT_TABLE();
+};
+
+void wxCheckedListCtrl::OnMouseEvent(wxMouseEvent &event)
+{
+    if (event.LeftDown()) {
+        int flags;
+        long item = HitTest(event.GetPosition(), flags);
+        if (item > -1 && (flags & wxLIST_HITTEST_ONITEMICON)) {
+            Check(item, !IsChecked(item));
+        } else { event.Skip(); }
+    } else { event.Skip(); }
+}
+
+wxCheckedListCtrl::wxCheckedListCtrl(wxWindow* parent, wxWindowID id, const wxPoint& pt,
+    const wxSize& sz, long style): wxListCtrl(parent, id, pt, sz, style),
+    m_imageList(CHECKBOX_SIZE, CHECKBOX_SIZE, true)
+{
+    wxLogMessage("Checked list created.");
+    //if (!wxListCtrl::Create(parent, id, pt, sz, style, validator, name))
+    //    return;// false;
+    
+    SetImageList(&m_imageList, wxIMAGE_LIST_SMALL);
+    
+    // TODO: Using the native size would be better
+    wxBitmap unchecked_bmp(CHECKBOX_SIZE, CHECKBOX_SIZE),
+    checked_bmp(CHECKBOX_SIZE, CHECKBOX_SIZE),
+    unchecked_disabled_bmp(CHECKBOX_SIZE, CHECKBOX_SIZE),
+    checked_disabled_bmp(CHECKBOX_SIZE, CHECKBOX_SIZE);
+    
+    /* Bitmaps must not be selected by a DC for addition to the image list 
+     * but I don't see a way of diselecting them in wxMemoryDC so let's just 
+     * use a code block to end the scope.
+     */
+    {
+        wxMemoryDC renderer_dc;
+        
+        // Unchecked
+        renderer_dc.SelectObject(unchecked_bmp);
+        renderer_dc.SetBackground(*wxTheBrushList->FindOrCreateBrush(GetBackgroundColour(), wxSOLID));
+        renderer_dc.Clear();
+        wxRendererNative::Get().DrawCheckBox(this, renderer_dc,
+            wxRect(0, 0, CHECKBOX_SIZE, CHECKBOX_SIZE), 0);
+        
+        // Checked
+        renderer_dc.SelectObject(checked_bmp);
+        renderer_dc.SetBackground(*wxTheBrushList->FindOrCreateBrush(GetBackgroundColour(), wxSOLID));
+        renderer_dc.Clear();
+        wxRendererNative::Get().DrawCheckBox(this, renderer_dc,
+            wxRect(0, 0, CHECKBOX_SIZE, CHECKBOX_SIZE), wxCONTROL_CHECKED);
+        
+        // Unchecked and Disabled
+        renderer_dc.SelectObject(unchecked_disabled_bmp);
+        renderer_dc.SetBackground(*wxTheBrushList->FindOrCreateBrush(GetBackgroundColour(), wxSOLID));
+        renderer_dc.Clear();
+        wxRendererNative::Get().DrawCheckBox(this, renderer_dc,
+            wxRect(0, 0, CHECKBOX_SIZE, CHECKBOX_SIZE), 0 | wxCONTROL_DISABLED);
+        
+        // Checked and Disabled
+        renderer_dc.SelectObject(checked_disabled_bmp);
+        renderer_dc.SetBackground(*wxTheBrushList->FindOrCreateBrush(GetBackgroundColour(), wxSOLID));
+        renderer_dc.Clear();
+        wxRendererNative::Get().DrawCheckBox(this, renderer_dc,
+            wxRect(0, 0, CHECKBOX_SIZE, CHECKBOX_SIZE), wxCONTROL_CHECKED | wxCONTROL_DISABLED);
+    }
+    
+    // the add order must respect the wxCLC_XXX_IMGIDX defines in the headers !
+    m_imageList.Add(unchecked_bmp);
+    m_imageList.Add(checked_bmp);
+    m_imageList.Add(unchecked_disabled_bmp);
+    m_imageList.Add(checked_disabled_bmp);
+    
+    //return true;
+}
+
+bool wxCheckedListCtrl::IsChecked(long item) const
+{
+    wxListItem info;
+    info.m_mask = wxLIST_MASK_IMAGE;
+    info.m_itemId = item;
+    
+    if (GetItem(info)) { return (info.m_image == 1); }
+    else { return false; }
+}
+
+void wxCheckedListCtrl::Check(long item, bool checked)
+{
+    SetItemImage(item, (checked ? 1 : 0), -1);
+}
+
+BEGIN_EVENT_TABLE(wxCheckedListCtrl, wxListCtrl)
+    EVT_LEFT_DOWN(wxCheckedListCtrl::OnMouseEvent)
+END_EVENT_TABLE()
 
 SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, wxT("Search"))
 {
@@ -84,8 +203,8 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	wxBoxSizer *results_sizer = new wxBoxSizer(wxHORIZONTAL);
 
 	/* The list control is a report-view displaying search results. */
-	list_control = new wxListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
-		(wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_THEME | wxLC_EDIT_LABELS));
+	list_control = new wxCheckedListCtrl(this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+		(wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_THEME));
 
 	wxListItem list_column;
 
@@ -116,7 +235,7 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	wxStaticBoxSizer* const controls_sizer = new wxStaticBoxSizer(wxVERTICAL, this, wxT("Search for Certificates"));
 	wxBoxSizer *servers_sizer = new wxBoxSizer(wxHORIZONTAL);
 	wxBoxSizer *search_sizer = new wxBoxSizer(wxHORIZONTAL);
-	wxBoxSizer *buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
+	//wxBoxSizer *buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
 
 	/* Create search list. */
 	wxArrayString servers_list;
@@ -161,7 +280,7 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 
 	/* Testing: setting even column widths. */
 	int list_column_size = SEARCH_PANEL_COLUMN_WIDTH;
-	this->list_control->SetColumnWidth(0, 20);
+	this->list_control->SetColumnWidth(0, 25);
 	this->list_control->SetColumnWidth(1, list_column_size);
 	this->list_control->SetColumnWidth(2, list_column_size);
 	this->list_control->SetColumnWidth(3, list_column_size);
@@ -177,8 +296,9 @@ void SeruroPanelSearch::AddResult(const wxString &address,
 	long item_index;
 	
 	/* place appropriately marked checkbox. */
-	CertificateCheckbox *checkbox = new CertificateCheckbox(list_control, address);
-	item_index = this->list_control->InsertItem(0, checkbox);
+	//CertificateCheckbox *checkbox = new CertificateCheckbox(list_control, address);
+	item_index = this->list_control->InsertItem(0, wxT(""));
+    list_control->Check(item_index, true);
 	
 	list_control->SetItem(item_index, 1, address);
 	list_control->SetItem(item_index, 2, first_name);

@@ -41,6 +41,10 @@ public:
 protected:
 	SeruroTray *tray;
 	wxNotebook *book;
+    
+    wxPanel *search_panel;
+    wxPanel *settings_panel;
+    wxPanel *test_panel;
 
 private:
 	DECLARE_EVENT_TABLE()

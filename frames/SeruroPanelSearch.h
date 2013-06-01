@@ -9,6 +9,7 @@
 #include <wx/listctrl.h>
 #include <wx/choice.h>
 #include <wx/srchctrl.h>
+#include <wx/log.h>
 
 enum search_actions_t
 {
@@ -25,6 +26,7 @@ enum search_ids_t
 #define SEARCH_UI_COMPONENTS_HEIGHT 100
 
 class SearchBox;
+class wxCheckedListCtrl;
 
 // Define a new frame type: this is going to be our main frame
 class SeruroPanelSearch : public SeruroPanel
@@ -51,7 +53,7 @@ public:
 
 private:
 	/* User inputs. */
-	wxListCtrl *list_control;
+	wxCheckedListCtrl *list_control;
 	wxChoice *servers_control;
 	SearchBox *search_control;
 
@@ -75,6 +77,7 @@ public:
 		parent(parent_obj) {}
 
 	void OnSearch(wxCommandEvent &event) {
+        wxLogMessage("searchbox, on search.");
 		this->parent->DoSearch();
 	}
 private:
