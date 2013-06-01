@@ -22,7 +22,55 @@ BEGIN_EVENT_TABLE(SearchBox, wxSearchCtrl)
 	EVT_TEXT_ENTER(SERURO_SEARCH_TEXT_INPUT_ID, SearchBox::OnSearch)
 END_EVENT_TABLE()
 
+enum checkboxes_t {
+	SERURO_CERTIFICATE_CHECKBOX_ID
+};
+
 DECLARE_APP(SeruroClient);
+
+/* Todo: consider polling if the user manually removes a certificate for a user which is displauyed. */
+
+/* The action checkbox allows the user to control the certificate for the user (which is a row)
+ * The checkbox will use the address of the user to perform the actions.
+ */
+class CertificateCheckbox : public wxCheckBox
+{
+public:
+	CertificateCheckbox(wxWindow *parent_obj, const wxString &address) : 
+		wxCheckBox(parent_obj, wxID_ANY, wxT("Install/Remove this user's certificate.")), 
+		address(address)
+	{	
+		/* Search for the address within the user's certificate store. */
+		this->Enable(false);
+	}
+
+	/* The user clicks the box, check the state, and whether that state still matches the state
+	 * of the certificate store. Then perform the "request" and "appropriate" action.
+	 * Request: remove certificate
+	 * Appropriate: remove (if certificate exists), nothing (if certificate does not exist).
+	 * Finally, update the state (enabled/disabled) of the checkbox depending on the result.
+	 */
+	void OnAction(wxCommandEvent &event)
+	{
+		event.Skip();
+		if (this->GetValue() == false) {
+			/* The user has requested the certificate be installed. */
+		} else {
+			/* Remove certificate */
+		}
+	}
+
+private:
+	/* Perform the action based on the address given at construction */
+	wxString address;
+
+	DECLARE_EVENT_TABLE();
+};
+
+BEGIN_EVENT_TABLE(CertificateCheckbox, wxCheckBox)
+	EVT_CHECKBOX(SERURO_CERTIFICATE_CHECKBOX_ID, CertificateCheckbox::OnAction)
+END_EVENT_TABLE()
+
 
 SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, wxT("Search"))
 {
@@ -127,8 +175,10 @@ void SeruroPanelSearch::AddResult(const wxString &address,
 	const wxString &first_name, const wxString &last_name)
 {
 	long item_index;
+	
 	/* place appropriately marked checkbox. */
-	item_index = this->list_control->InsertItem(0, wxT(""));
+	CertificateCheckbox *checkbox = new CertificateCheckbox(list_control, address);
+	item_index = this->list_control->InsertItem(0, checkbox);
 	
 	list_control->SetItem(item_index, 1, address);
 	list_control->SetItem(item_index, 2, first_name);
@@ -151,6 +201,9 @@ void SeruroPanelSearch::DoSearch()
 	wxJSONValue params;
 	params["query"] = query;
 	params["server"] = server;
+
+	/* Disable the search box until the query completes. */
+	this->search_control->Enable(false);
 	
 	SeruroRequest *request = api->CreateRequest(SERURO_API_SEARCH, params, SERURO_API_CALLBACK_SEARCH);
 	request->Run();
@@ -167,6 +220,7 @@ void SeruroPanelSearch::OnSearchResult(wxCommandEvent &event)
 	this->list_control->DeleteAllItems();
 
 	/* Set the cursor back to the input field. */
+	this->search_control->Enable(true);
 	this->search_control->SetFocus();
 
 	if (! response.HasMember("success") || ! response["success"].AsBool()) {

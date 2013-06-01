@@ -49,6 +49,43 @@ void SeruroCryptoMSW::OnInit()
 	//TLSRequest(none, 0, verb, object, data); /* SERURO_SECURITY_OPTIONS_DATA */
 }
 
+bool InstallCertToStore(wxMemoryBuffer &cert, wxString store_name)
+{
+	BOOL bResult;
+	DWORD error;
+
+	HCERTSTORE cert_store;
+	BSTR store = AsLongString(store_name);
+
+	/* The canonical name of the certificate store is passed to the function */
+	cert_store = CertOpenStore(CERT_STORE_PROV_SYSTEM, 0, 0, 
+		CERT_STORE_OPEN_EXISTING_FLAG | CERT_SYSTEM_STORE_CURRENT_USER, store);
+
+	if (cert_store == NULL) {
+		error = GetLastError();
+		wxLogMessage(wxT("SeruroCrypto::InstallCA> could not open CURRENT_USER/'%s' store (%u)."), 
+			store_name, error); 
+		return false;
+	}
+
+	BYTE *data = (BYTE *) cert.GetData();
+	DWORD len = cert.GetDataLen();
+
+	bResult = CertAddEncodedCertificateToStore(cert_store, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+		data, len, CERT_STORE_ADD_REPLACE_EXISTING, NULL);
+
+	if (bResult == false) {
+		error = GetLastError();
+		wxLogMessage(wxT("SeruroCrypto::InstallCA> could not decode cert (%u)."), error);
+		CertCloseStore(cert_store, 0);
+		return false;
+	}
+
+	wxLogMessage(wxT("SeruroCrypto::InstallCA> cert installed."));
+	CertCloseStore(cert_store, 0);
+	return true;
+}
+
 /* Todo: Errors should be events. */
 
 /* The TLS Request will assure the server meets the client's requirements for security.
@@ -198,43 +235,14 @@ finished:
 
 bool SeruroCryptoMSW::InstallCA(wxMemoryBuffer &ca)
 {
-	BOOL bResult;
-	DWORD error;
-
-	HCERTSTORE root_store;
-
-	/* Name of Trusted Root Certificates (CAs) is "Root". */
-	root_store = CertOpenStore(CERT_STORE_PROV_SYSTEM, 0, 0, 
-		CERT_STORE_OPEN_EXISTING_FLAG | CERT_SYSTEM_STORE_CURRENT_USER, L"Root");
-
-	if (root_store == NULL) {
-		error = GetLastError();
-		wxLogMessage(wxT("SeruroCrypto::InstallCA> could not open CURRENT_USER/'Root' store (%u)."), error); 
-		return false;
-	}
-
-	BYTE *data = (BYTE *) ca.GetData();
-	DWORD len = ca.GetDataLen();
-
-	bResult = CertAddEncodedCertificateToStore(root_store, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
-		data, len, CERT_STORE_ADD_REPLACE_EXISTING, NULL);
-
-	if (bResult == false) {
-		error = GetLastError();
-		wxLogMessage(wxT("SeruroCrypto::InstallCA> could not decode ca (%u)."), error);
-		CertCloseStore(root_store, 0);
-		return false;
-	}
-
-	wxLogMessage(wxT("SeruroCrypto::InstallCA> ca installed."));
-	CertCloseStore(root_store, 0);
-	return true;
+	return InstallCertToStore(ca, "Root");
 }
 
 bool SeruroCryptoMSW::InstallCert(wxMemoryBuffer &cert)
 {
 	/* Store name: AddressBook */
-	return true;
+	//return true;
+	return InstallCertToStore(cert, "AddressBook");
 }
 
 bool SeruroCryptoMSW::InstallP12(wxMemoryBuffer &p12, wxString &p_password)
