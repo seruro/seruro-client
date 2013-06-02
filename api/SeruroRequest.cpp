@@ -69,16 +69,22 @@ wxThread::ExitCode SeruroRequest::Entry()
 	/* Alternatively, this could be passed as a string (both in an out actually),
 	 * and reassembled as a JSON object by the caller (JSONWriter, JSONReader).
 	 */
-	writer.Write(response, event_string);
+	//writer.Write(response, event_string);
     
 	/* The controller might be responsible for removing this memory, the wxWidgets API does not
 	 * explicitly call out who owns this object.
 	 */
-	wxCommandEvent evt(SERURO_API_RESULT, this->evtId);
-	evt.SetString(event_string);
+	//wxCommandEvent evt(SERURO_API_RESULT, this->evtId);
+	//evt.SetString(event_string);
+    
+    /* Create a request/response event with the response data. 
+     * The ID determines which function receives the event. 
+     */
+    SeruroRequestEvent event(this->evtId);
+    event.SetResponse(response);
     
 	/* Todo: is this a critical section? */
-	this->evtHandler->AddPendingEvent(evt);
+	this->evtHandler->AddPendingEvent(event);
     
 	wxLogMessage("SeruroRequest> Thread finished...");
     

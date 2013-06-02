@@ -21,8 +21,9 @@ DECLARE_EVENT_TYPE(SERURO_API_RESULT, -1);
 class SeruroRequestEvent : public wxCommandEvent
 {
 public:
-	SeruroRequestEvent(wxEventType command_type = SERURO_API_RESULT,
-		int id = 0) : wxCommandEvent(command_type, id) {}
+    /* The ID specifies the callback, the developer should not need to modify the command_type. */
+	SeruroRequestEvent(int id = 0, wxEventType command_type = SERURO_API_RESULT)
+        : wxCommandEvent(command_type, id) {}
 
 	SeruroRequestEvent(const SeruroRequestEvent &event) 
 		: wxCommandEvent(event) { this->SetResponse(event.GetResponse()); }
@@ -38,11 +39,17 @@ private:
 /* Define a event type for API/Request responses. */
 typedef void (wxEvtHandler::*SeruroRequestEventFunction) (SeruroRequestEvent &);
 
+#define SeruroRequestEventHandler(func) \
+    (wxObjectEventFunction)(wxEventFunction)(wxCommandEventFunction) \
+    wxStaticCastEvent(SeruroRequestEventFunction, &func)
+
 #define EVT_SERURO_API_RESPONSE(type, fn) \
-	DECLARE_EVENT_TYPE_ENTRY(SERURO_API_RESULT, type, -1, \
-	(wxObjectEventFunction) (wxEventFunction) (wxCommandEventFunction) \
-	wxStaticCastEvent (SeruroRequestEventFunction, &fn), \
-	(wxObject*) NULL);
+	DECLARE_EVENT_TABLE_ENTRY(SERURO_API_RESULT, type, -1, \
+	(wxObjectEventFunction)(wxEventFunction)(wxCommandEventFunction) \
+	wxStaticCastEvent(SeruroRequestEventFunction, &fn), (wxObject*) NULL),
+
+#define EVT_SERURO_REQUEST(type, fn) EVT_SERURO_API_RESPONSE(type, fn)
+#define EVT_SERURO_RESPONSE(type, fn) EVT_SERURO_API_RESPONSE(type, fn)
 
 class SeruroRequest : public wxThread
 {

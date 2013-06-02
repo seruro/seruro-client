@@ -25,7 +25,8 @@ BEGIN_EVENT_TABLE(SettingsPanel_Server, SettingsPanel)
 	EVT_BUTTON(BUTTON_EDIT_INFO, SettingsPanel_Server::OnEdit)
 	EVT_BUTTON(BUTTON_DELETE, SettingsPanel_Server::OnDelete)
 
-	EVT_COMMAND(SERURO_API_CALLBACK_GET_CA, SERURO_API_RESULT, SettingsPanel_Server::OnUpdateResult)
+	//EVT_COMMAND(SERURO_API_CALLBACK_GET_CA, SERURO_API_RESULT, SettingsPanel_Server::OnUpdateResult)
+    EVT_SERURO_REQUEST(SERURO_API_CALLBACK_GET_CA, SettingsPanel_Server::OnUpdateResult)
 END_EVENT_TABLE()
 
 bool SettingsPanel_Server::Changed() { return false; }
@@ -107,16 +108,16 @@ void SettingsPanel_Server::OnUpdate(wxCommandEvent &event)
 	request->Run();
 }
 
-void SettingsPanel_Server::OnUpdateResult(wxCommandEvent &event)
+void SettingsPanel_Server::OnUpdateResult(SeruroRequestEvent &event)
 {
-	wxJSONReader reader;
-	wxJSONValue response;
-	wxString responseString = event.GetString();
+	//wxJSONReader reader;
+	//wxJSONValue response;
+	//wxString responseString = event.GetString();
 	
-	reader.Parse(responseString, &response);
+	//reader.Parse(responseString, &response);
 
 	SeruroServerAPI *api = new SeruroServerAPI(this->GetEventHandler());
-	api->InstallCA(response);
+	api->InstallCA(event.GetResponse());
 }
 
 void SettingsPanel_Server::OnEdit(wxCommandEvent &event)

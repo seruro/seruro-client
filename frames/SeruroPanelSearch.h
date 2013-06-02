@@ -29,7 +29,7 @@ enum search_ids_t
 #define CHECKBOX_SIZE 18
 
 class SearchBox;
-class wxCheckedListCtrl;
+class CheckedListCtrl;
 
 // Define a new frame type: this is going to be our main frame
 class SeruroPanelSearch : public SeruroPanel
@@ -43,9 +43,11 @@ public:
 
 	void OnSearch(wxCommandEvent &event);
 	void DoSearch();
-	void OnSearchResult(wxCommandEvent &event);
+	void OnSearchResult(SeruroRequestEvent &event);
 
-	void OnInstallResult(wxCommandEvent &event);
+    void Install(const wxString& address);
+    void Uninstall(const wxString& address);
+	void OnInstallResult(SeruroRequestEvent &event);
 
 	/* Searches if the address exists, and adds the result line to the
 	 * view list, with the appropriate checkbox depending on whether this
@@ -58,11 +60,12 @@ public:
 	//void OnUninstallCerl(wxCommandEvent &event);
 
 private:
+    CheckedListCtrl *list_control;
+    
 	/* User inputs. */
-	wxCheckedListCtrl *list_control;
 	wxChoice *servers_control;
 	SearchBox *search_control;
-
+    
 	wxBoxSizer *components_sizer;
 
 	SeruroServerAPI *api;
@@ -74,10 +77,10 @@ private:
  * checkbox for each item within the report. 
  * http://wiki.wxwidgets.org/WxListCtrl#Implement_wxListCtrl_with_Checkboxes
  */
-class wxCheckedListCtrl : public wxListCtrl
+class CheckedListCtrl : public wxListCtrl
 {
 public:
-	wxCheckedListCtrl(wxWindow* parent, wxWindowID id, const wxPoint& pt,
+	CheckedListCtrl(SeruroPanelSearch* parent, wxWindowID id, const wxPoint& pt,
 		const wxSize& sz, long style);
     
 	/* Replace the mouse event to capture clicks within the checkbox area. */
@@ -91,6 +94,7 @@ public:
     
 private:
 	/* Save an imagelist of rendered checkbox states. */
+    SeruroPanelSearch* parent;
     wxImageList m_imageList;
     
     DECLARE_EVENT_TABLE();

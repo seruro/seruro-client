@@ -28,7 +28,8 @@ BEGIN_EVENT_TABLE(SeruroPanelTest, wxPanel)
 
 	/* Request events */
 	EVT_COMMAND(SERURO_API_CALLBACK_GET_CA, SERURO_API_RESULT, SeruroPanelTest::OnGetCAResult)
-	EVT_COMMAND(SERURO_API_CALLBACK_GET_P12, SERURO_API_RESULT, SeruroPanelTest::OnGetP12Result)
+	//EVT_COMMAND(SERURO_API_CALLBACK_GET_P12, SERURO_API_RESULT, SeruroPanelTest::OnGetP12Result)
+    EVT_SERURO_RESPONSE(SERURO_API_CALLBACK_GET_P12, SeruroPanelTest::OnGetP12Result)
 	EVT_COMMAND(SERURO_API_CALLBACK_SEARCH, SERURO_API_RESULT, SeruroPanelTest::OnSearchResult)
 END_EVENT_TABLE()
 
@@ -130,6 +131,7 @@ void SeruroPanelTest::OnGetP12(wxCommandEvent &event)
 	//delete [] request;
 }
 
+/*
 void SeruroPanelTest::OnGetP12Result(wxCommandEvent &event)
 {
 	//wxJSONValue *response = (wxJSONValue *) event.GetClientData();
@@ -141,6 +143,13 @@ void SeruroPanelTest::OnGetP12Result(wxCommandEvent &event)
 	api->InstallP12(response);
 
 	return;
+}
+ */
+
+void SeruroPanelTest::OnGetP12Result(SeruroRequestEvent &event)
+{
+    //wxLogMessage("got P12 result.");
+    api->InstallP12(event.GetResponse());
 }
 
 void SeruroPanelTest::OnGetCA(wxCommandEvent &event)

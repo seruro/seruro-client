@@ -5,6 +5,8 @@
 #include "../../Defs.h"
 #include "../UIDefs.h"
 
+#include "../../api/SeruroRequest.h"
+
 #include <wx/treectrl.h>
 #include <wx/treebase.h>
 #include <wx/panel.h>
@@ -129,7 +131,7 @@ public:
     
     /* Button actions. */
 	void OnUpdate(wxCommandEvent &event);
-	void OnUpdateResult(wxCommandEvent &event);
+	void OnUpdateResult(SeruroRequestEvent &event);
 	void OnEdit(wxCommandEvent &event);
 	void OnDelete(wxCommandEvent &event);
 

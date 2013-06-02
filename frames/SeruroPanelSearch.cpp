@@ -17,7 +17,9 @@ DECLARE_APP(SeruroClient);
 BEGIN_EVENT_TABLE(SeruroPanelSearch, wxPanel)
 	//EVT_BUTTON(SEARCH_BUTTON_SEARCH, SeruroPanelSearch::OnSearch)
 	/* API call completes. */
-	EVT_COMMAND(SERURO_API_CALLBACK_SEARCH, SERURO_API_RESULT, SeruroPanelSearch::OnSearchResult)
+	//EVT_COMMAND(SERURO_API_CALLBACK_SEARCH, SERURO_API_RESULT, SeruroPanelSearch::OnSearchResult)
+    EVT_SERURO_REQUEST(SERURO_API_CALLBACK_SEARCH, SeruroPanelSearch::OnSearchResult)
+    EVT_SERURO_REQUEST(SERURO_API_CALLBACK_GET_CERT, SeruroPanelSearch::OnInstallResult)
 END_EVENT_TABLE()
 
 BEGIN_EVENT_TABLE(SearchBox, wxSearchCtrl)
@@ -26,18 +28,18 @@ BEGIN_EVENT_TABLE(SearchBox, wxSearchCtrl)
 	EVT_TEXT_ENTER(SERURO_SEARCH_TEXT_INPUT_ID, SearchBox::OnSearch)
 END_EVENT_TABLE()
 
-BEGIN_EVENT_TABLE(wxCheckedListCtrl, wxListCtrl)
+BEGIN_EVENT_TABLE(CheckedListCtrl, wxListCtrl)
 	/* User clicks a list row. */
-    EVT_LEFT_DCLICK(wxCheckedListCtrl::OnMouseEvent)
-	EVT_LEFT_DOWN(wxCheckedListCtrl::OnMouseEvent)
+    EVT_LEFT_DCLICK(CheckedListCtrl::OnMouseEvent)
+	EVT_LEFT_DOWN(CheckedListCtrl::OnMouseEvent)
 	/* User tries to resize a column. */
-	EVT_LIST_COL_BEGIN_DRAG(SERURO_SEARCH_LIST_ID, wxCheckedListCtrl::OnColumnDrag)
+	EVT_LIST_COL_BEGIN_DRAG(SERURO_SEARCH_LIST_ID, CheckedListCtrl::OnColumnDrag)
 END_EVENT_TABLE()
 
 /* Check or uncheck the checkbox, the appropriateness and applicability of this function
  * should be determined by the event handler registrations, eg. LEFT_DCLICK, LEFT_DOWN
  */
-void wxCheckedListCtrl::OnMouseEvent(wxMouseEvent &event)
+void CheckedListCtrl::OnMouseEvent(wxMouseEvent &event)
 {
     int flags;
     long item = HitTest(event.GetPosition(), flags);
@@ -50,7 +52,7 @@ void wxCheckedListCtrl::OnMouseEvent(wxMouseEvent &event)
 }
 
 /* Todo: a custom class for the search panel should inherit from the checked list control. */
-void wxCheckedListCtrl::OnColumnDrag(wxListEvent &event)
+void CheckedListCtrl::OnColumnDrag(wxListEvent &event)
 {
 	if (event.GetColumn() == 0) {
 		/* Stop resizing of the first column. */
@@ -58,8 +60,9 @@ void wxCheckedListCtrl::OnColumnDrag(wxListEvent &event)
 	}
 }
 
-wxCheckedListCtrl::wxCheckedListCtrl(wxWindow* parent, wxWindowID id, const wxPoint& pt,
-    const wxSize& sz, long style): wxListCtrl(parent, id, pt, sz, style),
+CheckedListCtrl::CheckedListCtrl(SeruroPanelSearch* parent, wxWindowID id,
+    const wxPoint& pt, const wxSize& sz, long style)
+    : wxListCtrl(parent, id, pt, sz, style), parent(parent),
     m_imageList(CHECKBOX_SIZE, CHECKBOX_SIZE, true)
 {
     SetImageList(&m_imageList, wxIMAGE_LIST_SMALL);
@@ -118,36 +121,72 @@ wxCheckedListCtrl::wxCheckedListCtrl(wxWindow* parent, wxWindowID id, const wxPo
 	this->InsertColumn(0, list_column);
 }
 
-bool wxCheckedListCtrl::IsChecked(long item) const
+bool CheckedListCtrl::IsChecked(long item) const
 {
     wxListItem info;
-    info.m_mask = wxLIST_MASK_IMAGE;
-    info.m_itemId = item;
+    info.SetMask(wxLIST_MASK_IMAGE);
+    info.SetId(item);
     
     if (GetItem(info)) { 
-		return (info.m_image == 1); 
+		return (info.GetImage() == 1);
 	} else { 
 		return false; 
 	}
 }
 
-void wxCheckedListCtrl::Check(long item, bool checked)
+/* The user has checked/unchecked an item. */
+void CheckedListCtrl::Check(long item, bool checked)
 {
+    wxListItem info;
+    wxString address;
+    
+    /* Set the mask as the type of information requested using GetItem. */
+    info.SetMask(wxLIST_MASK_TEXT);
+    info.SetId(item);
+    
+    /* Request the text for the item (item). */
+    if (! this->GetItem(info)) {
+        wxLogMessage(wxT("CheckedListCtrl:Check> Cannot find an item at index (%d)."), item);
+        return;
+    }
+    address = info.GetText();
+    
 	if (this->IsChecked(item)) {
 		/* No uninstalling as of now. */
+        wxLogMessage("debug: cannot uninstall certificate.");
 		return;
-	}
+        
+        this->parent->Uninstall(address);
+	} else {
+        this->parent->Install(address);
+    }
+}
 
-	//SeruroRequest *request = api->CreateRequest(SERURO_API_SEARCH, params, SERURO_API_CALLBACK_SEARCH);
-	//request->Run();
-
-    //SetItemImage(item, (checked ? 1 : 0), -1);
+void SeruroPanelSearch::Install(const wxString& address)
+{
+    wxJSONValue params;
+    
+    wxLogMessage(wxT("SeruroPanelSearch:Install> requesting certificate for (%s)."), address);
+    
+    params["server"] = wxT("Open Seruro");
+    params["address"] = address;
+    
+	SeruroRequest *request = api->CreateRequest(SERURO_API_GET_CERT, params, SERURO_API_CALLBACK_GET_CERT);
+	request->Run();
 }
 
 /* After the certificate is installed, update the UI. */
-void SeruroPanelSearch::OnInstallResult(wxCommandEvent &event)
+void SeruroPanelSearch::OnInstallResult(SeruroRequestEvent &event)
 {
 	/* The event data should include the address which was updated. */
+    
+    /* Check the corresponding item(s) in the list control. */
+}
+
+/* There is no callback for uninstall, this happens locally. */
+void SeruroPanelSearch::Uninstall(const wxString& address)
+{
+    
 }
 
 SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, wxT("Search"))
@@ -162,7 +201,7 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	wxBoxSizer *results_sizer = new wxBoxSizer(wxHORIZONTAL);
 
 	/* The list control is a report-view displaying search results. */
-	list_control = new wxCheckedListCtrl(this, SERURO_SEARCH_LIST_ID, 
+	list_control = new CheckedListCtrl(this, SERURO_SEARCH_LIST_ID, 
 		wxDefaultPosition, wxDefaultSize, (wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_THEME));
 
 	wxListItem list_column;
@@ -238,8 +277,13 @@ void SeruroPanelSearch::AddResult(const wxString &address,
 	
 	/* place appropriately marked checkbox. */
 	item_index = this->list_control->InsertItem(0, wxT(""));
+    /* Set data assigned to this item, the address, which is used to install/uninstall the certificate. */
+    this->list_control->SetItemText(item_index, address);
+    
+    /* Determine if certificate is installed. */
     list_control->Check(item_index, true);
 	
+    /* Add the textual (UI) information. */
 	list_control->SetItem(item_index, 1, address);
 	list_control->SetItem(item_index, 2, first_name);
 	list_control->SetItem(item_index, 3, last_name);
@@ -269,12 +313,12 @@ void SeruroPanelSearch::DoSearch()
 	request->Run();
 }
 
-void SeruroPanelSearch::OnSearchResult(wxCommandEvent &event)
+void SeruroPanelSearch::OnSearchResult(SeruroRequestEvent &event)
 {
-	wxJSONReader reader;
-	wxJSONValue response;
-	wxString responseString = event.GetString();
-	reader.Parse(responseString, &response);
+	//wxJSONReader reader;
+	wxJSONValue response = event.GetResponse();
+	//wxString responseString = event.GetString();
+	//reader.Parse(responseString, &response);
 
 	/* Clear the results list. */
 	this->list_control->DeleteAllItems();

@@ -32,7 +32,10 @@ public:
 	void OnGetCAResult(wxCommandEvent &event);
 
 	void OnGetP12(wxCommandEvent &event);
-	void OnGetP12Result(wxCommandEvent &event);
+	//void OnGetP12Result(wxCommandEvent &event);
+    
+    /* Testing custom event type. */
+    void OnGetP12Result(SeruroRequestEvent &event);
 
 	void OnWriteToken(wxCommandEvent &event);
 
