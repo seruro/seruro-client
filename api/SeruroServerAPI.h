@@ -47,7 +47,7 @@ public:
 	/* Helper functions for those who do not want to DECLARE_APP 
 	 * for access to the config methods. 
 	 */
-	wxJSONValue GetServer(wxString &server);
+	wxJSONValue GetServer(const wxString &server);
 	/* Must provide the API name, params, and callback event ID */
 	SeruroRequest *CreateRequest(api_name_t name, 
 		wxJSONValue params, int evtId);
@@ -63,7 +63,7 @@ protected:
 	 * Finally auth["data"] will be filled in appropriately.
 	 * Otherwise token will be assembled and passed as a query variable.
 	 */
-	wxJSONValue GetAuth(wxString &server, 
+	wxJSONValue GetAuth(const wxString &server,
 		const wxString &address = wxEmptyString);
 
 	/* Given an API identifier, this function will return a JSON propery with

@@ -29,7 +29,7 @@ bool CheckResponse(wxJSONValue response, wxString required_key)
 	return true;
 }
 
-bool DecodeBase64(wxString &encoded, wxMemoryBuffer *decode)
+bool DecodeBase64(const wxString &encoded, wxMemoryBuffer *decode)
 {
 	//wxString ca_encoded;
 	size_t decode_error;
@@ -48,7 +48,7 @@ bool DecodeBase64(wxString &encoded, wxMemoryBuffer *decode)
 	return true;
 }
 
-wxJSONValue SeruroServerAPI::GetServer(wxString &server)
+wxJSONValue SeruroServerAPI::GetServer(const wxString &server)
 {
 	//wxJSONValue server_info;
 	return wxGetApp().config->GetServer(server);
@@ -82,7 +82,7 @@ SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue param
 	return thread;
 }
 
-wxJSONValue SeruroServerAPI::GetAuth(wxString &server, const wxString &address)
+wxJSONValue SeruroServerAPI::GetAuth(const wxString &server, const wxString &address)
 {
 	wxJSONValue auth;
 
@@ -119,7 +119,7 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 
 	wxJSONValue query;
     //wxString query_string;
-
+    wxLogMessage(wxT("Testing server: (%s)"), params["server"].AsString());
 	/* All calls to the server are currently POSTs. */
 	request["verb"] = wxT("POST");
 	request["flags"] = SERURO_SECURITY_OPTIONS_NONE;

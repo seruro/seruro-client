@@ -160,10 +160,11 @@ void CheckedListCtrl::DoCheck(long item, bool checked)
     server.SetColumn(SEARCH_LIST_SERVER_COLUMN);
     
     /* Request the text for the item (item). */
-    if (! this->GetItem(address) || ! this->GetItem(server)) {
+    if (! this->GetItem(address)) {
         wxLogMessage(wxT("CheckedListCtrl:Check> Cannot find an item at index (%d)."), item);
         return;
     }
+    this->GetItem(server);
     //identity = info.GetIdentity();
     
 	if (this->IsChecked(item)) {
@@ -182,12 +183,14 @@ void CheckedListCtrl::SetCheck(long item, bool checked)
     SetItemImage(item, (checked ? 1 : 0), -1);
 }
 
-void SeruroPanelSearch::Install(const wxString& address, const wxString& server)
+void SeruroPanelSearch::Install(const wxString& address, const wxString& server_name)
 {
     wxJSONValue params;
+    wxJSONValue server;
     
-    wxLogMessage(wxT("SeruroPanelSearch:Install> requesting certificate for (%s)."), address);
+    wxLogMessage(wxT("SeruroPanelSearch:Install> requesting certificate for (%s) (%s)."), address, server_name);
     
+    server = api->GetServer(server_name);
     params["server"] = server;
     params["request_address"] = address;
     
@@ -205,7 +208,7 @@ void SeruroPanelSearch::OnInstallResult(SeruroRequestEvent &event)
 }
 
 /* There is no callback for uninstall, this happens locally. */
-void SeruroPanelSearch::Uninstall(const wxString& address, const wxString& server)
+void SeruroPanelSearch::Uninstall(const wxString& address, const wxString& server_name)
 {
     
 }
