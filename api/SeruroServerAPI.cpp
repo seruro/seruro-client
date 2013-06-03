@@ -140,7 +140,7 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 	switch (name) {
 		/* The SETUP api call (/api/setup) should return an encrypted P12 (using password auth) */
 	case SERURO_API_GET_P12:
-		request["object"] = wxT("getP12s");
+		request["object"] = wxT("p12s");
 		/* Include support for optional explicit address to retreive from. */
 		break;
 	case SERURO_API_SEARCH:
@@ -148,22 +148,25 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 			/* Return some error (not event, we are not in a thread yet) and stop. */
 		}
         request["verb"] = wxT("GET");
-        request["object"] = wxString(wxT("findCerts"));// + params["query"].AsString();
+        request["object"] = wxString(wxT("search"));// + params["query"].AsString();
         request["query"]["query"] = params["query"];
 		break;
 	case SERURO_API_GET_CERT:
 		if (! params.HasMember(wxT("request_address"))) {
 			/* Error and stop!. */
 		}
-		request["object"] = wxString(wxT("cert/")) + params["request_address"].AsString();
+		//request["object"] = wxString(wxT("cert/")) + params["request_address"].AsString();
+        request["verb"] = wxT("GET");
+        request["query"]["address"] = params["request_address"];
+        request["object"] = wxT("certs");
 		break;
 	case SERURO_API_GET_CA:
 		request["verb"] = wxT("POST");
-		request["object"] = wxT("getCA");
+		request["object"] = wxT("ca");
 		break;
 	}
 
-	/* Check to make sure server is in the params. */
+	/* Todo: Check to make sure server is in the params. */
 	request["server"] = params["server"]; //.AsString()
 	request["auth"] = params["auth"];
 

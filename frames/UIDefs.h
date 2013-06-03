@@ -31,7 +31,7 @@
 #endif
 
 /* Within the search results, the data columns should have a uniform width. */
-#define SEARCH_PANEL_COLUMN_WIDTH (SERURO_APP_DEFAULT_WIDTH - 60) / 3
+#define SEARCH_PANEL_COLUMN_WIDTH (SERURO_APP_DEFAULT_WIDTH - 60)
 
 #define SETTINGS_PANEL_SIZER_OPTIONS \
 wxSizerFlags().Expand().Border(wxALL, 5)

@@ -54,11 +54,11 @@
 
 /* Server API routes, or in HTTP diction "objects". */
 #define SERURO_API_OBJECT_LOGIN	  "/api/sessions/create"
-#define SERURO_API_OBJECT_GETP12  "/api/seruro/getP12"
-#define SERURO_API_OBJECT_GETCA	  "/api/seruro/getCA"
-#define SERURO_API_OBJECT_GETCERT "/api/seruro/getCert"
+#define SERURO_API_OBJECT_GETP12  "/api/seruro/p12s"
+#define SERURO_API_OBJECT_GETCA	  "/api/seruro/ca"
+#define SERURO_API_OBJECT_GETCERT "/api/seruro/certs"
 #define SERURO_API_OBJECT_SEARCH  "/api/seruro/search"
-#define SERURO_API_OBJECT_GETCRL  "/api/seruro/getCRL"
+#define SERURO_API_OBJECT_GETCRL  "/api/seruro/crl"
 
 /* Seruro API authentication POST fields. */
 #define SERURO_API_AUTH_FIELD_EMAIL "user_login[email]"
