@@ -121,6 +121,7 @@ public:
 	bool IsChecked(long item) const;
     void DoCheck(long item, bool checked);
     void SetCheck(long item, bool checked);
+    void SetCheck(const wxString &address, bool checked);
     
 private:
 	/* Save an imagelist of rendered checkbox states. */

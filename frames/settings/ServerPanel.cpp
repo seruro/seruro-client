@@ -10,6 +10,7 @@
 #include <wx/sizer.h>
 #include <wx/button.h>
 #include <wx/stattext.h>
+#include <wx/grid.h>
 
 enum button_actions
 {

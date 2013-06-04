@@ -88,7 +88,7 @@ SettingsPanelTree::SettingsPanelTree(SeruroPanelSettings *parent) :
 		new SettingsTreeItem(SETTINGS_VIEW_TYPE_ROOT_GENERAL));
 
 	/* List each server, which has settings, and each account within that server. */
-	wxTreeItemId root_servers_item = this->settings_tree->AppendItem(root, wxT("Accounts and Servers"), -1, -1,
+	wxTreeItemId root_servers_item = this->settings_tree->AppendItem(root, wxT("Servers and Accounts"), -1, -1,
 		new SettingsTreeItem(SETTINGS_VIEW_TYPE_ROOT_ACCOUNTS));
 	
 	wxArrayString servers_list = wxGetApp().config->GetServerList();

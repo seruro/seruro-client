@@ -196,6 +196,7 @@ bool SeruroServerAPI::InstallCA(wxJSONValue response)
 bool SeruroServerAPI::InstallCert(wxJSONValue response)
 {
 	if (! CheckResponse(response, "certs")) return false;
+    //if (! CheckResponse(response, "address")) return false;
 
 	wxString cert_encoded;
 	wxMemoryBuffer cert_decoded;
@@ -203,9 +204,9 @@ bool SeruroServerAPI::InstallCert(wxJSONValue response)
 	SeruroCrypto *cryptoHelper = new SeruroCrypto();
 
 	bool result;
-	wxArrayString cert_blobs = response["certs"].GetMemberNames();
-	for (size_t i = 0; i < cert_blobs.size(); i++) {
-		cert_encoded = response["certs"][cert_blobs[i]].AsString();
+	//wxArrayString cert_blobs = response["certs"].GetMemberNames();
+	for (size_t i = 0; i < response["certs"].Size(); i++) {
+		cert_encoded = response["certs"][i].AsString();
 
 		if (! DecodeBase64(cert_encoded, &cert_decoded)) continue;
 

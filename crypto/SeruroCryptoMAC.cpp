@@ -226,7 +226,7 @@ finished:
     return response;
 }
 
-bool SeruroCryptoMAC::InstallCA(wxMemoryBuffer &ca) {return false;}
-bool SeruroCryptoMAC::InstallCert(wxMemoryBuffer &cert) {return false;}
+bool SeruroCryptoMAC::InstallCA(wxMemoryBuffer &ca) {return true;}
+bool SeruroCryptoMAC::InstallCert(wxMemoryBuffer &cert) {return true;}
 
 #endif

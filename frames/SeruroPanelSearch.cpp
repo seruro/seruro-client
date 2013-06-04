@@ -183,6 +183,32 @@ void CheckedListCtrl::SetCheck(long item, bool checked)
     SetItemImage(item, (checked ? 1 : 0), -1);
 }
 
+void CheckedListCtrl::SetCheck(const wxString &address, bool checked)
+{
+    wxListItem item_address;
+
+    /* Set constant mask and column. */
+    item_address.SetMask(wxLIST_MASK_TEXT);
+    item_address.SetColumn(SEARCH_LIST_ADDRESS_COLUMN);
+    
+    for (long i = this->GetItemCount()-1; i >= 0; i--) {
+        item_address.SetId(i);
+        if (!this->GetItem(item_address)) {
+            wxLogMessage(wxT("SetCheck> could not get item (%d)."), i);
+            continue;
+        }
+        
+        wxLogMessage(wxT("SetCheck> trying (%d) with address of (%s)."), i, item_address.GetText());
+        
+        /* If this is a valid item, compare the address to the installed address. */
+        if (item_address.GetText().compare(address) == 0) {
+            wxLogMessage(wxT("SetCheck> checking item (%d) with address (%s)."), i, address);
+            this->SetCheck(i, checked);
+        }
+    }
+    
+}
+
 void SeruroPanelSearch::Install(const wxString& address, const wxString& server_name)
 {
     wxJSONValue params;
@@ -202,9 +228,23 @@ void SeruroPanelSearch::Install(const wxString& address, const wxString& server_
 void SeruroPanelSearch::OnInstallResult(SeruroRequestEvent &event)
 {
 	/* The event data should include the address which was updated. */
+    wxJSONValue response = event.GetResponse();
+    
+    if (! response.HasMember("success") || ! response["success"].AsBool()
+        || ! response.HasMember("address")) {
+        wxLogMessage(wxT("OnInstallResults> Bad Result."));
+        return;
+    }
+    
+    if (! response.HasMember("certs") || response["certs"].Size() == 0) {
+        wxLogMessage(wxT("OnInstallResult> No certs found for address (%s)."), response["address"].AsString());
+        return;
+    }
     
     /* Check the corresponding item(s) in the list control. */
-    
+    if (api->InstallCert(response)) {
+        this->list_control->SetCheck(response["address"].AsString(), true);
+    }
 }
 
 /* There is no callback for uninstall, this happens locally. */
