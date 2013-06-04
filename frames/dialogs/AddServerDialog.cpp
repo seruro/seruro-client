@@ -18,7 +18,8 @@ void AddServerForm::AddForm(wxSizer *sizer,
     const wxString &name, const wxString &host, const wxString &port)
 {
     /* Server details form. */
-	wxFlexGridSizer *const grid_sizer = new wxFlexGridSizer(4, 2, 5, 10);
+	wxFlexGridSizer *const grid_sizer = new wxFlexGridSizer(4, 2,
+        GRID_SIZER_WIDTH, GRID_SIZER_HEIGHT);
 	grid_sizer->AddGrowableCol(1, 1);
     
 	/* Name. */

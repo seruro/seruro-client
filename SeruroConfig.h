@@ -37,7 +37,7 @@ public:
 	wxArrayString GetAddressList(const wxString &server);
 	wxArrayString GetServerList();
 
-	/* Does not have to be part of the config. */
+	/* Reports the name (hostname:port) for the server. */
 	wxString GetServerString(wxString server);
 
 protected:

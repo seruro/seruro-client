@@ -102,13 +102,14 @@ wxJSONValue SeruroConfig::GetServer(const wxString &server)
 wxString SeruroConfig::GetServerString(wxString server)
 {
 	wxString server_name;
-	//wxString port;
+	wxString port;
 
 	/* Expext a "name" and "host", port can be the default value. */ 
 	wxJSONValue server_info = this->GetServer(server);
 	if (SERURO_DISPLAY_SERVER_INFO) {
+        port = (server_info.HasMember("port")) ? server_info["port"].AsString() : SERURO_DEFAULT_PORT;
 		server_name = server + wxT(" (") + server_info["host"].AsString() + wxT(":");
-		server_name = server_name + server_info["port"].AsString();
+		server_name = server_name + port;
 		server_name = server_name + wxT(")");
 	} else {
 		server_name = server;

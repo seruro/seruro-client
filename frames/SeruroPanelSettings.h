@@ -19,7 +19,7 @@ class SeruroPanelSettings : public SeruroPanel
 public:
     SeruroPanelSettings(wxBookCtrlBase *book);
 
-	wxWindow* GetViewer();
+	wxSplitterWindow* GetViewer();
 	/* Each of the following includes a type of panel,
 	 * An optional name, and optional parent. */
 	bool HasPanel(settings_view_type_t type,

@@ -47,6 +47,8 @@ wxSizerFlags().Expand().Border(wxTOP | wxRIGHT | wxLEFT, 5)
 #define DIALOGS_BUTTONS_OPTIONS \
 wxSizerFlags().Right().Border()
 
+#define GRID_SIZER_WIDTH 5
+#define GRID_SIZER_HEIGHT 5
 #define DIALOG_WRAP_WIDTH 300
 
 /* Helper class for text within panels, which will auto wrap to fit

@@ -61,9 +61,6 @@ SettingsPanelView::SettingsPanelView(SeruroPanelSettings *instance_panel) :
 	//this->Render();
 }
 
-SettingsPanel_RootAccounts::SettingsPanel_RootAccounts(SeruroPanelSettings *parent) :
-	SettingsPanelView(parent) {}
-
 void SettingsPanel_RootAccounts::OnAddAccount(wxCommandEvent &event)
 {
 
@@ -118,7 +115,7 @@ void SettingsPanel_RootAccounts::Render()
 			SETTINGS_PANEL_BOXSIZER_OPTIONS);
 		address_list = wxGetApp().config->GetAddressList(servers_list[i]);
 		for (size_t j = 0; j < address_list.size(); j++) {
-			all_address_list.Add(address_list[i] + wxT(" (") + servers_list[i] + wxT(")"));
+			all_address_list.Add(address_list[j] + wxT(" (") + servers_list[i] + wxT(")"));
 		}
 	}
 
@@ -142,6 +139,10 @@ void SettingsPanel_RootAccounts::Render()
 
 	vert_sizer->Add(accounts_list_sizer, SETTINGS_PANEL_SIZER_OPTIONS);
 
+   	/* Add address button */
+	//wxBoxSizer *servers_buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
+	//wxButton *add_server_button = new wxButton(this, BUTTON_ADD_SERVER, wxT("Add Account"));
+    
     this->SetSizer(vert_sizer);
 }
 

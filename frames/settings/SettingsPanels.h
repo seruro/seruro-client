@@ -82,7 +82,7 @@ public:
 	void ReRender() {
 		this->Freeze();
 		/* Free memory. */
-		this->GetSizer()->Clear(true);
+        if (this->GetSizer()) this->GetSizer()->Clear(true);
 		/* Perform panel-specific (virtual) render. */
 		this->Render();
 		this->Layout();
@@ -154,7 +154,8 @@ public:
 class SettingsPanel_RootAccounts : public SettingsPanelView
 {
 public:
-	SettingsPanel_RootAccounts(SeruroPanelSettings *parent);
+	SettingsPanel_RootAccounts(SeruroPanelSettings *parent) :
+        SettingsPanelView(parent) {}
 	bool Changed();
 	void Render();
 

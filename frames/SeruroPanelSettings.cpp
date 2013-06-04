@@ -48,19 +48,22 @@ SeruroPanelSettings::SeruroPanelSettings(wxBookCtrlBase *book) : SeruroPanel(boo
 	/* Create a resizeable window for the navigation pane (panel) and it's controlling view. */
 	this->splitter = new wxSplitterWindow(this, wxID_ANY,
         wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxSP_3DSASH | wxSP_BORDER);
-	this->splitter->SetSize(GetClientSize());
-	this->splitter->SetSashGravity(1.0);
-	this->splitter->SetMinimumPaneSize(SERURO_SETTINGS_TREE_MIN_WIDTH);
 
 	/* Create a tree control as well as the first settings view (general). */
 	SettingsPanelTree *settings_tree = new SettingsPanelTree(this);
+    /* Seed the current panel with the Root panel: general. */
 	this->AddFirstPanel();
 
-	splitter->SplitVertically(settings_tree, this->current_panel, 1);
-	/* Seed the current panel with the Root panel: general. */
-	
+	splitter->SplitVertically(settings_tree, this->current_panel);
+    
+    this->splitter->SetSize(GetClientSize());
+	this->splitter->SetSashGravity(1.0);
+	this->splitter->SetMinimumPaneSize(SERURO_SETTINGS_TREE_MIN_WIDTH);
+    //settings_tree->Layout();
+    
 	container_sizer->Add(this->splitter, 1, wxEXPAND | wxALL, 10);
 	this->SetSizer(container_sizer);
+    //container_sizer->SetSizerHints(this);
 }
 
 /* To help with organization, perform the initialization of the first panel as it's own method.
@@ -76,12 +79,16 @@ void SeruroPanelSettings::AddFirstPanel()
 	//wxString panel_name = wxT("root_general");
 	this->AddPanel(root_panel, SETTINGS_VIEW_TYPE_ROOT_GENERAL);
     this->AddPanel(new SettingsPanel_RootAccounts(this), SETTINGS_VIEW_TYPE_ROOT_ACCOUNTS);
+    
+    //this->ShowPanel(SETTINGS_VIEW_TYPE_ROOT_GENERAL);
+    this->splitter->Layout();
+    
 	this->current_panel = root_panel;
 }
 
-wxWindow* SeruroPanelSettings::GetViewer()
+wxSplitterWindow* SeruroPanelSettings::GetViewer()
 {
-	return (wxWindow*) this->splitter;
+	return (wxSplitterWindow*) this->splitter;
 }
 
 /* Return the existance of a multi-layered datum within the panels member. */
@@ -111,6 +118,8 @@ void SeruroPanelSettings::AddPanel(SettingsPanelView *panel_ptr, settings_view_t
 	/* Show scrollbars for panel. (But be called when created for the "first panel" edge case.) */
 	panel_ptr->InitSizer();
 	panel_ptr->Render();
+    
+    wxLogMessage(wxT("Adding panel (name= %s) (parent= %s)."), name, parent);
 
 	if (parent.compare(wxEmptyString) != 0) {
 		if (! this->panels[type].HasMember(parent)) {
