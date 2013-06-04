@@ -7,13 +7,6 @@
 #include "SeruroFrame.h"
 #include "../SeruroTray.h"
 
-// IDs for the controls and the menu commands
-enum
-{
-    Event_Quit = wxID_EXIT,
-    Event_About = wxID_ABOUT,
-};
-
 /* From SeruroTray */
 class SeruroTray;
 

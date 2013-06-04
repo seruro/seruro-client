@@ -20,6 +20,9 @@
 
 /* When a server name is displayed, display the host and port as well. */
 #define SERURO_DISPLAY_SERVER_INFO true
+/* Enable/Disable the encrypt/decrypt tabs. */
+#define SERURO_ENABLE_CRYPT_PANELS false
+#define SERURO_ENABLE_DEBUG_PANELS false
 
 #define SERURO_DEFAULT_PORT "443"
 /* File name to store and fetch user configuration data from. */

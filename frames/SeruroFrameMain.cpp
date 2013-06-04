@@ -6,20 +6,22 @@
 #include "SeruroFrameMain.h"
 #include "SeruroPanelSettings.h"
 #include "SeruroPanelSearch.h"
+
+#if SERURO_ENABLE_CRYPT_PANELS
 #include "SeruroPanelDecrypt.h"
 #include "SeruroPanelEncrypt.h"
-//#include "SeruroPanelUpdate.h"
+#endif
 
-//#if defined(__WXDEBUG__)
+#if SERURO_ENABLE_DEBUG_PANELS
 #include "SeruroPanelTest.h"
-//#endif
+#endif
 
 #include "../setup/SeruroSetup.h"
 
 BEGIN_EVENT_TABLE(SeruroFrameMain, wxFrame)
 	/* Events for Window interaction */
-	EVT_MENU	(Event_Quit,	SeruroFrameMain::OnQuit)
-    //EVT_MENU	(Event_About,	SeruroFrame::OnAbout)
+	EVT_MENU	(wxID_EXIT,     SeruroFrameMain::OnQuit)
+    //EVT_MENU	(wxID_ABOUT,	SeruroFrame::OnAbout)
 	EVT_ICONIZE	(				SeruroFrameMain::OnIconize)
 	EVT_CLOSE	(				SeruroFrameMain::OnClose)
 	/* Events for optional setup wizard */
@@ -43,7 +45,7 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
 	//	tray->SetIcon(wxICON(main), wxT("Seruro Client"));
 	//#endif
     //#if defined(__WXMAC__)
-        tray->SetIcon(wxIcon(icon_good), wxT("Seruro Client"));
+        tray->SetIcon(wxIcon(icon_good), wxT(SERURO_APP_NAME));
     //#endif
 
 	/* Testing IMGCTRL */
@@ -82,12 +84,13 @@ void SeruroFrameMain::AddPanels()
 {
 	/* Add content */
 	search_panel = new SeruroPanelSearch(book);
-	//SeruroPanelEncrypt	 *encrypt	= new SeruroPanelEncrypt(book);
-	//SeruroPanelDecrypt	 *decrypt	= new SeruroPanelDecrypt(book);
+#if SERURO_ENABLE_CRYPT_PANELS
+	SeruroPanelEncrypt	 *encrypt	= new SeruroPanelEncrypt(book);
+	SeruroPanelDecrypt	 *decrypt	= new SeruroPanelDecrypt(book);
+#endif
 	settings_panel = new SeruroPanelSettings(book);
-	//SeruroPanelUpdate	 *update	= new SeruroPanelUpdate(book);
-
-#if defined(DEBUG) || defined(__WXDEBUG__)
+	
+#if SERURO_ENABLE_DEBUG_PANELS
 	test_panel = new SeruroPanelTest(book);
 #endif
 }
@@ -97,6 +100,7 @@ void SeruroFrameMain::AddPanels()
  */
 void SeruroFrameMain::ChangePanel(tray_option_t option)
 {
+    /* Todo: this should be able to show selections based on the panels that have been added. */
 	switch (option) {
 	case seruroID_SEARCH:
 		this->book->SetSelection(0);
@@ -110,8 +114,6 @@ void SeruroFrameMain::ChangePanel(tray_option_t option)
 	case seruroID_CONFIGURE:
 		book->SetSelection(3);
 		break;
-	case seruroID_UPDATE:
-		book->SetSelection(4);
 	}
 }
 
