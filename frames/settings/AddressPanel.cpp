@@ -80,10 +80,9 @@ void SettingsPanel_Address::OnUpdate(wxCommandEvent &event)
 	params["server"] = api->GetServer(this->server_name);
 	params["address"] = this->address;
     
-	SeruroRequest *request = api->CreateRequest(SERURO_API_GET_P12, params, SERURO_API_CALLBACK_GET_P12);
+	SeruroRequest *request = api->CreateRequest(SERURO_API_P12S, params, SERURO_API_CALLBACK_P12S);
 	request->Run();
 	/* Todo: Cannot delete the request because the thread still exists, who cleans up this memory? */
-
 }
 
 void SettingsPanel_Address::OnDelete(wxCommandEvent &event)

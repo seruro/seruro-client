@@ -60,12 +60,12 @@
 #define SERURO_API_ERROR_INVALID_AUTH	"Invalid authentication token."
 
 /* Server API routes, or in HTTP diction "objects". */
-#define SERURO_API_OBJECT_LOGIN	  "/api/sessions/create"
-#define SERURO_API_OBJECT_GETP12  "/api/seruro/p12s"
-#define SERURO_API_OBJECT_GETCA	  "/api/seruro/ca"
-#define SERURO_API_OBJECT_GETCERT "/api/seruro/certs"
-#define SERURO_API_OBJECT_SEARCH  "/api/seruro/search"
-#define SERURO_API_OBJECT_GETCRL  "/api/seruro/crl"
+#define SERURO_API_OBJECT_LOGIN	 "/api/sessions/create"
+#define SERURO_API_OBJECT_P12S   "/api/seruro/p12s"
+#define SERURO_API_OBJECT_CA	 "/api/seruro/ca"
+#define SERURO_API_OBJECT_CERTS  "/api/seruro/certs"
+#define SERURO_API_OBJECT_SEARCH "/api/seruro/search"
+#define SERURO_API_OBJECT_CRL    "/api/seruro/crl"
 
 /* Seruro API authentication POST fields. */
 #define SERURO_API_AUTH_FIELD_EMAIL "user_login[email]"

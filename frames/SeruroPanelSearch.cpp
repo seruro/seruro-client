@@ -27,7 +27,7 @@ BEGIN_EVENT_TABLE(SeruroPanelSearch, wxPanel)
 	/* API call completes. */
 	//EVT_COMMAND(SERURO_API_CALLBACK_SEARCH, SERURO_API_RESULT, SeruroPanelSearch::OnSearchResult)
     EVT_SERURO_REQUEST(SERURO_API_CALLBACK_SEARCH, SeruroPanelSearch::OnSearchResult)
-    EVT_SERURO_REQUEST(SERURO_API_CALLBACK_GET_CERT, SeruroPanelSearch::OnInstallResult)
+    EVT_SERURO_REQUEST(SERURO_API_CALLBACK_CERTS, SeruroPanelSearch::OnInstallResult)
 END_EVENT_TABLE()
 
 BEGIN_EVENT_TABLE(SearchBox, wxSearchCtrl)
@@ -220,7 +220,7 @@ void SeruroPanelSearch::Install(const wxString& address, const wxString& server_
     params["server"] = server;
     params["request_address"] = address;
     
-	SeruroRequest *request = api->CreateRequest(SERURO_API_GET_CERT, params, SERURO_API_CALLBACK_GET_CERT);
+	SeruroRequest *request = api->CreateRequest(SERURO_API_CERTS, params, SERURO_API_CALLBACK_CERTS);
 	request->Run();
 }
 

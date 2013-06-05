@@ -27,7 +27,7 @@ BEGIN_EVENT_TABLE(SettingsPanel_Server, SettingsPanel)
 	EVT_BUTTON(BUTTON_DELETE, SettingsPanel_Server::OnDelete)
 
 	//EVT_COMMAND(SERURO_API_CALLBACK_GET_CA, SERURO_API_RESULT, SettingsPanel_Server::OnUpdateResult)
-    EVT_SERURO_REQUEST(SERURO_API_CALLBACK_GET_CA, SettingsPanel_Server::OnUpdateResult)
+    EVT_SERURO_REQUEST(SERURO_API_CALLBACK_CA, SettingsPanel_Server::OnUpdateResult)
 END_EVENT_TABLE()
 
 bool SettingsPanel_Server::Changed() { return false; }
@@ -105,7 +105,7 @@ void SettingsPanel_Server::OnUpdate(wxCommandEvent &event)
     
     params["server"] = api->GetServer(this->server_name);
     
-	SeruroRequest *request = api->CreateRequest(SERURO_API_GET_CA, params, SERURO_API_CALLBACK_GET_CA);
+	SeruroRequest *request = api->CreateRequest(SERURO_API_CA, params, SERURO_API_CALLBACK_CA);
 	request->Run();
 }
 

@@ -20,25 +20,29 @@ DecryptDialog::DecryptDialog(const wxString &method) :
 	}
     
 	/* Show a textual message. */
-	wxStaticText *msg = new wxStaticText(this, wxID_ANY,
-                                         wxString(method_text + wxT(" ") + wxT(TEXT_DECRYPT_EXPLAINATION)));
+	wxStaticText *msg = new wxStaticText(this, wxID_ANY, 
+		wxString(method_text + wxT(" ") + wxT(TEXT_DECRYPT_EXPLAINATION)));
 	msg->Wrap(300);
 	sizer_top->Add(msg, wxSizerFlags().Expand().Border(wxALL, 5));
     
-	wxSizer* const sizer_info = new wxStaticBoxSizer(wxVERTICAL, this, "&Certificates Password");
+	wxSizer* const sizer_info = new wxStaticBoxSizer(wxVERTICAL, this, 
+		"&Certificates Password");
 	/* Password selection. */
 	sizer_info->Add(new wxStaticText(this, wxID_ANY, "&Password:"));
 	password_control = new wxTextCtrl(this, wxID_ANY,
-                                      wxEmptyString, wxDefaultPosition, wxDefaultSize,
-                                      wxTE_PASSWORD);
-	sizer_info->Add(password_control, wxSizerFlags().Expand().Border(wxBOTTOM));
+		wxEmptyString, wxDefaultPosition, wxDefaultSize,
+		wxTE_PASSWORD);
+	sizer_info->Add(password_control, 
+		wxSizerFlags().Expand().Border(wxBOTTOM));
     
 	/* Default buttons. */
-	sizer_top->Add(sizer_info, wxSizerFlags().Expand().Border(wxTOP | wxLEFT | wxRIGHT, 5));
+	sizer_top->Add(sizer_info, 
+		wxSizerFlags().Expand().Border(wxTOP | wxLEFT | wxRIGHT, 5));
 	/* Note, the standard buttons allow us to use this dialog as a modal. Do not change
 	 * the button selections or the modal will no longer respond.
 	 */
-	sizer_top->Add(CreateStdDialogButtonSizer(wxOK | wxCANCEL), wxSizerFlags().Right().Border());
+	sizer_top->Add(CreateStdDialogButtonSizer(wxOK | wxCANCEL), 
+		wxSizerFlags().Right().Border());
 	SetSizerAndFit(sizer_top);
 }
 

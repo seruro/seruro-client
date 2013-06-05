@@ -118,10 +118,9 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 	wxJSONValue data;
 
 	wxJSONValue query;
-    //wxString query_string;
-    wxLogMessage(wxT("Testing server: (%s)"), params["server"].AsString());
-	/* All calls to the server are currently POSTs. */
-	request["verb"] = wxT("POST");
+
+	/* Most API calls to the server are currently GETs. */
+	request["verb"] = "GET";
 	request["flags"] = SERURO_SECURITY_OPTIONS_NONE;
     
 	/* (POST-DATA) Set multi-value (dict) "data" to a JSON Value. */
@@ -139,39 +138,34 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 	/* Switch over each API call and set it's URL */
 	switch (name) {
 		/* The SETUP api call (/api/setup) should return an encrypted P12 (using password auth) */
-	case SERURO_API_GET_P12:
-		request["object"] = wxT("p12s");
+	case SERURO_API_P12S:
+		request["verb"] = "POST";
+		request["object"] = SERURO_API_OBJECT_P12S;
 		/* Include support for optional explicit address to retreive from. */
 		break;
 	case SERURO_API_SEARCH:
-		if (! params.HasMember(wxT("query"))) {
+		if (! params.HasMember("query")) {
 			/* Return some error (not event, we are not in a thread yet) and stop. */
 		}
-        request["verb"] = wxT("GET");
-        request["object"] = wxString(wxT("search"));// + params["query"].AsString();
         request["query"]["query"] = params["query"];
+		request["object"] = SERURO_API_OBJECT_SEARCH;
 		break;
-	case SERURO_API_GET_CERT:
-		if (! params.HasMember(wxT("request_address"))) {
+	case SERURO_API_CERTS:
+		if (! params.HasMember("request_address")) {
 			/* Error and stop!. */
 		}
-		//request["object"] = wxString(wxT("cert/")) + params["request_address"].AsString();
-        request["verb"] = wxT("GET");
         request["query"]["address"] = params["request_address"];
-        request["object"] = wxT("certs");
+        request["object"] = SERURO_API_OBJECT_CERTS;
 		break;
-	case SERURO_API_GET_CA:
-		request["verb"] = wxT("POST");
-		request["object"] = wxT("ca");
+	case SERURO_API_CA:
+		request["object"] = SERURO_API_OBJECT_CA;
 		break;
 	}
 
 	/* Todo: Check to make sure server is in the params. */
-	request["server"] = params["server"]; //.AsString()
+	request["server"] = params["server"];
 	request["auth"] = params["auth"];
 
-	/* Add prefix of "/api/". */
-	request["object"] = wxString(wxT("/api/seruro/")) + request["object"].AsString();
 	return request;
 }
 

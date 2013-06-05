@@ -27,9 +27,9 @@ BEGIN_EVENT_TABLE(SeruroPanelTest, wxPanel)
 	EVT_BUTTON(BUTTON_SEARCH, SeruroPanelTest::OnSearch)
 
 	/* Request events */
-	EVT_COMMAND(SERURO_API_CALLBACK_GET_CA, SERURO_API_RESULT, SeruroPanelTest::OnGetCAResult)
+	EVT_COMMAND(SERURO_API_CALLBACK_CA, SERURO_API_RESULT, SeruroPanelTest::OnGetCAResult)
 	//EVT_COMMAND(SERURO_API_CALLBACK_GET_P12, SERURO_API_RESULT, SeruroPanelTest::OnGetP12Result)
-    EVT_SERURO_RESPONSE(SERURO_API_CALLBACK_GET_P12, SeruroPanelTest::OnGetP12Result)
+    EVT_SERURO_RESPONSE(SERURO_API_CALLBACK_P12S, SeruroPanelTest::OnGetP12Result)
 	EVT_COMMAND(SERURO_API_CALLBACK_SEARCH, SERURO_API_RESULT, SeruroPanelTest::OnSearchResult)
 END_EVENT_TABLE()
 
@@ -125,7 +125,7 @@ void SeruroPanelTest::OnGetP12(wxCommandEvent &event)
 	/* Todo, revisit an explicit auth. */
 	params["address"] = m_user_box->GetValue();
 
-	SeruroRequest *request = api->CreateRequest(SERURO_API_GET_P12, params, SERURO_API_CALLBACK_GET_P12);
+	SeruroRequest *request = api->CreateRequest(SERURO_API_P12S, params, SERURO_API_CALLBACK_P12S);
 	request->Run();
 	/* Todo: Cannot delete the request because the thread still exists, who cleans up this memory? */
 	//delete [] request;
@@ -158,7 +158,7 @@ void SeruroPanelTest::OnGetCA(wxCommandEvent &event)
 	wxString server_name = wxT("Open Seruro");
 	params["server"] = api->GetServer(server_name);//wxT("open.seruro.com");
 
-	SeruroRequest *request = api->CreateRequest(SERURO_API_GET_CA, params, SERURO_API_CALLBACK_GET_CA);
+	SeruroRequest *request = api->CreateRequest(SERURO_API_CA, params, SERURO_API_CALLBACK_CA);
 	request->Run();
 	//delete [] request;
 }
