@@ -1,6 +1,7 @@
 
 #include "SettingsPanels.h"
 #include "../../api/SeruroServerAPI.h"
+//#include "../../api/SeruroRequest.h"
 
 #include "../../wxJSON/wx/jsonval.h"
 
@@ -15,6 +16,8 @@ enum button_actions {
 BEGIN_EVENT_TABLE(SettingsPanel_Address, SettingsPanel)
     EVT_BUTTON(BUTTON_UPDATE, SettingsPanel_Address::OnUpdate)
     EVT_BUTTON(BUTTON_REMOVE, SettingsPanel_Address::OnDelete)
+
+	EVT_SERURO_REQUEST(SERURO_API_CALLBACK_P12S, SettingsPanel_Address::OnUpdateResponse)
 END_EVENT_TABLE()
 
 bool SettingsPanel_Address::Changed() { return false; }
@@ -67,6 +70,16 @@ SettingsPanel_Address::SettingsPanel_Address(SeruroPanelSettings *parent,
 	this->SetSizer(vert_sizer);
 }
 
+void SettingsPanel_Address::OnUpdateResponse(SeruroRequestEvent &event)
+{
+	SeruroServerAPI *api = new SeruroServerAPI(this->GetEventHandler());
+
+	/* Todo: add erroring checking. */
+	if (! api->InstallP12(event.GetResponse())) {
+		/* Todo: report that something bad happened. */
+	}
+}
+
 /* Todo: consider having the API call use a global callback function defined in API perhaps.
  * This prevents code duplication and allows maintainence of API handleing. 
  * This would also prevent custom call-back handling (such as alerts).
@@ -89,3 +102,5 @@ void SettingsPanel_Address::OnDelete(wxCommandEvent &event)
 {
     
 }
+
+

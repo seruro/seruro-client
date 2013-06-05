@@ -120,7 +120,7 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 	wxJSONValue query;
 
 	/* Most API calls to the server are currently GETs. */
-	request["verb"] = "GET";
+	request["verb"] = _("GET");
 	request["flags"] = SERURO_SECURITY_OPTIONS_NONE;
     
 	/* (POST-DATA) Set multi-value (dict) "data" to a JSON Value. */
@@ -139,8 +139,8 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 	switch (name) {
 		/* The SETUP api call (/api/setup) should return an encrypted P12 (using password auth) */
 	case SERURO_API_P12S:
-		request["verb"] = "POST";
-		request["object"] = SERURO_API_OBJECT_P12S;
+		request["verb"] = _("POST");
+		request["object"] = _(SERURO_API_OBJECT_P12S);
 		/* Include support for optional explicit address to retreive from. */
 		break;
 	case SERURO_API_SEARCH:
@@ -148,17 +148,17 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 			/* Return some error (not event, we are not in a thread yet) and stop. */
 		}
         request["query"]["query"] = params["query"];
-		request["object"] = SERURO_API_OBJECT_SEARCH;
+		request["object"] = _(SERURO_API_OBJECT_SEARCH);
 		break;
 	case SERURO_API_CERTS:
 		if (! params.HasMember("request_address")) {
 			/* Error and stop!. */
 		}
         request["query"]["address"] = params["request_address"];
-        request["object"] = SERURO_API_OBJECT_CERTS;
+        request["object"] = _(SERURO_API_OBJECT_CERTS);
 		break;
 	case SERURO_API_CA:
-		request["object"] = SERURO_API_OBJECT_CA;
+		request["object"] = _(SERURO_API_OBJECT_CA);
 		break;
 	}
 

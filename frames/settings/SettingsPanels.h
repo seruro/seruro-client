@@ -112,6 +112,8 @@ public:
     /* Button actions (no edit). */
     void OnUpdate(wxCommandEvent &event);
     void OnDelete(wxCommandEvent &event);
+
+	void OnUpdateResponse(SeruroRequestEvent &event);
     
 private:
     wxString address;
