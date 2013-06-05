@@ -77,12 +77,14 @@ void SettingsPanel_RootAccounts::OnAddServer(wxCommandEvent &event)
 		 * If no fields are populated then the user canceled the form. 
 		 */
 		server_info = AddServer();
-		if (! server_info.HasMember("server_name")) {
+		if (! server_info.HasMember("name")) {
 			/* Canceled. */
 			return;
 		}
-	} while (server_info["server_name"].Size() == 0 || 
-		server_info["server_address"].Size() == 0);
+	} while (server_info["name"].Size() == 0 || 
+		server_info["host"].Size() == 0);
+
+
 }
 
 bool SettingsPanel_RootAccounts::Changed()

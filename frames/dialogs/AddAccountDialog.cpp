@@ -1,5 +1,7 @@
 
 #include "AddAccountDialog.h"
+/* Need GetServerChoice. */
+#include "AddServerDialog.h"
 #include "../UIDefs.h"
 
 #include "../../SeruroClient.h"
@@ -9,7 +11,8 @@
 
 DECLARE_APP(SeruroClient);
 
-void AddAccountForm::AddForm(wxSizer *sizer, const wxString &address)
+void AddAccountForm::AddForm(wxSizer *sizer, const wxString &address,
+	const wxString &server_name)
 {
     /* Address details form. */
 	wxFlexGridSizer *const grid_sizer = new wxFlexGridSizer(2, 2, 5, 10);
@@ -43,7 +46,7 @@ void AddAccountForm::AddForm(wxSizer *sizer, const wxString &address)
 	sizer->Add(grid_sizer, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 }
 
-AddAccountDialog::AddAccountDialog(const wxString &address) : 
+AddAccountDialog::AddAccountDialog(const wxString &address, const wxString &server_name) : 
 	wxDialog(wxGetApp().GetFrame(), wxID_ANY, wxString(wxT("Add Account"))),
     AddAccountForm(this)
 {
@@ -53,6 +56,13 @@ AddAccountDialog::AddAccountDialog(const wxString &address) :
 	Text *msg = new Text(this, wxString(wxT(TEXT_ADD_ACCOUNT)), false);
 	msg->Wrap(300);
 	vert_sizer->Add(msg, DIALOGS_SIZER_OPTIONS);
+
+	wxSizer *const server_box = new wxStaticBoxSizer(wxVERTICAL, this, "&Select Server");
+
+	//this->server_menu = new wxChoice(this, wxID_ANY
+	this->server_menu = GetServerChoice(this, server_name);
+	server_box->Add(this->server_menu, DIALOGS_BOXSIZER_SIZER_OPTIONS);
+	vert_sizer->Add(server_box, DIALOGS_SIZER_OPTIONS);
 
 	wxSizer *const info_box = new wxStaticBoxSizer(wxVERTICAL, this, "&Account Information");
 
@@ -68,8 +78,22 @@ wxJSONValue AddAccountForm::GetValues()
 {
 	wxJSONValue values;
 
+
 	values["address"] = this->address->GetValue();
 	values["password"] = this->password->GetValue();
 	
+	return values;
+}
+
+wxJSONValue AddAccountDialog::GetValues()
+{
+	wxJSONValue values;
+	int selection;
+
+	values = AddAccountForm::GetValues();
+
+	selection = this->server_menu->GetSelection();
+	values["server_name"] = this->server_menu->GetString(selection);
+
 	return values;
 }

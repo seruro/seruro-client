@@ -70,6 +70,30 @@ void SeruroConfig::LoadConfig()
     this->configValid = true;
 }
 
+bool SeruroConfig::AddServer(wxJSONValue server_info)
+{
+	wxJSONValue new_server;
+
+	/* Only require a name and host to identity a server. */
+	if (! server_info.HasMember("name") || ! server_info.HasMember("host")) {
+		wxLogMessage(wxT("SeruroConfig> Cannot add a server without knowing the name and host."));
+		return false;
+	}
+
+	new_server["host"] = server_info["host"];
+	if (server_info.HasMember("port")) new_server["port"] = server_info["port"];
+
+	this->configData["servers"][server_info["name"].AsString()] = new_server;
+
+	wxLogMessage(_("SeruroConfig> Adding server (%s)."), server_info["name"].AsString());
+	return this->WriteConfig();
+}
+
+bool SeruroConfig::AddAddress(const wxString &server_name, wxJSONValue address_info)
+{
+	return false;
+}
+
 wxJSONValue SeruroConfig::GetServers()
 {
 	wxJSONValue servers;
@@ -206,6 +230,24 @@ bool GetTokenFile(wxTextFile** token_file)
 		wxLogMessage(wxT("Token file did not exist, successfully created."));
 	}
 	return true;
+}
+
+bool SeruroConfig::WriteConfig()
+{
+	bool results;
+
+	wxString config_string;
+	wxJSONWriter writer(wxJSONWRITER_STYLED);
+
+	writer.Write(this->configData, config_string);
+
+	configFile->Open();
+	configFile->Clear();
+	configFile->InsertLine(config_string, 0);
+	results = configFile->Write();
+	configFile->Close();
+
+	return results;
 }
 
 bool WriteTokenData(wxJSONValue token_data)

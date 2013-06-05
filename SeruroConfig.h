@@ -24,13 +24,16 @@ public:
        LNX: <UserDir>/.seruro/SeruroClient.config
      */
 	void LoadConfig();
-	void WriteConfig();
+	bool WriteConfig();
     bool HasConfig();
 
 	/* Token management, this file can exist before a config. */
 	wxString GetToken(const wxString &server, const wxString &address);
 	bool WriteToken(const wxString &server, const wxString &address, 
 		const wxString &token);
+
+	bool AddServer(wxJSONValue server_info);
+	bool AddAddress(const wxString &server_name, wxJSONValue address_info);
 
 	wxJSONValue GetServers();
 	wxJSONValue GetServer(const wxString &server);

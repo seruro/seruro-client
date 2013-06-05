@@ -1,6 +1,8 @@
 ﻿
 #include "SeruroPanelSearch.h"
 #include "../SeruroClient.h"
+/* Need GetServerChoice */
+#include "dialogs/AddServerDialog.h"
 #include "UIDefs.h"
 
 #include "../wxJSON/wx/jsonval.h"
@@ -293,17 +295,19 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	//wxBoxSizer *buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
 
 	/* Create search list. */
-	wxArrayString servers_list;
-	servers_list = wxGetApp().config->GetServerList();
-	if (servers_list.size() != 0) {
+	//wxArrayString servers_list;
+	//servers_list = wxGetApp().config->GetServerList();
+	//if (servers_list.size() != 0) {
 		/* Only create list if there are multiple servers configured. */
-		Text *servers_text = new Text(this, wxT("Select server:"));
-		this->servers_control = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, servers_list);
-		this->servers_control->SetSelection(0);
+	Text *servers_text = new Text(this, wxT("Select server:"));
+	//this->servers_control = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, servers_list);
+	//this->servers_control->SetSelection(0);
 
-		servers_sizer->Add(servers_text, 0, wxRIGHT, 5);
-		servers_sizer->Add(this->servers_control, 0, wxRIGHT, 5);
-	}
+	this->servers_control = GetServerChoice(this);
+
+	servers_sizer->Add(servers_text, 0, wxRIGHT, 5);
+	servers_sizer->Add(this->servers_control, 0, wxRIGHT, 5);
+	//}
 
 	/* Create search text-field. */
 	this->search_control = new SearchBox(this);

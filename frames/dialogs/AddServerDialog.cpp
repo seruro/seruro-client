@@ -14,6 +14,28 @@ BEGIN_EVENT_TABLE(AddServerDialog, wxDialog)
 	EVT_CHECKBOX(SERURO_ADD_SERVER_PORT_ID, AddServerDialog::OnCustomPort)
 END_EVENT_TABLE()
 
+wxChoice* GetServerChoice(wxWindow *parent, const wxString &server_name)
+{
+	wxChoice *server_menu;
+	wxArrayString servers_list;
+	bool disable_menu = false;
+
+	if (server_name.compare(wxEmptyString) == 0) {
+		/* Add all servers. */
+		servers_list = wxGetApp().config->GetServerList();
+	} else {
+		/* Add just this server. */
+		servers_list.Add(server_name);
+		disable_menu = true;
+	}
+
+	server_menu = new wxChoice(parent, wxID_ANY, wxDefaultPosition, wxDefaultSize, servers_list);
+	server_menu->SetSelection(0);
+	server_menu->Enable(! disable_menu);
+
+	return server_menu;
+}
+
 void AddServerForm::AddForm(wxSizer *sizer,
     const wxString &name, const wxString &host, const wxString &port)
 {

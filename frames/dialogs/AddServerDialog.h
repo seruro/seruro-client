@@ -11,12 +11,19 @@
 
 #include "../../wxJSON/wx/jsonval.h"
 
+#include <wx/choice.h>
+
+/* Helper function to show a list of servers. */
+wxChoice* GetServerChoice(wxWindow *parent, 
+	const wxString &server_name = wxEmptyString);
+
 class AddServerForm
 {
 public:
     AddServerForm(wxWindow *parent_obj) : parent(parent_obj) {}
     void AddForm(wxSizer *sizer,
-        const wxString &name = wxEmptyString, const wxString &host = wxEmptyString,
+        const wxString &name = wxEmptyString, 
+		const wxString &host = wxEmptyString,
         const wxString &port = SERURO_DEFAULT_PORT);
     wxJSONValue GetValues();
     

@@ -85,7 +85,7 @@ SettingsPanel_Server::SettingsPanel_Server(SeruroPanelSettings *parent,
 	/* Update/Delete server buttons with sizer and spacer. */
 	wxBoxSizer *status_buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
 	wxButton *update_button = new wxButton(this, BUTTON_UPDATE, wxT("Update"));
-	wxButton *delete_button = new wxButton(this, BUTTON_DELETE, wxT("Delete"));
+	wxButton *delete_button = new wxButton(this, BUTTON_DELETE, wxT("Remove"));
 
 	/* Add spacer, and button to horz sizer, then horz sizer to vert sizer. */
 	//status_buttons_sizer->AddStretchSpacer();
