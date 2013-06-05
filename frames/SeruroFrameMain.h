@@ -29,7 +29,7 @@ public:
     void OnSetupCancel(wxWizardEvent& event);
     void OnSetupFinished(wxWizardEvent& event);
 
-	void ChangePanel(tray_option_t page);
+	void ChangePanel(int panel_id);
 
 protected:
 	SeruroTray *tray;
@@ -37,7 +37,13 @@ protected:
     
     wxPanel *search_panel;
     wxPanel *settings_panel;
+#if SERURO_ENABLE_CRYPT_PANELS
+	wxPanel *encrypt;
+	wxPanel *decrypt;
+#endif
+#if SERURO_ENABLE_DEBUG_PANELS
     wxPanel *test_panel;
+#endif
 
 private:
 	DECLARE_EVENT_TABLE()

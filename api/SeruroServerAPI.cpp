@@ -205,7 +205,7 @@ bool SeruroServerAPI::InstallCert(wxJSONValue response)
 
 	bool result;
 	//wxArrayString cert_blobs = response["certs"].GetMemberNames();
-	for (size_t i = 0; i < response["certs"].Size(); i++) {
+	for (int i = 0; i < response["certs"].Size(); i++) {
 		cert_encoded = response["certs"][i].AsString();
 
 		if (! DecodeBase64(cert_encoded, &cert_decoded)) continue;

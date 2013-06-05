@@ -6,6 +6,7 @@
 #include "SeruroFrameMain.h"
 #include "SeruroPanelSettings.h"
 #include "SeruroPanelSearch.h"
+#include "../setup/SeruroSetup.h"
 
 #if SERURO_ENABLE_CRYPT_PANELS
 #include "SeruroPanelDecrypt.h"
@@ -16,7 +17,8 @@
 #include "SeruroPanelTest.h"
 #endif
 
-#include "../setup/SeruroSetup.h"
+int seruro_panels_ids[SERURO_MAX_PANELS];
+int seruro_panels_size;
 
 BEGIN_EVENT_TABLE(SeruroFrameMain, wxFrame)
 	/* Events for Window interaction */
@@ -84,36 +86,33 @@ void SeruroFrameMain::AddPanels()
 {
 	/* Add content */
 	search_panel = new SeruroPanelSearch(book);
+	/* Must define the order of panels. */
+	seruro_panels_ids[seruro_panels_size++] = SERURO_PANEL_SEARCH_ID;
 #if SERURO_ENABLE_CRYPT_PANELS
 	SeruroPanelEncrypt	 *encrypt	= new SeruroPanelEncrypt(book);
+	seruro_panels_ids[seruro_panels_size++] = SERURO_PANEL_ENCRYPT_ID;
 	SeruroPanelDecrypt	 *decrypt	= new SeruroPanelDecrypt(book);
+	seruro_panels_ids[seruro_panels_size++] = SERURO_PANEL_DECRYPT_ID;
 #endif
 	settings_panel = new SeruroPanelSettings(book);
+	seruro_panels_ids[seruro_panels_size++] = SERURO_PANEL_SETTINGS_ID;
 	
 #if SERURO_ENABLE_DEBUG_PANELS
 	test_panel = new SeruroPanelTest(book);
+	seruro_panels_ids[seruro_panels_size++] = 0; /* Test is not controllable. */
 #endif
 }
 
 /* The tray menu generates events based on IDs, these IDs correspond to pages. 
  * The mainFrame should change the notebook selection to the given page.
  */
-void SeruroFrameMain::ChangePanel(tray_option_t option)
+void SeruroFrameMain::ChangePanel(int panel_id)
 {
-    /* Todo: this should be able to show selections based on the panels that have been added. */
-	switch (option) {
-	case seruroID_SEARCH:
-		this->book->SetSelection(0);
-		break;
-	case seruroID_ENCRYPT:
-		book->SetSelection(1);
-		break;
-	case seruroID_DECRYPT:
-		book->SetSelection(2);
-		break;
-	case seruroID_CONFIGURE:
-		book->SetSelection(3);
-		break;
+	/* Iterate through the vector of panel ids, if a match is found, set selection. */
+	for (int i = 0; i < seruro_panels_size; i++) {
+		if (panel_id == seruro_panels_ids[i]) {
+			this->book->SetSelection(i);
+		}
 	}
 }
 

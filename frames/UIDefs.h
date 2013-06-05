@@ -4,8 +4,16 @@
 
 #include <wx/stattext.h>
 
-/* Uniform UI options / configurations. */
+/* Element IDs (where wxID_ANY is not appropriate. */
+#define SERURO_SETTINGS_TREE_ID		1009
+#define SERURO_ADD_SERVER_PORT_ID	1010
+#define SERURO_PANEL_SETTINGS_ID	1020
+#define SERURO_PANEL_SEARCH_ID		1021
+#define SERURO_PANEL_ENCRYPT_ID		1022
+#define SERURO_PANEL_DECRYPT_ID		1023
+#define SERURO_EXIT_ID				6667
 
+/* Uniform UI options / configurations. */
 #if defined(__WXMAC__)
 #define SERURO_APP_DEFAULT_WIDTH  675
 #else
@@ -19,9 +27,6 @@
 #else
 #define SERURO_SETTINGS_TREE_MIN_WIDTH 150
 #endif
-/* The settings tree event control id. */
-#define SERURO_SETTINGS_TREE_ID 1009
-#define SERURO_ADD_SERVER_PORT_ID 1010
 
 /* OSX has larger indents. */
 #if defined(__WXMAC__)

@@ -19,10 +19,10 @@
 #define SERURO_APP_NAME     "Seruro Client"
 
 /* When a server name is displayed, display the host and port as well. */
-#define SERURO_DISPLAY_SERVER_INFO true
+#define SERURO_DISPLAY_SERVER_INFO 1
 /* Enable/Disable the encrypt/decrypt tabs. */
-#define SERURO_ENABLE_CRYPT_PANELS false
-#define SERURO_ENABLE_DEBUG_PANELS false
+#define SERURO_ENABLE_CRYPT_PANELS 0
+#define SERURO_ENABLE_DEBUG_PANELS 0
 
 #define SERURO_DEFAULT_PORT "443"
 /* File name to store and fetch user configuration data from. */
@@ -32,6 +32,10 @@
 /* User agent to use for Server API requests. */
 #define SERURO_DEFAULT_USER_AGENT "Client/1.0"
 
+/* The maximum amount of 'application panels' which are 'tabs'. 
+ * This is used in the SeruroTray to identity the panel IDs. 
+ */
+#define SERURO_MAX_PANELS 10
 #define SERURO_INPUT_MAX_LENGTH 256
 #define SERURO_BUFFER_SIZE 256
 #define SERURO_INPUT_WHITELIST \

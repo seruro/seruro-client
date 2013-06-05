@@ -6,15 +6,9 @@
 
 class SeruroFrameMain;
 
-enum tray_option_t
-{
-	seruroID_SEARCH		= wxID_HIGHEST + 10,
-	seruroID_CONFIGURE	= wxID_HIGHEST + 11,
-	seruroID_UPDATE		= wxID_HIGHEST + 12,
-	seruroID_DECRYPT	= wxID_HIGHEST + 13,
-	seruroID_ENCRYPT	= wxID_HIGHEST + 14,
-	seruroID_EXIT		= wxID_HIGHEST + 1
-};
+/* Store the WX_IDs of the panels. */
+//extern int seruro_panels_ids[];
+//extern int seruro_panels_size;
 
 class SeruroTray: public wxTaskBarIcon
 {
@@ -25,11 +19,12 @@ public:
 	void SetMainFrame(SeruroFrameMain *frame);
     void RaiseFrame();
 	virtual wxMenu *CreatePopupMenu();
-
+#if SERURO_ENABLE_CRYPT_PANELS
 	void onEncrypt(wxCommandEvent &event);
 	void onDecrypt(wxCommandEvent &event);
-	void onUpdate(wxCommandEvent &event);
-	void onConfigure(wxCommandEvent &event);
+#endif
+	//void onUpdate(wxCommandEvent &event);
+	void onSettings(wxCommandEvent &event);
 	void onSearch(wxCommandEvent &event);
 
 	void OnLeftDoubleClick(wxTaskBarIconEvent &event);

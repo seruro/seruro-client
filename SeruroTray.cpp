@@ -2,23 +2,28 @@
 #include <wx/menu.h>
 #include <wx/msgdlg.h>
 
+#include "Defs.h"
+#include "frames/UIDefs.h"
+
 #include "SeruroTray.h"
 #include "frames/SeruroFrameMain.h"
 
 /* OSX Hack for active focus */
-#if defined(__WXMAC__)
+#if defined(__WXMAC__) || defined(__WXOSX__)
 #include <Carbon/Carbon.h>
 extern "C" { void CPSEnableForegroundOperation(ProcessSerialNumber *psn); }
 #endif
 
 BEGIN_EVENT_TABLE(SeruroTray, wxTaskBarIcon)
 	EVT_TASKBAR_LEFT_DCLICK(SeruroTray::OnLeftDoubleClick)
-	EVT_MENU(seruroID_ENCRYPT, SeruroTray::onEncrypt)
-	EVT_MENU(seruroID_DECRYPT, SeruroTray::onDecrypt)
-	EVT_MENU(seruroID_SEARCH, SeruroTray::onSearch)
-	EVT_MENU(seruroID_CONFIGURE, SeruroTray::onConfigure)
-	EVT_MENU(seruroID_UPDATE, SeruroTray::onUpdate)
-	EVT_MENU(seruroID_EXIT, SeruroTray::OnQuit)
+#if SERURO_ENABLE_CRYPT_PANELS
+	EVT_MENU(SERURO_PANEL_ENCRYPT_ID, SeruroTray::onEncrypt)
+	EVT_MENU(SERURO_PANEL_DECRYPT_ID, SeruroTray::onDecrypt)
+#endif
+	EVT_MENU(SERURO_PANEL_SEARCH_ID, SeruroTray::onSearch)
+	EVT_MENU(SERURO_PANEL_SETTINGS_ID, SeruroTray::onSettings)
+	//EVT_MENU(seruroID_UPDATE, SeruroTray::onUpdate)
+	EVT_MENU(SERURO_EXIT_ID, SeruroTray::OnQuit)
 END_EVENT_TABLE()
 
 void SeruroTray::RaiseFrame()
@@ -33,7 +38,7 @@ void SeruroTray::RaiseFrame()
         mainFrame->Show(true);
     
     /* Hardcore */
-#if defined(__WXMAC__)
+#if defined(__WXMAC__) || defined(__WXOSX__)
     //wxTheApp->SetFrontProcess();
     //wxTheApp->SetActive(true, NULL);
     //wx::MacSetFrontProcess();
@@ -46,34 +51,30 @@ void SeruroTray::RaiseFrame()
 #endif
 }
 
+#if SERURO_ENABLE_CRYPT_PANELS
 void SeruroTray::onEncrypt(wxCommandEvent &event)
 {
     RaiseFrame();
-	mainFrame->ChangePanel(seruroID_ENCRYPT);
+	mainFrame->ChangePanel(SERURO_PANEL_ENCRYPT_ID);
 }
 
 void SeruroTray::onDecrypt(wxCommandEvent &event)
 {
     RaiseFrame();
-	mainFrame->ChangePanel(seruroID_DECRYPT);
+	mainFrame->ChangePanel(SERURO_PANEL_DECRYPT_ID);
 }
+#endif
 
 void SeruroTray::onSearch(wxCommandEvent &event)
 {
     RaiseFrame();
-	mainFrame->ChangePanel(seruroID_SEARCH);
+	mainFrame->ChangePanel(SERURO_PANEL_SEARCH_ID);
 }
 
-void SeruroTray::onConfigure(wxCommandEvent& WXUNUSED(event))
+void SeruroTray::onSettings(wxCommandEvent& WXUNUSED(event))
 {
     RaiseFrame();
-	mainFrame->ChangePanel(seruroID_CONFIGURE);
-}
-
-void SeruroTray::onUpdate(wxCommandEvent &event)
-{
-    RaiseFrame();
-	mainFrame->ChangePanel(seruroID_UPDATE);
+	mainFrame->ChangePanel(SERURO_PANEL_SETTINGS_ID);
 }
 
 SeruroTray::SeruroTray() : wxTaskBarIcon(wxTBI_CUSTOM_STATUSITEM) /* wxTBI_CUSTOM_STATUSITEM */
@@ -110,15 +111,17 @@ wxMenu* SeruroTray::CreatePopupMenu()
 	wxMenu *popup = new wxMenu;
 	//wxMenuItem *header = new wxMenuItem;
 
-    popup->Append(seruroID_SEARCH, wxT("Search"));
-	popup->Append(seruroID_ENCRYPT, wxT("Encrypt"));
-	popup->Append(seruroID_DECRYPT, wxT("Decrypt"));
+    popup->Append(SERURO_PANEL_SEARCH_ID, wxT("&Search"));
+#if SERURO_ENABLE_CRYPT_PANELS
+	popup->Append(SERURO_PANEL_ENCRYPT_ID, wxT("&Encrypt"));
+	popup->Append(SERURO_PANEL_DECRYPT_ID, wxT("&Decrypt"));
+#endif
 	popup->AppendSeparator();
 	//popup->AppendSeparator();
 	//popup->Append(seruroID_UPDATE, wxT("Update"));
 	//popup->AppendSeparator();
-	popup->Append(seruroID_CONFIGURE, wxT("Settings"));
-	popup->Append(seruroID_EXIT, wxT("E&xit"));
+	popup->Append(SERURO_PANEL_SETTINGS_ID, wxT("Settings"));
+	popup->Append(SERURO_EXIT_ID, wxT("E&xit"));
 
 	return popup;
 }
