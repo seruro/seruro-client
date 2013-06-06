@@ -188,6 +188,8 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 	case SERURO_API_CA:
 		request["object"] = _(SERURO_API_OBJECT_CA);
 		break;
+	case SERURO_API_PING:
+		request["object"] = _(SERURO_API_OBJECT_PING);
 	}
 
 	/* Todo: Check to make sure server is in the params. */
