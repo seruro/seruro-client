@@ -16,7 +16,9 @@ enum api_name_t
 	SERURO_API_CERTS,
 	SERURO_API_CA,
 	SERURO_API_CRL,
-	SERURO_API_P12S
+	SERURO_API_P12S,
+	/* Special API call. */
+	SERURO_API_PING
 };
 
 /* Used by Create Request to bind result to callback method. */
@@ -26,7 +28,9 @@ enum seruro_api_callbacks_t
 	SERURO_API_CALLBACK_P12S,
 	SERURO_API_CALLBACK_CERTS,
 	SERURO_API_CALLBACK_CRL,
-	SERURO_API_CALLBACK_SEARCH
+	SERURO_API_CALLBACK_SEARCH,
+	/* Special API call. */
+	SERURO_API_CALLBACK_PING
 };
 
 //extern enum api_name api_name_t;

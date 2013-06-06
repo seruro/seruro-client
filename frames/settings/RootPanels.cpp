@@ -2,6 +2,7 @@
 #include "SettingsPanels.h"
 #include "../SeruroPanelSettings.h"
 #include "../../SeruroClient.h"
+#include "../../api/SeruroServerAPI.h"
 
 #include "../dialogs/AddServerDialog.h"
 #include "../dialogs/AddAccountDialog.h"
@@ -38,9 +39,31 @@ wxJSONValue AddServer()
 	return server_info;
 }
 
-wxJSONValue AddAddress()
+/* Try to add an address, prompt for a username and password, display a server or a server menu.
+ * Also try to authenticate the user using a PING API call, which will trigger a request.
+ */
+wxJSONValue AddAddress(wxJSONValue server_info, 
+	const wxString &display_server = wxEmptyString)
 {
 	wxJSONValue address_info;
+	/* Params used for a SeruroRequest, which checks auth. */
+	wxJSONValue auth_check_params;
+
+	//wxString empty_address = wxEmptyString;
+	AddAccountDialog *dialog = new AddAccountDialog(wxEmptyString, display_server);
+	if (dialog->ShowModal() == wxID_OK) {
+		wxLogMessage(wxT("RootPanels::AddAddress> OK"));
+		address_info = dialog->GetValues();
+	}
+	delete dialog;
+
+	auth_check_params["server"] = server_info;
+	auth_check_params["address"] = address_info["address"];
+	/* Set an explicit password, disabling the built-in auth prompt. */
+	auth_check_params["password"] = address_info["password"];
+
+	/* Todo: add server info as meta-data.*/
+	/* Todo: add callback which calls addAddress again on an auth failure. */
 
 	return address_info;
 }
@@ -70,21 +93,22 @@ void SettingsPanel_RootAccounts::OnAddServer(wxCommandEvent &event)
 {
     /* Todo: Get all users (emails) for given server. */
     wxJSONValue server_info;
-	wxJSONValue account_info;
-    
-	do {
-		/* Loop until the user enters valid information into the 'AddServer' dialog.
-		 * If no fields are populated then the user canceled the form. 
-		 */
-		server_info = AddServer();
-		if (! server_info.HasMember("name")) {
-			/* Canceled. */
-			return;
-		}
-	} while (server_info["name"].Size() == 0 || 
-		server_info["host"].Size() == 0);
+	wxJSONValue address_info;
+	//wxJSONValue auth_server_info;
+	
+	server_info = AddServer();
+	/* Make sure there is a name value, if not then something weird happened. */
+	if (! server_info.HasMember("name")) return;
+
+	/* Todo: should loop here until the address receives a valid token. */
+	wxString display_server = wxString(_("(New Server) ")) + server_info["name"].AsString();
+	address_info = AddAddress(server_info, display_server);
+
+	//auth_check_params["server"] = auth_server_info;
+	//auth_check_params["server"]["
 
 
+	/* Perform a request for nothing. */
 }
 
 bool SettingsPanel_RootAccounts::Changed()

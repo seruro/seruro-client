@@ -55,6 +55,29 @@ wxJSONValue SeruroServerAPI::GetServer(const wxString &server)
 	//return server_info;
 }
 
+/* Create a SeruroRequest object for an API call 'name' using 'params' 
+ * and generating an 'evtId' on response.
+ *
+ * params:
+ * |--server = {name, host, [port]}, the name is used in an auth prompt (for a token).
+ * |--[address], used to bind the request to a specific account/address (i.e., for P12s).
+ * |--[password], if a token does not exist, do not use an auth prompt, instead this password.
+ * |--[meta], a list of key/value pairs to pass back to the generated event (callback data).
+ * The following additional params members are created corresponding to the API:
+ * |--auth = {token, have_token}, a token if the an account exists for the server, a boolean.
+ * |--request = {object, verb, [data], [query], auth, [address], [meta]}
+ *    |--object: the object portion of the URI
+ *    |--verb: the HTTP verb for the request.
+ *    |--[data]: if the verb is POST, key/value pairs to post as data.
+ *    |--[query]: query string key/value pairs.
+ *    |--auth: a copy of params[auth].
+ *    |--[address]: a copy of params[address].
+ *    |--[meta]: a copy of params[meta].
+ * |--request will generate "data_string" based on [data].
+ *
+ * The SeruroRequest will use params[request] as it's input, along with the parent object's 
+ * event handler object and the provided 'evtId'.
+ */
 SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue params, int evtId)
 {
 	/* Add to params with GetAuth / GetRequest */
@@ -67,6 +90,11 @@ SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue param
 
 	if (params["request"].HasMember("data")) {
 		params["request"]["data_string"] = encodeData(params["request"]["data"]);
+	}
+
+	/* Copy callback meta-data into the request, which will end up in the response event. */
+	if (params.HasMember("meta")) {
+		params["request"]["meta"] = params["meta"];
 	}
 
 	SeruroRequest *thread = new SeruroRequest(params["request"], evtHandler, evtId);

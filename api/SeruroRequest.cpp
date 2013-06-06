@@ -77,6 +77,11 @@ wxThread::ExitCode SeruroRequest::Entry()
 	//wxCommandEvent evt(SERURO_API_RESULT, this->evtId);
 	//evt.SetString(event_string);
     
+	/* Copy callback data into response. */
+	if (params.HasMember("meta")) {
+		response["meta"] = params["meta"];
+	}
+
     /* Create a request/response event with the response data. 
      * The ID determines which function receives the event. 
      */
@@ -91,12 +96,16 @@ wxThread::ExitCode SeruroRequest::Entry()
 	return (ExitCode)0;
 }
 
+/* Todo: should take a password override, to prevent the auth prompt. 
+ * alternatively: use the auth prompt to add a new account/address? 
+ */
 wxString SeruroRequest::GetAuthToken()
 {
 	wxJSONValue response;
-	wxJSONValue auth_params;
-	wxString address;
+	wxJSONValue auth_params, data_string;
+	wxString address, password, server_name;
 	bool wrote_token;
+	int selected_address = 0;
     
 	/* Perform TLS request to create API session, receive a raw content (string) response. */
 	wxLogMessage(wxT("SeruroRequest::GetAuthToken> requesting token."));
@@ -108,28 +117,37 @@ wxString SeruroRequest::GetAuthToken()
     
 	/* If there was an explicit address set in the request parameters. */
 	address = (params.HasMember("address")) ? params["address"].AsString() : wxString(wxEmptyString);
-    
-	/* Loop until they get a 'good' token, or cancel this madness. */
-	int selected_address = 0;
-	wxJSONValue data_string;
-    wxString server_name;
-    
-	while (! response.HasMember("success") || response["success"].AsBool() == false) {
-		server_name = this->params["server"]["name"].AsString();
-		wxJSONValue data_string = getAuthFromPrompt(server_name,
-            address, selected_address);
-		if (! data_string.HasMember(SERURO_API_AUTH_FIELD_EMAIL)) {
-			/* The user canceled the request for auth. */
-			//return response;
-			break;
+    /* If there was an explicit password set in the request. */
+	password = (params.HasMember("password")) ? params["password"].AsString() : wxString(wxEmptyString);
+
+	/* The application is making a request without a valid token for an address in this server. 
+	 * The address may be explicit, for example with a P12s request. 
+	 */
+	if (password.compare(wxEmptyString) == 0 || address.compare(wxEmptyString) == 0) {
+		while (! response.HasMember("success") || response["success"].AsBool() == false) {
+			server_name = this->params["server"]["name"].AsString();
+			data_string = getAuthFromPrompt(server_name,
+				address, selected_address);
+			if (! data_string.HasMember(SERURO_API_AUTH_FIELD_EMAIL)) {
+				/* The user canceled the request for auth. */
+				//return response;
+				break;
+			}
+        
+			selected_address = (data_string.HasMember("selected")) ? data_string["selected"].AsInt() : 0;
+			data_string.Remove("selected");
+        
+			/* Todo: data_string potentially contains a user's password, ensure proper cleanup. */
+			auth_params["data_string"] = encodeData(data_string);
+			response = performRequest(auth_params);
 		}
-        
-		selected_address = (data_string.HasMember("selected")) ? data_string["selected"].AsInt() : 0;
-		data_string.Remove("selected");
-        
-		/* Todo: data_string potentially contains a user's password, ensure proper cleanup. */
+	} else {
+		data_string[SERURO_API_AUTH_FIELD_EMAIL] = address;
+		data_string[SERURO_API_AUTH_FIELD_PASSWORD] = password;
 		auth_params["data_string"] = encodeData(data_string);
 		response = performRequest(auth_params);
+		/* Set a special flag known to the API handler to assure the request is not repeated. */
+		response["no_repeat"] = true;
 	}
     
 	/* Warning, possible critical section. */
@@ -145,7 +163,7 @@ wxString SeruroRequest::GetAuthToken()
     
 	/* Warning: depends on response["email"] */
 	wrote_token = wxGetApp().config->WriteToken(auth_params["server"]["name"].AsString(),
-                                                response["email"].AsString(), response["token"].AsString());
+		response["email"].AsString(), response["token"].AsString());
 	if (! wrote_token) {
 		wxLogMessage(wxT("SeruroRequest::GetAuthToken> failed to write token."));
 	}
