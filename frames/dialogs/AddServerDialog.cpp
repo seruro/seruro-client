@@ -11,7 +11,7 @@
 DECLARE_APP(SeruroClient);
 
 BEGIN_EVENT_TABLE(AddServerDialog, wxDialog)
-	EVT_CHECKBOX(SERURO_ADD_SERVER_PORT_ID, AddServerDialog::OnCustomPort)
+	EVT_CHECKBOX(SERURO_ADD_SERVER_PORT_ID, AddServerDialog::OnForm_OnCustomPort)
 END_EVENT_TABLE()
 
 wxChoice* GetServerChoice(wxWindow *parent, const wxString &server_name)
@@ -97,8 +97,11 @@ void AddServerForm::AddForm(wxSizer *sizer,
 	sizer->Add(grid_sizer, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 }
 
-/* This event handler function will be duplicated (defined) for each implmentor. */
-void AddServerDialog::OnCustomPort(wxCommandEvent &event)
+/* This event handler function will be duplicated (defined) for each implmentor. 
+ * To prevent code duplication, simply call these event handlers from the implementing
+ * class using a wrapper handler. 
+ */
+void AddServerForm::OnCustomPort()
 {
     wxLogMessage(wxT("checkbox clicked."));
 	this->server_port->Enable(this->checkbox->IsChecked());
@@ -106,6 +109,11 @@ void AddServerDialog::OnCustomPort(wxCommandEvent &event)
 		/* If the checkbox becomes un-checked, reset the port value. */
 		this->server_port->SetValue(SERURO_DEFAULT_PORT);
 	}
+}
+
+void AddServerDialog::OnForm_OnCustomPort(wxCommandEvent &event)
+{
+	this->OnCustomPort();
 }
 
 AddServerDialog::AddServerDialog(const wxString &name, const wxString &host, const wxString &port) : 

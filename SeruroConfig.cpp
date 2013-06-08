@@ -99,15 +99,14 @@ bool SeruroConfig::AddServer(wxJSONValue server_info)
 		return false;
 	}
 
+	if (ServerExists(server_info)) {
+		return false;
+	}
+
+	/* Todo: potentially add config template. */
 	/* Add a servers list if none exists. */
 	if (! configData.HasMember("servers")) {
 		configData["servers"] = servers_list;
-	}
-
-	/* Check for duplicate servers (based on name). */
-	if (configData["servers"].HasMember(server_info["name"].AsString())) {
-		wxLogMessage(_("SeruroConfig> Cannot add server (duplicate name exists)."));
-		return false;
 	}
 
 	new_server["host"] = server_info["host"];
@@ -156,7 +155,6 @@ bool SeruroConfig::AddAddress(const wxString &server_name, const wxString &addre
 	}
 
 	address_list = GetAddressList(server_name);
-
 	/* Check for a duplicate address for this server. */
 	for (size_t i = 0; i < address_list.size(); i++) {
 		if (address_list[i].compare(address) == 0) {

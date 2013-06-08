@@ -27,6 +27,15 @@ public:
         const wxString &port = SERURO_DEFAULT_PORT);
     wxJSONValue GetValues();
     
+	/* Handle the single checkbox click. */
+	/* Todo: find a better way to implement this event handler,
+	 * within the base abstract class would be great, tried inheriting
+	 * from wxEvtHandler, but this results in invalid access if the event
+	 * table is defined for the implementor, and no action if the event 
+	 * table is defined for the abstract.
+	 */
+	void OnCustomPort();
+
 protected:
     wxWindow *parent;
     
@@ -45,15 +54,8 @@ public:
 	AddServerDialog(const wxString &name = wxEmptyString,
 		const wxString &host = wxEmptyString, 
 		const wxString &port = SERURO_DEFAULT_PORT);
-	
-	/* Handle the single checkbox click. */
-	/* Todo: find a better way to implement this event handler,
-	 * within the base abstract class would be great, tried inheriting
-	 * from wxEvtHandler, but this results in invalid access if the event
-	 * table is defined for the implementor, and no action if the event 
-	 * table is defined for the abstract.
-	 */
-	void OnCustomPort(wxCommandEvent &event);
+
+	void OnForm_OnCustomPort(wxCommandEvent &event);
 
 private:
 	DECLARE_EVENT_TABLE()

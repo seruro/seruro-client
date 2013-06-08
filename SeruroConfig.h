@@ -33,12 +33,17 @@ public:
 		const wxString &token);
 
 	bool AddServer(wxJSONValue server_info);
-	bool AddAddress(const wxString &server_name, wxJSONValue address_info);
+	bool AddAddress(const wxString &server_name, const wxString &address);
 
 	wxJSONValue GetServers();
 	wxJSONValue GetServer(const wxString &server);
 	wxArrayString GetAddressList(const wxString &server);
 	wxArrayString GetServerList();
+
+	bool ServerExists(wxJSONValue server_info);
+	/* Helper to always convert the port to a long. */
+	long GetPort(wxString server_name);
+	long GetPortFromServer(wxJSONValue server_info);
 
 	/* Reports the name (hostname:port) for the server. */
 	wxString GetServerString(wxString server);
