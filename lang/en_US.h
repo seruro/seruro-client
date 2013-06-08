@@ -17,8 +17,16 @@ after you enter it: "
 Seruro Server you would like to add. You may use any 'name', using \
 letters, numbers, hyphens, underscores and spaces."
 
-#define TEXT_ADD_ACCOUNT "Please enter your email address and passowrd \
-used to log into your Seruro Server account. WARNING: do NOT enter the password \
-used to log into your email account!."
+#define TEXT_ADD_ADDRESS "Please enter your email address and passowrd \
+used to log into your Seruro Server account. \
+WARNING: do NOT enter the password used to log into your email account!."
+
+#define TEXT_REMOVE_SERVER "This will remove the Seruro Server '%s'. \
+You may optionally remove the associated certificate authority (CA), \
+certificates downloaded from '%s', and your '%s' account identities."
+
+#define TEXT_REMOVE_ADDRESS "This will remove the account '%s' \
+from the Seruro Server '%s'. \
+You may optionally remove the associated identity."
 
 #endif

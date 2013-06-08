@@ -53,7 +53,7 @@ AddAccountDialog::AddAccountDialog(const wxString &address, const wxString &serv
 	wxSizer *const vert_sizer = new wxBoxSizer(wxVERTICAL);
 
     /* Textual message */
-	Text *msg = new Text(this, wxString(wxT(TEXT_ADD_ACCOUNT)), false);
+	Text *msg = new Text(this, wxString(wxT(TEXT_ADD_ADDRESS)), false);
 	msg->Wrap(300);
 	vert_sizer->Add(msg, DIALOGS_SIZER_OPTIONS);
 

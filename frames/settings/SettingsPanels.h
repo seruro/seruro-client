@@ -139,7 +139,7 @@ public:
 	void OnUpdate(wxCommandEvent &event);
 	void OnUpdateResult(SeruroRequestEvent &event);
 	void OnEdit(wxCommandEvent &event);
-	void OnDelete(wxCommandEvent &event);
+	void OnRemove(wxCommandEvent &event);
 
 private:
     wxString server_name;

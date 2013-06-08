@@ -100,6 +100,7 @@ SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue param
 	}
 
 	/* Request auth */
+	server_name = params["server"]["name"].AsString();
 	params["request"]["auth"] = GetAuth(server_name, address);
 
 	if (params["request"].HasMember("data")) {

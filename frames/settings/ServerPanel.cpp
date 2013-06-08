@@ -2,6 +2,7 @@
 #include "SettingsPanels.h"
 #include "../../SeruroClient.h"
 #include "../../api/SeruroServerAPI.h"
+#include "../dialogs/RemoveDialog.h"
 //#include "../../SeruroConfig.h"
 
 #include "../../wxJSON/wx/jsonval.h"
@@ -16,7 +17,7 @@ enum button_actions
 {
 	BUTTON_EDIT_INFO,
 	BUTTON_UPDATE,
-	BUTTON_DELETE
+	BUTTON_REMOVE
 };
 
 DECLARE_APP(SeruroClient);
@@ -24,7 +25,7 @@ DECLARE_APP(SeruroClient);
 BEGIN_EVENT_TABLE(SettingsPanel_Server, SettingsPanel)
 	EVT_BUTTON(BUTTON_UPDATE, SettingsPanel_Server::OnUpdate)
 	EVT_BUTTON(BUTTON_EDIT_INFO, SettingsPanel_Server::OnEdit)
-	EVT_BUTTON(BUTTON_DELETE, SettingsPanel_Server::OnDelete)
+	EVT_BUTTON(BUTTON_REMOVE, SettingsPanel_Server::OnRemove)
 
 	//EVT_COMMAND(SERURO_API_CALLBACK_GET_CA, SERURO_API_RESULT, SettingsPanel_Server::OnUpdateResult)
     EVT_SERURO_REQUEST(SERURO_API_CALLBACK_CA, SettingsPanel_Server::OnUpdateResult)
@@ -85,12 +86,12 @@ SettingsPanel_Server::SettingsPanel_Server(SeruroPanelSettings *parent,
 	/* Update/Delete server buttons with sizer and spacer. */
 	wxBoxSizer *status_buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
 	wxButton *update_button = new wxButton(this, BUTTON_UPDATE, wxT("Update"));
-	wxButton *delete_button = new wxButton(this, BUTTON_DELETE, wxT("Remove"));
+	wxButton *remove_button = new wxButton(this, BUTTON_REMOVE, wxT("Remove"));
 
 	/* Add spacer, and button to horz sizer, then horz sizer to vert sizer. */
 	//status_buttons_sizer->AddStretchSpacer();
 	status_buttons_sizer->Add(update_button, SETTINGS_PANEL_BUTTONS_OPTIONS);
-	status_buttons_sizer->Add(delete_button, SETTINGS_PANEL_BUTTONS_OPTIONS);
+	status_buttons_sizer->Add(remove_button, SETTINGS_PANEL_BUTTONS_OPTIONS);
 	vert_sizer->Add(status_buttons_sizer, SETTINGS_PANEL_SIZER_OPTIONS);
 
 	this->SetSizer(vert_sizer);
@@ -126,8 +127,16 @@ void SettingsPanel_Server::OnEdit(wxCommandEvent &event)
 
 }
 
-void SettingsPanel_Server::OnDelete(wxCommandEvent &event)
+void SettingsPanel_Server::OnRemove(wxCommandEvent &event)
 {
+	RemoveDialog *dialog = new RemoveDialog(this->server_name);
+	if (dialog->ShowModal() == wxID_OK) {
+		wxLogMessage(wxT("ServerPanel> (OnRemove) OK"));
+		//server_info = dialog->GetValues();
+		dialog->DoRemove();
+	}
+	delete dialog;
 
+	//return server_info;
 }
 
