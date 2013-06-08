@@ -31,6 +31,24 @@ SeruroConfig::SeruroConfig()
 
 }
 
+bool SeruroConfig::WriteConfig()
+{
+	bool results;
+
+	wxString config_string;
+	wxJSONWriter writer(wxJSONWRITER_STYLED);
+
+	writer.Write(this->configData, config_string);
+
+	configFile->Open();
+	configFile->Clear();
+	configFile->InsertLine(config_string, 0);
+	results = configFile->Write();
+	configFile->Close();
+
+	return results;
+}
+
 void SeruroConfig::LoadConfig()
 {
     if (! this->configFile->Exists())
@@ -73,10 +91,22 @@ void SeruroConfig::LoadConfig()
 bool SeruroConfig::AddServer(wxJSONValue server_info)
 {
 	wxJSONValue new_server;
+	wxJSONValue servers_list;
 
 	/* Only require a name and host to identity a server. */
 	if (! server_info.HasMember("name") || ! server_info.HasMember("host")) {
 		wxLogMessage(wxT("SeruroConfig> Cannot add a server without knowing the name and host."));
+		return false;
+	}
+
+	/* Add a servers list if none exists. */
+	if (! configData.HasMember("servers")) {
+		configData["servers"] = servers_list;
+	}
+
+	/* Check for duplicate servers (based on name). */
+	if (configData["servers"].HasMember(server_info["name"].AsString())) {
+		wxLogMessage(_("SeruroConfig> Cannot add server (duplicate name exists)."));
 		return false;
 	}
 
@@ -89,8 +119,92 @@ bool SeruroConfig::AddServer(wxJSONValue server_info)
 	return this->WriteConfig();
 }
 
-bool SeruroConfig::AddAddress(const wxString &server_name, wxJSONValue address_info)
+long SeruroConfig::GetPort(wxString server_name)
 {
+	/* If this server does not exist, return an error state (0). */
+	if (! HasConfig() || ! configData.HasMember("servers") || 
+		! configData["servers"].HasMember(server_name)) {
+		return 0;
+	}
+
+	return GetPortFromServer(configData["servers"][server_name]);
+}
+
+long SeruroConfig::GetPortFromServer(wxJSONValue server_info)
+{
+	long port;
+	wxString port_string;
+	/* The server entry may or may not have an explicit port. */
+	if (server_info.HasMember("port")) {
+		port_string = server_info.AsString();
+	} else {
+		port_string = _(SERURO_DEFAULT_PORT);
+	}
+
+	port_string.ToLong(&port, 10);
+	return port;
+}
+
+bool SeruroConfig::AddAddress(const wxString &server_name, const wxString &address)
+{
+	wxJSONValue new_list;
+	wxArrayString address_list;
+
+	if (! this->configData["servers"].HasMember(server_name)) {
+		wxLogMessage(_("SeruroConfig> (AddAddress) Cannot find server (%s)."), server_name);
+		return false;
+	}
+
+	address_list = GetAddressList(server_name);
+
+	/* Check for a duplicate address for this server. */
+	for (size_t i = 0; i < address_list.size(); i++) {
+		if (address_list[i].compare(address) == 0) {
+			wxLogMessage(_("SeruroConfig> (AddAddress) Found duplicate address (%s) for (%s)."),
+				address, server_name);
+			return false;
+		}
+	}
+
+	configData["servers"][server_name]["addresses"].Append(address);
+
+	wxLogMessage(_("SeruroConfig> Adding address (%s) (%s)."), server_name, address);
+	return this->WriteConfig();
+}
+
+bool SeruroConfig::ServerExists(wxJSONValue server_info)
+{
+	if (! server_info.HasMember("name") || ! server_info.HasMember("host") ||
+		! server_info.HasMember("port")) {
+		wxLogMessage(_("SeruroConfig> (ServerExists) must know name/host/port."));
+		return true;
+	}
+
+	/* If no servers list exists, there are no duplicates. */
+	if (! HasConfig() || ! configData.HasMember("servers")) {
+		return false;
+	}
+
+	/* The canonical name is the index into the config server list. */
+	if (configData["servers"].HasMember(server_info["name"].AsString())) {
+		wxLogMessage(_("SeruroConfig> (ServerExists) duplicate server name (%s) exists."),
+			server_info["name"].AsString());
+		return true;
+	}
+
+	/* Check the host/port pairs for each existing server. */
+	wxArrayString server_list = GetServerList();
+	for (size_t i = 0; i < server_list.size(); i++) {
+		if (server_info["host"].AsString().compare(
+				configData["servers"][server_list[i]]["host"].AsString()
+			) == 0 && GetPort(server_list[i]) == GetPortFromServer(server_info)) {
+			/* Server host names and ports are identical, this is a duplicate. */
+			wxLogMessage(_("SeruroConfig> (ServerExists) duplicate server host/port (%s) exists."),
+				server_list[i]);
+			return true;
+		}
+	}
+
 	return false;
 }
 
@@ -158,7 +272,8 @@ wxArrayString SeruroConfig::GetAddressList(const wxString &server)
 {
 	wxArrayString addresses;
 
-	if (! HasConfig() || ! configData["servers"].HasMember(server)) {
+	if (! HasConfig() || ! configData["servers"].HasMember(server) ||
+		! configData["servers"][server].HasMember("addresses")) {
 		return addresses;
 	}
 
@@ -230,24 +345,6 @@ bool GetTokenFile(wxTextFile** token_file)
 		wxLogMessage(wxT("Token file did not exist, successfully created."));
 	}
 	return true;
-}
-
-bool SeruroConfig::WriteConfig()
-{
-	bool results;
-
-	wxString config_string;
-	wxJSONWriter writer(wxJSONWRITER_STYLED);
-
-	writer.Write(this->configData, config_string);
-
-	configFile->Open();
-	configFile->Clear();
-	configFile->InsertLine(config_string, 0);
-	results = configFile->Write();
-	configFile->Close();
-
-	return results;
 }
 
 bool WriteTokenData(wxJSONValue token_data)

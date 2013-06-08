@@ -11,7 +11,11 @@ DEFINE_EVENT_TYPE(SERURO_API_RESULT);
 DECLARE_APP(SeruroClient);
 
 SeruroRequest::SeruroRequest(wxJSONValue api_params, wxEvtHandler *parent, int parentEvtId)
-: wxThread(), params(api_params), evtHandler(parent), evtId(parentEvtId) {}
+	: wxThread(), params(api_params), evtHandler(parent), evtId(parentEvtId)
+{
+	/* Catch-all for incorrectly set port values. */
+	params["server"]["port"] = wxGetApp().config->GetPortFromServer(params["server"]);
+}
 
 SeruroRequest::~SeruroRequest()
 {
@@ -26,6 +30,23 @@ SeruroRequest::~SeruroRequest()
 	
 }
 
+void SeruroRequest::Reply(wxJSONValue response)
+{
+	/* Copy initialization callback data (called meta) into response. */
+	if (params.HasMember("meta")) {
+		response["meta"] = params["meta"];
+	}
+
+    /* Create a request/response event with the response data. 
+     * The ID determines which function receives the event. 
+     */
+    SeruroRequestEvent event(this->evtId);
+    event.SetResponse(response);
+    
+	/* Todo: is this a critical section? */
+	this->evtHandler->AddPendingEvent(event);
+}
+
 /* Async-Requesting:
  * All API calls are over TLS, when the request thread begins, create a Crypto object.
  * When the TLS request returns, create a SERURO_API_RESULT event.
@@ -34,9 +55,9 @@ SeruroRequest::~SeruroRequest()
  */
 wxThread::ExitCode SeruroRequest::Entry()
 {
-    wxJSONWriter writer;
+    //wxJSONWriter writer;
     wxJSONValue response;
-    wxString event_string;
+    //wxString event_string;
 	bool requested_token;
     
 	wxLogMessage("SeruroRequest> Thread started...");
@@ -44,14 +65,19 @@ wxThread::ExitCode SeruroRequest::Entry()
     /* Check for params["auth"]["have_token"], if false perform GetAuthToken,. */
 	requested_token = false;
 	wxLogMessage(wxT("SeruroRequest::Entry> have token (%s), token (%s)."),
-                 params["auth"]["have_token"].AsString(), params["auth"]["token"].AsString());
+		params["auth"]["have_token"].AsString(), params["auth"]["token"].AsString());
     
 	if (! params["auth"].HasMember("have_token") || ! params["auth"]["have_token"].AsBool()) {
 		wxLogMessage(wxT("SeruroRequest::Entry> no auth token present."));
 		params["auth"]["token"] = this->GetAuthToken();
+
+		//response_string = params["auth"]["token"].AsString().
+		//if (params["auth"]["token"].AsString().compare(wxEmptyString) == 0) {
+		//	response[
+		//}
 		requested_token = true;
 	}
-    
+
     /* Perform Request, receive JSON response. */
     response = this->DoRequest();
     
@@ -66,33 +92,10 @@ wxThread::ExitCode SeruroRequest::Entry()
 		}
 	}
     
-	/* Alternatively, this could be passed as a string (both in an out actually),
-	 * and reassembled as a JSON object by the caller (JSONWriter, JSONReader).
-	 */
-	//writer.Write(response, event_string);
-    
-	/* The controller might be responsible for removing this memory, the wxWidgets API does not
-	 * explicitly call out who owns this object.
-	 */
-	//wxCommandEvent evt(SERURO_API_RESULT, this->evtId);
-	//evt.SetString(event_string);
-    
-	/* Copy callback data into response. */
-	if (params.HasMember("meta")) {
-		response["meta"] = params["meta"];
-	}
-
-    /* Create a request/response event with the response data. 
-     * The ID determines which function receives the event. 
-     */
-    SeruroRequestEvent event(this->evtId);
-    event.SetResponse(response);
-    
-	/* Todo: is this a critical section? */
-	this->evtHandler->AddPendingEvent(event);
-    
 	wxLogMessage("SeruroRequest> Thread finished...");
-    
+
+	this->Reply(response);
+
 	return (ExitCode)0;
 }
 
@@ -109,7 +112,7 @@ wxString SeruroRequest::GetAuthToken()
     
 	/* Perform TLS request to create API session, receive a raw content (string) response. */
 	wxLogMessage(wxT("SeruroRequest::GetAuthToken> requesting token."));
-    
+
 	auth_params["flags"] = SERURO_SECURITY_OPTIONS_DATA;
 	auth_params["server"] = this->params["server"];
 	auth_params["object"] = wxT(SERURO_API_OBJECT_LOGIN);
@@ -152,13 +155,14 @@ wxString SeruroRequest::GetAuthToken()
     
 	/* Warning, possible critical section. */
     wxCriticalSectionLocker enter(wxGetApp().seruro_critSection);
-    
-    /* If "result" (boolean) is true, update token store for "email", set "token". */
+
+	/* If "result" (boolean) is true, update token store for "email", set "token". */
 	if (response.HasMember("error") || ! response["success"].AsBool() || ! response.HasMember("token")) {
 		wxLogMessage(wxT("SeruroRequest::GetAuthToken> failed (%s)."), response["error"].AsString());
+		response["token"] = wxEmptyString;
 		goto finished;
 	}
-    
+
 	wxLogMessage(wxT("SeruroRequest::GetAuthToken> received token (%s)."), response["token"].AsString());
     
 	/* Warning: depends on response["email"] */

@@ -60,6 +60,9 @@ public:
 	virtual void *Entry(); /* thread execution starts */
 	/* Todo: consider an OnExit() is the thread can be terminated by user action. */
     
+	/* Create the response event type and add it to the provided event handler. */
+	void Reply(wxJSONValue response);
+
 protected:
     /* Creates a TLS Request (as an attempt) to create an authentication token. */
 	wxString GetAuthToken();

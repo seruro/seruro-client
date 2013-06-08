@@ -43,6 +43,10 @@ bool SeruroClient::OnInit()
 	/* Now safe to start sub-frames (panels). */
 	mainFrame->AddPanels();
 
+	//wxJSONValue port;
+	//port["port"] = 443;
+	//wxLogMessage(_("Port test (%d) (%s)."), port["port"].AsInt(), port["port"].AsString());
+	//wxLogMessage(_("Port test (%d) (%s)."), port["port"].AsString().ToLong(
 	//wxArrayString servers = config->GetServers();
 	//wxLogStatus(servers[0]);
 

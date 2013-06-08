@@ -162,7 +162,10 @@ public:
 	void Render();
 
 	void OnAddServer(wxCommandEvent &event);
-	void OnAddAccount(wxCommandEvent &event);
+	void OnAddAddress(wxCommandEvent &event);
+
+	/* API/Actions callbacks. */
+	void OnAddAddressResult(SeruroRequestEvent &event);
 
 private:
 	DECLARE_EVENT_TABLE();

@@ -57,6 +57,7 @@
 #define SERURO_SECURITY_OPTIONS_DATA	0x08
 
 /* Used in the Server API to determine an expired or invalid token. */
+#define SERURO_API_ERROR_SUCCESS		"Success."
 #define SERURO_API_ERROR_INVALID_AUTH	"Invalid authentication token."
 
 /* Server API routes, or in HTTP diction "objects". */
@@ -70,8 +71,8 @@
 #define SERURO_API_OBJECT_PING	 "/api/seruro/ping"
 
 /* Seruro API authentication POST fields. */
-#define SERURO_API_AUTH_FIELD_EMAIL "user_login[email]"
-#define SERURO_API_AUTH_FIELD_PASSWORD "user_login[password]"
+#define SERURO_API_AUTH_FIELD_EMAIL		"user_login[email]"
+#define SERURO_API_AUTH_FIELD_PASSWORD	"user_login[password]"
 #define SERURO_API_AUTH_TOKEN_PARAMETER "token"
 
 /* Textual data, stored here to allow easy 'future' translation. */

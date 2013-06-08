@@ -20,6 +20,7 @@ enum button_actions
 
 BEGIN_EVENT_TABLE(SettingsPanel_RootAccounts, SettingsPanel)
 	EVT_BUTTON(BUTTON_ADD_SERVER, SettingsPanel_RootAccounts::OnAddServer)
+	EVT_SERURO_REQUEST(SERURO_API_CALLBACK_PING, SettingsPanel_RootAccounts::OnAddAddressResult)
 END_EVENT_TABLE()
 
 /* Create the 'AddServer' dialog, and if the user does not cancle, return the values
@@ -41,8 +42,9 @@ wxJSONValue AddServer()
 
 /* Try to add an address, prompt for a username and password, display a server or a server menu.
  * Also try to authenticate the user using a PING API call, which will trigger a request.
+ * The first parameter (caller) is required for the API event handler.
  */
-wxJSONValue AddAddress(wxJSONValue server_info, 
+wxJSONValue AddAddress(wxWindow *caller, wxJSONValue server_info, 
 	const wxString &display_server = wxEmptyString)
 {
 	wxJSONValue address_info;
@@ -63,7 +65,14 @@ wxJSONValue AddAddress(wxJSONValue server_info,
 	auth_check_params["password"] = address_info["password"];
 
 	/* Todo: add server info as meta-data.*/
+	auth_check_params["meta"] = server_info; 
+	/* callback should know about this temporary server. */
+
 	/* Todo: add callback which calls addAddress again on an auth failure. */
+	SeruroServerAPI *api = new SeruroServerAPI(caller);
+	SeruroRequest *request = api->Ping(auth_check_params);
+	request->Run();
+	delete api;
 
 	return address_info;
 }
@@ -84,7 +93,36 @@ SettingsPanelView::SettingsPanelView(SeruroPanelSettings *instance_panel) :
 	//this->Render();
 }
 
-void SettingsPanel_RootAccounts::OnAddAccount(wxCommandEvent &event)
+void SettingsPanel_RootAccounts::OnAddAddressResult(SeruroRequestEvent &event)
+{
+	wxJSONValue response = event.GetResponse();
+	wxString server_name, address;
+
+	if (! response["success"].AsBool() || ! response.HasMember("address")) {
+		wxLogMessage(_("RootAccounts (AddAddressResult) failed to ping server."));
+		return;
+	}
+
+	/* An address can be added as a request to add a server.
+	 * If so, the server has not yet been written to the config.
+	 */
+	//if (response.HasMember("meta") && response["meta"].HasMember("name")) {
+	//	wxGetApp().config->AddServer(response["meta"]);
+	//}
+
+	if (! response.HasMember("meta") || ! response["meta"].HasMember("name")) {
+		wxLogMessage(_("RootAccounts> (AddAddressResult) no server name in meta."));
+		return;
+	}
+
+	server_name = response["meta"]["name"].AsString();
+	address = response["address"].AsString();
+
+	wxGetApp().config->AddServer(response["meta"]);
+	wxGetApp().config->AddAddress(server_name, address);
+}
+
+void SettingsPanel_RootAccounts::OnAddAddress(wxCommandEvent &event)
 {
 
 }
@@ -102,7 +140,7 @@ void SettingsPanel_RootAccounts::OnAddServer(wxCommandEvent &event)
 
 	/* Todo: should loop here until the address receives a valid token. */
 	wxString display_server = wxString(_("(New Server) ")) + server_info["name"].AsString();
-	address_info = AddAddress(server_info, display_server);
+	address_info = AddAddress(this, server_info, display_server);
 
 	//auth_check_params["server"] = auth_server_info;
 	//auth_check_params["server"]["
@@ -119,7 +157,8 @@ bool SettingsPanel_RootAccounts::Changed()
 void SettingsPanel_RootAccounts::Render()
 {
     wxBoxSizer *vert_sizer = new wxBoxSizer(wxVERTICAL);
-    
+    wxArrayString servers_list = wxGetApp().config->GetServerList();
+
     Text *msg = new Text(this, wxT("The Seruro Client can be configured to support multiple Seruro Servers."));
     vert_sizer->Add(msg, SETTINGS_PANEL_SIZER_OPTIONS);
     
@@ -127,27 +166,28 @@ void SettingsPanel_RootAccounts::Render()
 	 * Each server will be a child tree item under the root accounts, and will show additional
 	 * details about the server such as the last time the CA/CRL was fetched. 
 	 */
-	wxSizer *server_list_sizer = new wxStaticBoxSizer(wxVERTICAL, this, "&Servers List");
-
 	wxString server_string;//, server_name;
-	wxArrayString servers_list = wxGetApp().config->GetServerList();
 	wxArrayString all_address_list;
 	wxArrayString address_list;
 
-	/* Iterate through the list of servers, adding each to list display. */
-	for (size_t i = 0; i < servers_list.size(); i++) {
-		server_string =  wxGetApp().config->GetServerString(servers_list[i]);
-		server_list_sizer->Add(new Text(this, server_string), 
-			SETTINGS_PANEL_BOXSIZER_OPTIONS);
-		address_list = wxGetApp().config->GetAddressList(servers_list[i]);
-		for (size_t j = 0; j < address_list.size(); j++) {
-			all_address_list.Add(address_list[j] + wxT(" (") + servers_list[i] + wxT(")"));
-		}
-	}
+	if (servers_list.size() > 0) {
+		wxSizer *server_list_sizer = new wxStaticBoxSizer(wxVERTICAL, this, "&Servers List");
 
-	vert_sizer->Add(server_list_sizer, SETTINGS_PANEL_SIZER_OPTIONS);
+		/* Iterate through the list of servers, adding each to list display. */
+		for (size_t i = 0; i < servers_list.size(); i++) {
+			server_string =  wxGetApp().config->GetServerString(servers_list[i]);
+			server_list_sizer->Add(new Text(this, server_string), 
+				SETTINGS_PANEL_BOXSIZER_OPTIONS);
+			address_list = wxGetApp().config->GetAddressList(servers_list[i]);
+			for (size_t j = 0; j < address_list.size(); j++) {
+				all_address_list.Add(address_list[j] + wxT(" (") + servers_list[i] + wxT(")"));
+			}
+		}
+
+		vert_sizer->Add(server_list_sizer, SETTINGS_PANEL_SIZER_OPTIONS);
+	}
 	
-	/* Add server button */
+	/* Add server button (will always be shown. */
 	wxBoxSizer *servers_buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
 	wxButton *add_server_button = new wxButton(this, BUTTON_ADD_SERVER, wxT("Add Server"));
 
@@ -156,14 +196,16 @@ void SettingsPanel_RootAccounts::Render()
 	servers_buttons_sizer->Add(add_server_button, SETTINGS_PANEL_BUTTONS_OPTIONS);
 	vert_sizer->Add(servers_buttons_sizer, SETTINGS_PANEL_SIZER_OPTIONS);
 
-	wxSizer *accounts_list_sizer = new wxStaticBoxSizer(wxVERTICAL, this, "&Address List");
+	if (servers_list.size() > 0) {
+		wxSizer *accounts_list_sizer = new wxStaticBoxSizer(wxVERTICAL, this, "&Address List");
 
-	for (size_t i = 0; i < all_address_list.size(); i++) {
-		accounts_list_sizer->Add(new Text(this, all_address_list[i]),
-			SETTINGS_PANEL_BOXSIZER_OPTIONS);
+		for (size_t i = 0; i < all_address_list.size(); i++) {
+			accounts_list_sizer->Add(new Text(this, all_address_list[i]),
+				SETTINGS_PANEL_BOXSIZER_OPTIONS);
+		}
+
+		vert_sizer->Add(accounts_list_sizer, SETTINGS_PANEL_SIZER_OPTIONS);
 	}
-
-	vert_sizer->Add(accounts_list_sizer, SETTINGS_PANEL_SIZER_OPTIONS);
 
    	/* Add address button */
 	//wxBoxSizer *servers_buttons_sizer = new wxBoxSizer(wxHORIZONTAL);

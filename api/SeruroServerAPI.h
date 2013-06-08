@@ -46,6 +46,8 @@ class SeruroServerAPI
 public:
 	SeruroServerAPI(wxEvtHandler *caller) : 
 	  evtHandler(caller) {}
+	SeruroServerAPI(wxWindow *caller) :
+	  evtHandler(caller->GetEventHandler()) {}
 
 	/* Helper functions for those who do not want to DECLARE_APP 
 	 * for access to the config methods. 
@@ -54,6 +56,12 @@ public:
 	/* Must provide the API name, params, and callback event ID */
 	SeruroRequest *CreateRequest(api_name_t name, 
 		wxJSONValue params, int evtId);
+
+	/* Special API calls. */
+	SeruroRequest *Ping(wxJSONValue params) {
+		return CreateRequest(SERURO_API_PING, params,
+			SERURO_API_CALLBACK_PING);
+	}
 
 	/* API callbacks */
 	bool InstallP12(wxJSONValue response);

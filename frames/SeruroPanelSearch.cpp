@@ -337,7 +337,11 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
         wxString("No First Name"), wxString("No Last Name"));
     
 	/* Testing default focus */
-	this->search_control->SetFocus();
+	if (wxGetApp().config->GetServerList().size() == 0) {
+		this->DisableSearch();
+	} else {
+		this->search_control->SetFocus();
+	}
 	this->Layout();
 }
 
@@ -381,7 +385,12 @@ void SeruroPanelSearch::DoSearch()
     wxString server_name = this->GetSelectedServer();
 	wxString query = this->search_control->GetValue();
 
-	wxJSONValue server = this->api->GetServer(server_name);	
+	wxJSONValue server = this->api->GetServer(server_name);
+	/* Sanity check for no servers, but an interactive search input. */
+	if (! server.HasMember("host")) {
+		wxLogMessage(_("SeruroPanelServer> (DoSearch) Invalid server selected."));
+		return;
+	}
 	
 	wxJSONValue params;
 	params["query"] = query;

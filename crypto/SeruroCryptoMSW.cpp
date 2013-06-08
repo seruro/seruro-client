@@ -145,7 +145,8 @@ wxString SeruroCryptoMSW::TLSRequest(wxJSONValue params)
 	::SysFreeString(object);
 
 	/* Calculate length of "data", which comes after heads, if any, add a urlencoded Content-Type. */
-	DWORD dwOptionalLength = (params["flags"].AsInt() & SERURO_SECURITY_OPTIONS_DATA) ? params["data_string"].AsString().length() : 0;
+	DWORD dwOptionalLength = (params["flags"].AsInt() & SERURO_SECURITY_OPTIONS_DATA) ? 
+		params["data_string"].AsString().length() : 0;
 	//if (dwOptionalLength > 0) {
 	/* no Content-Type: application/json support. */
 	WinHttpAddRequestHeaders(hRequest, 

@@ -81,12 +81,26 @@ wxJSONValue SeruroServerAPI::GetServer(const wxString &server)
 SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue params, int evtId)
 {
 	/* Add to params with GetAuth / GetRequest */
-    wxString server = params["server"]["name"].AsString();
-	wxString address = (params.HasMember("address")) ? params["address"].AsString() : wxString(wxEmptyString);
-	params["auth"] = GetAuth(server, address);
+    wxString server_name, address;
 
-	/* GetRequest will expect auth to exist. */
+	/* Create the request based on the API call. (Fills in object, verb, method, data, query.) */
 	params["request"] = GetRequest(name, params);
+
+	/* (Optionally) Pin this request to an address. */
+	if (params.HasMember("address")) {
+		address = params["address"].AsString();
+		params["request"]["address"] = address;
+	} else {
+		address = wxEmptyString;
+	}
+	
+	/* (Optionally) This request has a pinned password provided. */
+	if (params.HasMember("password")) {
+		params["request"]["password"] = params["password"];
+	}
+
+	/* Request auth */
+	params["request"]["auth"] = GetAuth(server_name, address);
 
 	if (params["request"].HasMember("data")) {
 		params["request"]["data_string"] = encodeData(params["request"]["data"]);
@@ -97,6 +111,7 @@ SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue param
 		params["request"]["meta"] = params["meta"];
 	}
 
+	/* Create the request thread after all data is filled in. */
 	SeruroRequest *thread = new SeruroRequest(params["request"], evtHandler, evtId);
 
 	if (thread->Create() != wxTHREAD_NO_ERROR) {
@@ -157,11 +172,11 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
     request["query"] = query;
     
 	/* Allow address pinning, for authentication */
-	request["address"] = (params.HasMember("address")) ? params["address"] : wxEmptyString;
+	//request["address"] = (params.HasMember("address")) ? params["address"] : wxEmptyString;
 
 	/* Debug log. */
-	wxLogMessage(wxT("ServerAPI::GetRequest> Current auth token (%s)."), 
-		params["auth"]["token"].AsString());
+	//wxLogMessage(wxT("ServerAPI::GetRequest> Current auth token (%s)."), 
+	//	params["auth"]["token"].AsString());
 
 	/* Switch over each API call and set it's URL */
 	switch (name) {
@@ -194,7 +209,7 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 
 	/* Todo: Check to make sure server is in the params. */
 	request["server"] = params["server"];
-	request["auth"] = params["auth"];
+	//request["auth"] = params["auth"];
 
 	return request;
 }
