@@ -91,7 +91,7 @@ void SeruroConfig::LoadConfig()
 bool SeruroConfig::AddServer(wxJSONValue server_info)
 {
 	wxJSONValue new_server;
-	wxJSONValue servers_list;
+	//wxJSONValue servers_list;
 
 	/* Only require a name and host to identity a server. */
 	if (! server_info.HasMember("name") || ! server_info.HasMember("host")) {
@@ -106,7 +106,7 @@ bool SeruroConfig::AddServer(wxJSONValue server_info)
 	/* Todo: potentially add config template. */
 	/* Add a servers list if none exists. */
 	if (! configData.HasMember("servers")) {
-		configData["servers"] = servers_list;
+		configData["servers"] = wxJSONValue( wxJSONTYPE_OBJECT );
 	}
 
 	new_server["host"] = server_info["host"];
@@ -133,6 +133,7 @@ long SeruroConfig::GetPortFromServer(wxJSONValue server_info)
 {
 	long port = 0;
 	wxString port_string;
+
 	/* The server entry may or may not have an explicit port. */
 	if (server_info.HasMember("port")) {
 		port_string = server_info["port"].AsString();
@@ -149,7 +150,7 @@ long SeruroConfig::GetPortFromServer(wxJSONValue server_info)
 
 bool SeruroConfig::AddAddress(const wxString &server_name, const wxString &address)
 {
-	wxJSONValue new_list;
+	//wxJSONValue new_list;
 	wxArrayString address_list;
 
 	if (! this->configData["servers"].HasMember(server_name)) {

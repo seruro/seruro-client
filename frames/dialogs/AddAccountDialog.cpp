@@ -78,7 +78,6 @@ wxJSONValue AddAccountForm::GetValues()
 {
 	wxJSONValue values;
 
-
 	values["address"] = this->address->GetValue();
 	values["password"] = this->password->GetValue();
 	

@@ -16,11 +16,13 @@ DECLARE_APP(SeruroClient);
 enum button_actions
 {
 	BUTTON_ADD_SERVER,
-	BUTTON_ADD_ACCOUNT
+	BUTTON_ADD_ADDRESS
 };
 
 BEGIN_EVENT_TABLE(SettingsPanel_RootAccounts, SettingsPanel)
 	EVT_BUTTON(BUTTON_ADD_SERVER, SettingsPanel_RootAccounts::OnAddServer)
+	EVT_BUTTON(BUTTON_ADD_ADDRESS, SettingsPanel_RootAccounts::OnAddAddress)
+
 	EVT_SERURO_REQUEST(SERURO_API_CALLBACK_PING, SettingsPanel_RootAccounts::OnAddAddressResult)
 END_EVENT_TABLE()
 
@@ -45,7 +47,8 @@ wxJSONValue AddServer()
  * Also try to authenticate the user using a PING API call, which will trigger a request.
  * The first parameter (caller) is required for the API event handler.
  */
-wxJSONValue AddAddress(wxWindow *caller, wxJSONValue server_info, 
+wxJSONValue AddAddress(wxWindow *caller, 
+	wxJSONValue server_info = wxJSONValue(wxJSONTYPE_OBJECT), 
 	const wxString &display_server = wxEmptyString)
 {
 	wxJSONValue address_info;
@@ -60,16 +63,21 @@ wxJSONValue AddAddress(wxWindow *caller, wxJSONValue server_info,
 	}
 	delete dialog;
 
-	auth_check_params["server"] = server_info;
 	auth_check_params["address"] = address_info["address"];
 	/* Set an explicit password, disabling the built-in auth prompt. */
 	auth_check_params["password"] = address_info["password"];
 
-	/* Todo: add server info as meta-data.*/
-	auth_check_params["meta"] = server_info; 
-	/* callback should know about this temporary server. */
-
-	/* Todo: add callback which calls addAddress again on an auth failure. */
+	/* The server info can be set explicitly, or (if not) the user will choose a server name.
+	 * Both the authentication parameters and callback metadata need the server info.
+	 */
+	if (! server_info.HasMember("name")) {
+		auth_check_params["meta"] = wxGetApp().config->GetServer(address_info["server_name"].AsString());
+		auth_check_params["server"] = auth_check_params["meta"];
+	} else {
+		auth_check_params["server"] = server_info;
+		auth_check_params["meta"] = server_info; 
+	}
+	
 	SeruroServerAPI *api = new SeruroServerAPI(caller);
 	SeruroRequest *request = api->Ping(auth_check_params);
 	request->Run();
@@ -146,7 +154,7 @@ void SettingsPanel_RootAccounts::OnAddAddressResult(SeruroRequestEvent &event)
 
 void SettingsPanel_RootAccounts::OnAddAddress(wxCommandEvent &event)
 {
-
+	AddAddress(this);
 }
 
 void SettingsPanel_RootAccounts::OnAddServer(wxCommandEvent &event)
@@ -223,9 +231,12 @@ void SettingsPanel_RootAccounts::Render()
 	}
 
    	/* Add address button */
-	//wxBoxSizer *servers_buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
-	//wxButton *add_server_button = new wxButton(this, BUTTON_ADD_SERVER, wxT("Add Account"));
+	wxBoxSizer *addresses_buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
+	wxButton *add_address_button = new wxButton(this, BUTTON_ADD_ADDRESS, wxT("Add Address"));
     
+	addresses_buttons_sizer->Add(add_address_button, SETTINGS_PANEL_BUTTONS_OPTIONS);
+	vert_sizer->Add(addresses_buttons_sizer, SETTINGS_PANEL_SIZER_OPTIONS);
+
     this->SetSizer(vert_sizer);
 }
 
