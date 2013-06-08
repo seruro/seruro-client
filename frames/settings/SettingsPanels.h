@@ -80,13 +80,17 @@ public:
 	 * This is mainly a helper to reduce code. 
 	 */
 	void ReRender() {
+#if ! defined(__WXMSW__)
 		this->Freeze();
+#endif
 		/* Free memory. */
         if (this->GetSizer()) this->GetSizer()->Clear(true);
 		/* Perform panel-specific (virtual) render. */
 		this->Render();
 		this->Layout();
+#if ! defined(__WXMSW__)
 		this->Thaw();
+#endif
 	}
 
 	void InitSizer() {
@@ -191,9 +195,14 @@ class SettingsPanelTree : public SettingsPanel
 {
 public:
 	SettingsPanelTree(SeruroPanelSettings *parent);
+
+	void AddItem(settings_view_type_t type,
+		wxString name = wxEmptyString, 
+		wxString parent = wxEmptyString);
     
 private:
 	wxTreeCtrl *settings_tree;
+	wxTreeItemId root;
 };
 
 /* Selecting a tree item will change the settings view, meaning the

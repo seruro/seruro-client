@@ -13,7 +13,7 @@ DECLARE_APP(SeruroClient);
 SeruroRequest::SeruroRequest(wxJSONValue api_params, wxEvtHandler *parent, int parentEvtId)
 	: wxThread(), params(api_params), evtHandler(parent), evtId(parentEvtId)
 {
-	/* Catch-all for incorrectly set port values. */
+	/* Catch-all for port configurations. */
 	params["server"]["port"] = wxGetApp().config->GetPortFromServer(params["server"]);
 }
 

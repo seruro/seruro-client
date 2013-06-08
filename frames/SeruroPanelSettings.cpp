@@ -50,11 +50,11 @@ SeruroPanelSettings::SeruroPanelSettings(wxBookCtrlBase *book) : SeruroPanel(boo
         wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxSP_3DSASH | wxSP_BORDER);
 
 	/* Create a tree control as well as the first settings view (general). */
-	SettingsPanelTree *settings_tree = new SettingsPanelTree(this);
+	tree_panel = new SettingsPanelTree(this);
     /* Seed the current panel with the Root panel: general. */
 	this->AddFirstPanel();
 
-	splitter->SplitVertically(settings_tree, this->current_panel);
+	splitter->SplitVertically(tree_panel, this->current_panel);
     
     this->splitter->SetSize(GetClientSize());
 	this->splitter->SetSashGravity(1.0);
@@ -189,3 +189,10 @@ void SeruroPanelSettings::ShowPanel(settings_view_type_t type,
 	new_panel->Show(true);
 	this->current_panel = new_panel;
 }
+
+void SeruroPanelSettings::AddTreeItem(settings_view_type_t type, 
+	const wxString &name, const wxString &parent)
+{
+	this->tree_panel->AddItem(type, name, parent);
+}
+

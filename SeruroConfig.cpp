@@ -131,16 +131,19 @@ long SeruroConfig::GetPort(wxString server_name)
 
 long SeruroConfig::GetPortFromServer(wxJSONValue server_info)
 {
-	long port;
+	long port = 0;
 	wxString port_string;
 	/* The server entry may or may not have an explicit port. */
 	if (server_info.HasMember("port")) {
-		port_string = server_info.AsString();
+		port_string = server_info["port"].AsString();
 	} else {
 		port_string = _(SERURO_DEFAULT_PORT);
 	}
 
 	port_string.ToLong(&port, 10);
+	wxLogMessage(_("SeruroConfig> (GetPortFromServer) port for (%s) is (%s)= (%d)."), 
+		server_info["name"].AsString(), port_string, port);
+
 	return port;
 }
 

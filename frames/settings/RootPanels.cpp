@@ -1,6 +1,7 @@
 
 #include "SettingsPanels.h"
 #include "../SeruroPanelSettings.h"
+
 #include "../../SeruroClient.h"
 #include "../../api/SeruroServerAPI.h"
 
@@ -103,23 +104,44 @@ void SettingsPanel_RootAccounts::OnAddAddressResult(SeruroRequestEvent &event)
 		return;
 	}
 
-	/* An address can be added as a request to add a server.
-	 * If so, the server has not yet been written to the config.
+	/* Every address added will be identified by the server it is added "under".
+	 * This server may be a "new" server, meaning addAddress was called as a response
+	 * to addServer.
+	 *
+	 * In both cases, the server information must exists.
+	 * Also, try to add the server without intellegence. 
 	 */
-	//if (response.HasMember("meta") && response["meta"].HasMember("name")) {
-	//	wxGetApp().config->AddServer(response["meta"]);
-	//}
-
 	if (! response.HasMember("meta") || ! response["meta"].HasMember("name")) {
 		wxLogMessage(_("RootAccounts> (AddAddressResult) no server name in meta."));
 		return;
 	}
 
+	/* Save references. */
 	server_name = response["meta"]["name"].AsString();
 	address = response["address"].AsString();
 
-	wxGetApp().config->AddServer(response["meta"]);
-	wxGetApp().config->AddAddress(server_name, address);
+	/* Save the results to the application's config. */
+	if (! wxGetApp().config->AddServer(response["meta"])) {
+		return;
+	} else {
+		/* Add a new server panel. */
+		this->MainPanel()->AddTreeItem(SETTINGS_VIEW_TYPE_SERVER, response["meta"]["name"].AsString());
+	}
+
+	/* Regardless of the addServer response, the addAddress will determine a UI update.
+	 * (If the server was new, and it fails, the address will fail.)
+	 * (If the server was new, and it successes, but the address fails, there is a larger problem.)
+	 */
+	if (! wxGetApp().config->AddAddress(server_name, address)) {
+		return;
+	} else {
+		/* Add an address panel under the server panel. */
+		this->MainPanel()->AddTreeItem(SETTINGS_VIEW_TYPE_ADDRESS, 
+			response["address"].AsString(), response["meta"]["name"].AsString());
+	}
+
+	/* Update the UI for this panel. */
+	ReRender();
 }
 
 void SettingsPanel_RootAccounts::OnAddAddress(wxCommandEvent &event)
@@ -132,7 +154,6 @@ void SettingsPanel_RootAccounts::OnAddServer(wxCommandEvent &event)
     /* Todo: Get all users (emails) for given server. */
     wxJSONValue server_info;
 	wxJSONValue address_info;
-	//wxJSONValue auth_server_info;
 	
 	server_info = AddServer();
 	/* Make sure there is a name value, if not then something weird happened. */
@@ -141,12 +162,6 @@ void SettingsPanel_RootAccounts::OnAddServer(wxCommandEvent &event)
 	/* Todo: should loop here until the address receives a valid token. */
 	wxString display_server = wxString(_("(New Server) ")) + server_info["name"].AsString();
 	address_info = AddAddress(this, server_info, display_server);
-
-	//auth_check_params["server"] = auth_server_info;
-	//auth_check_params["server"]["
-
-
-	/* Perform a request for nothing. */
 }
 
 bool SettingsPanel_RootAccounts::Changed()

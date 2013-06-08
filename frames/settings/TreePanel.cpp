@@ -71,6 +71,52 @@ void SettingsTree::OnSelectItem(wxTreeEvent &event)
 	this->main_panel->ShowPanel(data->item_type, data->item_name, data->item_parent);
 }
 
+void SettingsPanelTree::AddItem(settings_view_type_t type, wxString name, wxString parent)
+{
+	wxTreeItemIdValue cookie;
+	wxTreeItemId item;
+	SettingsTreeItem *item_data;
+
+	/* Initially set the item/item data to the first child of root. */
+	item = settings_tree->GetFirstChild(this->root, cookie);
+	item_data = (SettingsTreeItem*) settings_tree->GetItemData(item);
+
+	if (type == SETTINGS_VIEW_TYPE_SERVER) {
+		/* Find root child (servers) and add. */
+		while (item.IsOk() && item_data->item_type != SETTINGS_VIEW_TYPE_ROOT_ACCOUNTS) {
+			item = settings_tree->GetNextChild(item, cookie);
+			item_data = (SettingsTreeItem*) settings_tree->GetItemData(item);
+		}
+	} else if (type == SETTINGS_VIEW_TYPE_ADDRESS) {
+		/* Find root child (servers) then child (parent) and add. */
+		while (item.IsOk() && item_data->item_type != SETTINGS_VIEW_TYPE_ROOT_ACCOUNTS) {
+			/* Fist find the accounts root item. */
+			item = settings_tree->GetNextChild(item, cookie);
+			item_data = (SettingsTreeItem*) settings_tree->GetItemData(item);
+		}
+
+		/* Now search the account children for a parent (server name) that matches. */
+		item = settings_tree->GetFirstChild(item, cookie);
+		item_data = (SettingsTreeItem*) settings_tree->GetItemData(item);
+		while (item.IsOk() && item_data->item_name.compare(parent) != 0) {
+			item = settings_tree->GetNextChild(item, cookie);
+			item_data = (SettingsTreeItem*) settings_tree->GetItemData(item);
+		}
+	} else if (type == SETTINGS_VIEW_TYPE_APPLICATION) {
+		/* Find root child (applications) and add. */
+		/* Note: this should not be dynamic? */
+	}
+
+	if (! item.IsOk()) {
+		wxLogMessage(_("SettingsPanelTree> (AddItem) could not find a valid parent item."));
+		return;
+	}
+
+	/* 'item' should be positioned as the parent object where this item should be appened. */
+	wxLogMessage(_("SettingsPanelTree> (AddItem) adding to parent with name (%s)."), item_data->item_name);
+	item = settings_tree->AppendItem(item, name, -1, -1, new SettingsTreeItem(type, name, parent));
+}
+
 SettingsPanelTree::SettingsPanelTree(SeruroPanelSettings *parent) : 
 	SettingsPanel(parent)
 {
@@ -81,7 +127,7 @@ SettingsPanelTree::SettingsPanelTree(SeruroPanelSettings *parent) :
     this->settings_tree->SetIndent(SERURO_SETTINGS_TREE_INDENT);
 
 	/* We want a multi-root tree, so create a hidden tree root. */
-	wxTreeItemId root = this->settings_tree->AddRoot(wxT("_"));
+	this->root = this->settings_tree->AddRoot(wxT("_"));
 
 	/* The basic controls are called general. */
 	wxTreeItemId root_general_item = this->settings_tree->AppendItem(root, wxT("General"), -1, -1,
