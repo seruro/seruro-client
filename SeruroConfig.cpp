@@ -88,6 +88,21 @@ void SeruroConfig::LoadConfig()
     this->configValid = true;
 }
 
+bool SeruroConfig::RemoveServer(wxString server_name)
+{
+	if (! configData["servers"].HasMember(server_name)) {
+		return true;
+	}
+
+	/* Remove tokens for all addresses belonging to this server. */
+	//wxArrayString address_list = GetAddressList(server_name);
+	//for (size_t i = 0; i < address_list.size(); i
+	RemoveTokens(server_name);
+
+	configData["servers"].Remove(server_name);
+	return this->WriteConfig();
+}
+
 bool SeruroConfig::AddServer(wxJSONValue server_info)
 {
 	wxJSONValue new_server;
@@ -148,24 +163,39 @@ long SeruroConfig::GetPortFromServer(wxJSONValue server_info)
 	return port;
 }
 
+bool SeruroConfig::RemoveAddress(wxString server_name, wxString address)
+{
+	/* Todo: should this remove the token too? yes! */
+	if (! AddressExists(server_name, address)) {
+		return true;
+	}
+
+	/* Get list, and reset. */
+	wxArrayString address_list = GetAddressList(server_name);
+	configData["servers"][server_name]["addresses"] =  wxJSONValue(wxJSONTYPE_OBJECT);
+
+	for (size_t i = 0; i < address_list.size(); i++) {
+		if (address_list[i].compare(address) != 0) {
+			configData["servers"][server_name]["addresses"].Append(address_list[i]);
+		}
+	}
+
+	/* Remove token. */
+	RemoveToken(server_name, address);
+	return this->WriteConfig();
+}
+
 bool SeruroConfig::AddAddress(const wxString &server_name, const wxString &address)
 {
-	//wxJSONValue new_list;
-	wxArrayString address_list;
-
 	if (! this->configData["servers"].HasMember(server_name)) {
 		wxLogMessage(_("SeruroConfig> (AddAddress) Cannot find server (%s)."), server_name);
 		return false;
 	}
 
-	address_list = GetAddressList(server_name);
-	/* Check for a duplicate address for this server. */
-	for (size_t i = 0; i < address_list.size(); i++) {
-		if (address_list[i].compare(address) == 0) {
-			wxLogMessage(_("SeruroConfig> (AddAddress) Found duplicate address (%s) for (%s)."),
+	if (AddressExists(server_name, address)) {
+		wxLogMessage(_("SeruroConfig> (AddAddress) Found duplicate address (%s) for (%s)."),
 				address, server_name);
-			return false;
-		}
+		return false;
 	}
 
 	configData["servers"][server_name]["addresses"].Append(address);
@@ -207,6 +237,18 @@ bool SeruroConfig::ServerExists(wxJSONValue server_info)
 		}
 	}
 
+	return false;
+}
+
+bool SeruroConfig::AddressExists(wxString server_name, wxString address)
+{
+	wxArrayString address_list = GetAddressList(server_name);
+	/* Check for a duplicate address for this server. */
+	for (size_t i = 0; i < address_list.size(); i++) {
+		if (address_list[i].compare(address) == 0) {
+			return true;
+		}
+	}
 	return false;
 }
 
@@ -428,6 +470,39 @@ wxString SeruroConfig::GetToken(const wxString &server, const wxString &address)
 	}
 
 	return token;
+}
+
+bool SeruroConfig::RemoveTokens(const wxString &server_name)
+{
+	bool results;
+
+	wxJSONValue token_data = GetTokenData();
+	if (! token_data.HasMember(server_name)) {
+		return true;
+	}
+
+	token_data.Remove(server_name);
+	results = WriteTokenData(token_data);
+
+	return results;
+}
+
+bool SeruroConfig::RemoveToken(const wxString &server_name, const wxString &address)
+{
+	bool results;
+
+	wxJSONValue token_data = GetTokenData();
+	if (! token_data.HasMember(server_name) || ! token_data[server_name].HasMember(address)) {
+		/* Unexpected, maybe there was never a token for this account, 
+		 * and it was the only for the given server?
+		 */
+		return true;
+	}
+
+	token_data[server_name].Remove(address);
+	results = WriteTokenData(token_data);
+
+	return results;
 }
 
 bool SeruroConfig::WriteToken(const wxString &server, const wxString &address, const wxString &token)

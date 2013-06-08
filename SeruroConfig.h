@@ -31,9 +31,16 @@ public:
 	wxString GetToken(const wxString &server, const wxString &address);
 	bool WriteToken(const wxString &server, const wxString &address, 
 		const wxString &token);
+	bool RemoveToken(const wxString &server_name, 
+		const wxString &address);
+	bool RemoveTokens(const wxString &server_name);
 
 	bool AddServer(wxJSONValue server_info);
-	bool AddAddress(const wxString &server_name, const wxString &address);
+	bool AddAddress(const wxString &server_name, 
+		const wxString &address);
+
+	bool RemoveServer(wxString server_name);
+	bool RemoveAddress(wxString server_name, wxString address);
 
 	wxJSONValue GetServers();
 	wxJSONValue GetServer(const wxString &server);
@@ -41,6 +48,7 @@ public:
 	wxArrayString GetServerList();
 
 	bool ServerExists(wxJSONValue server_info);
+	bool AddressExists(wxString server_name, wxString address);
 	/* Helper to always convert the port to a long. */
 	long GetPort(wxString server_name);
 	long GetPortFromServer(wxJSONValue server_info);

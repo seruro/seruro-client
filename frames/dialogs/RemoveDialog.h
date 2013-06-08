@@ -44,6 +44,10 @@ public:
 
 protected:
 	bool remove_server;
+
+	wxString server_name;
+	wxString address;
+
 	/* Checkboxes specific to a server removal. */
 	wxCheckBox *remove_ca;
 	wxCheckBox *remove_certs;

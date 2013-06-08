@@ -10,7 +10,8 @@
 DECLARE_APP(SeruroClient);
 
 RemoveDialog::RemoveDialog(const wxString &server_name, const wxString &address) : 
-	wxDialog(wxGetApp().GetFrame(), wxID_ANY, wxString(wxT("Remove")))
+	wxDialog(wxGetApp().GetFrame(), wxID_ANY, wxString(wxT("Remove"))),
+	server_name(server_name), address(address)
 {
 	/* To avoid many-string compares, initially set if we are removing a server. */
 	remove_server = (address.compare(wxEmptyString) == 0);
@@ -57,5 +58,20 @@ RemoveDialog::RemoveDialog(const wxString &server_name, const wxString &address)
 
 void RemoveDialog::DoRemove() 
 {
+	size_t identities_size = wxGetApp().config->GetAddressList(server_name).size();
 
+	/* Todo: evaluate TOCTOU logic errors. */
+	/* Very important, this list must be iterated the same way it is created. */
+	for (size_t i = 0; i < identities_size; i++) {
+		if (this->remove_identities[i]->IsChecked()) {
+
+		}
+	}
+
+	/* Finally remove the data from the config (and the app). */
+	if (this->remove_server) {
+		wxGetApp().config->RemoveServer(this->server_name);
+	} else {
+		wxGetApp().config->RemoveAddress(this->server_name, this->address);
+	}
 }
