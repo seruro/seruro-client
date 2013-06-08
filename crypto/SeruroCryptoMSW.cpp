@@ -327,4 +327,8 @@ bool SeruroCryptoMSW::InstallP12(wxMemoryBuffer &p12, wxString &p_password)
 	return true;
 }
 
+bool SeruroCryptoMSW::RemoveIdentity(wxString thumbprint) { return false; }
+bool SeruroCryptoMSW::RemoveCA(wxString thumbprint) { return false; }
+bool SeruroCryptoMSW::RemoveCerts(wxArrayString thumbprints) { return false; }
+
 #endif

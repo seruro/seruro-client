@@ -42,6 +42,9 @@ public:
 	void AddTreeItem(settings_view_type_t type,
 		const wxString &name   = wxString(wxEmptyString), 
 		const wxString &parent = wxString(wxEmptyString));
+	void RemoveTreeItem(settings_view_type_t type,
+		const wxString &name   = wxString(wxEmptyString), 
+		const wxString &parent = wxString(wxEmptyString));
 
 private:
 	/* Keep all panels (lazily created) for easy switching.

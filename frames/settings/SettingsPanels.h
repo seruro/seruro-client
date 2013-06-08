@@ -199,8 +199,19 @@ public:
 	void AddItem(settings_view_type_t type,
 		wxString name = wxEmptyString, 
 		wxString parent = wxEmptyString);
+
+	void RemoveItem(settings_view_type_t type,
+		wxString name = wxEmptyString, 
+		wxString parent = wxEmptyString);
     
 private:
+	wxTreeItemId GetItemParent(settings_view_type_t type,
+		wxString name = wxEmptyString, 
+		wxString parent = wxEmptyString);
+	wxTreeItemId GetItem(settings_view_type_t type,
+		wxString name = wxEmptyString, 
+		wxString parent = wxEmptyString);
+
 	wxTreeCtrl *settings_tree;
 	wxTreeItemId root;
 };

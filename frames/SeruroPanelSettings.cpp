@@ -196,3 +196,9 @@ void SeruroPanelSettings::AddTreeItem(settings_view_type_t type,
 	this->tree_panel->AddItem(type, name, parent);
 }
 
+void SeruroPanelSettings::RemoveTreeItem(settings_view_type_t type, 
+	const wxString &name, const wxString &parent)
+{
+	this->tree_panel->RemoveItem(type, name, parent);
+}
+

@@ -193,7 +193,8 @@ void SettingsPanel_RootAccounts::Render()
 	wxArrayString all_address_list;
 	wxArrayString address_list;
 
-	if (servers_list.size() > 0) {
+
+	if (servers_list.size() != 0) {
 		wxSizer *server_list_sizer = new wxStaticBoxSizer(wxVERTICAL, this, "&Servers List");
 
 		/* Iterate through the list of servers, adding each to list display. */
@@ -209,7 +210,7 @@ void SettingsPanel_RootAccounts::Render()
 
 		vert_sizer->Add(server_list_sizer, SETTINGS_PANEL_SIZER_OPTIONS);
 	}
-	
+
 	/* Add server button (will always be shown. */
 	wxBoxSizer *servers_buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
 	wxButton *add_server_button = new wxButton(this, BUTTON_ADD_SERVER, wxT("Add Server"));
@@ -219,16 +220,20 @@ void SettingsPanel_RootAccounts::Render()
 	servers_buttons_sizer->Add(add_server_button, SETTINGS_PANEL_BUTTONS_OPTIONS);
 	vert_sizer->Add(servers_buttons_sizer, SETTINGS_PANEL_SIZER_OPTIONS);
 
-	if (servers_list.size() > 0) {
-		wxSizer *accounts_list_sizer = new wxStaticBoxSizer(wxVERTICAL, this, "&Address List");
-
-		for (size_t i = 0; i < all_address_list.size(); i++) {
-			accounts_list_sizer->Add(new Text(this, all_address_list[i]),
-				SETTINGS_PANEL_BOXSIZER_OPTIONS);
-		}
-
-		vert_sizer->Add(accounts_list_sizer, SETTINGS_PANEL_SIZER_OPTIONS);
+	/* If there are no servers, we are done. */
+	if (servers_list.size() == 0) {
+		this->SetSizer(vert_sizer);
+		return;
 	}
+
+	wxSizer *accounts_list_sizer = new wxStaticBoxSizer(wxVERTICAL, this, "&Address List");
+
+	for (size_t i = 0; i < all_address_list.size(); i++) {
+		accounts_list_sizer->Add(new Text(this, all_address_list[i]),
+			SETTINGS_PANEL_BOXSIZER_OPTIONS);
+	}
+
+	vert_sizer->Add(accounts_list_sizer, SETTINGS_PANEL_SIZER_OPTIONS);
 
    	/* Add address button */
 	wxBoxSizer *addresses_buttons_sizer = new wxBoxSizer(wxHORIZONTAL);

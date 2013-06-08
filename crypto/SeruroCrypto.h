@@ -20,20 +20,6 @@ class SeruroCrypto : public SeruroCryptoMAC
 {
 public:
 	SeruroCrypto() {}
-
-	virtual void OnInit();
-
-	/* wxJSONValue, For easy overloading access. */
-	virtual wxString TLSRequest(wxJSONValue params);
-
-	virtual bool InstallP12(wxMemoryBuffer &p12, wxString &password);
-
-	virtual bool InstallCA(wxMemoryBuffer &ca);
-	virtual bool InstallCert(wxMemoryBuffer &cert);
-
-	virtual bool RemoveIdentity(wxString thumbprint);
-	virtual bool RemoveCA(wxString thumbprint);
-	virtual bool RemoveCerts(wxArrayString thumbprints);
 };
 
 #endif

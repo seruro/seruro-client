@@ -71,10 +71,11 @@ void SettingsTree::OnSelectItem(wxTreeEvent &event)
 	this->main_panel->ShowPanel(data->item_type, data->item_name, data->item_parent);
 }
 
-void SettingsPanelTree::AddItem(settings_view_type_t type, wxString name, wxString parent)
+wxTreeItemId SettingsPanelTree::GetItemParent(settings_view_type_t type, wxString name, wxString parent)
 {
 	wxTreeItemIdValue cookie;
 	wxTreeItemId item;
+	/* Need to query item data to inspect type, name, parent. */
 	SettingsTreeItem *item_data;
 
 	/* Initially set the item/item data to the first child of root. */
@@ -107,14 +108,58 @@ void SettingsPanelTree::AddItem(settings_view_type_t type, wxString name, wxStri
 		/* Note: this should not be dynamic? */
 	}
 
+	return item;
+}
+
+wxTreeItemId SettingsPanelTree::GetItem(settings_view_type_t type, wxString name, wxString parent)
+{
+	wxTreeItemIdValue cookie;
+	wxTreeItemId item;
+	SettingsTreeItem *item_data;
+
+	item = GetItemParent(type, name, parent);
+	item = settings_tree->GetFirstChild(item, cookie);
+	item_data = (SettingsTreeItem*) settings_tree->GetItemData(item);
+
+	/* Once the parent is found (using the type/parent) the child is a match on name. */
+	while (item.IsOk() && item_data->item_name.compare(name) != 0) {
+		/* Fist find the accounts root item. */
+		item = settings_tree->GetNextChild(item, cookie);
+		item_data = (SettingsTreeItem*) settings_tree->GetItemData(item);
+	}
+
+	return item;
+}
+
+void SettingsPanelTree::AddItem(settings_view_type_t type, wxString name, wxString parent)
+{
+	wxTreeItemId item = GetItemParent(type, name, parent);
+
 	if (! item.IsOk()) {
 		wxLogMessage(_("SettingsPanelTree> (AddItem) could not find a valid parent item."));
 		return;
 	}
 
 	/* 'item' should be positioned as the parent object where this item should be appened. */
-	wxLogMessage(_("SettingsPanelTree> (AddItem) adding to parent with name (%s)."), item_data->item_name);
+	//wxLogMessage(_("SettingsPanelTree> (AddItem) adding to parent with name (%s)."), item_data->item_name);
 	item = settings_tree->AppendItem(item, name, -1, -1, new SettingsTreeItem(type, name, parent));
+}
+
+void SettingsPanelTree::RemoveItem(settings_view_type_t type, wxString name, wxString parent)
+{
+	//wxTreeItemIdValue cookie;
+	wxTreeItemId item = GetItem(type, name, parent);
+	//SettingsTreeItem *item_data;
+	//wxTreeItemId parent_item = settings_tree->GetItemParent(item);
+
+	if (! item.IsOk()) {
+		wxLogMessage(_("SettingsPanelTree> (RemoveItem) could not find a valid parent item."));
+		return;
+	}
+
+	settings_tree->DeleteChildren(item);
+	/* Todo, this could be confirmed using the generated event. */
+	settings_tree->Delete(item);
 }
 
 SettingsPanelTree::SettingsPanelTree(SeruroPanelSettings *parent) : 

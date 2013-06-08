@@ -1,5 +1,6 @@
 
 #include "SettingsPanels.h"
+#include "../SeruroPanelSettings.h"
 #include "../../SeruroClient.h"
 #include "../../api/SeruroServerAPI.h"
 #include "../dialogs/RemoveDialog.h"
@@ -134,6 +135,12 @@ void SettingsPanel_Server::OnRemove(wxCommandEvent &event)
 		wxLogMessage(wxT("ServerPanel> (OnRemove) OK"));
 		//server_info = dialog->GetValues();
 		dialog->DoRemove();
+
+		/* Place the user back on the select servers/accounts panel view.*/
+		this->MainPanel()->ShowPanel(SETTINGS_VIEW_TYPE_ROOT_ACCOUNTS);
+
+		/* Remove this server, and all subsequent account views. */
+		this->MainPanel()->RemoveTreeItem(SETTINGS_VIEW_TYPE_SERVER, this->server_name);
 	}
 	delete dialog;
 
