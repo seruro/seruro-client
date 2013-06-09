@@ -59,6 +59,7 @@ public:
 		bool write_config = false);
 	/* May search the OS certificate store for the fingerprint. */
 	bool HaveCertificates(wxString server_name, wxString address);
+	bool HaveIdentity(wxString server_name, wxString address);
 
 	wxJSONValue GetServers();
 	wxJSONValue GetServer(const wxString &server);

@@ -121,6 +121,7 @@ void SettingsPanel_Server::OnUpdateResult(SeruroRequestEvent &event)
 
 	SeruroServerAPI *api = new SeruroServerAPI(this->GetEventHandler());
 	api->InstallCA(event.GetResponse());
+	delete api;
 }
 
 void SettingsPanel_Server::OnEdit(wxCommandEvent &event)

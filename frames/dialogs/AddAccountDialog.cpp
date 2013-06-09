@@ -66,9 +66,20 @@ AddAccountDialog::AddAccountDialog(const wxString &address, const wxString &serv
 
 	wxSizer *const info_box = new wxStaticBoxSizer(wxVERTICAL, this, "&Account Information");
 
+	/* Add the generic username/password form */
     this->AddForm(info_box, address);
-	
 	vert_sizer->Add(info_box, DIALOGS_BOXSIZER_SIZER_OPTIONS);
+
+	Text *identity_msg = new Text(this, _(TEXT_INSTALL_IDENTITY));
+	identity_msg->Wrap(300);
+	vert_sizer->Add(identity_msg, DIALOGS_SIZER_OPTIONS);
+
+	/* Attach an additional checkbox to allow this form to also install the identity. */
+	wxSizer *const identity_box = new wxStaticBoxSizer(wxVERTICAL, this, "&Identity");
+
+	install_identity = new wxCheckBox(this, wxID_ANY, _("Install the identity for this address."));
+	identity_box->Add(install_identity, DIALOGS_BOXSIZER_OPTIONS);
+	vert_sizer->Add(identity_box, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 
 	vert_sizer->Add(CreateStdDialogButtonSizer(wxOK | wxCANCEL), DIALOGS_BUTTONS_OPTIONS);
 	this->SetSizerAndFit(vert_sizer);
@@ -93,6 +104,7 @@ wxJSONValue AddAccountDialog::GetValues()
 
 	selection = this->server_menu->GetSelection();
 	values["server_name"] = this->server_menu->GetString(selection);
+	values["install_identity"] = this->install_identity->IsChecked();
 
 	return values;
 }

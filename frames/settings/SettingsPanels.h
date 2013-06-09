@@ -170,6 +170,8 @@ public:
 
 	/* API/Actions callbacks. */
 	void OnAddAddressResult(SeruroRequestEvent &event);
+	void OnCAResult(SeruroRequestEvent &event);
+	void OnP12sResult(SeruroRequestEvent &event);
 
 private:
 	DECLARE_EVENT_TABLE();

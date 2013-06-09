@@ -440,7 +440,24 @@ bool SeruroConfig::RemoveCertificates(wxString server_name, wxString address, bo
 
 bool SeruroConfig::HaveCertificates(wxString server_name, wxString address)
 {
-	return (configData["servers"][server_name]["certificates"][address].Size() > 0);
+	if (HasConfig() && configData.HasMember("servers") &&
+		configData["servers"].HasMember(server_name) &&
+		configData["servers"][server_name].HasMember("certificates") &&
+		configData["servers"][server_name]["certificates"].HasMember(address)) {
+		return (configData["servers"][server_name]["certificates"][address].Size() > 0);
+	}
+	return false;
+}
+
+bool SeruroConfig::HaveIdentity(wxString server_name, wxString address)
+{
+	if (HasConfig() && configData.HasMember("servers") &&
+		configData["servers"].HasMember(server_name) &&
+		configData["servers"][server_name].HasMember("identities") &&
+		configData["servers"][server_name]["identities"].HasMember(address)) {
+		return (configData["servers"][server_name]["identities"][address].Size() > 0);
+	}
+	return false;
 }
 
 /* Token management methods.

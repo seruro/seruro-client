@@ -65,7 +65,12 @@ SettingsPanel_Address::SettingsPanel_Address(SeruroPanelSettings *parent,
     /* Control buttons. */
     wxBoxSizer *buttons_sizer = new wxBoxSizer(wxHORIZONTAL);
     
-    wxButton *update_button = new wxButton(this, BUTTON_UPDATE, wxT("Update"));
+	/* Set the button's verb based on the status of the identity. */
+	wxString identity_status;
+	identity_status = (wxGetApp().config->HaveIdentity(server_name, address)) 
+		? _("Update") : _("Install");
+
+    wxButton *update_button = new wxButton(this, BUTTON_UPDATE, identity_status);
     wxButton *remove_button = new wxButton(this, BUTTON_REMOVE, wxT("Remove"));
 
 	/* Don't allow the remove button, if this is the only account. */
@@ -89,6 +94,7 @@ void SettingsPanel_Address::OnUpdateResponse(SeruroRequestEvent &event)
 	if (! api->InstallP12(event.GetResponse())) {
 		/* Todo: report that something bad happened. */
 	}
+	delete api;
 }
 
 /* Todo: consider having the API call use a global callback function defined in API perhaps.

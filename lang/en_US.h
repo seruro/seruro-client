@@ -29,4 +29,8 @@ certificates downloaded from '%s', and your '%s' account identities."
 from the Seruro Server '%s'. \
 You may optionally remove the associated identity."
 
+#define TEXT_INSTALL_IDENTITY "You may also install the identity for \
+this address now. Only install the identity if you are on a trusted machine. \
+The identity will require a 'keyphrase' to install."
+
 #endif

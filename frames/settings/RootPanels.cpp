@@ -24,6 +24,8 @@ BEGIN_EVENT_TABLE(SettingsPanel_RootAccounts, SettingsPanel)
 	EVT_BUTTON(BUTTON_ADD_ADDRESS, SettingsPanel_RootAccounts::OnAddAddress)
 
 	EVT_SERURO_REQUEST(SERURO_API_CALLBACK_PING, SettingsPanel_RootAccounts::OnAddAddressResult)
+	EVT_SERURO_REQUEST(SERURO_API_CALLBACK_CA, SettingsPanel_RootAccounts::OnCAResult)
+	EVT_SERURO_REQUEST(SERURO_API_CALLBACK_P12S, SettingsPanel_RootAccounts::OnP12sResult)
 END_EVENT_TABLE()
 
 /* Create the 'AddServer' dialog, and if the user does not cancle, return the values
@@ -80,6 +82,9 @@ wxJSONValue AddAddress(wxWindow *caller,
 		auth_check_params["server"] = server_info;
 		auth_check_params["meta"] = server_info; 
 	}
+
+	/* (Optionally) allow the user to install their identity when the address is added. */
+	auth_check_params["meta"]["install_identity"] = address_info["install_identity"];
 	
 	SeruroServerAPI *api = new SeruroServerAPI(caller);
 	SeruroRequest *request = api->Ping(auth_check_params);
@@ -105,9 +110,29 @@ SettingsPanelView::SettingsPanelView(SeruroPanelSettings *instance_panel) :
 	//this->Render();
 }
 
+/* CA/P12s installers (triggered from adding a new server/address */
+void SettingsPanel_RootAccounts::OnCAResult(SeruroRequestEvent &event)
+{
+	SeruroServerAPI *api = new SeruroServerAPI(this->GetEventHandler());
+	api->InstallCA(event.GetResponse());
+	delete api;
+}
+
+void SettingsPanel_RootAccounts::OnP12sResult(SeruroRequestEvent &event)
+{
+	SeruroServerAPI *api = new SeruroServerAPI(this->GetEventHandler());
+
+	/* Todo: add erroring checking. */
+	if (! api->InstallP12(event.GetResponse())) {
+		/* Todo: report that something bad happened. */
+	}
+	delete api;
+}
+
 void SettingsPanel_RootAccounts::OnAddAddressResult(SeruroRequestEvent &event)
 {
 	wxJSONValue response = event.GetResponse();
+	wxJSONValue params;
 	wxString server_name, address;
 
 	if (! response["success"].AsBool() || ! response.HasMember("address")) {
@@ -127,12 +152,18 @@ void SettingsPanel_RootAccounts::OnAddAddressResult(SeruroRequestEvent &event)
 		return;
 	}
 
+	/* The server's CA/CRL might need installing, as well as (optional) a P12. */
+	SeruroServerAPI *api = new SeruroServerAPI(this->GetEventHandler());
+	//SeruroRequest *request;
+
 	/* Save references. */
 	server_name = response["meta"]["name"].AsString();
 	address = response["address"].AsString();
 
 	/* Save the results to the application's config. */
-	if (wxGetApp().config->AddServer(response["meta"])) {
+	bool new_server = wxGetApp().config->AddServer(response["meta"]);
+	if (new_server) {
+		/* Add the server panel before potentially adding the address panel. */
 		this->MainPanel()->AddTreeItem(SETTINGS_VIEW_TYPE_SERVER, response["meta"]["name"].AsString());
 	}
 
@@ -141,12 +172,29 @@ void SettingsPanel_RootAccounts::OnAddAddressResult(SeruroRequestEvent &event)
 	 * (If the server was new, and it successes, but the address fails, there is a larger problem.)
 	 */
 	if (! wxGetApp().config->AddAddress(server_name, address)) {
-		return;
+		goto finished;
 	} else {
+		/* Check if the user wanted the P12 installed. */
+
 		/* Add an address panel under the server panel. */
 		this->MainPanel()->AddTreeItem(SETTINGS_VIEW_TYPE_ADDRESS, 
 			response["address"].AsString(), response["meta"]["name"].AsString());
 	}
+
+	/* Finally, (after the address has been added) and a token saved. */
+	params["server"] = response["meta"];
+	if (new_server) {
+		api->CreateRequest(SERURO_API_CA, params, SERURO_API_CALLBACK_CA)->Run();
+	}
+	
+	/* (Optionally) install the address identity. */
+	if (response["meta"].HasMember("install_identity") && response["meta"]["install_identity"].AsBool()) {
+		params["address"] = response["address"];
+		api->CreateRequest(SERURO_API_P12S, params, SERURO_API_CALLBACK_P12S)->Run();
+	}
+
+finished:
+	delete api;
 
 	/* Update the UI for this panel. */
 	ReRender();

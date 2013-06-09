@@ -5,6 +5,7 @@
 #include <wx/textctrl.h>
 #include <wx/dialog.h>
 #include <wx/choice.h>
+#include <wx/checkbox.h>
 
 /* Need to access default port. */
 #include "../../Defs.h"
@@ -38,6 +39,7 @@ public:
 	wxJSONValue GetValues();
 
 protected:
+	wxCheckBox *install_identity;
 	wxChoice *server_menu;
 };
 
