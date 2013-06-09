@@ -29,6 +29,8 @@ public:
 	bool RemoveIdentity(wxString thumbprint);
 	bool RemoveCA(wxString thumbprint);
 	bool RemoveCerts(wxArrayString thumbprints);
+
+	wxString GetFingerprint(wxMemoryBuffer &cert);
 };
 
 #endif 

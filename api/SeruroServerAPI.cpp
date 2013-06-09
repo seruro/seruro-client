@@ -253,6 +253,8 @@ bool SeruroServerAPI::InstallCert(wxJSONValue response)
 		result = cryptoHelper->InstallCert(cert_decoded);
 	}
 
+	//cryptoHelper->GetFingerprint(cert_decoded);
+
 	delete cryptoHelper;
 	return result;
 }

@@ -3,6 +3,7 @@
 #if defined(__WXMSW__)
 
 #include <wx/log.h>
+#include <wx/base64.h>
 
 #include <Windows.h>
 #include <winhttp.h>
@@ -84,6 +85,36 @@ bool InstallCertToStore(wxMemoryBuffer &cert, wxString store_name)
 	wxLogMessage(wxT("SeruroCrypto::InstallCA> cert installed."));
 	CertCloseStore(cert_store, 0);
 	return true;
+}
+
+/* Calculate SHA1 for thumbprinting. */
+wxString SeruroCryptoMSW::GetFingerprint(wxMemoryBuffer &cert)
+{
+	HCRYPTPROV crypto_provider;
+	HCRYPTHASH hash;
+
+	BYTE *data = (BYTE *) cert.GetData();
+	DWORD len = cert.GetDataLen();
+
+	CryptAcquireContext(&crypto_provider, NULL, NULL, PROV_RSA_FULL, 0);
+	CryptCreateHash(crypto_provider, CALG_SHA1, 0, 0, &hash);
+	CryptHashData(hash, data, len, 0);
+
+	BYTE hash_value[20];
+	CryptGetHashParam(hash, HP_HASHVAL, (BYTE*) hash_value, &len, 0);
+
+	char digits[] = "0123456789abcdef";
+	for (DWORD i = 0; i < len; i++) {
+		wxLogMessage(_("%c%c"), digits[hash_value[i] >> 4], digits[hash_value[i] & 0xf]);
+	}
+
+	/* Convert raw data to base64, then to string. */
+	wxMemoryBuffer hash_buffer;
+	hash_buffer.AppendData((void *) hash_value, 20);
+
+	return wxBase64Encode(hash_buffer);
+
+	//return hash_value;
 }
 
 /* Todo: Errors should be events. */
@@ -297,6 +328,11 @@ bool SeruroCryptoMSW::InstallP12(wxMemoryBuffer &p12, wxString &p_password)
 		} else {
 			wxLogMessage(wxT("SeruroCrypto::InstallP12> found certificate: %s"), certName);
 		}
+
+		/* Testing, getting fingerprint of P12. */
+		//wxMemoryBuffer cert_buffer;
+		//cert_buffer.AppendData(cert->pbCertEncoded, cert->cbCertEncoded);
+		//GetFingerprint(cert_buffer);
 
 		bResult = CertAddCertificateContextToStore(myStore, cert, CERT_STORE_ADD_NEW, 0);
 		if (! bResult && GetLastError() == CRYPT_E_EXISTS) {
