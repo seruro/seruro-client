@@ -228,6 +228,11 @@ bool SeruroServerAPI::InstallCA(wxJSONValue response)
 	bool result;
 	SeruroCrypto *cryptoHelper = new SeruroCrypto();
 	result = cryptoHelper->InstallCA(ca_decoded);
+
+	/* Set the CA fingerprint. */
+	wxGetApp().config->SetCAFingerprint(response["server_name"].AsString(),
+		cryptoHelper->GetFingerprint(ca_decoded));
+
 	delete cryptoHelper;
 
 	return result;
@@ -251,9 +256,11 @@ bool SeruroServerAPI::InstallCert(wxJSONValue response)
 		if (! DecodeBase64(cert_encoded, &cert_decoded)) continue;
 
 		result = cryptoHelper->InstallCert(cert_decoded);
-	}
 
-	//cryptoHelper->GetFingerprint(cert_decoded);
+		/* Track this certificate. */
+		wxGetApp().config->AddCertificate(response["server_name"].AsString(), 
+			response["address"].AsString(), cryptoHelper->GetFingerprint(cert_decoded));
+	}
 
 	delete cryptoHelper;
 	return result;
@@ -285,8 +292,9 @@ bool SeruroServerAPI::InstallP12(wxJSONValue response)
 		p12_encoded = response["p12"][p12_blobs[i]].AsString();
 
 		if (! DecodeBase64(p12_encoded, &p12_decoded)) continue;
-
-		result = cryptoHelper->InstallP12(p12_decoded, p12_key);
+		/* Note: identity tracking happens within the crypto helper. */
+		result = cryptoHelper->InstallP12(p12_decoded, p12_key,
+			response["server_name"].AsString(), response["address"].AsString());
 	}
 
 	/* Cleanup. */

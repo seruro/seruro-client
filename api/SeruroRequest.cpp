@@ -37,6 +37,9 @@ void SeruroRequest::Reply(wxJSONValue response)
 		response["meta"] = params["meta"];
 	}
 
+	/* Set the server name. */
+	response["server_name"] = params["server"]["name"];
+
     /* Create a request/response event with the response data. 
      * The ID determines which function receives the event. 
      */

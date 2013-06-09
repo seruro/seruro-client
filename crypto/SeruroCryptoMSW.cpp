@@ -178,12 +178,10 @@ wxString SeruroCryptoMSW::TLSRequest(wxJSONValue params)
 	/* Calculate length of "data", which comes after heads, if any, add a urlencoded Content-Type. */
 	DWORD dwOptionalLength = (params["flags"].AsInt() & SERURO_SECURITY_OPTIONS_DATA) ? 
 		params["data_string"].AsString().length() : 0;
-	//if (dwOptionalLength > 0) {
 	/* no Content-Type: application/json support. */
 	WinHttpAddRequestHeaders(hRequest, 
 		L"Content-Type: application/x-www-form-urlencoded\r\nAccept: application/json", (ULONG)-1L,
 		WINHTTP_ADDREQ_FLAG_ADD);
-	//}
 
 	/* Send VERB and OBJECT (if post data exists it will be sent as well). */
 	bResults = WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
@@ -277,7 +275,8 @@ bool SeruroCryptoMSW::InstallCert(wxMemoryBuffer &cert)
 	return InstallCertToStore(cert, "AddressBook");
 }
 
-bool SeruroCryptoMSW::InstallP12(wxMemoryBuffer &p12, wxString &p_password)
+bool SeruroCryptoMSW::InstallP12(wxMemoryBuffer &p12, wxString &p_password, 
+	wxString &server_name, wxString &address)
 {
 	CRYPT_DATA_BLOB blob;
 
@@ -323,16 +322,17 @@ bool SeruroCryptoMSW::InstallP12(wxMemoryBuffer &p12, wxString &p_password)
 	/* Iterate through certificates within P12 cert store, using the current cert as a "previous" iterator. */
 	while (NULL != (cert = CertEnumCertificatesInStore(pfxStore, cert))) {
 		bResult = CertGetNameString(cert, CERT_NAME_FRIENDLY_DISPLAY_TYPE, 0, 0, certName, 256);
+		certName[256-1] = 0;
 		if (! bResult) {
 			wxLogMessage(wxT("SeruroCrypto::InstallP12> could not get certificate display name."));
 		} else {
 			wxLogMessage(wxT("SeruroCrypto::InstallP12> found certificate: %s"), certName);
 		}
 
-		/* Testing, getting fingerprint of P12. */
-		//wxMemoryBuffer cert_buffer;
-		//cert_buffer.AppendData(cert->pbCertEncoded, cert->cbCertEncoded);
-		//GetFingerprint(cert_buffer);
+		/* fingerprint of P12. */
+		wxMemoryBuffer cert_buffer;
+		cert_buffer.AppendData(cert->pbCertEncoded, cert->cbCertEncoded);
+		wxGetApp().config->AddIdentity(server_name, address, GetFingerprint(cert_buffer));
 
 		bResult = CertAddCertificateContextToStore(myStore, cert, CERT_STORE_ADD_NEW, 0);
 		if (! bResult && GetLastError() == CRYPT_E_EXISTS) {
@@ -363,8 +363,8 @@ bool SeruroCryptoMSW::InstallP12(wxMemoryBuffer &p12, wxString &p_password)
 	return true;
 }
 
-bool SeruroCryptoMSW::RemoveIdentity(wxString thumbprint) { return false; }
-bool SeruroCryptoMSW::RemoveCA(wxString thumbprint) { return false; }
-bool SeruroCryptoMSW::RemoveCerts(wxArrayString thumbprints) { return false; }
+bool SeruroCryptoMSW::RemoveIdentity(wxString fingerprint) { return false; }
+bool SeruroCryptoMSW::RemoveCA(wxString fingerprint) { return false; }
+bool SeruroCryptoMSW::RemoveCerts(wxArrayString fingerprints) { return false; }
 
 #endif

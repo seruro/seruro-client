@@ -149,7 +149,7 @@ void SeruroPanelTest::OnGetP12Result(wxCommandEvent &event)
 void SeruroPanelTest::OnGetP12Result(SeruroRequestEvent &event)
 {
     //wxLogMessage("got P12 result.");
-    api->InstallP12(event.GetResponse());
+    //api->InstallP12(event.GetResponse());
 }
 
 void SeruroPanelTest::OnGetCA(wxCommandEvent &event)

@@ -347,6 +347,94 @@ bool SeruroConfig::HasConfig()
     return (this->configFile->Exists() && this->configValid);
 }
 
+/* Certificate tracking methods.
+ */
+bool SeruroConfig::AddFingerprint(wxString location, wxString server_name, 
+	wxString fingerprint, wxString address)
+{
+	if (! HasConfig() || ! configData["servers"].HasMember(server_name)) return false;
+
+	/* If there is no address, then the fingerprint is placed in the location. */
+	if (address.compare(wxEmptyString) == 0) {
+		configData["servers"][server_name][location] = fingerprint;
+		goto finished;
+	}
+
+	/* If there is an address, the location is a value. */
+	if (! configData["servers"][server_name].HasMember(location)) {
+		configData["servers"][server_name][location] = wxJSONValue(wxJSONTYPE_OBJECT);
+	}
+
+	/* All address-type fingerprints are many-to-one so they must also be a value. */
+	if (! configData["servers"][server_name][location].HasMember(address)) {
+		configData["servers"][server_name][location][address] = wxJSONValue(wxJSONTYPE_OBJECT);
+	}
+
+	configData["servers"][server_name][location][address].Append(fingerprint);
+
+finished:
+	return WriteConfig();
+}
+
+bool SeruroConfig::RemoveFingerprint(wxString location, wxString server_name, wxString address)
+{
+	if (! HasConfig() || ! configData["servers"].HasMember(server_name)) return false;
+
+	if (address.compare(wxEmptyString) == 0) {
+		configData["servers"][server_name].Remove(location);
+		goto finished;
+	}
+
+	if (! configData["servers"][server_name].HasMember(location)) return false;
+	if (! configData["servers"][server_name][location].HasMember(address)) return false;
+
+	configData["servers"][server_name]["identities"].Remove(address);
+
+finished:
+	return WriteConfig();
+}
+
+bool SeruroConfig::SetCAFingerprint(wxString server_name, wxString fingerprint)
+{
+	wxString location = _("ca");
+	return AddFingerprint(location, server_name, fingerprint);
+}
+
+bool SeruroConfig::RemoveCACertificate(wxString server_name, bool write_config)
+{
+	wxString location = _("ca");
+	return RemoveFingerprint(location, server_name);
+}
+
+bool SeruroConfig::AddIdentity(wxString server_name, wxString address, wxString fingerprint)
+{
+	wxString location = _("identities");
+	return AddFingerprint(location, server_name, fingerprint, address);
+}
+
+bool SeruroConfig::RemoveIdentity(wxString server_name, wxString address, bool write_config)
+{
+	wxString location = _("identities");
+	return RemoveFingerprint(location, server_name, address);
+}
+
+bool SeruroConfig::AddCertificate(wxString server_name, wxString address, wxString fingerprint)
+{
+	wxString location = _("certificates");
+	return AddFingerprint(location, server_name, fingerprint, address);
+}
+
+bool SeruroConfig::RemoveCertificates(wxString server_name, wxString address, bool write_config)
+{
+	wxString location = _("certificates");
+	return RemoveFingerprint(location, server_name, address);
+}
+
+bool SeruroConfig::HaveCertificates(wxString server_name, wxString address)
+{
+	return (configData["servers"][server_name]["certificates"][address].Size() > 0);
+}
+
 /* Token management methods.
  * Tokens are stored in (DataDir)/tokens, or the file name listed in Defs.h.
  * The format is as such:

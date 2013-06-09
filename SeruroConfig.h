@@ -42,6 +42,24 @@ public:
 	bool RemoveServer(wxString server_name);
 	bool RemoveAddress(wxString server_name, wxString address);
 
+	/* Identity related set/gets. */
+	bool SetCAFingerprint(wxString server_name,
+		wxString fingerprint);
+	//wxString GetCAFingerprint();
+	bool RemoveCACertificate(wxString server_name,
+		bool write_config = false);
+	bool AddIdentity(wxString server_name, wxString addresss,
+		wxString fingerprint);
+	bool RemoveIdentity(wxString server_name, wxString address,
+		bool write_config = false);
+	/* Each address under each server should be a list. */
+	bool AddCertificate(wxString server_name, wxString address,
+		wxString fingerprint);
+	bool RemoveCertificates(wxString server_name, wxString address,
+		bool write_config = false);
+	/* May search the OS certificate store for the fingerprint. */
+	bool HaveCertificates(wxString server_name, wxString address);
+
 	wxJSONValue GetServers();
 	wxJSONValue GetServer(const wxString &server);
 	wxArrayString GetAddressList(const wxString &server);
@@ -59,6 +77,12 @@ public:
 protected:
 	/* Used in previous 'testing builds'. */
 	wxArrayString GetMemberArray(const wxString &member);
+
+	bool AddFingerprint(wxString location, wxString server_name,
+		wxString fingerprint, 
+		wxString address = wxEmptyString);
+	bool RemoveFingerprint(wxString location, wxString server_name,
+		wxString address = wxEmptyString);
 
 private:
     bool configValid;

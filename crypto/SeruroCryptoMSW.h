@@ -18,7 +18,16 @@ public:
 	/* wxJSONValue, For easy overloading access. */
 	wxString TLSRequest(wxJSONValue params);
 
-	bool InstallP12(wxMemoryBuffer &p12, wxString &password);
+	/* Server name has been recently added to allow identity tracking
+	 * in the case of duplicate certificates.
+	 * 
+	 * Identities could also be removed by enumerating from the 
+	 * CA (as the issuer), but a fingerprint is most flexible w.r.t.
+	 * future development allowing for arbitrary (to the max supported)
+	 * intermediary CAs. 
+	 */
+	bool InstallP12(wxMemoryBuffer &p12, wxString &password,
+		wxString &server_name, wxString &address);	
 
 	bool InstallCA(wxMemoryBuffer &ca);
 	bool InstallCert(wxMemoryBuffer &cert);
@@ -26,9 +35,9 @@ public:
 	/* Todo: consider using Install Cert with an optional store name. */
 	//bool InstallTLSCert(wxMemoryBuffer &cert);
 
-	bool RemoveIdentity(wxString thumbprint);
-	bool RemoveCA(wxString thumbprint);
-	bool RemoveCerts(wxArrayString thumbprints);
+	bool RemoveIdentity(wxString fingerprint);
+	bool RemoveCA(wxString fingerprint);
+	bool RemoveCerts(wxArrayString fingerprints);
 
 	wxString GetFingerprint(wxMemoryBuffer &cert);
 };
