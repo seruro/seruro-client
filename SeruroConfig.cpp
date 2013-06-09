@@ -352,6 +352,8 @@ bool SeruroConfig::HasConfig()
 bool SeruroConfig::AddFingerprint(wxString location, wxString server_name, 
 	wxString fingerprint, wxString address)
 {
+	wxJSONValue address_list; 
+
 	if (! HasConfig() || ! configData["servers"].HasMember(server_name)) return false;
 
 	/* If there is no address, then the fingerprint is placed in the location. */
@@ -370,13 +372,19 @@ bool SeruroConfig::AddFingerprint(wxString location, wxString server_name,
 		configData["servers"][server_name][location][address] = wxJSONValue(wxJSONTYPE_OBJECT);
 	}
 
+	address_list = configData["servers"][server_name][location][address];
+	for (int i = 0; i < address_list.Size(); i++) {
+		/* Prevent duplicates. */
+		if (address_list[i].AsString().compare(fingerprint) == 0) return false;
+	}
+
 	configData["servers"][server_name][location][address].Append(fingerprint);
 
 finished:
 	return WriteConfig();
 }
 
-bool SeruroConfig::RemoveFingerprint(wxString location, wxString server_name, wxString address)
+bool SeruroConfig::RemoveFingerprints(wxString location, wxString server_name, wxString address)
 {
 	if (! HasConfig() || ! configData["servers"].HasMember(server_name)) return false;
 
@@ -403,7 +411,7 @@ bool SeruroConfig::SetCAFingerprint(wxString server_name, wxString fingerprint)
 bool SeruroConfig::RemoveCACertificate(wxString server_name, bool write_config)
 {
 	wxString location = _("ca");
-	return RemoveFingerprint(location, server_name);
+	return RemoveFingerprints(location, server_name);
 }
 
 bool SeruroConfig::AddIdentity(wxString server_name, wxString address, wxString fingerprint)
@@ -415,7 +423,7 @@ bool SeruroConfig::AddIdentity(wxString server_name, wxString address, wxString 
 bool SeruroConfig::RemoveIdentity(wxString server_name, wxString address, bool write_config)
 {
 	wxString location = _("identities");
-	return RemoveFingerprint(location, server_name, address);
+	return RemoveFingerprints(location, server_name, address);
 }
 
 bool SeruroConfig::AddCertificate(wxString server_name, wxString address, wxString fingerprint)
@@ -427,7 +435,7 @@ bool SeruroConfig::AddCertificate(wxString server_name, wxString address, wxStri
 bool SeruroConfig::RemoveCertificates(wxString server_name, wxString address, bool write_config)
 {
 	wxString location = _("certificates");
-	return RemoveFingerprint(location, server_name, address);
+	return RemoveFingerprints(location, server_name, address);
 }
 
 bool SeruroConfig::HaveCertificates(wxString server_name, wxString address)

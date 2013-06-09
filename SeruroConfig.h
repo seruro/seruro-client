@@ -81,7 +81,7 @@ protected:
 	bool AddFingerprint(wxString location, wxString server_name,
 		wxString fingerprint, 
 		wxString address = wxEmptyString);
-	bool RemoveFingerprint(wxString location, wxString server_name,
+	bool RemoveFingerprints(wxString location, wxString server_name,
 		wxString address = wxEmptyString);
 
 private:

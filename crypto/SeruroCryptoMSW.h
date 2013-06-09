@@ -27,7 +27,8 @@ public:
 	 * intermediary CAs. 
 	 */
 	bool InstallP12(wxMemoryBuffer &p12, wxString &password,
-		wxString &server_name, wxString &address);	
+		/* Place fingerprints here. */
+		wxArrayString &fingerprints);	
 
 	bool InstallCA(wxMemoryBuffer &ca);
 	bool InstallCert(wxMemoryBuffer &cert);

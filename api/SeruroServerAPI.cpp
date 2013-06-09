@@ -286,6 +286,9 @@ bool SeruroServerAPI::InstallP12(wxJSONValue response)
 	wxString p12_encoded;
 	wxMemoryBuffer p12_decoded;
 
+	/* Extract fingerprints from the install. */
+	wxArrayString fingerprints;
+
 	bool result;
 	SeruroCrypto *cryptoHelper = new SeruroCrypto();
 	for (size_t i = 0; i < p12_blobs.size(); i++) {
@@ -293,14 +296,21 @@ bool SeruroServerAPI::InstallP12(wxJSONValue response)
 
 		if (! DecodeBase64(p12_encoded, &p12_decoded)) continue;
 		/* Note: identity tracking happens within the crypto helper. */
-		result = cryptoHelper->InstallP12(p12_decoded, p12_key,
-			response["server_name"].AsString(), response["address"].AsString());
+		result = cryptoHelper->InstallP12(p12_decoded, p12_key, fingerprints);
 	}
 
 	/* Cleanup. */
 	delete cryptoHelper;
 	p12_key.Empty();
 
-	return result;
+	if (! result) return false;
+
+	/* Add the fingerprints. */
+	for (size_t i = 0; i < fingerprints.size(); i++) {
+		wxGetApp().config->AddIdentity(response["server_name"].AsString(), 
+			response["address"].AsString(), fingerprints[i]);
+	}
+
+	return true;
 }
 

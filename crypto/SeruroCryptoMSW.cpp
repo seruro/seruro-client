@@ -103,18 +103,16 @@ wxString SeruroCryptoMSW::GetFingerprint(wxMemoryBuffer &cert)
 	BYTE hash_value[20];
 	CryptGetHashParam(hash, HP_HASHVAL, (BYTE*) hash_value, &len, 0);
 
-	char digits[] = "0123456789abcdef";
-	for (DWORD i = 0; i < len; i++) {
-		wxLogMessage(_("%c%c"), digits[hash_value[i] >> 4], digits[hash_value[i] & 0xf]);
-	}
+	//char digits[] = "0123456789abcdef";
+	//for (DWORD i = 0; i < len; i++) {
+	//	wxLogMessage(_("%c%c"), digits[hash_value[i] >> 4], digits[hash_value[i] & 0xf]);
+	//}
 
 	/* Convert raw data to base64, then to string. */
 	wxMemoryBuffer hash_buffer;
 	hash_buffer.AppendData((void *) hash_value, 20);
 
 	return wxBase64Encode(hash_buffer);
-
-	//return hash_value;
 }
 
 /* Todo: Errors should be events. */
@@ -276,7 +274,7 @@ bool SeruroCryptoMSW::InstallCert(wxMemoryBuffer &cert)
 }
 
 bool SeruroCryptoMSW::InstallP12(wxMemoryBuffer &p12, wxString &p_password, 
-	wxString &server_name, wxString &address)
+	wxArrayString &fingerprints)
 {
 	CRYPT_DATA_BLOB blob;
 
@@ -332,7 +330,8 @@ bool SeruroCryptoMSW::InstallP12(wxMemoryBuffer &p12, wxString &p_password,
 		/* fingerprint of P12. */
 		wxMemoryBuffer cert_buffer;
 		cert_buffer.AppendData(cert->pbCertEncoded, cert->cbCertEncoded);
-		wxGetApp().config->AddIdentity(server_name, address, GetFingerprint(cert_buffer));
+		//wxGetApp().config->AddIdentity(server_name, address, GetFingerprint(cert_buffer));
+		fingerprints.Add(GetFingerprint(cert_buffer));
 
 		bResult = CertAddCertificateContextToStore(myStore, cert, CERT_STORE_ADD_NEW, 0);
 		if (! bResult && GetLastError() == CRYPT_E_EXISTS) {
