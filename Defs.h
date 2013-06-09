@@ -23,6 +23,8 @@
 /* Enable/Disable the encrypt/decrypt tabs. */
 #define SERURO_ENABLE_CRYPT_PANELS 0
 #define SERURO_ENABLE_DEBUG_PANELS 0
+/* Allow servers to exist without an account? */
+#define SERURO_MUST_HAVE_ACCOUNT 1
 
 #define SERURO_DEFAULT_PORT "443"
 /* File name to store and fetch user configuration data from. */

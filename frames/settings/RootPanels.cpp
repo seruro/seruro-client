@@ -60,6 +60,9 @@ wxJSONValue AddAddress(wxWindow *caller,
 	if (dialog->ShowModal() == wxID_OK) {
 		wxLogMessage(wxT("RootPanels::AddAddress> OK"));
 		address_info = dialog->GetValues();
+	} else {
+		delete dialog;
+		return address_info;
 	}
 	delete dialog;
 
@@ -129,10 +132,7 @@ void SettingsPanel_RootAccounts::OnAddAddressResult(SeruroRequestEvent &event)
 	address = response["address"].AsString();
 
 	/* Save the results to the application's config. */
-	if (! wxGetApp().config->AddServer(response["meta"])) {
-		return;
-	} else {
-		/* Add a new server panel. */
+	if (wxGetApp().config->AddServer(response["meta"])) {
 		this->MainPanel()->AddTreeItem(SETTINGS_VIEW_TYPE_SERVER, response["meta"]["name"].AsString());
 	}
 
@@ -167,9 +167,17 @@ void SettingsPanel_RootAccounts::OnAddServer(wxCommandEvent &event)
 	/* Make sure there is a name value, if not then something weird happened. */
 	if (! server_info.HasMember("name")) return;
 
-	/* Todo: should loop here until the address receives a valid token. */
-	wxString display_server = wxString(_("(New Server) ")) + server_info["name"].AsString();
-	address_info = AddAddress(this, server_info, display_server);
+	if (SERURO_MUST_HAVE_ACCOUNT) {
+		/* Todo: should loop here until the address receives a valid token. */
+		wxString display_server = wxString(_("(New Server) ")) + server_info["name"].AsString();
+		AddAddress(this, server_info, display_server);
+	} else {
+		/* Add server to config, and rerender. */
+		wxGetApp().config->AddServer(server_info);
+		/* Add a new server panel. */
+		this->MainPanel()->AddTreeItem(SETTINGS_VIEW_TYPE_SERVER, server_info["name"].AsString());
+		ReRender();
+	}
 }
 
 bool SettingsPanel_RootAccounts::Changed()

@@ -115,7 +115,7 @@ public:
     
     /* Button actions (no edit). */
     void OnUpdate(wxCommandEvent &event);
-    void OnDelete(wxCommandEvent &event);
+    void OnRemove(wxCommandEvent &event);
 
 	void OnUpdateResponse(SeruroRequestEvent &event);
     
