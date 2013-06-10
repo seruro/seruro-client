@@ -58,7 +58,8 @@ public:
     void EnableSearch();
 
     void Install(const wxString& address, const wxString& server_name);
-    void Uninstall(const wxString& address, const wxString& server_name = wxEmptyString);
+    void Uninstall(const wxString& address, 
+		const wxString& server_name = wxEmptyString);
 	void OnInstallResult(SeruroRequestEvent &event);
 
 	/* Searches if the address exists, and adds the result line to the
@@ -70,6 +71,16 @@ public:
 
 	//void OnInstallCert(wxCommandEvent &event);
 	//void OnUninstallCerl(wxCommandEvent &event);
+
+	/* Since other parts of the app may update server/address(s)
+	 * Catch view changing events to update the server list
+	 * or potentially remove entries from cached search results.
+	 */
+	void OnFocus(wxFocusEvent &event) { 
+		this->DoFocus();
+	}
+	/* Apply the focuing logic */
+	void DoFocus();
 
 private:
     CheckedListCtrl *list_control;
@@ -123,6 +134,9 @@ public:
     void SetCheck(long item, bool checked);
     void SetCheck(const wxString &address, bool checked);
     
+	/* Remove results from servers which may not exist. */
+	void FilterResultsByServers(wxArrayString servers);
+
 private:
 	/* Save an imagelist of rendered checkbox states. */
     SeruroPanelSearch* parent;
@@ -137,9 +151,9 @@ class SearchBox : public wxSearchCtrl
 public:
 	SearchBox(SeruroPanelSearch *parent_obj) :
     wxSearchCtrl(parent_obj, SERURO_SEARCH_TEXT_INPUT_ID,
-                 wxEmptyString, wxDefaultPosition, wxDefaultSize,
-                 /* Make sure to handle ENTER events normally. */
-                 wxTE_PROCESS_ENTER),
+		wxEmptyString, wxDefaultPosition, wxDefaultSize,
+        /* Make sure to handle ENTER events normally. */
+        wxTE_PROCESS_ENTER),
     parent(parent_obj) {}
     
 	void OnSearch(wxCommandEvent &event) {

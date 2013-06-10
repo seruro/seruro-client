@@ -1,6 +1,5 @@
 
 #include <wx/icon.h>
-#include <wx/notebook.h>
 #include <wx/artprov.h>
 
 #include "SeruroFrameMain.h"
@@ -30,6 +29,8 @@ BEGIN_EVENT_TABLE(SeruroFrameMain, wxFrame)
 	//EVT_MENU    (seruroID_SETUP_ALERT,  SeruroFrameMain::OnSetupRun)
     EVT_WIZARD_CANCEL(wxID_ANY,   SeruroFrameMain::OnSetupCancel)
     EVT_WIZARD_FINISHED(wxID_ANY, SeruroFrameMain::OnSetupFinished)	
+	EVT_NOTEBOOK_PAGE_CHANGED(SERURO_NOTEBOOK_ID, SeruroFrameMain::OnChange)
+	//EVT_NOTEBOOK_PAGE_CHANGING(SERURO_NOTEBOOK_ID, SeruroFrameMain::OnChange)
 END_EVENT_TABLE()
 
 SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) : SeruroFrame(title)
@@ -57,7 +58,7 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
 
 	/* Add singular panel */
 	wxPanel *panel = new wxPanel(this, wxID_ANY);
-	book = new wxNotebook(panel, wxID_ANY, wxPoint(-1, -1), wxSize(-1, -1), wxNB_TOP);
+	book = new wxNotebook(panel, SERURO_NOTEBOOK_ID, wxPoint(-1, -1), wxSize(-1, -1), wxNB_TOP);
 	//book->SetImageList(list);
 
 	//wxPanel *page1 = new wxPanel(book, wxID_ANY);
@@ -113,6 +114,15 @@ void SeruroFrameMain::ChangePanel(int panel_id)
 		if (panel_id == seruro_panels_ids[i]) {
 			this->book->SetSelection(i);
 		}
+	}
+}
+
+void SeruroFrameMain::OnChange(wxBookCtrlEvent &event)
+{
+	/* The search panel may need to update it's UI if servers were added/removed. */
+	wxLogMessage(_("Notebook panel changed (%d)."), event.GetSelection());
+	if (seruro_panels_ids[event.GetSelection()] == SERURO_PANEL_SEARCH_ID) {
+		((SeruroPanelSearch*) this->search_panel)->DoFocus();
 	}
 }
 

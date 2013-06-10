@@ -3,6 +3,7 @@
 #define H_SeruroFrameMain
 
 #include <wx/wizard.h>
+#include <wx/notebook.h>
 
 #include "SeruroFrame.h"
 #include "../SeruroTray.h"
@@ -28,6 +29,9 @@ public:
 	void OnSetupRun(wxCommandEvent &event);
     void OnSetupCancel(wxWizardEvent& event);
     void OnSetupFinished(wxWizardEvent& event);
+
+	/* When the panels change, their UI elements may need updating. */
+	void OnChange(wxBookCtrlEvent &event);
 
 	void ChangePanel(int panel_id);
 

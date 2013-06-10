@@ -93,6 +93,9 @@ void SettingsPanel_Address::OnUpdateResponse(SeruroRequestEvent &event)
 	/* Todo: add erroring checking. */
 	if (! api->InstallP12(event.GetResponse())) {
 		/* Todo: report that something bad happened. */
+	} else {
+		/* May have to update the verb. */
+		ReRender();
 	}
 	delete api;
 }

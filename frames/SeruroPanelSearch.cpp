@@ -30,6 +30,8 @@ BEGIN_EVENT_TABLE(SeruroPanelSearch, wxPanel)
 	//EVT_COMMAND(SERURO_API_CALLBACK_SEARCH, SERURO_API_RESULT, SeruroPanelSearch::OnSearchResult)
     EVT_SERURO_REQUEST(SERURO_API_CALLBACK_SEARCH, SeruroPanelSearch::OnSearchResult)
     EVT_SERURO_REQUEST(SERURO_API_CALLBACK_CERTS, SeruroPanelSearch::OnInstallResult)
+
+	EVT_SET_FOCUS(SeruroPanelSearch::OnFocus)
 END_EVENT_TABLE()
 
 BEGIN_EVENT_TABLE(SearchBox, wxSearchCtrl)
@@ -211,6 +213,57 @@ void CheckedListCtrl::SetCheck(const wxString &address, bool checked)
     
 }
 
+void CheckedListCtrl::FilterResultsByServers(wxArrayString servers)
+{
+	wxListItem item;
+	bool server_exists;
+
+	/* Search each row's server. */
+	item.SetMask(wxLIST_MASK_TEXT);
+	item.SetColumn(SEARCH_LIST_SERVER_COLUMN);
+
+	for (long i = this->GetItemCount()-1; i >= 0; i--) {
+		item.SetId(i);
+		if (! this->GetItem(item)) { continue; }
+
+		/* The row's server must be in the list provided. */
+		server_exists = false;
+		for (size_t j = 0; j < servers.size(); j++) {
+			if (item.GetText().compare(servers[j]) == 0) server_exists = true;
+		}
+
+		if (! server_exists) {
+			this->DeleteItem(i);
+		}
+	}
+}
+
+void SeruroPanelSearch::DoFocus()
+{
+	wxArrayString servers = wxGetApp().config->GetServerList();
+	wxLogMessage(_("SeruroPanelSearch> (DoFocus) focusing the search."));
+
+	/* If the config has changed, regenerate the list of servers. */
+	if (servers.size() != servers_control->GetCount()) {
+		this->servers_control->Clear();
+		this->servers_control->Append(servers);
+		this->servers_control->SetSelection(0);
+
+		/* Filter search results for potentially-removed servers. */
+		this->list_control->FilterResultsByServers(servers);
+	}
+
+	/* Depending on the number of servers, enable/disable the controls. */
+	if (servers.size() == 0) {
+		/* This may have been active before, and there may be dangling text. */
+		this->search_control->Clear();
+		this->DisableSearch();
+	} else {
+		this->EnableSearch();
+		this->search_control->SetFocus();
+	}
+}
+
 void SeruroPanelSearch::Install(const wxString& address, const wxString& server_name)
 {
     wxJSONValue params;
@@ -337,11 +390,8 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
         wxString("No First Name"), wxString("No Last Name"));
     
 	/* Testing default focus */
-	if (wxGetApp().config->GetServerList().size() == 0) {
-		this->DisableSearch();
-	} else {
-		this->search_control->SetFocus();
-	}
+	DoFocus();
+
 	this->Layout();
 }
 

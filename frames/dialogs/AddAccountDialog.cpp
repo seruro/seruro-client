@@ -70,7 +70,7 @@ AddAccountDialog::AddAccountDialog(const wxString &address, const wxString &serv
     this->AddForm(info_box, address);
 	vert_sizer->Add(info_box, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 
-	Text *identity_msg = new Text(this, _(TEXT_INSTALL_IDENTITY));
+	Text *identity_msg = new Text(this, _(TEXT_INSTALL_IDENTITY), false);
 	identity_msg->Wrap(300);
 	vert_sizer->Add(identity_msg, DIALOGS_SIZER_OPTIONS);
 
