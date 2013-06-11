@@ -3,6 +3,7 @@
 #include "../SeruroPanelSettings.h"
 
 #include "../../SeruroClient.h"
+#include "../../setup/SeruroSetup.h"
 #include "../../api/SeruroServerAPI.h"
 
 #include "../dialogs/AddServerDialog.h"
@@ -211,6 +212,11 @@ void SettingsPanel_RootAccounts::OnAddServer(wxCommandEvent &event)
     wxJSONValue server_info;
 	wxJSONValue address_info;
 	
+	/* Testing wizard-implementation. */
+	SeruroSetup add_server_setup((wxFrame*) (wxGetApp().GetFrame()), true);
+	add_server_setup.RunWizard(add_server_setup.GetInitialPage());
+	return;
+
 	server_info = AddServer();
 	/* Make sure there is a name value, if not then something weird happened. */
 	if (! server_info.HasMember("name")) return;

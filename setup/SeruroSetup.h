@@ -25,28 +25,62 @@ enum seruro_setup_ids
     SETUP_SETTINGS_ID
 };
 
+class SeruroSetup;
+
 class SetupPage : public wxWizardPageSimple
 {
 public:
-    SetupPage (wxWizard *parent) : wxWizardPageSimple(parent) {}
+    SetupPage (wxWizard *parent) : 
+	  wxWizardPageSimple(parent), wizard((SeruroSetup*)parent) {}
     //virtual wxJSONValue GetValues();
+private:
+	wxString next_button;
+	wxString prev_button;
+	SeruroSetup *wizard;
 };
 
 class SeruroSetup : public wxWizard
 {
 public:
 	/* Todo: disable "Exit" while wizard is running. */
-	SeruroSetup(wxFrame *parent);
 
-	//wxWizardPage *GetManualConfig() const { return manualConfigPage; }
-	//wxWizardPage *GetDownload() const { return downloadP12Page; }
-	//wxWizardPage *GetDecrypt() const { return decryptP12Page; }
-    wxWizardPage *GetInitialPage() const { return initial_page; }
+	/* The setup wizard may have three initialization states, 
+	 * for the first account the user adds (their first setup 
+	 * of Seruro), for a new server, and for a new account (address).
+	 */
+	SeruroSetup(wxFrame *parent, 
+		bool add_server= false, bool add_address= false);
+
+    wxWizardPage *GetInitialPage() const { 
+		return initial_page; 
+	}
     
     /* Over write without validation for backbutton */
     void GoBack(wxCommandEvent& event);
 
+	/* Special functions for over-writing the button text (per-page). */
+	void SetButtonText(wxString back, wxString next) {
+		if (next.compare(wxEmptyString) == 0) {
+			this->m_btnNext->SetLabel(next_button_orig);
+		} else {
+			this->m_btnNext->SetLabel(next);
+		}
+
+		if (back.compare(wxEmptyString) == 0) {
+			this->m_btnPrev->SetLabel(next_button_orig);
+		} else {
+			this->m_btnPrev->SetLabel(back);
+		}
+	}
+
 private:
+	/* If pages edit the button text, save the original values to reset. */
+	wxString next_button_orig;
+	wxString prev_button_orig;
+
+	/* Allow the constructor to create pages based on a setup type. */
+	bool server_setup;
+	bool address_setup;
 	//wxWizardPageSimple *manualConfigPage;
 	//wxWizardPageSimple *downloadP12Page;
 	//wxWizardPageSimple *decryptP12Page;
@@ -73,7 +107,7 @@ public:
     ServerPage(SeruroSetup *parent);
 
 	/* Handle the single checkbox click. */
-	void OnCustomPort(wxCommandEvent &event);
+	void OnForm_OnCustomPort(wxCommandEvent &event);
 
 private:
 	DECLARE_EVENT_TABLE()

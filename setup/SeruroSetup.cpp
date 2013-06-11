@@ -28,30 +28,53 @@ InitialPage::InitialPage(SeruroSetup *parent) : SetupPage(parent)
     this->SetSizer(vert_sizer);
 }
 
-SeruroSetup::SeruroSetup(wxFrame *parent)
+SeruroSetup::SeruroSetup(wxFrame *parent, bool add_server, bool add_address) : 
+  server_setup(add_server), address_setup(add_address),
+  /* Set the default values of the navigation buttons */
+  next_button_orig(m_btnNext), prev_button_orig(m_btnPrev)
 {
+	wxString setup_title = wxString(_(SERURO_APP_NAME)) + _(" Setup");
+	if (server_setup && ! address_setup) setup_title = _("Add Server Setup"); 
+	if (! server_setup && address_setup) setup_title = _("Add Address Setup");
+
     this->SetExtraStyle(wxWIZARD_EX_HELPBUTTON);
-    this->Create(parent, wxID_ANY, wxString(wxT(SERURO_APP_NAME)) + wxT(" Setup"),
+    this->Create(parent, wxID_ANY, setup_title,
         /* Todo: replace icon */
         wxIcon(icon_good), wxDefaultPosition,
         wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
     
-    /* Page creation. */
-    this->initial_page  = new InitialPage(this);
-    this->server_page   = new ServerPage(this);
-	this->account_page  = new AccountPage(this);
-    
-    //initial_page->Chain(server_page);
-    initial_page->SetNext(server_page);
-    server_page->SetPrev(initial_page);
+    /* Page creation, a welcome page for the initial setup. */
+	if (! server_setup && ! address_setup) {
+		this->initial_page  = new InitialPage(this);
+	}
 
-	server_page->SetNext(account_page);
-	account_page->SetPrev(server_page);
+	/* Only show if in the initial setup or a server setup. */
+	if (server_setup && ! address_setup) {
+		this->server_page   = new ServerPage(this);
+		/* Set the initial page for dumb member functions. */
+		this->initial_page  = this->server_page;
+	}
+
+	this->account_page  = new AccountPage(this);
+	/* Set the initial page for dumb member functions. */
+	if (address_setup) this->initial_page = this->account_page;
     
+    if (! server_setup && ! address_setup) {
+		initial_page->SetNext(server_page);
+		server_page->SetPrev(initial_page);
+	}
+
+	if (server_setup && ! address_setup) {
+		server_page->SetNext(account_page);
+		account_page->SetPrev(server_page);
+	}
+
     this->GetPageAreaSizer()->Add(this->initial_page);
 }
 
-/* Implemented in wxWizard at: wxwidgets\src\generic */
+/* Implemented in wxWizard at: wxwidgets\src\generic. 
+ * This override for a button click allows the page to go backward even if there is
+ * a form with invalid input (such as no input). */
 void SeruroSetup::GoBack(wxCommandEvent &event)
 {
     wxWizardEvent eventPreChanged(wxEVT_WIZARD_BEFORE_PAGE_CHANGED, GetId(), false, m_page);
