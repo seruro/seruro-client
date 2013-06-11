@@ -14,7 +14,7 @@
 #include "../frames/dialogs/AddAccountDialog.h"
 //#include "frames/SeruroFrameMain.h"
 
-enum seruro_setup_ids
+enum seruro_setup_id
 {
 	//seruroID_SETUP_ALERT,
 	//seruroID_SETUP_DOWNLOAD,
@@ -30,12 +30,22 @@ class SeruroSetup;
 class SetupPage : public wxWizardPageSimple
 {
 public:
-    SetupPage (wxWizard *parent) : 
-	  wxWizardPageSimple(parent), wizard((SeruroSetup*)parent) {}
+    SetupPage (wxWizard *parent) 
+		//, seruro_setup_id id = SETUP_SERVER_ID
+		: wxWizardPageSimple(parent), 
+		wizard((SeruroSetup*)parent) {} 
+		//page_id(id) {}
     //virtual wxJSONValue GetValues();
-private:
+
+	//seruro_setup_id GetId() { return page_id; }
+	virtual bool GoForward() { return true; } 
+
 	wxString next_button;
 	wxString prev_button;
+protected:
+	/* Parent wizard */
+	//seruro_setup_id page_id;
+
 	SeruroSetup *wizard;
 };
 
@@ -57,21 +67,12 @@ public:
     
     /* Over write without validation for backbutton */
     void GoBack(wxCommandEvent& event);
+	/* Restore/set button text when a new page is displayed. */
+	void OnChanged(wxWizardEvent &event);
+	void OnChanging(wxWizardEvent &event);
 
 	/* Special functions for over-writing the button text (per-page). */
-	void SetButtonText(wxString back, wxString next) {
-		if (next.compare(wxEmptyString) == 0) {
-			this->m_btnNext->SetLabel(next_button_orig);
-		} else {
-			this->m_btnNext->SetLabel(next);
-		}
-
-		if (back.compare(wxEmptyString) == 0) {
-			this->m_btnPrev->SetLabel(next_button_orig);
-		} else {
-			this->m_btnPrev->SetLabel(back);
-		}
-	}
+	void SetButtonText(wxString prev, wxString next);
 
 private:
 	/* If pages edit the button text, save the original values to reset. */
@@ -118,6 +119,7 @@ class AccountPage : public SetupPage, public AddAccountForm
 {
 public:
     AccountPage (SeruroSetup *parent);
+	bool GoForward();
 };
 
 #endif

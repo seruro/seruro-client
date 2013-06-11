@@ -27,4 +27,3 @@ ServerPage::ServerPage(SeruroSetup *parent) : SetupPage(parent), AddServerForm(t
     vert_sizer->Add(server_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);
     this->SetSizer(vert_sizer);
 }
-
