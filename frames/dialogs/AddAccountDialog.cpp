@@ -39,7 +39,10 @@ void AddAccountForm::AddForm(wxSizer *sizer, const wxString &address,
 	grid_sizer->Add(new Text(parent, "&Password:"));
     
     /* Host controller. */
-	this->password = new wxTextCtrl(parent, wxID_ANY, wxEmptyString);
+	this->password = new wxTextCtrl(parent, wxID_ANY, wxEmptyString,
+		wxDefaultPosition, wxDefaultSize,
+		/* It's full of stars... */
+		wxTE_PASSWORD);
 	grid_sizer->Add(this->password, DIALOGS_BOXSIZER_OPTIONS);
 	
     /* Add sizers together. */

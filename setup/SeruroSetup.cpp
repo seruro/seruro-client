@@ -10,6 +10,16 @@ BEGIN_EVENT_TABLE(SeruroSetup, wxWizard)
 	EVT_WIZARD_BEFORE_PAGE_CHANGED(SERURO_SETUP_ID, SeruroSetup::OnChanging)
 END_EVENT_TABLE()
 
+SetupPage::SetupPage(SeruroSetup *parent) : wxWizardPageSimple(parent), wizard(parent),
+	enable_back(false), require_auth(false)
+{
+	//this->enable_back = (! (! this->wizard->GetInitialPage())) // return;
+	//if (this->wizard->HasPrevPage(this->wizard->GetCurrentPage())) {
+		//this->wizard->EnableBack(true);
+	//}
+	//this->wizard->RequireAuth(false);
+}
+
 InitialPage::InitialPage(SeruroSetup *parent) : SetupPage(parent)
 {
     /* Show welcome message, and overview of the workflow to follow. */
@@ -140,6 +150,12 @@ void SeruroSetup::OnChanged(wxWizardEvent &event)
 {
 	wxLogMessage(_("SeruroSetup> (OnChanged) the page has changed."));
 	SetupPage *shown_page = (SetupPage*) event.GetPage();
+
+	/* Decorate the buttons */
+	//if (shown_page->enable_back) 
+	this->EnableBack(shown_page->enable_back);
+	this->RequireAuth(shown_page->require_auth);
+
 	/* Let us take care of the text. */
 	this->SetButtonText(shown_page->prev_button, shown_page->next_button);
 }

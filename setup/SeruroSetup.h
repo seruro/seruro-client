@@ -19,8 +19,7 @@ class SeruroSetup;
 class SetupPage : public wxWizardPageSimple
 {
 public:
-    SetupPage (wxWizard *parent) 
-		: wxWizardPageSimple(parent), wizard((SeruroSetup*)parent) {}
+    SetupPage (SeruroSetup *parent);
 	/* The 'GoForward' method is called when the user, or some callback
 	 * function tries to proceed the wizard. If from_callback is true
 	 * then don't issue another request. 
@@ -29,6 +28,8 @@ public:
 
 	wxString next_button;
 	wxString prev_button;
+	bool enable_back;
+	bool require_auth;
 protected:
 	/* Parent wizard */
 	SeruroSetup *wizard;
@@ -64,7 +65,18 @@ public:
 	void OnChanging(wxWizardEvent &event);
 
 	/* Special functions for over-writing the button text (per-page). */
-	void SetButtonText(wxString prev, wxString next);
+	void SetButtonText(wxString prev = wxEmptyString, 
+		wxString next = wxEmptyString);
+	void EnableBack(bool enable) {
+		//this->m_btnPrev->Disable();
+		this->m_btnPrev->Enable(enable);
+	}
+	/* Since this process will potentially install a CA, optionally
+	 * decorate the action button with an auth symbol. */
+	void RequireAuth(bool require) {
+		/* Testing, might not look nice on NON-MSW. */
+		this->m_btnNext->SetAuthNeeded(require);
+	}
 
 private:
 	/* If pages edit the button text, save the original values to reset. */
@@ -111,10 +123,13 @@ public:
     AccountPage (SeruroSetup *parent);
 	bool GoForward(bool from_callback = false);
 
+	/* API Call handlers. */
 	void OnPingResult(SeruroRequestEvent &event);
+	void OnCAResult(SeruroRequestEvent &event);
 
 private:
 	bool login_success;
+	bool has_ca;
 
 	DECLARE_EVENT_TABLE()
 };
@@ -124,9 +139,13 @@ class IdentityPage : public SetupPage
 public:
 	IdentityPage (SeruroSetup *parent);
 
+	/* Check the 'install' identity box. */
+	void OnToggleInstall(wxCommandEvent &event);
+
 private:
 	wxCheckBox *install_identity;
 
+	DECLARE_EVENT_TABLE()
 };
 
 #endif
