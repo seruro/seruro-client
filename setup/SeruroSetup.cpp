@@ -11,7 +11,7 @@ BEGIN_EVENT_TABLE(SeruroSetup, wxWizard)
 END_EVENT_TABLE()
 
 SetupPage::SetupPage(SeruroSetup *parent) : wxWizardPageSimple(parent), wizard(parent),
-	enable_back(false), require_auth(false)
+	enable_back(true), require_auth(false)
 {
 	//this->enable_back = (! (! this->wizard->GetInitialPage())) // return;
 	//if (this->wizard->HasPrevPage(this->wizard->GetCurrentPage())) {
@@ -158,6 +158,9 @@ void SeruroSetup::OnChanged(wxWizardEvent &event)
 
 	/* Let us take care of the text. */
 	this->SetButtonText(shown_page->prev_button, shown_page->next_button);
+
+	/* Finally, each page may update it's content with 'DoFocus'. */
+	shown_page->DoFocus();
 }
 
 /* Allow each page to set the wizards prev/next button text. */

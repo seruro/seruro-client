@@ -40,6 +40,11 @@ public:
 	bool RemoveCA(wxString fingerprint);
 	bool RemoveCerts(wxArrayString fingerprints);
 
+	/* Methods to query certificates by their name (meaning SHA1) */
+	bool HasCA(wxString server_name);
+	bool HasCerts(wxString server_name, wxString address);
+	bool HasIdentity(wxString server_name, wxString address);
+
 	wxString GetFingerprint(wxMemoryBuffer &cert);
 };
 

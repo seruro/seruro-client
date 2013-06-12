@@ -4,6 +4,8 @@
 
 #include <wx/wizard.h>
 #include <wx/checkbox.h>
+#include <wx/choice.h>
+#include <wx/textctrl.h>
 
 #include "../wxJSON/wx/jsonval.h"
 
@@ -24,7 +26,8 @@ public:
 	 * function tries to proceed the wizard. If from_callback is true
 	 * then don't issue another request. 
 	 */
-	virtual bool GoForward(bool from_callback = false) { return true; } 
+	virtual bool GoForward(bool from_callback = false) { return true; }
+	virtual void DoFocus() { return; }
 
 	wxString next_button;
 	wxString prev_button;
@@ -127,9 +130,19 @@ public:
 	void OnPingResult(SeruroRequestEvent &event);
 	void OnCAResult(SeruroRequestEvent &event);
 
+	/* Manage server/CA lookups. */
+	void OnSelectServer(wxCommandEvent &event);
+	bool HasServerCertificate(wxString server_name);
+	/* Check if the name from the server page changed (and reselect). */
+	void DoFocus();
+
 private:
 	bool login_success;
 	bool has_ca;
+
+	/* Server list is a choice, even if there is only one. */
+	wxChoice *server_menu;
+	wxString server_name;
 
 	DECLARE_EVENT_TABLE()
 };

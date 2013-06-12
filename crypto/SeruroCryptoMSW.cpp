@@ -362,6 +362,10 @@ bool SeruroCryptoMSW::InstallP12(wxMemoryBuffer &p12, wxString &p_password,
 	return true;
 }
 
+bool SeruroCryptoMSW::HasIdentity(wxString server_name, wxString address) { return false; }
+bool SeruroCryptoMSW::HasCA(wxString server_name) { return false; }
+bool SeruroCryptoMSW::HasCerts(wxString server_name, wxString address) { return false; }
+
 bool SeruroCryptoMSW::RemoveIdentity(wxString fingerprint) { return false; }
 bool SeruroCryptoMSW::RemoveCA(wxString fingerprint) { return false; }
 bool SeruroCryptoMSW::RemoveCerts(wxArrayString fingerprints) { return false; }
