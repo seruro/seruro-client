@@ -2,28 +2,17 @@
 #ifndef H_SeruroSetup
 #define H_SeruroSetup
 
-#include "wx/wizard.h"
-#include "wx/textctrl.h"
+#include <wx/wizard.h>
+#include <wx/checkbox.h>
 
 #include "../wxJSON/wx/jsonval.h"
 
 #include "../SeruroClient.h"
+#include "../api/SeruroServerAPI.h"
 
 /* The dialogs include the form mixin classes. */
 #include "../frames/dialogs/AddServerDialog.h"
 #include "../frames/dialogs/AddAccountDialog.h"
-//#include "frames/SeruroFrameMain.h"
-
-enum seruro_setup_id
-{
-	//seruroID_SETUP_ALERT,
-	//seruroID_SETUP_DOWNLOAD,
-	//seruroID_SETUP_DECRYPT
-    SETUP_SERVER_ID,
-    SETUP_ACCOUNT_ID,
-    SETUP_APPLICATIONS_ID,
-    SETUP_SETTINGS_ID
-};
 
 class SeruroSetup;
 
@@ -31,21 +20,17 @@ class SetupPage : public wxWizardPageSimple
 {
 public:
     SetupPage (wxWizard *parent) 
-		//, seruro_setup_id id = SETUP_SERVER_ID
-		: wxWizardPageSimple(parent), 
-		wizard((SeruroSetup*)parent) {} 
-		//page_id(id) {}
-    //virtual wxJSONValue GetValues();
-
-	//seruro_setup_id GetId() { return page_id; }
-	virtual bool GoForward() { return true; } 
+		: wxWizardPageSimple(parent), wizard((SeruroSetup*)parent) {}
+	/* The 'GoForward' method is called when the user, or some callback
+	 * function tries to proceed the wizard. If from_callback is true
+	 * then don't issue another request. 
+	 */
+	virtual bool GoForward(bool from_callback = false) { return true; } 
 
 	wxString next_button;
 	wxString prev_button;
 protected:
 	/* Parent wizard */
-	//seruro_setup_id page_id;
-
 	SeruroSetup *wizard;
 };
 
@@ -64,9 +49,16 @@ public:
     wxWizardPage *GetInitialPage() const { 
 		return initial_page; 
 	}
+
+	SetupPage* GetServerPage() { return server_page; }
+	SetupPage* GetAccountPage() { return account_page; }
+	bool HasServerInfo() { 
+		return (! this->address_setup);
+	}
     
     /* Over write without validation for backbutton */
     void GoBack(wxCommandEvent& event);
+	void ForceForward();
 	/* Restore/set button text when a new page is displayed. */
 	void OnChanged(wxWizardEvent &event);
 	void OnChanging(wxWizardEvent &event);
@@ -82,13 +74,11 @@ private:
 	/* Allow the constructor to create pages based on a setup type. */
 	bool server_setup;
 	bool address_setup;
-	//wxWizardPageSimple *manualConfigPage;
-	//wxWizardPageSimple *downloadP12Page;
-	//wxWizardPageSimple *decryptP12Page;
+
     SetupPage *initial_page;
-    
     SetupPage *server_page;
     SetupPage *account_page;
+	SetupPage *identity_page;
     SetupPage *applications_page;
     SetupPage *settings_page;
     
@@ -119,7 +109,24 @@ class AccountPage : public SetupPage, public AddAccountForm
 {
 public:
     AccountPage (SeruroSetup *parent);
-	bool GoForward();
+	bool GoForward(bool from_callback = false);
+
+	void OnPingResult(SeruroRequestEvent &event);
+
+private:
+	bool login_success;
+
+	DECLARE_EVENT_TABLE()
+};
+
+class IdentityPage : public SetupPage
+{
+public:
+	IdentityPage (SeruroSetup *parent);
+
+private:
+	wxCheckBox *install_identity;
+
 };
 
 #endif

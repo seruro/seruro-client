@@ -2,6 +2,8 @@
 #include "SeruroSetup.h"
 #include "../frames/UIDefs.h"
 
+#include <wx/event.h>
+
 BEGIN_EVENT_TABLE(SeruroSetup, wxWizard)
     EVT_BUTTON(wxID_BACKWARD, SeruroSetup::GoBack)
 	EVT_WIZARD_PAGE_CHANGED(SERURO_SETUP_ID, SeruroSetup::OnChanged)
@@ -77,6 +79,10 @@ SeruroSetup::SeruroSetup(wxFrame *parent, bool add_server, bool add_address) :
 		account_page->SetPrev(server_page);
 	}
 
+	this->identity_page = new IdentityPage(this);
+	account_page->SetNext(identity_page);
+	identity_page->SetPrev(account_page);
+
     this->GetPageAreaSizer()->Add(this->initial_page);
 }
 
@@ -97,6 +103,18 @@ void SeruroSetup::GoBack(wxCommandEvent &event)
     page = m_page->GetPrev();
 
     (void)ShowPage(page, false);
+}
+
+void SeruroSetup::ForceForward()
+{
+	/* If a callback is trying to force the forward action, the wizard must 
+	 * process the event. */
+	//wxCommandEvent event(wxEVT_COMMAND_BUTTON_CLICKED); 
+	//event.SetId(wxID_FORWARD); 
+	//this->ProcessEvent(event); 
+	if (! this->HasNextPage(this->GetCurrentPage())) return;
+
+	(void)ShowPage(this->GetCurrentPage()->GetNext(), true);
 }
 
 void SeruroSetup::OnChanging(wxWizardEvent &event)
@@ -120,6 +138,7 @@ void SeruroSetup::OnChanging(wxWizardEvent &event)
 /* Catch the wizard when a new page is displayed (to update UI elements). */
 void SeruroSetup::OnChanged(wxWizardEvent &event)
 {
+	wxLogMessage(_("SeruroSetup> (OnChanged) the page has changed."));
 	SetupPage *shown_page = (SetupPage*) event.GetPage();
 	/* Let us take care of the text. */
 	this->SetButtonText(shown_page->prev_button, shown_page->next_button);
@@ -129,7 +148,11 @@ void SeruroSetup::OnChanged(wxWizardEvent &event)
 void SeruroSetup::SetButtonText(wxString prev, wxString next)
 {
 	if (next.compare(wxEmptyString) == 0) {
-		this->m_btnNext->SetLabel(next_button_orig);
+		if (! this->HasNextPage(this->GetCurrentPage())) {
+			this->m_btnNext->SetLabel(_("&Finish"));
+		} else {
+			this->m_btnNext->SetLabel(next_button_orig);
+		}
 	} else {
 		this->m_btnNext->SetLabel(next);
 	}
