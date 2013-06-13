@@ -63,6 +63,7 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	wxJSONValue response = event.GetResponse();
 	wxJSONValue params;
 	wxString server_name, address;
+    bool new_server;
 
 	/* The server's CA/CRL might need installing. */
 	SeruroServerAPI *api = new SeruroServerAPI(this->GetEventHandler());
@@ -85,7 +86,7 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	}
 
 	/* Try to add the server to the config, will fail if server existed. */
-	bool new_server = wxGetApp().config->AddServer(response["meta"]);
+	new_server = wxGetApp().config->AddServer(response["meta"]);
 	if (new_server) {
 		/* Add the server panel before potentially adding the address panel. */
 		//this->MainPanel()->AddTreeItem(SETTINGS_VIEW_TYPE_SERVER, response["meta"]["name"].AsString());
@@ -229,7 +230,10 @@ bool AccountPage::GoForward(bool from_callback) {
 	if (from_callback) return false;
 
 	/* About to perform some callback-action. (Must disable the form and next). */
+    /* TODO: why does disabling a password field erase the password? */
+//#if ! defined(_WXOSX_)
 	this->DisablePage();
+//#endif
 
 	if (this->wizard->HasServerInfo()) {
 		/* The server information was entered on a previous page. */

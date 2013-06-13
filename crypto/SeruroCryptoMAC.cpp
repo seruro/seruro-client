@@ -42,13 +42,6 @@ void SeruroCryptoMAC::OnInit()
 	//TLSRequest(none, 0, verb, object, data); /* SERURO_SECURITY_OPTIONS_DATA */
 }
 
-/* Errors should be events. */
-
-bool SeruroCryptoMAC::InstallP12(wxMemoryBuffer &p12, wxString &password)
-{
-    return false;
-}
-
 wxString SeruroCryptoMAC::TLSRequest(wxJSONValue params)
 {
 	wxString response("");
@@ -226,7 +219,26 @@ finished:
     return response;
 }
 
+/* Errors should be events. */
+
+bool SeruroCryptoMAC::InstallP12(wxMemoryBuffer &p12, wxString &password, wxArrayString &fingerprints)
+{
+    return false;
+}
 bool SeruroCryptoMAC::InstallCA(wxMemoryBuffer &ca) {return true;}
-bool SeruroCryptoMAC::InstallCert(wxMemoryBuffer &cert) {return true;}
+bool SeruroCryptoMAC::InstallCertificate(wxMemoryBuffer &cert) {return true;}
+
+bool SeruroCryptoMAC::RemoveIdentity(wxString fingerprint) { return true; }
+bool SeruroCryptoMAC::RemoveCA(wxString fingerprint) { return true; }
+bool SeruroCryptoMAC::RemoveCertificates(wxArrayString fingerprints)
+{ return true; }
+
+/* Methods to query certificates by their name (meaning SHA1) */
+bool SeruroCryptoMAC::HaveCA(wxString server_name) { return true; }
+bool SeruroCryptoMAC::HaveCertificates(wxString server_name, wxString address) { return true; }
+bool SeruroCryptoMAC::HaveIdentity(wxString server_name, wxString address) { return true; }
+
+wxString SeruroCryptoMAC::GetFingerprint(wxMemoryBuffer &cert) { return wxEmptyString; }
+
 
 #endif

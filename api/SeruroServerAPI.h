@@ -2,6 +2,8 @@
 #ifndef H_SeruroServerAPI
 #define H_SeruroServerAPI
 
+#include <wx/window.h>
+
 #include "../Defs.h"
 #include "SeruroRequest.h"
 
