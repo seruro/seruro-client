@@ -60,6 +60,11 @@ public:
 	/* May search the OS certificate store for the fingerprint. */
 	bool HaveCertificates(wxString server_name, wxString address);
 	bool HaveIdentity(wxString server_name, wxString address);
+	bool HaveCA(wxString server_name);
+	/* Fingerprint/thumbprint/hash retreival. */
+	wxArrayString GetCertificates(wxString server_name, wxString address);
+	wxArrayString GetIdentity(wxString server_name, wxString address);
+	wxString GetCA(wxString server_name);
 
 	wxJSONValue GetServers();
 	wxJSONValue GetServer(const wxString &server);

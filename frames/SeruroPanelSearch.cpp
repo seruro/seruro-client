@@ -297,7 +297,7 @@ void SeruroPanelSearch::OnInstallResult(SeruroRequestEvent &event)
     }
     
     /* Check the corresponding item(s) in the list control. */
-    if (api->InstallCert(response)) {
+    if (api->InstallCertificate(response)) {
         this->list_control->SetCheck(response["address"].AsString(), true);
     }
 }

@@ -49,6 +49,18 @@ void AddAccountForm::AddForm(wxSizer *sizer, const wxString &address,
 	sizer->Add(grid_sizer, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 }
 
+void AddAccountForm::DisableForm()
+{
+	this->address->Disable();
+	this->password->Disable();
+}
+
+void AddAccountForm::EnableForm()
+{
+	this->address->Enable(true);
+	this->password->Enable(true);
+}
+
 AddAccountDialog::AddAccountDialog(const wxString &address, const wxString &server_name) : 
 	wxDialog(wxGetApp().GetFrame(), wxID_ANY, wxString(wxT("Add Account"))),
     AddAccountForm(this)

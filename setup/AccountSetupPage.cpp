@@ -19,15 +19,28 @@ void AccountPage::OnCAResult(SeruroRequestEvent &event)
 {
 	wxJSONValue response = event.GetResponse();
 
+	/* There are no more callback actions. */
+	this->EnablePage();
+
 	SeruroServerAPI *api = new SeruroServerAPI(this->GetEventHandler());
 	/* This is a boolean, which indicates a successful add, but the user may deny. */
 	api->InstallCA(response);
 	delete api;
 
 	/* Check that the (now-known) CA hash exists within the trusted Root store. */
-	this->has_ca = HasServerCertificate(response["meta"]["server_name"].AsString());
+	this->has_ca = HasServerCertificate(response["server_name"].AsString());
+	
 	/* If the user canceled the install, stop. */
-	if (! has_ca) return;
+	if (! has_ca) {
+		/* Remove the account and server which was saved to the config. */
+		wxJSONValue account_info = this->GetValues();
+		//wxGetApp().config->RemoveAddress(response["server_name"], account_info["address"]);
+		wxGetApp().config->RemoveServer(response["server_name"].AsString());
+
+		/* Allow the login to "try-again". */
+		this->login_success = false;
+		return;
+	}
 	
 	/* This result handler may be able to proceed the setup. */
 	if (response.HasMember("meta") && response["meta"].HasMember("go_forward")) {
@@ -39,7 +52,10 @@ bool AccountPage::HasServerCertificate(wxString server_name)
 {
 	SeruroCrypto crypto_helper;
 
-	return crypto_helper.HasCA(server_name);
+	bool has_ca = crypto_helper.HaveCA(server_name);
+	wxLogMessage(_("AccountPage> (HasServerCertificate) certificate (%s) in store: (%s)."), 
+		server_name, (has_ca) ? "true" : "false");
+	return has_ca;
 }
 
 void AccountPage::OnPingResult(SeruroRequestEvent &event)
@@ -48,9 +64,12 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	wxJSONValue params;
 	wxString server_name, address;
 
+	/* The server's CA/CRL might need installing. */
+	SeruroServerAPI *api = new SeruroServerAPI(this->GetEventHandler());
+
 	if (! response["success"].AsBool() || ! response.HasMember("address")) {
 		wxLogMessage(_("AccountPage> (OnPingResult) failed to ping server."));
-		return;
+		goto enable_form;
 	}
 
 	/* Every address added will be identified by the server it is added "under".
@@ -62,7 +81,7 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	 */
 	if (! response.HasMember("meta") || ! response["meta"].HasMember("name")) {
 		wxLogMessage(_("RootAccounts> (AddAddressResult) no server name in meta."));
-		return;
+		goto enable_form;
 	}
 
 	/* Try to add the server to the config, will fail if server existed. */
@@ -72,9 +91,6 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 		//this->MainPanel()->AddTreeItem(SETTINGS_VIEW_TYPE_SERVER, response["meta"]["name"].AsString());
 	}
 
-	/* The server's CA/CRL might need installing. */
-	SeruroServerAPI *api = new SeruroServerAPI(this->GetEventHandler());
-
 	/* Regardless of the addServer response, the addAddress will determine a UI update.
 	 * (If the server was new, and it fails, the address will fail.)
 	 * (If the server was new, and it successes, but the address fails, there is a larger problem.)
@@ -82,7 +98,7 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	server_name = response["meta"]["name"].AsString();
 	address = response["address"].AsString();
 	if (! wxGetApp().config->AddAddress(server_name, address)) {
-		goto finished;
+		goto enable_form;
 	} else {
 		/* Add an address panel under the server panel. */
 		//this->MainPanel()->AddTreeItem(SETTINGS_VIEW_TYPE_ADDRESS, 
@@ -97,16 +113,39 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	if (new_server) {
 		params["meta"]["go_forward"] = true;
 		api->CreateRequest(SERURO_API_CA, params, SERURO_API_CALLBACK_CA)->Run();
+		goto finished;
 	} else {
 		/* If the server existed before, then a successful add of the account can proceed the
 		 * setup. Otherwise the result handler of InstallCA will proceed the setup. */
+	
+		/* There are no more callback-actions. */
+		this->EnablePage();
 
 		/* Call GoForward, but indicate that this call is from a callback. */
 		this->GoForward(true);
+		goto finished;
 	}
+
+enable_form:
+	/* There are no more callback-actions (if GoForward is called, it must be called after this). */
+	this->EnablePage();
 
 finished:
 	delete api;
+}
+
+void AccountPage::EnablePage()
+{
+	this->EnableForm();
+	wizard->EnableBack(true);
+	wizard->EnableForward(true);
+}
+
+void AccountPage::DisablePage()
+{
+	this->DisableForm();
+	wizard->EnableBack(false);
+	wizard->EnableForward(false);
 }
 
 AccountPage::AccountPage(SeruroSetup *parent) 
@@ -188,6 +227,9 @@ bool AccountPage::GoForward(bool from_callback) {
 	}
 	/* If the login failed, do not allow this method to make a subsequent request. */
 	if (from_callback) return false;
+
+	/* About to perform some callback-action. (Must disable the form and next). */
+	this->DisablePage();
 
 	if (this->wizard->HasServerInfo()) {
 		/* The server information was entered on a previous page. */

@@ -20,6 +20,10 @@
 
 DECLARE_APP(SeruroClient);
 
+#define CERTIFICATE_STORE_TRUSTED_ROOT "Root"
+#define CERTIFICATE_STORE_CONTACTS	   "AddressBook"
+#define CERTIFICATE_STORE_PERSONAL	   "My"
+
 /* Helper function to convert wxString to a L, the caller is responsible for memory. */
 BSTR AsLongString(wxString &input)
 {
@@ -85,6 +89,40 @@ bool InstallCertToStore(wxMemoryBuffer &cert, wxString store_name)
 	wxLogMessage(wxT("SeruroCrypto::InstallCA> cert installed."));
 	CertCloseStore(cert_store, 0);
 	return true;
+}
+
+bool HaveCertificateByFingerprint(wxString fingerprint, wxString store_name)
+{
+	HCERTSTORE cert_store;
+	BSTR store = AsLongString(store_name);
+
+	/* Open the requested certificate store. */
+	cert_store = CertOpenStore(CERT_STORE_PROV_SYSTEM, 0, 0,
+		CERT_STORE_OPEN_EXISTING_FLAG | CERT_SYSTEM_STORE_CURRENT_USER, store);
+
+	if (cert_store == NULL) {
+		DWORD error = GetLastError();
+		wxLogMessage(_("SeruroCrypto> (HaveCertificateByFingerprint) could not open CURRENT_USER/(%s) (%u)."),
+			store_name, error);
+		return false;
+	}
+
+	/* Convert the base64 fingerprint to the 160-bit SHA1 hash. */
+	CRYPT_HASH_BLOB hash;
+	wxMemoryBuffer hash_value = wxBase64Decode(fingerprint);
+	if (hash_value.GetDataLen() != 20) {
+		wxLogMessage(_("SeruroCrypto> (HaveCertificateByFingerprint) hash value was not 20 bytes?"));
+		return false;
+	}
+	hash.pbData = (BYTE *) hash_value.GetData();
+	hash.cbData = hash_value.GetDataLen();
+
+	/* Search the store for the hash. */
+	PCCERT_CONTEXT cert;
+	cert = CertFindCertificateInStore(cert_store, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 
+		0, CERT_FIND_HASH, (void *) &hash, NULL);
+
+	return (cert != NULL);
 }
 
 /* Calculate SHA1 for thumbprinting. */
@@ -263,14 +301,14 @@ finished:
 
 bool SeruroCryptoMSW::InstallCA(wxMemoryBuffer &ca)
 {
-	return InstallCertToStore(ca, "Root");
+	return InstallCertToStore(ca, CERTIFICATE_STORE_TRUSTED_ROOT);
 }
 
-bool SeruroCryptoMSW::InstallCert(wxMemoryBuffer &cert)
+bool SeruroCryptoMSW::InstallCertificate(wxMemoryBuffer &cert)
 {
 	/* Store name: AddressBook */
 	//return true;
-	return InstallCertToStore(cert, "AddressBook");
+	return InstallCertToStore(cert, CERTIFICATE_STORE_CONTACTS);
 }
 
 bool SeruroCryptoMSW::InstallP12(wxMemoryBuffer &p12, wxString &p_password, 
@@ -302,14 +340,16 @@ bool SeruroCryptoMSW::InstallP12(wxMemoryBuffer &p12, wxString &p_password,
 	}
 
 	HCERTSTORE myStore;
+	wxString store_name = _(CERTIFICATE_STORE_PERSONAL);
+	BSTR store = AsLongString(store_name);
 	/* This should set the "existing" flag and MUST set the "CURRENT_USER" high word. */
 	/* This is the user's "Personal" store, while iterating, this should identify included
 	 * CA certificates and potentially handle them differently. */
 	myStore = CertOpenStore(CERT_STORE_PROV_SYSTEM, 0, 0, 
-		CERT_STORE_OPEN_EXISTING_FLAG | CERT_SYSTEM_STORE_CURRENT_USER, L"MY");
+		CERT_STORE_OPEN_EXISTING_FLAG | CERT_SYSTEM_STORE_CURRENT_USER, store);
 
 	if (myStore == NULL) {
-		wxLogMessage(wxT("SeruroCrypto::InstallP12> could not open CURRENT_USER/'My' store.")); 
+		wxLogMessage(_("SeruroCrypto::InstallP12> could not open CURRENT_USER/(%s) store."), store_name); 
 		CertCloseStore(pfxStore, 0);
 		return false;
 	}
@@ -362,12 +402,63 @@ bool SeruroCryptoMSW::InstallP12(wxMemoryBuffer &p12, wxString &p_password,
 	return true;
 }
 
-bool SeruroCryptoMSW::HasIdentity(wxString server_name, wxString address) { return false; }
-bool SeruroCryptoMSW::HasCA(wxString server_name) { return false; }
-bool SeruroCryptoMSW::HasCerts(wxString server_name, wxString address) { return false; }
+bool SeruroCryptoMSW::HaveIdentity(wxString server_name, wxString address)
+{
+	/* First get the fingerprint string from the config. */
+	if (! wxGetApp().config->HaveIdentity(server_name, address)) return false;
+	wxArrayString identity = wxGetApp().config->GetIdentity(server_name, address);
+
+	if (identity.size() != 2) {
+		wxLogMessage(_("SeruroCrypto> (HaveIdentity) the identity (%s) (%s) does not have 2 certificates?"),
+			server_name, address);
+		return false;
+	}
+
+	/* Looking at the trusted Root store. */
+	bool cert_1 = HaveCertificateByFingerprint(identity[0], CERTIFICATE_STORE_PERSONAL);
+	bool cert_2 = HaveCertificateByFingerprint(identity[1], CERTIFICATE_STORE_PERSONAL);
+	wxLogMessage(_("SeruroCrypto> (HaveIdentity) identity (%s) (%s) in store: (1: %s, 2: %s)."), 
+		server_name, address, (cert_1) ? "true" : "false", (cert_2) ? "true" : "false");
+	return (cert_1 && cert_2);
+}
+
+bool SeruroCryptoMSW::HaveCA(wxString server_name)
+{ 
+	/* First get the fingerprint string from the config. */
+	if (! wxGetApp().config->HaveCA(server_name)) return false;
+	wxString ca_fingerprint = wxGetApp().config->GetCA(server_name);
+
+	/* Looking at the personal (my) store. */
+	bool in_store = HaveCertificateByFingerprint(ca_fingerprint, CERTIFICATE_STORE_TRUSTED_ROOT);
+	wxLogMessage(_("SeruroCrypto> (HaveCA) certificate (%s) in store: (%s)."), 
+		server_name, (in_store) ? "true" : "false");
+	return in_store;
+}
+
+bool SeruroCryptoMSW::HaveCertificates(wxString server_name, wxString address)
+{ 
+	/* First get the fingerprint string from the config. */
+	if (! wxGetApp().config->HaveCertificates(server_name, address)) return false;
+	wxArrayString identity = wxGetApp().config->GetCertificates(server_name, address);
+
+	if (identity.size() != 2) {
+		wxLogMessage(_("SeruroCrypto> (HaveCertificates) the address (%s) (%s) does not have 2 certificates?"),
+			server_name, address);
+		return false;
+	}
+
+	/* Looking at the address book store. */
+	bool cert_1 = HaveCertificateByFingerprint(identity[0], CERTIFICATE_STORE_CONTACTS);
+	bool cert_2 = HaveCertificateByFingerprint(identity[1], CERTIFICATE_STORE_CONTACTS);
+	wxLogMessage(_("SeruroCrypto> (HaveCertificates) address (%s) (%s) in store: (1: %s, 2: %s)."), 
+		server_name, address, (cert_1) ? "true" : "false", (cert_2) ? "true" : "false");
+	return (cert_1 && cert_2);
+}
 
 bool SeruroCryptoMSW::RemoveIdentity(wxString fingerprint) { return false; }
+
 bool SeruroCryptoMSW::RemoveCA(wxString fingerprint) { return false; }
-bool SeruroCryptoMSW::RemoveCerts(wxArrayString fingerprints) { return false; }
+
+bool SeruroCryptoMSW::RemoveCertificates(wxArrayString fingerprints) { return false; }
 
 #endif

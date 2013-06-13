@@ -238,7 +238,7 @@ bool SeruroServerAPI::InstallCA(wxJSONValue response)
 	return result;
 }
 
-bool SeruroServerAPI::InstallCert(wxJSONValue response)
+bool SeruroServerAPI::InstallCertificate(wxJSONValue response)
 {
 	if (! CheckResponse(response, "certs")) return false;
     //if (! CheckResponse(response, "address")) return false;
@@ -255,7 +255,7 @@ bool SeruroServerAPI::InstallCert(wxJSONValue response)
 
 		if (! DecodeBase64(cert_encoded, &cert_decoded)) continue;
 
-		result = cryptoHelper->InstallCert(cert_decoded);
+		result = cryptoHelper->InstallCertificate(cert_decoded);
 
 		/* Track this certificate. */
 		wxGetApp().config->AddCertificate(response["server_name"].AsString(), 

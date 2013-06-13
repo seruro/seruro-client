@@ -74,6 +74,9 @@ public:
 		//this->m_btnPrev->Disable();
 		this->m_btnPrev->Enable(enable);
 	}
+	void EnableForward(bool enable) {
+		this->m_btnNext->Enable(enable);
+	}
 	/* Since this process will potentially install a CA, optionally
 	 * decorate the action button with an auth symbol. */
 	void RequireAuth(bool require) {
@@ -135,6 +138,10 @@ public:
 	bool HasServerCertificate(wxString server_name);
 	/* Check if the name from the server page changed (and reselect). */
 	void DoFocus();
+
+	/* Help update the UI to reflect callback actions. */
+	void DisablePage();
+	void EnablePage();
 
 private:
 	bool login_success;

@@ -20,6 +20,9 @@ public:
 		const wxString &server_name = wxEmptyString);
     wxJSONValue GetValues();
     
+	void DisableForm();
+	void EnableForm();
+
 protected:
     wxWindow *parent;
     

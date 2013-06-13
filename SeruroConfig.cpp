@@ -460,6 +460,54 @@ bool SeruroConfig::HaveIdentity(wxString server_name, wxString address)
 	return false;
 }
 
+bool SeruroConfig::HaveCA(wxString server_name)
+{
+	if (HasConfig() && configData.HasMember("servers") &&
+		configData["servers"].HasMember(server_name) &&
+		configData["servers"][server_name].HasMember("ca")) {
+		return true;
+	}
+	return false;
+}
+
+wxArrayString SeruroConfig::GetCertificates(wxString server_name, wxString address)
+{
+	wxArrayString certificates;
+	if (! this->HaveCertificates(server_name, address)) {
+		return certificates;
+	}
+
+	for (int i = configData["servers"][server_name]["certificates"][address].Size()-1; i >= 0; i--) {
+		certificates.Add(configData["servers"][server_name]["certificates"][address][i].AsString());
+	}
+	//certificates = configData["servers"][server_name]["certificates"][address].AddComment
+	return certificates;
+}
+
+wxArrayString SeruroConfig::GetIdentity(wxString server_name, wxString address)
+{
+	wxArrayString identity;
+	if (! this->HaveIdentity(server_name, address)) {
+		return identity;
+	}
+
+	for (int i = configData["servers"][server_name]["identitites"][address].Size()-1; i >= 0; i--) {
+		identity.Add(configData["servers"][server_name]["identities"][address][i].AsString());
+	}
+	return identity;
+}
+
+wxString SeruroConfig::GetCA(wxString server_name)
+{
+	wxString ca;
+	if (! this->HaveCA(server_name)) {
+		return ca;
+	}
+
+	ca = configData["servers"][server_name]["ca"].AsString();
+	return ca;
+}
+
 /* Token management methods.
  * Tokens are stored in (DataDir)/tokens, or the file name listed in Defs.h.
  * The format is as such:

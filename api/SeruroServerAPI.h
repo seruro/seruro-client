@@ -66,7 +66,7 @@ public:
 	/* API callbacks */
 	bool InstallP12(wxJSONValue response);
 	bool InstallCA(wxJSONValue response);
-	bool InstallCert(wxJSONValue response);
+	bool InstallCertificate(wxJSONValue response);
 
 protected:
 	/* Return an auth object {"auth": {"token": "", "have_token": bool}}.

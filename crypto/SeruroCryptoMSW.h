@@ -31,19 +31,20 @@ public:
 		wxArrayString &fingerprints);	
 
 	bool InstallCA(wxMemoryBuffer &ca);
-	bool InstallCert(wxMemoryBuffer &cert);
+	/* Todo: change name to Certificate. */
+	bool InstallCertificate(wxMemoryBuffer &cert);
 
 	/* Todo: consider using Install Cert with an optional store name. */
 	//bool InstallTLSCert(wxMemoryBuffer &cert);
 
 	bool RemoveIdentity(wxString fingerprint);
 	bool RemoveCA(wxString fingerprint);
-	bool RemoveCerts(wxArrayString fingerprints);
+	bool RemoveCertificates(wxArrayString fingerprints);
 
 	/* Methods to query certificates by their name (meaning SHA1) */
-	bool HasCA(wxString server_name);
-	bool HasCerts(wxString server_name, wxString address);
-	bool HasIdentity(wxString server_name, wxString address);
+	bool HaveCA(wxString server_name);
+	bool HaveCertificates(wxString server_name, wxString address);
+	bool HaveIdentity(wxString server_name, wxString address);
 
 	wxString GetFingerprint(wxMemoryBuffer &cert);
 };
