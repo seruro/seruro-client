@@ -20,8 +20,12 @@ public:
 		const wxString &server_name = wxEmptyString);
     wxJSONValue GetValues();
     
+	/* Disallow/Allow form actions. */
 	void DisableForm();
 	void EnableForm();
+
+	/* Start the focus at the first form element. */
+	void FocusForm();
 
 protected:
     wxWindow *parent;

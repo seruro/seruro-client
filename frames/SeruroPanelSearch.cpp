@@ -173,7 +173,7 @@ void CheckedListCtrl::DoCheck(long item, bool checked)
     
 	if (this->IsChecked(item)) {
 		/* No uninstalling as of now. */
-        wxLogMessage("debug: cannot uninstall certificate.");
+        wxLogMessage(_("debug: cannot uninstall certificate."));
 		return;
         
         //this->parent->Uninstall(identity);
