@@ -52,21 +52,20 @@ void AddAccountForm::AddForm(wxSizer *sizer, const wxString &address,
 void AddAccountForm::DisableForm()
 {
 	this->address->Disable();
-#if ! defined(_WXOSX_)
-	this->password->Disable();
-#else
+#if defined(__WXOSX__) || defined(__WXMAC__)
     password->SetWindowStyle(password->GetWindowStyle() | wxTE_READONLY);
+#else
+    this->password->Disable();
 #endif
-    //password->Enable(false);
 }
 
 void AddAccountForm::EnableForm()
 {
 	this->address->Enable(true);
-#if ! defined(_WXOSX_)
-	this->password->Enable(true);
+#if defined(__WXOSX__) || defined(__WXMAC__)
+	password->SetWindowStyle(wxTE_PASSWORD);
 #else
-    password->SetWindowStyle(wxTE_PASSWORD);
+    password->Enable(true);
 #endif
 }
 

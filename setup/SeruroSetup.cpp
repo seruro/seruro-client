@@ -25,6 +25,8 @@ InitialPage::InitialPage(SeruroSetup *parent) : SetupPage(parent)
     /* Show welcome message, and overview of the workflow to follow. */
     wxSizer *vert_sizer = new wxBoxSizer(wxVERTICAL);
     
+    this->enable_back = false;
+    
     Text *msg = new Text(this, wxT("Welcome to Seruro! Let's take a moment and configure your client.\n")
 		wxT("\n")
         wxT("If this is your first time installing the Seruro Client, please pay attention as some settings may")
@@ -66,6 +68,7 @@ SeruroSetup::SeruroSetup(wxFrame *parent, bool add_server, bool add_address) :
     /* Page creation, a welcome page for the initial setup. */
 	if (! server_setup && ! address_setup) {
 		this->initial_page  = new InitialPage(this);
+        this->server_page   = new ServerPage(this);
 	}
 
 	/* Only show if in the initial setup or a server setup. */
