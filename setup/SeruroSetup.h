@@ -3,7 +3,8 @@
 #define H_SeruroSetup
 
 #include <wx/wizard.h>
-#include <wx/checkbox.h>
+//#include <wx/checkbox.h>
+#include <wx/button.h>
 #include <wx/choice.h>
 #include <wx/textctrl.h>
 
@@ -27,12 +28,13 @@ public:
 	 * function tries to proceed the wizard. If from_callback is true
 	 * then don't issue another request. 
 	 */
-	virtual bool GoForward(bool from_callback = false) { return true; }
+	virtual bool GoNext(bool from_callback = false) { return true; }
 	virtual void DoFocus() { return; }
 
 	wxString next_button;
 	wxString prev_button;
-	bool enable_back;
+	bool enable_prev;
+    bool enable_next;
 	bool require_auth;
 protected:
 	/* Parent wizard */
@@ -62,8 +64,8 @@ public:
 	}
     
     /* Over write without validation for backbutton */
-    void GoBack(wxCommandEvent& event);
-	void ForceForward();
+    void GoPrev(wxCommandEvent& event);
+	void ForceNext();
 	/* Restore/set button text when a new page is displayed. */
 	void OnChanged(wxWizardEvent &event);
 	void OnChanging(wxWizardEvent &event);
@@ -71,7 +73,7 @@ public:
 	/* Special functions for over-writing the button text (per-page). */
 	void SetButtonText(wxString prev = wxEmptyString, 
 		wxString next = wxEmptyString);
-	void EnableBack(bool enable) {
+	void EnablePrev(bool enable) {
 		//this->m_btnPrev->Disable();
 		if (this->HasPrevPage(this->GetCurrentPage())) {
 			/* Only permit override if previous page exists. */
@@ -80,7 +82,7 @@ public:
 			this->m_btnPrev->Enable(false);
 		}
 	}
-	void EnableForward(bool enable) {
+	void EnableNext(bool enable) {
 		this->m_btnNext->Enable(enable);
 	}
 	/* Since this process will potentially install a CA, optionally
@@ -133,7 +135,7 @@ class AccountPage : public SetupPage, public AddAccountForm
 {
 public:
     AccountPage (SeruroSetup *parent);
-	bool GoForward(bool from_callback = false);
+	bool GoNext(bool from_callback = false);
 
 	/* API Call handlers. */
 	void OnPingResult(SeruroRequestEvent &event);
@@ -175,13 +177,25 @@ private:
 class IdentityPage : public SetupPage
 {
 public:
-	IdentityPage (SeruroSetup *parent);
+	IdentityPage (SeruroSetup *parent, bool force_install = false);
 
 	/* Check the 'install' identity box. */
-	void OnToggleInstall(wxCommandEvent &event);
+	//void OnToggleInstall(wxCommandEvent &event);
+    void OnP12sResponse(SeruroRequestEvent &event);
+    void OnDownloadIdentity(wxCommandEvent &event);
+    
+    /* The key form and download button are enabled/disabled. */
+    void DisablePage();
+    void EnablePage();
+    
+    /* The user tries to install the identity (after entering their key). */
+    bool GoNext(bool from_callback = false);
 
 private:
-	wxCheckBox *install_identity;
+    wxButton *download_identity;
+	//wxCheckBox *install_identity;
+    
+    bool identity_downloaded;
 
 	DECLARE_EVENT_TABLE()
 };

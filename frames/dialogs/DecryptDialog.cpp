@@ -1,9 +1,19 @@
 
 #include "DecryptDialog.h"
+#include "../UIDefs.h"
 
 #include "../../SeruroClient.h"
 
 DECLARE_APP(SeruroClient);
+
+void DecryptForm::AddForm(wxSizer *sizer)
+{
+ 	sizer->Add(new Text(parent, "&Password:"));
+	password_control = new wxTextCtrl(parent, wxID_ANY,
+        wxEmptyString, wxDefaultPosition, wxDefaultSize,
+        wxTE_PASSWORD);
+	sizer->Add(password_control, DIALOGS_BOXSIZER_OPTIONS);
+}
 
 DecryptDialog::DecryptDialog(const wxString &method) :
     wxDialog(wxGetApp().GetFrame(), wxID_ANY, wxString(wxT("Decrypt Certificates")),
@@ -20,33 +30,51 @@ DecryptDialog::DecryptDialog(const wxString &method) :
 	}
     
 	/* Show a textual message. */
-	wxStaticText *msg = new wxStaticText(this, wxID_ANY, 
-		wxString(method_text + wxT(" ") + wxT(TEXT_DECRYPT_EXPLAINATION)));
+    wxString msg_text = method_text + _(" ") + _(TEXT_DECRYPT_EXPLAINATION);
+	wxStaticText *msg = new Text(this, msg_text, false);
 	msg->Wrap(300);
-	sizer_top->Add(msg, wxSizerFlags().Expand().Border(wxALL, 5));
+	sizer_top->Add(msg, DIALOGS_SIZER_OPTIONS);
     
 	wxSizer* const sizer_info = new wxStaticBoxSizer(wxVERTICAL, this, 
 		"&Certificates Password");
+    
 	/* Password selection. */
-	sizer_info->Add(new wxStaticText(this, wxID_ANY, "&Password:"));
-	password_control = new wxTextCtrl(this, wxID_ANY,
-		wxEmptyString, wxDefaultPosition, wxDefaultSize,
-		wxTE_PASSWORD);
-	sizer_info->Add(password_control, 
-		wxSizerFlags().Expand().Border(wxBOTTOM));
+    this->AddForm(sizer_info);
     
 	/* Default buttons. */
-	sizer_top->Add(sizer_info, 
-		wxSizerFlags().Expand().Border(wxTOP | wxLEFT | wxRIGHT, 5));
+	sizer_top->Add(sizer_info, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 	/* Note, the standard buttons allow us to use this dialog as a modal. Do not change
 	 * the button selections or the modal will no longer respond.
 	 */
 	sizer_top->Add(CreateStdDialogButtonSizer(wxOK | wxCANCEL), 
-		wxSizerFlags().Right().Border());
+		DIALOGS_BUTTONS_OPTIONS);
 	SetSizerAndFit(sizer_top);
 }
 
-wxString DecryptDialog::GetValue()
+void DecryptForm::DisableForm()
+{
+#if defined(__WXOSX__) || defined(__WXMAC__)
+    password_control->SetWindowStyle(password->GetWindowStyle() | wxTE_READONLY);
+#else
+    this->password_control->Disable();
+#endif
+}
+
+void DecryptForm::EnableForm()
+{
+#if defined(__WXOSX__) || defined(__WXMAC__)
+	password_control->SetWindowStyle(wxTE_PASSWORD);
+#else
+    password_control->Enable(true);
+#endif
+}
+
+void DecryptForm::FocusForm()
+{
+	this->password_control->SetFocus();
+}
+
+wxString DecryptForm::GetValue()
 {
 	return password_control->GetValue();
 }

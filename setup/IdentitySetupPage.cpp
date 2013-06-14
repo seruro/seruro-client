@@ -1,50 +1,63 @@
 
 #include "SeruroSetup.h"
 #include "../frames/UIDefs.h"
+#include <wx/button.h>
 
-#define SERURO_INSTALL_IDENTITY_ID wxID_HIGHEST
+enum {
+    BUTTON_DOWNLOAD_IDENTITY
+};
 
 BEGIN_EVENT_TABLE(IdentityPage, SetupPage)
-	EVT_CHECKBOX(SERURO_INSTALL_IDENTITY_ID, IdentityPage::OnToggleInstall)
+	//EVT_CHECKBOX(SERURO_INSTALL_IDENTITY_ID, IdentityPage::OnToggleInstall)
+    EVT_BUTTON(BUTTON_DOWNLOAD_IDENTITY, IdentityPage::OnDownloadIdentity)
+    EVT_SERURO_REQUEST(SERURO_API_CALLBACK_P12S, IdentityPage::OnP12sResponse)
 END_EVENT_TABLE()
 
-void IdentityPage::OnToggleInstall(wxCommandEvent &event)
+void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
 {
-	//this->wizard->EnableBack(this->install_identity->IsChecked());
-	if (this->install_identity->IsChecked()) {
-		//this->wizard->EnableBack(false);
-		this->wizard->SetButtonText(wxEmptyString, _("&Install"));
-	} else {
-		//this->wizard->EnableBack(true);
-		this->wizard->SetButtonText(wxEmptyString, this->next_button);
-	}
+    
 }
 
-IdentityPage::IdentityPage(SeruroSetup *parent) 
+void IdentityPage::OnDownloadIdentity(wxCommandEvent &event)
+{
+    
+}
+
+IdentityPage::IdentityPage(SeruroSetup *parent, bool force_install)
 	: SetupPage(parent) //, AddAccountForm(this), login_success(false)
 {
     wxSizer *const vert_sizer = new wxBoxSizer(wxVERTICAL);
     
-	//this->next_button = _("&Login");
 	/* The identity page does not allow the user to go backward. */
-	//this->wizard->EnableBack(false);
-	this->enable_back = false;
-	/* Unless the user installs this identity, this is the last page. */
-	this->next_button = _("&Finish");
+	this->enable_prev = false;
+    this->enable_next = false;
+	/* The user may not proceeded unless the P12 is download (may happen automatically). */
+	this->next_button = _("&Install");
 
+    /* Textual notice about the use of an identity. */
     wxString msg_text = _(TEXT_INSTALL_IDENTITY);
     Text *msg = new Text(this, msg_text);
     vert_sizer->Add(msg, DIALOGS_SIZER_OPTIONS);
     
-    wxSizer *const identity_form = new wxStaticBoxSizer(wxVERTICAL, this, "&Install Identity");
+    /* Download form if the P12 is not retreived automatically. */
+    wxSizer *const identity_form = new wxStaticBoxSizer(wxHORIZONTAL, this, "&Download Identity");
+    identity_form->Add(new Text(this, _("I trust, and send email from, this machine.")), DIALOGS_BOXSIZER_OPTIONS);
+    identity_form->AddStretchSpacer();
+    identity_button = new wxButton(this, BUTTON_DOWNLOAD_IDENTITY, _("Download"));
+    identity_form->Add(identity_button, DIALOGS_BOXSIZER_OPTIONS);
     
-    //this->AddForm(account_form);
-    
-	install_identity = new wxCheckBox(this, SERURO_INSTALL_IDENTITY_ID, 
-		_("Install the identity for this address."));
-	identity_form->Add(install_identity, DIALOGS_BOXSIZER_OPTIONS);
+
 
     vert_sizer->Add(identity_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);
     this->SetSizer(vert_sizer);
+}
+
+void IdentityPage::EnablePage()
+{
+    if (! this->identity_downloaded) {
+        identity_button->Enable();
+        identity_button->SetLabelText("&Download");
+    }
+    
 }
 

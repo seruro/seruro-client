@@ -47,7 +47,7 @@ void AccountPage::OnCAResult(SeruroRequestEvent &event)
 	
 	/* This result handler may be able to proceed the setup. */
 	if (response.HasMember("meta") && response["meta"].HasMember("go_forward")) {
-		this->GoForward(true);
+		this->GoNext(true);
 	}
 }
 
@@ -137,7 +137,7 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 		SetServerStatus(_("Success."));
 
 		/* Call GoForward, but indicate that this call is from a callback. */
-		this->GoForward(true);
+		this->GoNext(true);
 		goto finished;
 	}
 
@@ -153,15 +153,15 @@ finished:
 void AccountPage::EnablePage()
 {
 	this->EnableForm();
-	wizard->EnableBack(true);
-	wizard->EnableForward(true);
+	wizard->EnablePrev(true);
+	wizard->EnableNext(true);
 }
 
 void AccountPage::DisablePage()
 {
 	this->DisableForm();
-	wizard->EnableBack(false);
-	wizard->EnableForward(false);
+	wizard->EnablePrev(false);
+	wizard->EnableNext(false);
 }
 
 AccountPage::AccountPage(SeruroSetup *parent) 
@@ -239,14 +239,14 @@ void AccountPage::DoFocus()
 
 /* Use the information in the form to login, update the UI, and allow 
  * the wizard to "move forward". */
-bool AccountPage::GoForward(bool from_callback) {
+bool AccountPage::GoNext(bool from_callback) {
 	/* Perform a ping to validate the user's credentials. */
 	wxJSONValue server_info, address_info, params;
 
 	/* If a 'previous' login is still valid, allow the user to proceed. */
 	if (this->login_success && this->has_ca) {
 		if (from_callback) {
-			this->wizard->ForceForward();
+			this->wizard->ForceNext();
 		}
 		return true;
 	}

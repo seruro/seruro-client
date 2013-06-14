@@ -5,13 +5,13 @@
 #include <wx/event.h>
 
 BEGIN_EVENT_TABLE(SeruroSetup, wxWizard)
-    EVT_BUTTON(wxID_BACKWARD, SeruroSetup::GoBack)
+    EVT_BUTTON(wxID_BACKWARD, SeruroSetup::GoPrev)
 	EVT_WIZARD_PAGE_CHANGED(SERURO_SETUP_ID, SeruroSetup::OnChanged)
 	EVT_WIZARD_BEFORE_PAGE_CHANGED(SERURO_SETUP_ID, SeruroSetup::OnChanging)
 END_EVENT_TABLE()
 
 SetupPage::SetupPage(SeruroSetup *parent) : wxWizardPageSimple(parent), wizard(parent),
-	enable_back(true), require_auth(false)
+	enable_prev(true), require_auth(false)
 {
 	//this->enable_back = (! (! this->wizard->GetInitialPage())) // return;
 	//if (this->wizard->HasPrevPage(this->wizard->GetCurrentPage())) {
@@ -25,7 +25,7 @@ InitialPage::InitialPage(SeruroSetup *parent) : SetupPage(parent)
     /* Show welcome message, and overview of the workflow to follow. */
     wxSizer *vert_sizer = new wxBoxSizer(wxVERTICAL);
     
-    this->enable_back = false;
+    this->enable_prev = false;
     
     Text *msg = new Text(this, wxT("Welcome to Seruro! Let's take a moment and configure your client.\n")
 		wxT("\n")
@@ -102,7 +102,7 @@ SeruroSetup::SeruroSetup(wxFrame *parent, bool add_server, bool add_address) :
 /* Implemented in wxWizard at: wxwidgets\src\generic. 
  * This override for a button click allows the page to go backward even if there is
  * a form with invalid input (such as no input). */
-void SeruroSetup::GoBack(wxCommandEvent &event)
+void SeruroSetup::GoPrev(wxCommandEvent &event)
 {
 	/* Allow the page to react to a backward event (OnChanging). */
     wxWizardEvent eventPreChanged(wxEVT_WIZARD_BEFORE_PAGE_CHANGED, GetId(), false, m_page);
@@ -118,7 +118,7 @@ void SeruroSetup::GoBack(wxCommandEvent &event)
     (void)ShowPage(page, false);
 }
 
-void SeruroSetup::ForceForward()
+void SeruroSetup::ForceNext()
 {
 	/* If a callback is trying to force the forward action, the wizard must 
 	 * process the event. */
@@ -141,8 +141,8 @@ void SeruroSetup::OnChanging(wxWizardEvent &event)
 	 */
 
 	/* This page may not allow us to proceed. */
-	if (! ((SetupPage*) event.GetPage())->GoForward()) {
-		wxLogMessage(_("SeruroSetup> (OnChanging) this page prevented the wizard form moving forward."));
+	if (! ((SetupPage*) event.GetPage())->GoNext()) {
+		wxLogMessage(_("SeruroSetup> (OnChanging) this page prevented the wizard form moving next."));
 		event.Veto();
 	}
 	/* Continue normally... */
@@ -156,7 +156,8 @@ void SeruroSetup::OnChanged(wxWizardEvent &event)
 
 	/* Decorate the buttons */
 	//if (shown_page->enable_back) 
-	this->EnableBack(shown_page->enable_back);
+	this->EnablePrev(shown_page->enable_prev);
+    this->EnableNext(shown_page->enable_next);
 	this->RequireAuth(shown_page->require_auth);
 
 	/* Let us take care of the text. */
