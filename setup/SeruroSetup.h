@@ -11,6 +11,7 @@
 
 #include "../SeruroClient.h"
 #include "../api/SeruroServerAPI.h"
+#include "../frames/UIDefs.h"
 
 /* The dialogs include the form mixin classes. */
 #include "../frames/dialogs/AddServerDialog.h"
@@ -72,7 +73,12 @@ public:
 		wxString next = wxEmptyString);
 	void EnableBack(bool enable) {
 		//this->m_btnPrev->Disable();
-		this->m_btnPrev->Enable(enable);
+		if (this->HasPrevPage(this->GetCurrentPage())) {
+			/* Only permit override if previous page exists. */
+			this->m_btnPrev->Enable(enable);
+		} else {
+			this->m_btnPrev->Enable(false);
+		}
 	}
 	void EnableForward(bool enable) {
 		this->m_btnNext->Enable(enable);
@@ -143,6 +149,14 @@ public:
 	void DisablePage();
 	void EnablePage();
 
+	/* Help update the UI to reflect callback status. */
+	void SetServerStatus(wxString status) {
+		this->server_status->SetLabelText(status);
+	}
+	void SetAccountStatus(wxString status) {
+		this->account_status->SetLabelText(status);
+	}
+
 private:
 	bool login_success;
 	bool has_ca;
@@ -150,6 +164,10 @@ private:
 	/* Server list is a choice, even if there is only one. */
 	wxChoice *server_menu;
 	wxString server_name;
+
+	/* Textual messages indicating address/server install status. */
+	Text *server_status;
+	Text *account_status;
 
 	DECLARE_EVENT_TABLE()
 };

@@ -1,6 +1,5 @@
 
 #include "SeruroSetup.h"
-#include "../frames/UIDefs.h"
 #include "../frames/dialogs/AddServerDialog.h"
 
 #include "../crypto/SeruroCrypto.h"
@@ -36,11 +35,15 @@ void AccountPage::OnCAResult(SeruroRequestEvent &event)
 		wxJSONValue account_info = this->GetValues();
 		//wxGetApp().config->RemoveAddress(response["server_name"], account_info["address"]);
 		wxGetApp().config->RemoveServer(response["server_name"].AsString());
+		SetServerStatus(_("Unable to install server."));
 
 		/* Allow the login to "try-again". */
+		this->FocusForm();
 		this->login_success = false;
 		return;
 	}
+
+	SetServerStatus(_("Success."));
 	
 	/* This result handler may be able to proceed the setup. */
 	if (response.HasMember("meta") && response["meta"].HasMember("go_forward")) {
@@ -70,6 +73,13 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 
 	if (! response["success"].AsBool() || ! response.HasMember("address")) {
 		wxLogMessage(_("AccountPage> (OnPingResult) failed to ping server."));
+		if (response["error"].AsString().compare(_(SERURO_API_ERROR_CONNECTION)) == 0) {
+			SetServerStatus(response["error"].AsString());
+		} else {
+			SetServerStatus(_("Login failed."));
+			SetAccountStatus(_("Invalid account information."));
+		}
+
 		goto enable_form;
 	}
 
@@ -82,6 +92,7 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	 */
 	if (! response.HasMember("meta") || ! response["meta"].HasMember("name")) {
 		wxLogMessage(_("RootAccounts> (AddAddressResult) no server name in meta."));
+		SetServerStatus(_("Invalid server response."));
 		goto enable_form;
 	}
 
@@ -99,6 +110,7 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	server_name = response["meta"]["name"].AsString();
 	address = response["address"].AsString();
 	if (! wxGetApp().config->AddAddress(server_name, address)) {
+		SetAccountStatus(_("Account already exists."));
 		goto enable_form;
 	} else {
 		/* Add an address panel under the server panel. */
@@ -108,6 +120,7 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 
 	/* Only set login_success if the address has been added. */
 	this->login_success = true;
+	SetAccountStatus(_("Success."));
 
 	/* After the address has been added, and a token save, check if this is a new server. */
 	params["server"] = response["meta"];
@@ -121,6 +134,7 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	
 		/* There are no more callback-actions. */
 		this->EnablePage();
+		SetServerStatus(_("Success."));
 
 		/* Call GoForward, but indicate that this call is from a callback. */
 		this->GoForward(true);
@@ -129,6 +143,7 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 
 enable_form:
 	/* There are no more callback-actions (if GoForward is called, it must be called after this). */
+	this->FocusForm();
 	this->EnablePage();
 
 finished:
@@ -179,8 +194,17 @@ AccountPage::AccountPage(SeruroSetup *parent)
     this->AddForm(account_form);
 	vert_sizer->Add(account_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 
-	/* Todo: if this came from a new server, check for CA. Otherwise check from the displayed
-	 * list of CAs. */
+	/* Show textual status messages for the account (login success) and server
+	 * (connectivity/CA installation success).
+	 */
+	wxFlexGridSizer *const status_grid_sizer = new wxFlexGridSizer(2, 2, 5, 10);
+	status_grid_sizer->Add(new Text(this, _("Server status: ")));
+	this->server_status = new Text(this, _("Please login."));
+	status_grid_sizer->Add(this->server_status);
+	status_grid_sizer->Add(new Text(this, _("Account status: ")));
+	this->account_status = new Text(this, _("Please login."));
+	status_grid_sizer->Add(this->account_status);
+	vert_sizer->Add(status_grid_sizer, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 
     this->SetSizer(vert_sizer);
 }
@@ -243,7 +267,12 @@ bool AccountPage::GoForward(bool from_callback) {
 	/* Get values from AddAddressForm. */
 	address_info = this->GetValues();
 	params["address"] = address_info["address"];
-	params["password"] = address_info["password"];
+	if (address_info["password"].AsString().compare(wxEmptyString) == 0) {
+		/* If the user did not enter a password, fill un null. */
+		params["password"] = "null";
+	} else {
+		params["password"] = address_info["password"];
+	}
 
 	/* Preserve server info within the request callback using 'meta'. */
 	params["meta"] = server_info;

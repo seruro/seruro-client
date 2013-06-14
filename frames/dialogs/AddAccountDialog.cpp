@@ -69,6 +69,11 @@ void AddAccountForm::EnableForm()
 #endif
 }
 
+void AddAccountForm::FocusForm()
+{
+	this->address->SetFocus();
+}
+
 AddAccountDialog::AddAccountDialog(const wxString &address, const wxString &server_name) : 
 	wxDialog(wxGetApp().GetFrame(), wxID_ANY, wxString(wxT("Add Account"))),
     AddAccountForm(this)

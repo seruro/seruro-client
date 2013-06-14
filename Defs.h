@@ -61,6 +61,7 @@
 /* Used in the Server API to determine an expired or invalid token. */
 #define SERURO_API_ERROR_SUCCESS		"Success."
 #define SERURO_API_ERROR_INVALID_AUTH	"Invalid authentication token."
+#define SERURO_API_ERROR_CONNECTION		"Connection failed."
 
 /* Server API routes, or in HTTP diction "objects". */
 #define SERURO_API_OBJECT_LOGIN	 "/api/sessions/create"
