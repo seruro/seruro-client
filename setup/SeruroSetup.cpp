@@ -64,7 +64,6 @@ SeruroSetup::SeruroSetup(wxFrame *parent, bool add_server, bool add_address) :
 	this->next_button_orig = this->m_btnNext->GetLabelText();
 	this->prev_button_orig = this->m_btnPrev->GetLabelText();
 
-
     /* Page creation, a welcome page for the initial setup. */
 	if (! server_setup && ! address_setup) {
 		this->initial_page  = new InitialPage(this);
@@ -78,23 +77,34 @@ SeruroSetup::SeruroSetup(wxFrame *parent, bool add_server, bool add_address) :
 		this->initial_page  = this->server_page;
 	}
 
+	/* The account page will always exist. */
 	this->account_page  = new AccountPage(this);
 	/* Set the initial page for dumb member functions. */
 	if (address_setup) this->initial_page = this->account_page;
     
+	/* If this is an initial setup, the initial page is first. */
     if (! server_setup && ! address_setup) {
 		initial_page->SetNext(server_page);
 		server_page->SetPrev(initial_page);
 	}
 
-	if (server_setup && ! address_setup) {
+	/* If this is not an address setup, then there is a server page. */
+	if (! address_setup) {
 		server_page->SetNext(account_page);
 		account_page->SetPrev(server_page);
 	}
 
-	this->identity_page = new IdentityPage(this);
+	/* Donwloading an identity is automatic if this is the initial setup. */
+	bool force_identity_download = (! server_setup && ! address_setup);
+	/* Identity page will always exist. */
+	this->identity_page = new IdentityPage(this, force_identity_download);
 	account_page->SetNext(identity_page);
 	identity_page->SetPrev(account_page);
+
+	/* Applications page will always exist. */
+	this->applications_page = new ApplicationsPage(this);
+	identity_page->SetNext(applications_page);
+	applications_page->SetPrev(identity_page);
 
     this->GetPageAreaSizer()->Add(this->initial_page);
 }

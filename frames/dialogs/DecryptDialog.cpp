@@ -6,18 +6,25 @@
 
 DECLARE_APP(SeruroClient);
 
-void DecryptForm::AddForm(wxSizer *sizer)
+void DecryptForm::AddForms(wxSizer *sizer)
 {
- 	sizer->Add(new Text(parent, "&Password:"));
+	wxFlexGridSizer *const grid_sizer = new wxFlexGridSizer(1, 2, 
+		GRID_SIZER_WIDTH, GRID_SIZER_HEIGHT);
+	grid_sizer->AddGrowableCol(1, 1);
+
+ 	grid_sizer->Add(new Text(parent, "&Decrypt Key:"));
 	password_control = new wxTextCtrl(parent, wxID_ANY,
         wxEmptyString, wxDefaultPosition, wxDefaultSize,
         wxTE_PASSWORD);
-	sizer->Add(password_control, DIALOGS_BOXSIZER_OPTIONS);
+	grid_sizer->Add(password_control, DIALOGS_BOXSIZER_OPTIONS);
+
+	sizer->Add(grid_sizer, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 }
 
 DecryptDialog::DecryptDialog(const wxString &method) :
     wxDialog(wxGetApp().GetFrame(), wxID_ANY, wxString(wxT("Decrypt Certificates")),
-        wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE)
+        wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
+	DecryptForm(this)
 {
 	wxSizer* const sizer_top = new wxBoxSizer(wxVERTICAL);
     
@@ -39,7 +46,7 @@ DecryptDialog::DecryptDialog(const wxString &method) :
 		"&Certificates Password");
     
 	/* Password selection. */
-    this->AddForm(sizer_info);
+    this->AddForms(sizer_info);
     
 	/* Default buttons. */
 	sizer_top->Add(sizer_info, DIALOGS_BOXSIZER_SIZER_OPTIONS);

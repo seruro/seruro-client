@@ -474,6 +474,8 @@ wxArrayString SeruroConfig::GetCertificates(wxString server_name, wxString addre
 {
 	wxArrayString certificates;
 	if (! this->HaveCertificates(server_name, address)) {
+		wxLogMessage(_("SeruroConfig> (GetCertificates) cannot find certificates (%s) (%s)."),
+			server_name, address);
 		return certificates;
 	}
 
@@ -488,10 +490,12 @@ wxArrayString SeruroConfig::GetIdentity(wxString server_name, wxString address)
 {
 	wxArrayString identity;
 	if (! this->HaveIdentity(server_name, address)) {
+		wxLogMessage(_("SeruroConfig> (GetIdentity) cannot find certificates (%s) (%s)."),
+			server_name, address);
 		return identity;
 	}
 
-	for (int i = configData["servers"][server_name]["identitites"][address].Size()-1; i >= 0; i--) {
+	for (int i = configData["servers"][server_name]["identities"][address].Size()-1; i >= 0; i--) {
 		identity.Add(configData["servers"][server_name]["identities"][address][i].AsString());
 	}
 	return identity;

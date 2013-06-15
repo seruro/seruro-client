@@ -15,7 +15,8 @@ class DecryptForm
 {
 public:
     DecryptForm(wxWindow *parent_obj) : parent(parent_obj) {}
-    void AddForm(wxSizer *sizer);
+
+    void AddForms(wxSizer *sizer);
     wxString GetValue();
     
 	/* Disallow/Allow form actions. */

@@ -1,4 +1,6 @@
 
+#include "../frames/dialogs/AddAccountDialog.h"
+
 #include "SeruroSetup.h"
 #include "../frames/UIDefs.h"
 

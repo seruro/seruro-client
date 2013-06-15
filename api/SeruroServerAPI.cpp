@@ -266,20 +266,25 @@ bool SeruroServerAPI::InstallCertificate(wxJSONValue response)
 	return result;
 }
 
-bool SeruroServerAPI::InstallP12(wxJSONValue response)
+bool SeruroServerAPI::InstallP12(wxJSONValue response, wxString key)
 {
 	if (! CheckResponse(response, "p12")) return false;
 
 	/* Get password from user for p12 containers. */
 	wxString p12_key;
-	DecryptDialog *decrypt_dialog = new DecryptDialog(response["method"].AsString());
-	if (decrypt_dialog->ShowModal() == wxID_OK) {
-		p12_key = decrypt_dialog->GetValue();
+
+	if (key.compare(wxEmptyString) == 0) {
+		DecryptDialog *decrypt_dialog = new DecryptDialog(response["method"].AsString());
+		if (decrypt_dialog->ShowModal() == wxID_OK) {
+			p12_key = decrypt_dialog->GetValue();
+		} else {
+			return false;
+		}
+		/* Remove the modal from memory. */
+		decrypt_dialog->Destroy();
 	} else {
-		return false;
+		p12_key = key;
 	}
-	/* Remove the modal from memory. */
-	decrypt_dialog->Destroy();
 
 	/* Install all P12 b64 blobs. */
 	wxArrayString p12_blobs = response["p12"].GetMemberNames();

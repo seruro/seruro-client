@@ -17,6 +17,7 @@
 /* The dialogs include the form mixin classes. */
 #include "../frames/dialogs/AddServerDialog.h"
 #include "../frames/dialogs/AddAccountDialog.h"
+#include "../frames/dialogs/DecryptDialog.h"
 
 class SeruroSetup;
 
@@ -143,7 +144,7 @@ public:
 
 	/* Manage server/CA lookups. */
 	void OnSelectServer(wxCommandEvent &event);
-	bool HasServerCertificate(wxString server_name);
+	//bool HasServerCertificate(wxString server_name);
 	/* Check if the name from the server page changed (and reselect). */
 	void DoFocus();
 
@@ -152,9 +153,9 @@ public:
 	void EnablePage();
 
 	/* Help update the UI to reflect callback status. */
-	void SetServerStatus(wxString status) {
-		this->server_status->SetLabelText(status);
-	}
+	//void SetServerStatus(wxString status) {
+	//	this->server_status->SetLabelText(status);
+	//}
 	void SetAccountStatus(wxString status) {
 		this->account_status->SetLabelText(status);
 	}
@@ -168,36 +169,55 @@ private:
 	wxString server_name;
 
 	/* Textual messages indicating address/server install status. */
-	Text *server_status;
+	//Text *server_status;
 	Text *account_status;
 
 	DECLARE_EVENT_TABLE()
 };
 
-class IdentityPage : public SetupPage
+class IdentityPage : public SetupPage, public DecryptForm
 {
 public:
-	IdentityPage (SeruroSetup *parent, bool force_install = false);
+	IdentityPage (SeruroSetup *parent, bool force_download = false);
 
 	/* Check the 'install' identity box. */
 	//void OnToggleInstall(wxCommandEvent &event);
     void OnP12sResponse(SeruroRequestEvent &event);
     void OnDownloadIdentity(wxCommandEvent &event);
+	/* Can be called from event or from a forced download. */
+	void DownloadIdentity();
+
+	/* Show the status, including the method of key retrevial. */
+	void SetIdentityStatus(wxString status) {
+		this->identity_status->SetLabelText(status);
+	}
     
     /* The key form and download button are enabled/disabled. */
+	void DoFocus();
     void DisablePage();
     void EnablePage();
     
-    /* The user tries to install the identity (after entering their key). */
+    /* The user tries to install the identity 
+	 * (after entering their key). */
     bool GoNext(bool from_callback = false);
 
 private:
-    wxButton *download_identity;
+    wxButton *download_button;
+	wxJSONValue download_response;
 	//wxCheckBox *install_identity;
     
     bool identity_downloaded;
+	bool force_download;
+	bool identity_installed;
+	Text *identity_status;
 
 	DECLARE_EVENT_TABLE()
+};
+
+class ApplicationsPage : public SetupPage
+{
+public:
+	ApplicationsPage(SeruroSetup *parent) : SetupPage(parent) {}
 };
 
 #endif

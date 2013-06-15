@@ -15,7 +15,8 @@ void AddAccountForm::AddForm(wxSizer *sizer, const wxString &address,
 	const wxString &server_name)
 {
     /* Address details form. */
-	wxFlexGridSizer *const grid_sizer = new wxFlexGridSizer(2, 2, 5, 10);
+	wxFlexGridSizer *const grid_sizer = new wxFlexGridSizer(2, 2, 
+		GRID_SIZER_WIDTH, GRID_SIZER_HEIGHT);
 	grid_sizer->AddGrowableCol(1, 1);
     
 	/* Address. */

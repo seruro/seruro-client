@@ -66,7 +66,8 @@ public:
 	}
 
 	/* API callbacks */
-	bool InstallP12(wxJSONValue response);
+	bool InstallP12(wxJSONValue response, 
+		wxString key = wxEmptyString);
 	bool InstallCA(wxJSONValue response);
 	bool InstallCertificate(wxJSONValue response);
 

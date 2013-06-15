@@ -1,6 +1,7 @@
 
 #include "SeruroSetup.h"
 #include "../frames/dialogs/AddServerDialog.h"
+#include "../frames/dialogs/AddAccountDialog.h"
 
 #include "../crypto/SeruroCrypto.h"
 
@@ -27,15 +28,17 @@ void AccountPage::OnCAResult(SeruroRequestEvent &event)
 	delete api;
 
 	/* Check that the (now-known) CA hash exists within the trusted Root store. */
-	this->has_ca = HasServerCertificate(response["server_name"].AsString());
-	
+	//this->has_ca = HasServerCertificate(response["server_name"].AsString());
+	SeruroCrypto crypto_helper;
+	this->has_ca = crypto_helper.HaveCA(response["server_name"].AsString());
+
 	/* If the user canceled the install, stop. */
 	if (! has_ca) {
 		/* Remove the account and server which was saved to the config. */
 		wxJSONValue account_info = this->GetValues();
 		//wxGetApp().config->RemoveAddress(response["server_name"], account_info["address"]);
 		wxGetApp().config->RemoveServer(response["server_name"].AsString());
-		SetServerStatus(_("Unable to install server."));
+		SetAccountStatus(_("Unable to install server."));
 
 		/* Allow the login to "try-again". */
 		this->FocusForm();
@@ -43,22 +46,12 @@ void AccountPage::OnCAResult(SeruroRequestEvent &event)
 		return;
 	}
 
-	SetServerStatus(_("Success."));
+	//SetServerStatus(_("Success."));
 	
 	/* This result handler may be able to proceed the setup. */
 	if (response.HasMember("meta") && response["meta"].HasMember("go_forward")) {
 		this->GoNext(true);
 	}
-}
-
-bool AccountPage::HasServerCertificate(wxString server_name)
-{
-	SeruroCrypto crypto_helper;
-
-	bool has_ca = crypto_helper.HaveCA(server_name);
-	wxLogMessage(_("AccountPage> (HasServerCertificate) certificate (%s) in store: (%s)."), 
-		server_name, (has_ca) ? "true" : "false");
-	return has_ca;
 }
 
 void AccountPage::OnPingResult(SeruroRequestEvent &event)
@@ -74,9 +67,9 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	if (! response["success"].AsBool() || ! response.HasMember("address")) {
 		wxLogMessage(_("AccountPage> (OnPingResult) failed to ping server."));
 		if (response["error"].AsString().compare(_(SERURO_API_ERROR_CONNECTION)) == 0) {
-			SetServerStatus(response["error"].AsString());
+			SetAccountStatus(response["error"].AsString());
 		} else {
-			SetServerStatus(_("Login failed."));
+			//SetServerStatus(_("Login failed."));
 			SetAccountStatus(_("Invalid account information."));
 		}
 
@@ -92,7 +85,7 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	 */
 	if (! response.HasMember("meta") || ! response["meta"].HasMember("name")) {
 		wxLogMessage(_("RootAccounts> (AddAddressResult) no server name in meta."));
-		SetServerStatus(_("Invalid server response."));
+		SetAccountStatus(_("Invalid server response."));
 		goto enable_form;
 	}
 
@@ -134,7 +127,7 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	
 		/* There are no more callback-actions. */
 		this->EnablePage();
-		SetServerStatus(_("Success."));
+		//SetServerStatus(_("Success."));
 
 		/* Call GoForward, but indicate that this call is from a callback. */
 		this->GoNext(true);
@@ -155,6 +148,8 @@ void AccountPage::EnablePage()
 	this->EnableForm();
 	wizard->EnablePrev(true);
 	wizard->EnableNext(true);
+
+	this->FocusForm();
 }
 
 void AccountPage::DisablePage()
@@ -191,20 +186,30 @@ AccountPage::AccountPage(SeruroSetup *parent)
 	}
 
     wxSizer *const account_form = new wxStaticBoxSizer(wxVERTICAL, this, "&Account Information");
+	//wxFlexGridSizer *const account_grid_sizer = new wxFlexGridSizer(2, 2, 5, 10);
+	wxSizer *const status_sizer = new wxBoxSizer(wxHORIZONTAL);
+	status_sizer->Add(new Text(this, _("Login status: ")), DIALOGS_SIZER_OPTIONS);
+	this->account_status = new Text(this, _("Please login."));
+	status_sizer->Add(this->account_status, DIALOGS_SIZER_OPTIONS);
+	account_form->Add(status_sizer, DIALOGS_BOXSIZER_OPTIONS);
+
+	/* Add the form, which is itself, a grid sizer. */
     this->AddForm(account_form);
+	//account_grid_sizer->AddGrowableCol(0);
+
+	//account_form->Add(account_grid_sizer, DIALOGS_SIZER_OPTIONS);
 	vert_sizer->Add(account_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 
 	/* Show textual status messages for the account (login success) and server
 	 * (connectivity/CA installation success).
 	 */
-	wxFlexGridSizer *const status_grid_sizer = new wxFlexGridSizer(2, 2, 5, 10);
-	status_grid_sizer->Add(new Text(this, _("Server status: ")));
-	this->server_status = new Text(this, _("Please login."));
-	status_grid_sizer->Add(this->server_status);
-	status_grid_sizer->Add(new Text(this, _("Account status: ")));
-	this->account_status = new Text(this, _("Please login."));
-	status_grid_sizer->Add(this->account_status);
-	vert_sizer->Add(status_grid_sizer, DIALOGS_BOXSIZER_SIZER_OPTIONS);
+	
+	//status_grid_sizer->Add(new Text(this, _("Server status: ")));
+	//this->server_status = new Text(this, _("Please login."));
+	//status_grid_sizer->Add(this->server_status);
+
+	//;
+	//vert_sizer->Add(status_grid_sizer, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 
     this->SetSizer(vert_sizer);
 }
@@ -213,9 +218,10 @@ void AccountPage::OnSelectServer(wxCommandEvent &event)
 {
 	wxString new_server = server_menu->GetString(server_menu->GetSelection());
 
+	SeruroCrypto crypto_helper;
 	wxLogMessage(_("AccountPage> (OnSelectServer) server (%s) was selected."), new_server);
 	this->server_name = new_server;
-	this->has_ca = HasServerCertificate(new_server);
+	this->has_ca = crypto_helper.HaveCA(new_server);
 }
 
 void AccountPage::DoFocus()
@@ -254,10 +260,7 @@ bool AccountPage::GoNext(bool from_callback) {
 	if (from_callback) return false;
 
 	/* About to perform some callback-action. (Must disable the form and next). */
-    /* TODO: why does disabling a password field erase the password? */
-//#if ! defined(_WXOSX_)
 	this->DisablePage();
-//#endif
 
 	if (this->wizard->HasServerInfo()) {
 		/* The server information was entered on a previous page. */
