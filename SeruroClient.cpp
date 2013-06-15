@@ -1,5 +1,13 @@
+// For compilers that support precompilation, includes "wx/wx.h".
+#include "wx/wxprec.h"
+//C:\Program Files %28x86%29\Visual Leak Detector\lib\Win32
+#ifdef __BORLANDC__
+#pragma hdrstop
+#endif
 
-//#include <boost/thread.hpp>
+#ifndef WX_PRECOMP
+#include "wx/wx.h"
+#endif
 
 #include "SeruroClient.h"
 #include "SeruroConfig.h"
@@ -11,6 +19,7 @@
 #include "frames/SeruroFrameMain.h"
 
 #include <wx/log.h>
+#include <wx/image.h>
 
 #define SERURO_DEBUG_SETUP 0
 
@@ -27,6 +36,9 @@ bool SeruroClient::OnInit()
 {
     if ( !wxApp::OnInit() )
         return false;
+
+	/* Support for PNGs. */
+	wxImage::AddHandler(new wxPNGHandler);
 
 	/* Create a frame, but do not start sub frames, which may depend on config. */
 	mainFrame = new SeruroFrameMain(wxT(SERURO_APP_NAME), 

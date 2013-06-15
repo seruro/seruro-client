@@ -60,7 +60,7 @@ class SettingsView : public wxWindow
 {
 public:
     SettingsView(SeruroPanelSettings *window) : parent(window),
-    wxWindow(window, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_SIMPLE) {
+    wxWindow(window, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME) {
         SetBackgroundColour(_("white"));
     }
     
