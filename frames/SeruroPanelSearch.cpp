@@ -321,7 +321,7 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 
 	/* The list control is a report-view displaying search results. */
 	list_control = new CheckedListCtrl(this, SERURO_SEARCH_LIST_ID, 
-		wxDefaultPosition, wxDefaultSize, (wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_THEME));
+		wxDefaultPosition, wxDefaultSize, (wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_SIMPLE));
 
 	wxListItem list_column;
 

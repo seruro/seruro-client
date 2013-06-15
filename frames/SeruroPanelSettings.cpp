@@ -51,10 +51,13 @@ SeruroPanelSettings::SeruroPanelSettings(wxBookCtrlBase *book) : SeruroPanel(boo
     wxSize s;
     s.SetWidth(SERURO_SETTINGS_TREE_MIN_WIDTH);
     wxListCtrl *t_menu = new wxListCtrl(this, SETTINGS_MENU_ID, wxDefaultPosition, s,
-        wxLC_REPORT | wxLC_SINGLE_SEL | wxLC_NO_HEADER | wxBORDER_THEME);
+        wxLC_REPORT | wxLC_SINGLE_SEL | wxLC_NO_HEADER | wxBORDER_SIMPLE);
 	t_menu->SetImageList(image_list, wxIMAGE_LIST_SMALL);
-	wxColour blue_color(_("blue"));
-	t_menu->SetBackgroundColour(blue_color);
+    //wxColour grey(247, 247, 247);
+    //t_menu->SetAlternateRowColour(grey);
+    //t_menu->EnableAlternateRowColours(true);
+	//wxColour blue_color(_("blue"));
+	//t_menu->SetBackgroundColour(blue_color);
     //t_menu->SetWindowStyleFlag(t_menu->GetWindowStyleFlag() | wxBORDER_SIMPLE);
     //t_menu->EnableAlternateRowColours(true);
     //wxSize m_size;// = GetClientSize();
@@ -77,8 +80,16 @@ SeruroPanelSettings::SeruroPanelSettings(wxBookCtrlBase *book) : SeruroPanel(boo
 	//t_menu->SetItem(0, 0, _("General"), 0);
 	//t_menu->SetItem(1, 0, _("Accounts"), 0);
 
-	t_menu->InsertItem(0, _("General"));
-	t_menu->InsertItem(1, _("Accounts"));
+    long index;
+    wxFont font;
+	index = t_menu->InsertItem(0, _("General"), 0);
+    //t_menu->SetItemFont(index, )
+    font = t_menu->GetItemFont(index);
+    //font.Bold();
+    font.SetWeight(wxFONTWEIGHT_BOLD);
+    font.SetPointSize(14);
+    t_menu->SetItemFont(index, font);
+	t_menu->InsertItem(1, _("Accounts"), 0);
     //long item_index;
     //item_index = t_menu->InsertItem(0, _(" "));
     //t_menu->SetItem(item_index, 0, _("General"));
