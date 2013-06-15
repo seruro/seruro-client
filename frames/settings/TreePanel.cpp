@@ -38,19 +38,19 @@ void SettingsTree::OnSelectItem(wxTreeEvent &event)
 	switch (data->item_type) {
 	case SETTINGS_VIEW_TYPE_SERVER: 
 		//this->ShowView_Server(data);
-        if (! this->main_panel->HasPanel(SETTINGS_VIEW_TYPE_SERVER, data->item_name)) {
-            SettingsPanel_Server *server_panel = new SettingsPanel_Server(this->main_panel, data->item_name);
-            this->main_panel->AddPanel(server_panel, SETTINGS_VIEW_TYPE_SERVER, data->item_name);
-        }
+        //if (! this->main_panel->HasPanel(SETTINGS_VIEW_TYPE_SERVER, data->item_name)) {
+        //    SettingsPanel_Server *server_panel = new SettingsPanel_Server(this->main_panel, data->item_name);
+        //    this->main_panel->AddPanel(server_panel, SETTINGS_VIEW_TYPE_SERVER, data->item_name);
+        //}
 		break;
 	case SETTINGS_VIEW_TYPE_ADDRESS: 
 		//this->ShowView_Address(data); 
-		if (! this->main_panel->HasPanel(SETTINGS_VIEW_TYPE_ADDRESS, data->item_name,  data->item_parent)) {
-			SettingsPanel_Address *address_panel = new SettingsPanel_Address(this->main_panel,  
-				data->item_name, data->item_parent);
-			this->main_panel->AddPanel(address_panel, SETTINGS_VIEW_TYPE_ADDRESS,
-				data->item_name, data->item_parent);
-		}
+		//if (! this->main_panel->HasPanel(SETTINGS_VIEW_TYPE_ADDRESS, data->item_name,  data->item_parent)) {
+		//	SettingsPanel_Address *address_panel = new SettingsPanel_Address(this->main_panel,
+		//		data->item_name, data->item_parent);
+		//	this->main_panel->AddPanel(address_panel, SETTINGS_VIEW_TYPE_ADDRESS,
+		//		data->item_name, data->item_parent);
+		//}
 		break;
 	case SETTINGS_VIEW_TYPE_APPLICATION: 
 		//this->ShowView_Application(data); 
@@ -68,7 +68,7 @@ void SettingsTree::OnSelectItem(wxTreeEvent &event)
 	}
 
 	/* Finally show the requested view. */
-	this->main_panel->ShowPanel(data->item_type, data->item_name, data->item_parent);
+	//this->main_panel->ShowPanel(data->item_type, data->item_name, data->item_parent);
 }
 
 wxTreeItemId SettingsPanelTree::GetItemParent(settings_view_type_t type, wxString name, wxString parent)

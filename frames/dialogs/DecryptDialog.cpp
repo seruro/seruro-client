@@ -61,7 +61,7 @@ DecryptDialog::DecryptDialog(const wxString &method) :
 void DecryptForm::DisableForm()
 {
 #if defined(__WXOSX__) || defined(__WXMAC__)
-    password_control->SetWindowStyle(password->GetWindowStyle() | wxTE_READONLY);
+    password_control->SetWindowStyle(password_control->GetWindowStyle() | wxTE_READONLY);
 #else
     this->password_control->Disable();
 #endif

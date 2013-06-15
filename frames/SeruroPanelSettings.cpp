@@ -1,204 +1,110 @@
 
 #include "SeruroPanelSettings.h"
-#include "settings/SettingsPanels.h"
+//#include "settings/SettingsPanels.h"
+#include "UIDefs.h"
 
 #include "../api/SeruroServerAPI.h"
 
-#include <wx/stattext.h>
+//#include <wx/stattext.h>
 #include <wx/button.h>
 #include <wx/log.h>
 
-/* Keep a list of panel pointers, which should not be stored as JSON ints. */
-SettingsPanelView *panel_list[32];
-/* The JSON mapping stores the panel pointer as an integer index into the list (+1). */
-int panel_list_size = 0;
+#include <wx/listctrl.h>
 
-#if 0
-void DestoryAll(wxSizer *sizer)
-{
-	//wxSizerItemList children = sizer->GetChildren();
-	//size_t num_items = sizer->GetItemCount();
+enum {
+    SETTINGS_MENU_ID
+};
 
-	wxSizerItem *item;
-	wxWindow *window;
-	//for (size_t i = ; i < num_items; i++) {
-	/*while (item = sizer->GetItem((size_t) 0)) {
-		//item = sizer->GetItem(i);
-		if (item->IsWindow()) {
-			window = item->GetWindow();
-			window->DestroyChildren();
-			window->Destroy();
-			//delete window;
-		}
-		sizer->Detach(0);
-		//if (item) delete item;
-	}*/
-	sizer->Clear(true);
-}
-#endif
+#define SETTINGS_MENU_WIDTH 200
+
 
 SeruroPanelSettings::SeruroPanelSettings(wxBookCtrlBase *book) : SeruroPanel(book, wxT("Settings"))
 {
 	/* Override default sizer. */
-	wxBoxSizer *container_sizer = new wxBoxSizer(wxHORIZONTAL);
+	wxBoxSizer *sizer = new wxBoxSizer(wxHORIZONTAL);
 
-	//container_sizer->Add(settings_tree, 0, wxEXPAND, 5);
-	//container_sizer->Add(test_panel, 0, wxEXPAND, 5);
-
-	/* Create a resizeable window for the navigation pane (panel) and it's controlling view. */
-	this->splitter = new wxSplitterWindow(this, wxID_ANY,
-        wxDefaultPosition, wxDefaultSize, wxSP_LIVE_UPDATE | wxSP_3DSASH | wxSP_BORDER);
-
-	/* Create a tree control as well as the first settings view (general). */
-	tree_panel = new SettingsPanelTree(this);
-    /* Seed the current panel with the Root panel: general. */
-	this->AddFirstPanel();
-
-	splitter->SplitVertically(tree_panel, this->current_panel);
+    //splitter = new wxSplitterWindow(this, wxID_ANY, wxDefaultPosition, wxDefaultSize,
+    //    wxSP_3DSASH | wxSP_BORDER);
+    /* First add the menu, followed by the views. */
+    //this->AddMenu(container_sizer);
+    //menu_window = new MenuWindow(this);
+    //general_window = new GeneralWindow(this);
     
-    this->splitter->SetSize(GetClientSize());
-	this->splitter->SetSashGravity(1.0);
-	this->splitter->SetMinimumPaneSize(SERURO_SETTINGS_TREE_MIN_WIDTH);
-    //settings_tree->Layout();
+    //splitter->SplitVertically(menu_window, general_window);
+    //splitter->SetSize(GetClientSize());
+    //splitter->SetMinimumPaneSize(SETTINGS_MENU_WIDTH);
+    //container_sizer->Add(splitter, 1, wxEXPAND | wxALL, 10);
+	
+    wxSize s;
+    s.SetWidth(200);
+    wxListCtrl *t_menu = new wxListCtrl(this, SETTINGS_MENU_ID, wxDefaultPosition, s,
+        wxLC_ICON | wxLC_SINGLE_SEL | wxLC_NO_HEADER | wxBORDER_SIMPLE);
+    //t_menu->SetWindowStyleFlag(t_menu->GetWindowStyleFlag() | wxBORDER_SIMPLE);
+    //t_menu->EnableAlternateRowColours(true);
+    //wxSize m_size;// = GetClientSize();
+    //m_size.SetWidth(SETTINGS_MENU_WIDTH);
+    //m_size.SetHeight(SERURO_APP_DEFAULT_HEIGHT);
+    //m_size.SetHeight(-1);
+    //t_menu->SetSize(m_size);
+    wxListItem column;
+    column.SetText(_(" "));
+    t_menu->InsertColumn(1, column);
     
-	container_sizer->Add(this->splitter, 1, wxEXPAND | wxALL, 10);
-	this->SetSizer(container_sizer);
+    long item_index;
+    item_index = t_menu->InsertItem(0, _(" "));
+    t_menu->SetItem(item_index, 1, _("General"));
+    item_index = t_menu->InsertItem(0, _("ACCOUNTS"));
+    t_menu->SetItem(item_index, 1, _("Accounts"));
+    sizer->Add(t_menu, 0, wxEXPAND | wxALL, 10);
+    
+    GeneralWindow *general = new GeneralWindow(this);
+    sizer->Add(general, 1, wxEXPAND | wxALL, 10);
+    general->Hide();
+    
+    AccountsWindow *accounts = new AccountsWindow(this);
+    sizer->Add(accounts, 1, wxEXPAND | wxALL, 10);
+    //accounts->Hide();
+    
+    this->SetSizer(sizer);
     //container_sizer->SetSizerHints(this);
 }
-
-/* To help with organization, perform the initialization of the first panel as it's own method.
- * In most cases, this is the 'General' root panel. 
- */
-void SeruroPanelSettings::AddFirstPanel()
-{
-    /* The initial view, general settings, must be set as the current_panel as well as added
-	 * to the list of 'instanciated' panels.
-	 */
-	SettingsPanelView *root_panel = new SettingsPanel_RootGeneral(this);
-
-	//wxString panel_name = wxT("root_general");
-	this->AddPanel(root_panel, SETTINGS_VIEW_TYPE_ROOT_GENERAL);
-    this->AddPanel(new SettingsPanel_RootAccounts(this), SETTINGS_VIEW_TYPE_ROOT_ACCOUNTS);
     
-    //this->ShowPanel(SETTINGS_VIEW_TYPE_ROOT_GENERAL);
-    this->splitter->Layout();
+     
+MenuWindow::MenuWindow(SeruroPanelSettings *window) : parent(window)
+{
+    /* Create the list control menu. */
+    wxSizer *const sizer = new wxBoxSizer(wxHORIZONTAL);
     
-	this->current_panel = root_panel;
-}
-
-wxSplitterWindow* SeruroPanelSettings::GetViewer()
-{
-	return (wxSplitterWindow*) this->splitter;
-}
-
-/* Return the existance of a multi-layered datum within the panels member. */
-bool SeruroPanelSettings::HasPanel(settings_view_type_t type, 
-	const wxString &name, const wxString &parent)
-{
-	/* If a parent is given. */
-	if (parent.compare(wxEmptyString) != 0) {
-		return (this->panels.HasMember(type) && 
-			(this->panels[type].HasMember(parent) && this->panels[type][parent].HasMember(name)));
-	}
-
-	/* If only a name was given. */
-	return (this->panels.HasMember(type) && this->panels[type].HasMember(name));
-}
-
-/* Record an int as name or parent/name. */
-void SeruroPanelSettings::AddPanel(SettingsPanelView *panel_ptr, settings_view_type_t type,
-	const wxString &name, const wxString &parent)
-{
-	wxJSONValue type_value;
-	if (! this->panels.HasMember(type)) {
-		/* See the JSON value with this type of panel. */
-		this->panels[type] = type_value;
-	}
-
-	/* Show scrollbars for panel. (But be called when created for the "first panel" edge case.) */
-	panel_ptr->InitSizer();
-	panel_ptr->Render();
+    menu = new wxListCtrl(this, SETTINGS_MENU_ID, wxDefaultPosition, wxDefaultSize, wxLC_ICON);
     
-    wxLogMessage(wxT("Adding panel (name= %s) (parent= %s)."), name, parent);
-
-	if (parent.compare(wxEmptyString) != 0) {
-		if (! this->panels[type].HasMember(parent)) {
-			wxJSONValue parent_value;
-			this->panels[type][parent] = parent_value;
-		}
-        /* Store the index + 1, when retreiving a 0 is a failure, the minimum is 1. */
-        panel_list[panel_list_size++] = panel_ptr;
-		this->panels[type][parent][name] = panel_list_size;
-		return;
-	}
-
-	panel_list[panel_list_size++] = panel_ptr;
-	this->panels[type][name] = panel_list_size;
-	return;
+    wxSize menu_size = menu->GetSize();
+    menu_size.SetWidth(SETTINGS_MENU_WIDTH);
+    menu->SetSize(menu_size);
+    
+    //wxListItem menu_item;
+    //menu_item.SetText(_("General"));
+    //menu->InsertItem(0, _("General"));
+    
+    //sizer->Add(menu, 1, wxALL | wxEXPAND, 5);
+    this->SetSizer(sizer);
 }
 
-/* Search the JSON map for a panel index, then access via the indexes array. */
-void SeruroPanelSettings::ShowPanel(settings_view_type_t type,
-	const wxString &name, const wxString &parent)
+GeneralWindow::GeneralWindow(SeruroPanelSettings *window) : SettingsView(window)
 {
-	int panel_ptr;
-
-	if (parent.compare(wxEmptyString) != 0) {
-		if (! this->panels.HasMember(type) || 
-			! this->panels[type].HasMember(parent) || ! this->panels[type][parent].HasMember(name)) {
-			wxLogMessage(wxT("SeruroPanelSettings> Could not change views, unknown name or parent."));
-			/* Calling ShowPanel without first calling AddPanel, very bad. */
-			return;
-		}
-		panel_ptr = this->panels[type][parent][name].AsInt();
-	} else {
-		if (! this->panels.HasMember(type) || ! this->panels[type].HasMember(name)) {
-			wxLogMessage(wxT("SeruroPanelSettings> Could not change views, unknown name."));
-			/* Calling ShowPanel without first calling AddPanel, very bad. */
-			return;
-		}
-		panel_ptr = this->panels[type][name].AsInt();
-	}
-
-	if (panel_ptr == 0) {
-		/* Very odd state (something added a null pointer, which they thought was a panel). */
-		wxLogMessage(wxT("SeruroPanelSettings> Something is terribly wrong, got a NULL pointer from panels."));
-		return;
-	}
-
-	/* Subtract 1, since the "index store" avoids using 0. */
-	SettingsPanelView *new_panel(panel_list[panel_ptr-1]);
-
-	bool changed = this->splitter->ReplaceWindow(this->current_panel, new_panel);
-	if (! changed) {
-		/* The UI parent was unable to replace the current panel with the requested panel */
-		wxLogMessage(wxT("SeruroPanelSettings> Something is terribly wrong, could not replace view."));
-		return;
-	}
-
-	if (new_panel->Changed()) {
-		/* Ask the panel to compare it's UI to the current application state, if the view
-		 * has changed then ask the panel to re-render the UI.
-		 */
-		new_panel->ReRender();
-	}
-
-	/* Hide the previously shown panel, and show the requested view, finally record the pointer as current. */
-	wxLogMessage(wxT("SeruroPanelSettings> View is switching."));
-	this->current_panel->Show(false);
-	new_panel->Show(true);
-	this->current_panel = new_panel;
+    wxSizer *const sizer = new wxBoxSizer(wxHORIZONTAL);
+    
+    wxButton *button = new wxButton(this, wxID_ANY, _("Click me"));
+    sizer->Add(button, DIALOGS_SIZER_OPTIONS);
+    
+    this->SetSizer(sizer);
 }
 
-void SeruroPanelSettings::AddTreeItem(settings_view_type_t type, 
-	const wxString &name, const wxString &parent)
+AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(window)
 {
-	this->tree_panel->AddItem(type, name, parent);
+    wxSizer *const sizer = new wxBoxSizer(wxHORIZONTAL);
+    
+    wxButton *button = new wxButton(this, wxID_ANY, _("Click you"));
+    sizer->Add(button, DIALOGS_SIZER_OPTIONS);
+    
+    this->SetSizer(sizer);
 }
-
-void SeruroPanelSettings::RemoveTreeItem(settings_view_type_t type, 
-	const wxString &name, const wxString &parent)
-{
-	this->tree_panel->RemoveItem(type, name, parent);
-}
-

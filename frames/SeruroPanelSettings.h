@@ -3,60 +3,81 @@
 #define H_SeruroPanelSettings
 
 #include "SeruroFrame.h"
-#include "settings/SettingsPanels.h"
 
 #include "../wxJSON/wx/jsonval.h"
 
+#include <wx/listctrl.h>
 #include <wx/splitter.h>
 
-/* Provided by settings/SettingsPanels.h. */
-class SettingsPanel;
-//extern enum settings_view_type settings_view_type_t;
+class MenuWindow;
+class SettingsView;
 
-// Define a new frame type: this is going to be our main frame
 class SeruroPanelSettings : public SeruroPanel
 {
 public:
     SeruroPanelSettings(wxBookCtrlBase *book);
-
-	/* Return a pointer to the tree/view window splitter. */
-	wxSplitterWindow* GetViewer();
-	/* Each of the following includes a type of panel,
-	 * An optional name, and optional parent. */
-	bool HasPanel(settings_view_type_t type,
-		const wxString &name   = wxString(wxEmptyString), 
-		const wxString &parent = wxString(wxEmptyString));
-	/* Assign a panel view to a lookup table. */
-	void AddPanel(SettingsPanelView *panel_ptr, 
-		settings_view_type_t type,
-		const wxString &name   = wxString(wxEmptyString), 
-		const wxString &parent = wxString(wxEmptyString));
-	/* Render a panel view. */
-	void ShowPanel(settings_view_type_t type,
-		const wxString &name   = wxString(wxEmptyString), 
-		const wxString &parent = wxString(wxEmptyString));
-
-	/* Create the "root" panels. */
-	void AddFirstPanel();
-	/* Add a new item to the settings tree. */
-	void AddTreeItem(settings_view_type_t type,
-		const wxString &name   = wxString(wxEmptyString), 
-		const wxString &parent = wxString(wxEmptyString));
-	void RemoveTreeItem(settings_view_type_t type,
-		const wxString &name   = wxString(wxEmptyString), 
-		const wxString &parent = wxString(wxEmptyString));
-
+    //~SeruroPanelSettings() {
+    //    menu_window->Destory();
+    //    general_window->Destory();
+    //    splitter->Destory();
+    //}
+    
+    /* Other components may refresh the views. */
+    void RefreshAccounts();
+    void RefreshExtensions();
+    
+    /* Todo: consider having a log for extensions. */
+    
 private:
-	/* Keep all panels (lazily created) for easy switching.
-	 * This also allows "non-saved" settings to persist in the UI.
-	 */
-	/* Warning: this may be hackish, to save pointers in JSON. */
-	wxJSONValue panels;
+    
+    //void AddMenu(wxSizer *sizer);
+    
+    //void AddGeneral(wxSizer *sizer);
+    //void AddAccounts(wxSizer *sizer);
+    //void AddApplications(wxSizer *sizer);
+    //void AddExtensions(wxSizer *sizer);
+    
+    /* Components. */
+    //wxListCtrl *menu;
+    MenuWindow *menu_window;
+    SettingsView *general_window;
+    
+    wxSplitterWindow *splitter;
+};
 
-	/* The splitter create the dual-view construct. */
-	wxSplitterWindow *splitter;
-	SettingsPanel *current_panel;
-	SettingsPanelTree *tree_panel;
+class MenuWindow : public wxScrolledWindow
+{
+public:
+    MenuWindow(SeruroPanelSettings *window);
+    
+private:
+    wxListCtrl *menu;
+    SeruroPanelSettings *parent;
+};
+
+//class SettingsView : public wxScrolledWindow
+class SettingsView : public wxWindow
+{
+public:
+    SettingsView(SeruroPanelSettings *window) : parent(window),
+    wxWindow(window, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_SIMPLE) {
+        SetBackgroundColour(_("white"));
+    }
+    
+protected:
+    SeruroPanelSettings *parent;
+};
+
+class GeneralWindow : public SettingsView
+{
+public:
+    GeneralWindow(SeruroPanelSettings *window);
+};
+
+class AccountsWindow : public SettingsView
+{
+public:
+    AccountsWindow(SeruroPanelSettings *window);
 };
 
 #endif

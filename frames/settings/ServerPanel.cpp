@@ -138,10 +138,10 @@ void SettingsPanel_Server::OnRemove(wxCommandEvent &event)
 		dialog->DoRemove();
 
 		/* Place the user back on the select servers/accounts panel view.*/
-		this->MainPanel()->ShowPanel(SETTINGS_VIEW_TYPE_ROOT_ACCOUNTS);
+		//this->MainPanel()->ShowPanel(SETTINGS_VIEW_TYPE_ROOT_ACCOUNTS);
 
 		/* Remove this server, and all subsequent account views. */
-		this->MainPanel()->RemoveTreeItem(SETTINGS_VIEW_TYPE_SERVER, this->server_name);
+		//this->MainPanel()->RemoveTreeItem(SETTINGS_VIEW_TYPE_SERVER, this->server_name);
 	}
 	delete dialog;
 
