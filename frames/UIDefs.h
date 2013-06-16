@@ -3,6 +3,8 @@
 #define H_SeruroUIDefs
 
 #include <wx/stattext.h>
+#include <wx/mstream.h>
+#include <wx/bitmap.h>
 
 /* Element IDs (where wxID_ANY is not appropriate. */
 #define SERURO_SETTINGS_TREE_ID		1009
@@ -25,9 +27,9 @@
 
 /* Settings view related definitions. */
 #if defined(__WXMAC__)
-#define SERURO_SETTINGS_TREE_MIN_WIDTH 175
-#else
 #define SERURO_SETTINGS_TREE_MIN_WIDTH 150
+#else
+#define SERURO_SETTINGS_TREE_MIN_WIDTH 125
 #endif
 
 /* OSX has larger indents. */
@@ -76,5 +78,16 @@ public:
 
 private:
 };
+
+/* Reading in PNGs from header files. */
+#define wxGetBitmapFromMemory(name) \
+_wxGetBitmapFromMemory(name ## _png, sizeof(name ## _png))
+
+/* The image handler for PNG is enabled in SeruroClient.cpp. */
+inline wxBitmap _wxGetBitmapFromMemory(const unsigned char *data, 
+	int length) {
+	wxMemoryInputStream is(data, length);
+	return wxBitmap(wxImage(is, wxBITMAP_TYPE_ANY, -1), -1);
+}
 
 #endif

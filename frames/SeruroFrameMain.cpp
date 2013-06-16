@@ -6,6 +6,7 @@
 #include "SeruroPanelSettings.h"
 #include "SeruroPanelSearch.h"
 #include "../setup/SeruroSetup.h"
+#include "UIDefs.h"
 
 #if SERURO_ENABLE_CRYPT_PANELS
 #include "SeruroPanelDecrypt.h"
@@ -15,6 +16,14 @@
 #if SERURO_ENABLE_DEBUG_PANELS
 #include "SeruroPanelTest.h"
 #endif
+
+#include "../resources/images/logo_block_256_flat.png.h"
+#include "../resources/images/logo_block_128_flat.png.h"
+#include "../resources/images/logo_block_64_flat.png.h"
+#include "../resources/images/logo_block_32_flat.png.h"
+#include "../resources/images/logo_block_16_flat.png.h"
+
+#include <wx/iconbndl.h>
 
 int seruro_panels_ids[SERURO_MAX_PANELS];
 int seruro_panels_size;
@@ -42,13 +51,30 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
 	tray = new SeruroTray();
 	tray->SetMainFrame(this);
 
+	wxIconBundle icon_bundle;// = new wxIconBundle();
+	wxIcon icon;
+
+	icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_block_256_flat));
+	icon_bundle.AddIcon(icon);
+	icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_block_128_flat));
+	icon_bundle.AddIcon(icon);
+	icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_block_64_flat));
+	icon_bundle.AddIcon(icon);
+	icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_block_32_flat));
+	icon_bundle.AddIcon(icon);
+	icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_block_16_flat));
+	icon_bundle.AddIcon(icon);
+
+	this->SetIcons(icon_bundle);
+	tray->SetIcon(icon, _(SERURO_APP_NAME));
+
 	/* Todo: replace icon */
 	//#if defined(__WXMSW__)
-    	SetIcon(wxIcon(icon_good));
+    	//SetIcon(wxIcon(icon_good));
 	//	tray->SetIcon(wxICON(main), wxT("Seruro Client"));
 	//#endif
     //#if defined(__WXMAC__)
-        tray->SetIcon(wxIcon(icon_good), wxT(SERURO_APP_NAME));
+        //tray->SetIcon(wxIcon(icon_good), wxT(SERURO_APP_NAME));
     //#endif
 
 	/* Testing IMGCTRL */
