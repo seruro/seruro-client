@@ -10,7 +10,17 @@
 //#include <netdb.h>
 //#include <sys/socket.h>
 
+/* For making HTTP/TLS reqeusts. */
 #include <CFNetwork/CFNetwork.h>
+#include <Security/Security.h>
+/* For certificate/keychain import. */
+#include <Security/SecCertificate.h>
+/* For hashing/fingerprinting (SHA1). */
+#include <CommonCrypto/CommonDigest.h>
+/* For reading p12 data. */
+#include <Security/SecImportExport.h>
+/* For adding identity to keychain. */
+#include <Security/SecItem.h>
 
 /* Code goes here */
 #include "../SeruroConfig.h"
@@ -21,81 +31,14 @@ const char* AsChar(wxString &input)
 	return input.mb_str(wxConvUTF8);
 }
 
-#if 0
-OSStatus _SSLWrite (SSLConnectionRef connection, const void *data, size_t *length)
-{
-    wxLogMessage(wxT("SeruroCrypto::_SSLWrite> size (%d)"), *length);
-    return (OSStatus) 0;
-}
-
-OSStatus _SSLRead (SSLConnectionRef connection, void *data, size_t *length)
-{
-    wxLogMessage(wxT("SeruroCryto::_SSLRead> size (%d) data: (%s)"), *length, (char *)data);
-    return (OSStatus) 0;
-}
-#endif
-
 void SeruroCryptoMAC::OnInit()
 {
 	wxLogStatus(wxT("SeruroCrypt::MAC> Initialized"));
-    
-	//TLSRequest(none, 0, verb, object, data); /* SERURO_SECURITY_OPTIONS_DATA */
 }
 
 wxString SeruroCryptoMAC::TLSRequest(wxJSONValue params)
 {
 	wxString response("");
-    //int results;
-    
-#if 0
-    SSLContextRef ssl_context;
-    
-    wxLogMessage(wxT("SeruroCrypto::TLS> Received, options: %d."), params["flags"].AsInt());
-    
-    /* Get server address from p_serverAddress (create socket) */
-    struct sockaddr_in address;
-    struct hostent *server_entry;
-    struct in_addr server_address;
-    int client_socket;
-    
-    bool is_hostname = false;
-    const char *server_name = AsChar(params["server"].AsString());
-    for (size_t i = 0; i < params["server"].AsString().length(); i++) {
-        /* Loop through server address, searching for a non '.' and non (0-9) character. */
-        if (server_name[i] != '.' && (server_name[i] < '0' || server_name[i] > '9')) {
-            is_hostname = true;
-            break;
-        }
-    }
-    
-    if (is_hostname) {
-        /* Find IP from hostname */
-        server_entry = gethostbyname(server_name);
-        if (! server_entry) {
-            wxLogMessage(wxT("SeruroCrypto::TLS> gethostbyname (%s) failed."), params["server"].AsString());
-            goto bailout;
-        }
-        memcpy((void*) &server_address, server_entry->h_addr, sizeof(struct in_addr));
-    }
-    
-    client_socket = socket(PF_INET, SOCK_STREAM, 0);
-    address.sin_addr = server_address;
-    address.sin_port = htons((u_short) SERURO_DEFAULT_PORT);
-    address.sin_family = PF_INET;
-    
-    results = connect(client_socket, (struct sockaddr *) &address, sizeof(struct sockaddr_in));
-    if (results) {
-        wxLogMessage(wxT("SeruroCrypto::TLS> socket connect error (%d)"), results);
-        goto bailout;
-    }
-    
-    /* Create session & connection */
-    results = SSLNewContext(false, &ssl_context);
-    results = SSLSetConnection(ssl_context, (SSLConnectionRef) client_socket);
-    results = SSLSetIOFuncs(ssl_context, _SSLRead, _SSLWrite);
-    results = SSLSetEnableCertVerify(ss_context, true);
-#endif
-    
     bool status;
     CFIndex bytes_read;
     /* Used to read data from stream sychronously. */
@@ -104,10 +47,10 @@ wxString SeruroCryptoMAC::TLSRequest(wxJSONValue params)
     CFHTTPMessageRef http_response;
     
     /* Set TLS version (hopfully TLS1.2 (fallback to TLS1), fail if not that (???). */
-    wxString url_string = wxString(wxT("https://") + params["server"]["host"].AsString() +
+    wxString url_string = wxString(wxT("https://") +
+        params["server"]["host"].AsString() +
         wxT(":") + params["server"]["port"].AsString() +
 		params["object"].AsString());
-    /* Todo: fix static port */
     CFStringRef url_cfstring = CFStringCreateWithCString(kCFAllocatorDefault, 
 		AsChar(url_string), kCFStringEncodingMacRoman);
     CFURLRef url = CFURLCreateWithString(kCFAllocatorDefault, url_cfstring, NULL);
@@ -119,16 +62,17 @@ wxString SeruroCryptoMAC::TLSRequest(wxJSONValue params)
     wxString verb = params["verb"].AsString();
     CFStringRef cfverb = CFStringCreateWithCString(kCFAllocatorDefault, 
 		AsChar(verb), kCFStringEncodingMacRoman);
-    CFHTTPMessageRef request = CFHTTPMessageCreateRequest(kCFAllocatorDefault, cfverb, url, kCFHTTPVersion1_1);
+    CFHTTPMessageRef request = CFHTTPMessageCreateRequest(kCFAllocatorDefault,
+        cfverb, url, kCFHTTPVersion1_1);
     
     wxString post_data_string;
     CFDataRef post_data;
     if (params["flags"].AsInt() & SERURO_SECURITY_OPTIONS_DATA) {
         wxLogMessage(wxT("SeruroCrypto::TLS> POST, must add headers."));
-        CFHTTPMessageSetHeaderFieldValue(request, CFSTR("Content-Type"), CFSTR("application/x-www-form-urlencoded"));
+        CFHTTPMessageSetHeaderFieldValue(request,
+            CFSTR("Content-Type"), CFSTR("application/x-www-form-urlencoded"));
         /* Todo: cleanup possible auth data in p_data parameter. */
         post_data_string = params["data_string"].AsString();
-        //read_buffer = (UInt8 *) malloc(sizeof(UInt8) * params["data_string"].AsString().length());
         post_data = CFDataCreate(kCFAllocatorDefault,
             (UInt8 *) AsChar(post_data_string), post_data_string.length());
         CFHTTPMessageSetBody(request, post_data);
@@ -137,7 +81,8 @@ wxString SeruroCryptoMAC::TLSRequest(wxJSONValue params)
     /* Add request headers "Accept: application/json", calculate length. */
     CFHTTPMessageSetHeaderFieldValue(request, CFSTR("Accept"), CFSTR("application/json"));
     
-    /* This will make a copy of the request, which can be released afterward (this will open the request!). */
+    /* This will make a copy of the request, 
+     * which can be released afterward (this will open the request!). */
     CFReadStreamRef read_stream = CFReadStreamCreateForHTTPRequest(kCFAllocatorDefault, request);
     status = CFReadStreamOpen(read_stream);
     
@@ -197,7 +142,8 @@ wxString SeruroCryptoMAC::TLSRequest(wxJSONValue params)
     CFDataGetBytes(http_response_body, CFRangeMake(0, CFDataGetLength(http_response_body)), read_buffer);
     
     /* Finally convert to wxString */
-    response = wxString::FromAscii((char *) read_buffer, CFDataGetLength(http_response_body));
+    response = wxString::FromAscii((char *) read_buffer,
+        CFDataGetLength(http_response_body));
     
     /* Clean up */
     CFRelease(http_response_body);
@@ -221,10 +167,153 @@ finished:
 
 /* Errors should be events. */
 
-bool SeruroCryptoMAC::InstallP12(wxMemoryBuffer &p12, wxString &password, wxArrayString &fingerprints)
+bool SeruroCryptoMAC::InstallP12(wxMemoryBuffer &p12,
+    wxString &password, wxArrayString &fingerprints)
 {
-    return false;
+    /* OSStatus SecPKCS12Import (
+     *   CFDataRef pkcs12_data, //p12 data
+     *   CFDictionaryRef options, //options?
+     *   CFArrayRef *items); //array of two dictionaries, identities and certificates
+     * Notes: should return SecIdentityRef and SecCertificateRef. 
+     * Errors: (errSecDecode) if p12 is bad, ( errSecAuthFailed) is password is bad,
+     *   or the data in the p12 was damaged.
+     *
+     * Options: extern CFStringRef kSecImportExportPassphrase; (CFStringRef)
+     *   extern CFStringRef kSecImportExportKeychain; (SecKeychainRef)
+     *   extern CFStringRef kSecImportExportAccess; (SecAccessRef)
+     *
+     * To use: (1) iterate through the returned CFArrayRef (each dictionary)
+     *   will have (keys: kSecImportItemIdentity, kSecImportItemCertChain)
+     *   (2) first iterate through the cert_chain, of CFArrayRef type (SecCertificateRef)
+     *   (3) then import the identity of SecIdentityRef type
+     */
+    
+    /* Todo: what if kSecImportExportAccess is missing? */
+    
+    OSStatus success;
+    CFDataRef p12_data;
+    const char *key;
+    const char *password_data;
+    
+    /* Set the password as an option. */
+    CFMutableDictionaryRef options;
+    key = CFStringGetCStringPtr(kSecImportExportPassphrase, kCFStringEncodingASCII);
+    password_data = AsChar(password);
+    
+    options = CFDictionaryCreateMutable(kCFAllocatorDefault, 0,
+        &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+    CFDictionaryAddValue(options, (const void *) key, (const void *) password_data);
+    
+    /* Convert type of p12. */
+    p12_data = CFDataCreate(kCFAllocatorDefault,
+        (UInt8 *) p12.GetData(), p12.GetDataLen());
+    
+    CFArrayRef p12_items;
+    /* Perform import. */
+    success = SecPKCS12Import(p12_data, options, &p12_items);
+    
+    /* Release used objects. */
+    CFRelease(options);
+    CFRelease(p12_data);
+    
+    if (success == errSecDecode) {
+        wxLogMessage(_("SeruroCrypto> (InstallP12) could not decode p12."));
+        return false;
+    }
+    
+    if (success == errSecAuthFailed) {
+        wxLogMessage(_("SeruroCrypto> (InstallP12) auth failed or corrupted p12 data."));
+        return false;
+    }
+    
+    /* The import function will have a list of items. */
+    CFDictionaryRef item;
+    /* Find the identity item, add it to a dictionary, add it to the keychain. */
+    CFMutableDictionaryRef identity_item;
+    identity_item = CFDictionaryCreateMutable(kCFAllocatorDefault, 0,
+        &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+    SecIdentityRef identity;
+    /* Iterate through all p12 items. */
+    for (int i = CFArrayGetCount(p12_items)-1; i >= 0; i--) {
+        item = (CFDictionaryRef) CFArrayGetValueAtIndex(p12_items, i);
+        
+        /* Install P12s to keychain. */
+        key = CFStringGetCStringPtr(kSecImportItemIdentity, kCFStringEncodingASCII);
+        identity = (SecIdentityRef) CFDictionaryGetValue(item, (const void *) key);
+        
+        //key = CFStringGetCStringPtr(kSecValueRef, kCFStringEncodingASCII);
+        //CFDictionarySetValue(identity_item, (const void *) key, (const void *) itentity);
+        CFDictionarySetValue(identity_item, kSecValueRef, (const void *) &identity);
+        
+        success = SecItemAdd(identity_item, NULL);
+        if (success != errSecSuccess) {
+            wxLogMessage(_("SeruroCrypto> (InstallP12) could not add identity to keychain."));
+            return false;
+        }
+    }
+    
+    /* Release array of dictionaries. */
+    if (CFArrayGetCount(p12_items) > 0) {
+        //CFRelease(item);
+    }
+    CFRelease(p12_items);
+    CFRelease(identity_item);
+    
+    return true;
 }
+
+//from MSW: InstallCertToStore (wxMemoryBuffer &cert, wxString store_name)
+bool InstallCertToKeychain(wxMemoryBuffer &cert_binary, wxString keychain_name)
+{
+    /* By default all certificates go to the default (login) keychain. */
+    SecKeychainRef keychain = NULL;
+    /* Todo: add to specific keychain if name is given. */
+    
+    SecCertificateRef certificate;
+    CFDataRef cert_data;
+    
+    /* The memory buffer will hold the DER in byte form. */
+    cert_data = CFDataCreate(kCFAllocatorDefault,
+        (UInt8 *) cert_binary.GetData(), cert_binary.GetDataLen());
+    certificate = SecCertificateCreateWithData(kCFAllocatorDefault, cert_data);
+    
+    /* SecCertificateRef SecCertificateCreateWithData ( //from: SecCertificate.h
+     *   CFAllocatorRef allocator, //NULL for the default allocator?
+     *   CFDataRef data); //a DER-encoded representation of x509
+     * Notes: SecCertificateRef will be NULL if the data is not formatted correctly
+     */
+    
+    if (certificate == NULL) {
+        wxLogMessage(_("SeruroCrypto> (InstallToKeychain) certificate is null."));
+        return false;
+    }
+    
+    /* OSStatus SecCertificateAddToKeychain ( //from: SecCertificate.h
+     *   SecCertificateRef certificate, //cert object
+     *   SecKeychainRef keychain); //NULL to add to the default keychain
+     * Notes: if the certificate already exists in the keychain then: 
+     * errSecDuplicateItem (–25299)
+     */
+    
+    OSStatus success;
+    success = SecCertificateAddToKeychain(certificate, keychain);
+    
+    /* Release objects. */
+    CFRelease(certificate);
+    CFRelease(cert_data);
+    
+    if (success == errSecDuplicateItem) {
+        wxLogMessage(_("SeruroCrypto> (InstallToKeychain) duplicate certificate detected."));
+        return true;
+    }
+    
+    if (success != errSecSuccess) {
+        wxLogMessage(_("SeruroCrypto> (InstallToKeychain) error (%d)."), success);
+        return false;
+    }
+    return true;
+}
+
 bool SeruroCryptoMAC::InstallCA(wxMemoryBuffer &ca) {return true;}
 bool SeruroCryptoMAC::InstallCertificate(wxMemoryBuffer &cert) {return true;}
 
@@ -238,7 +327,27 @@ bool SeruroCryptoMAC::HaveCA(wxString server_name) { return true; }
 bool SeruroCryptoMAC::HaveCertificates(wxString server_name, wxString address) { return true; }
 bool SeruroCryptoMAC::HaveIdentity(wxString server_name, wxString address) { return true; }
 
-wxString SeruroCryptoMAC::GetFingerprint(wxMemoryBuffer &cert) { return wxEmptyString; }
+wxString SeruroCryptoMAC::GetFingerprint(wxMemoryBuffer &cert) {
+    
+    /* Documentation missing from offline view. */
+    CC_SHA1_CTX hash_ctx;
+    CC_SHA1_Init(&hash_ctx);
+    
+    /* Add contents of memory buffer. */
+    CC_SHA1_Update(&hash_ctx, (const void *)cert.GetData(), (CC_LONG)cert.GetDataLen());
+    
+    /* Store byte-data of hash in character buffer. */
+    unsigned char hash_digest[CC_SHA1_DIGEST_LENGTH];
+    CC_SHA1_Final(hash_digest, &hash_ctx);
+    
+    /* Store in memory buffer. */
+    wxMemoryBuffer hash_buffer;
+    hash_buffer.AppendData( (void *) hash_digest, 20);
+
+    /* Todo: (Optional), zero out digest buffer. */
+    
+    return wxBase64Encode(hash_buffer);
+}
 
 
 #endif
