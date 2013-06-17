@@ -4,6 +4,9 @@
 #include "../api/SeruroServerAPI.h"
 #include "../SeruroClient.h"
 
+#include "dialogs/RemoveDialog.h"
+#include "../setup/SeruroSetup.h"
+
 #include <wx/button.h>
 #include <wx/log.h>
 #include <wx/listctrl.h>
@@ -29,6 +32,11 @@ enum {
 
 #define SETTINGS_MENU_WIDTH 200
 
+/* Set these to help search for strings on selection. */
+#define SERVERS_LIST_NAME_COLUMN 1
+#define ACCOUNTS_LIST_NAME_COLUMN 1
+#define ACCOUNTS_LIST_SERVER_COLUMN 2
+
 BEGIN_EVENT_TABLE(SeruroPanelSettings, SeruroPanel)
 	EVT_LIST_ITEM_SELECTED(SETTINGS_MENU_ID, SeruroPanelSettings::OnSelected)
 END_EVENT_TABLE()
@@ -36,6 +44,7 @@ END_EVENT_TABLE()
 BEGIN_EVENT_TABLE(AccountsWindow, SettingsView)
 	EVT_LIST_ITEM_SELECTED(SETTINGS_SERVERS_LIST_ID, AccountsWindow::OnServerSelected)
 	EVT_LIST_ITEM_SELECTED(SETTINGS_ACCOUNTS_LIST_ID, AccountsWindow::OnAccountSelected)
+    EVT_LIST_ITEM_DESELECTED(wxID_ANY, AccountsWindow::OnDeselect)
 
 	EVT_BUTTON(BUTTON_ADD_SERVER, AccountsWindow::OnAddServer)
 	EVT_BUTTON(BUTTON_ADD_ACCOUNT, AccountsWindow::OnAddAccount)
@@ -136,14 +145,172 @@ GeneralWindow::GeneralWindow(SeruroPanelSettings *window) : SettingsView(window)
     this->SetSizer(sizer);
 }
 
-void AccountsWindow::OnServerSelected(wxListEvent &event) {}
-void AccountsWindow::OnAccountSelected(wxListEvent &event) {}
-void AccountsWindow::DeselectServers() {}
-void AccountsWindow::DeselectAccounts() {}
-void AccountsWindow::OnUpdate(wxCommandEvent &event) {}
-void AccountsWindow::OnRemove(wxCommandEvent &event) {}
-void AccountsWindow::OnAddServer(wxCommandEvent &event) {}
-void AccountsWindow::OnAddAccount(wxCommandEvent &event) {}
+void AccountsWindow::OnServerSelected(wxListEvent &event)
+{
+    //wxString server_name;
+    wxListItem item;
+    
+    /* Set the mask as the type of information requested using GetItem. */
+    item.SetMask(wxLIST_MASK_TEXT);
+    item.SetId(event.GetIndex());
+    item.SetColumn(SERVERS_LIST_NAME_COLUMN);
+    
+    if (! servers_list->GetItem(item)) {
+        wxLogMessage(_("AccountsWindow> (OnServerSelected) could not get server name."));
+        return;
+    }
+    
+    /* Must deselect all accounts. */
+    DeselectAccounts();
+    
+    /* Server name is now available. */
+    this->server_name = item.GetText();
+    this->account_selected = false;
+    
+    if (! wxGetApp().config->HaveCA(server_name)) {
+        SetActionLabel(_("Install"));
+    } else {
+        SetActionLabel(_("Update"));
+    }
+
+    this->update_button->Enable(true);
+    this->remove_button->Enable(true);
+}
+
+void AccountsWindow::OnAccountSelected(wxListEvent &event)
+{
+    wxListItem item;
+    
+    item.SetMask(wxLIST_MASK_TEXT);
+    item.SetId(event.GetIndex());
+    item.SetColumn(ACCOUNTS_LIST_NAME_COLUMN);
+    
+    if (! accounts_list->GetItem(item)) {
+        wxLogMessage(_("AccountsWindow> (OnAddressSelected) could not get address."));
+        return
+    }
+    
+    /* Only one server or account can be selected at a time. */
+    DeselectServers();
+    
+    this->address = item.GetText();
+    this->account_selected = true;
+    
+    /* Also need the server name for this account. */
+    item.SetColumn(ACCOUNTS_LIST_SERVER_COLUMN);
+    accounts_list->GetItem(item);
+    this->server_name = item.GetText();
+    
+    if (! wxGetApp().config->HaveIdentity(server_name, address)) {
+        SetActionLabel(_("Install"));
+    } else {
+        SetActionLabel(_("Update"));
+    }
+    
+    this->update_button->Enable(true);
+    this->remove_button->Enable(true);
+}
+
+void AccountsWindow::DeselectServers()
+{
+    /* Todo: hopefully this does not cause a deselection event */
+    wxListItem item;
+    for (size_t i = servers_list->GetItemCount()-1; i >= 0; i--) {
+        item.SetId(i);
+        servers_list->SetItemState(item, 0, wxLIST_STATE_SELECTED);
+    }
+}
+
+void AccountsWindow::DeselectAccounts()
+{
+    /* Todo: hopefully this does not account a deselect event. */
+    wxListItem item;
+    for (size_t i = accounts_list->GetItemCount()-1; i >= 0; i--) {
+        item.SetId(i);
+        accounts_list->SetItemState(item, 0, wxLIST_STATE_SELECTED);
+    }
+}
+
+void AccountsWindow::OnDeselect(wxListEvent &event)
+{
+    this->server_name = wxEmptyString;
+    this->address = wxEmptyString;
+    
+    this->update_button->Disable();
+    this->remove_button->Disable();
+}
+
+void AccountsWindow::OnUpdate(wxCommandEvent &event)
+{
+    /* All actions must have a server to act on. */
+    if (this->server_name.compare(wxEmptyString) == 0) {
+        return;
+    }
+    
+    if (this->account_selected) {
+        
+    } else {
+        
+    }
+}
+
+void AccountsWindow::OnRemove(wxCommandEvent &event)
+{
+    /* All actions must have a server to act on. */
+    if (this->server_name.compare(wxEmptyString) == 0) {
+        return;
+    }
+    
+    /* UI is trying to remove a selected server. */
+    if (! this->account_selected) {
+        RemoveDialog *dialog = new RemoveDialog(this->server_name);
+        if (dialog->ShowModal() == wxID_OK) {
+            wxLogMessage(wxT("ServerPanel> (OnRemove) OK"));
+            dialog->DoRemove();
+            
+            /* Todo: update the list of servers/accounts. */
+        }
+        delete dialog;
+        return;
+    }
+    
+    /* UI is trying to remove a selected account. */
+    if (SERURO_MUST_HAVE_ACCOUNT &&
+        wxGetApp().config->GetAddressList(server_name).size() == 1) {
+        /* Don't allow this account to be removed. */
+        wxLogMessage(_("AddressPanel> (OnRemove) Cannot remove account for server (%s)."),
+                     server_name);
+        /* Todo: display warnning message? */
+        return;
+    }
+    
+    RemoveDialog *dialog = new RemoveDialog(this->server_name, this->address);
+    if (dialog->ShowModal() == wxID_OK) {
+        wxLogMessage(wxT("AddressPanel> (OnRemove) OK"));
+        dialog->DoRemove();
+        
+        /* Todo: update the list of accounts. */
+    }
+    delete dialog;
+}
+
+void AccountsWindow::OnAddServer(wxCommandEvent &event)
+{
+    /* Todo: consider having a new account/new server event? */
+    
+	/* Testing wizard-implementation. */
+	SeruroSetup add_server_setup((wxFrame*) (wxGetApp().GetFrame()), true);
+	add_server_setup.RunWizard(add_server_setup.GetInitialPage());
+	return;
+}
+
+void AccountsWindow::OnAddAccount(wxCommandEvent &event)
+{
+	/* Testing wizard-implementation. */
+	SeruroSetup add_account_setup((wxFrame*) (wxGetApp().GetFrame()), false, true);
+	add_account_setup.RunWizard(add_account_setup.GetInitialPage());
+	return;
+}
 
 AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(window),
 	account_selected(false)

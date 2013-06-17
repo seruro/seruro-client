@@ -66,6 +66,9 @@ public:
 	/* Event handlers. */
 	void OnServerSelected(wxListEvent &event);
 	void OnAccountSelected(wxListEvent &event);
+    //void OnServerDeselected(wxListEvent &event);
+    //void OnAccountDeselected(wxListEvent &event);
+    void OnDeselect(wxListEvent &event);
 	void DeselectServers();
 	void DeselectAccounts();
 
@@ -74,6 +77,11 @@ public:
 
 	void OnAddServer(wxCommandEvent &event);
 	void OnAddAccount(wxCommandEvent &event);
+    
+    /* Add action. */
+    void SetActionLabel(wxString label) {
+        update_button->SetLabelText(label);
+    }
 
 	/* Todo: d-click to view certificate information. */
 
