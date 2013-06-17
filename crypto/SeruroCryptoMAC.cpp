@@ -82,6 +82,7 @@ bool InstallIdentityToKeychain(SecIdentityRef &identity, wxString &keychain_name
 {
     //kSecUseKeychain
     OSStatus success;
+    /* Todo: implement keychain access. */
     SecKeychainRef keychain = NULL;
 
     /* Find the identity item, add it to a dictionary, add it to the keychain. */
@@ -400,19 +401,48 @@ bool SeruroCryptoMAC::InstallP12(wxMemoryBuffer &p12,
 
 bool SeruroCryptoMAC::InstallCA(wxMemoryBuffer &ca)
 {
-    return true;
+    return InstallCertificateToKeychain(ca, _(CA_KEYCHAIN));
 }
 
-bool SeruroCryptoMAC::InstallCertificate(wxMemoryBuffer &cert) {return true;}
+bool SeruroCryptoMAC::InstallCertificate(wxMemoryBuffer &cert)
+{
+    return InstallCertificateToKeychain(cert, _(CERTIFICATE_KEYCHAIN));
+}
 
 bool SeruroCryptoMAC::RemoveIdentity(wxString fingerprint) { return true; }
 bool SeruroCryptoMAC::RemoveCA(wxString fingerprint) { return true; }
 bool SeruroCryptoMAC::RemoveCertificates(wxArrayString fingerprints)
 { return true; }
 
+bool FindFingerprintInKeychain(wxString &fingerprint, wxString &keychain_name)
+{
+    // 1. Get SecKeychainRef
+    // (item class is certificate, attr-list does not allow SHA1?)
+    
+    /* Todo: this is deprecated. */
+    /* OSStatus SecKeychainSearchCreateFromAttributes (
+     *   CFTypeRef keychainOrArray, // can be a SecKeychainRef
+     *   SecItemClass itemClass, //kSecCertificateItemClass
+     *   const SecKeychainAttributeList *attrList,
+     *   SecKeychainSearchRef *searchRef);
+     */
+    
+    // Use SecKeychainSearchCopyNext to get a keychain item
+    // Use  SecKeychainItemCopyAttributesAndData to get item data
+    // Calculate SHA1
+    // Compare
+}
+
 /* Methods to query certificates by their name (meaning SHA1) */
 bool SeruroCryptoMAC::HaveCA(wxString server_name) { return true; }
-bool SeruroCryptoMAC::HaveCertificates(wxString server_name, wxString address) { return true; }
+bool SeruroCryptoMAC::HaveCertificates(wxString server_name, wxString address)
+{
+    /* Overview: since OSX cannot search a certificate using it's fingerprint.
+     *   First find the CA certificate by matching SHA1 over all certificates in the given
+     *   keychain. Then search all certificates matching the issues of that CA (and SHA1).
+     */
+    return true;
+}
 bool SeruroCryptoMAC::HaveIdentity(wxString server_name, wxString address) { return true; }
 
 wxString SeruroCryptoMAC::GetFingerprint(wxMemoryBuffer &cert)
