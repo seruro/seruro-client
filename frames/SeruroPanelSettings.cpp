@@ -187,7 +187,7 @@ void AccountsWindow::OnAccountSelected(wxListEvent &event)
     
     if (! accounts_list->GetItem(item)) {
         wxLogMessage(_("AccountsWindow> (OnAddressSelected) could not get address."));
-        return
+        return;
     }
     
     /* Only one server or account can be selected at a time. */
@@ -247,11 +247,15 @@ void AccountsWindow::OnUpdate(wxCommandEvent &event)
         return;
     }
     
-    if (this->account_selected) {
-        
-    } else {
-        
+    /* If updating/installing the server certificate. */
+    if (! this->account_selected) {
+        /* Create API request to download certificate. */
+        /* On callback update the UI based on the status of the cert. */
+        return;
     }
+    
+    /* Open the setup wizard on the identity page. */
+    /* Todo: have an event which updates the status of an identity. */
 }
 
 void AccountsWindow::OnRemove(wxCommandEvent &event)
@@ -442,8 +446,11 @@ ApplicationsWindow::ApplicationsWindow(SeruroPanelSettings *window) : SettingsVi
 {
     wxSizer *const sizer = new wxBoxSizer(wxHORIZONTAL);
     
-    wxButton *button = new wxButton(this, wxID_ANY, _("Applications"));
-    sizer->Add(button, DIALOGS_SIZER_OPTIONS);
+    //wxButton *button = new wxButton(this, wxID_ANY, _("Applications"));
+    //sizer->Add(button, DIALOGS_SIZER_OPTIONS);
+    
+    Text *warning = new Text(this, _("Application hooks are disabled."));
+    sizer->Add(warning, DIALOGS_SIZER_OPTIONS);
     
     this->SetSizer(sizer);
 }
@@ -452,8 +459,8 @@ ExtensionsWindow::ExtensionsWindow(SeruroPanelSettings *window) : SettingsView(w
 {
     wxSizer *const sizer = new wxBoxSizer(wxHORIZONTAL);
     
-    wxButton *button = new wxButton(this, wxID_ANY, _("Accounts"));
-    sizer->Add(button, DIALOGS_SIZER_OPTIONS);
+    Text *warning = new Text(this, _("Extensions are disabled."));
+    sizer->Add(warning, DIALOGS_SIZER_OPTIONS);
     
     this->SetSizer(sizer);
 }

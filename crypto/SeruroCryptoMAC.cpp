@@ -4,6 +4,7 @@
 
 #include <wx/log.h>
 #include <wx/base64.h>
+#include <wx/wx.h>
 
 /* Note: requires C++ flags: "-framework Security" */
 //#include <Security/Security.h>
@@ -27,9 +28,9 @@
 #include "../SeruroConfig.h"
 #include "SeruroCryptoMAC.h"
 
-#define IDENTITY_KEYCHAIN "login"
-#define CERTIFICATE_KEYCHAIN "login"
-#define CA_KEYCHAIN "System Roots"
+#define IDENTITY_KEYCHAIN       "login"
+#define CERTIFICATE_KEYCHAIN    "login"
+#define CA_KEYCHAIN             "System Roots"
 
 const char* AsChar(wxString &input)
 {
@@ -78,7 +79,7 @@ wxString GetFingerprintFromIdentity(SecIdentityRef &identity)
     return GetFingerprintFromBuffer(cert_buffer);
 }
 
-bool InstallIdentityToKeychain(SecIdentityRef &identity, wxString &keychain_name)
+bool InstallIdentityToKeychain(SecIdentityRef &identity, wxString keychain_name)
 {
     //kSecUseKeychain
     OSStatus success;
@@ -106,6 +107,7 @@ bool InstallIdentityToKeychain(SecIdentityRef &identity, wxString &keychain_name
         wxLogMessage(_("SeruroCrypto> (InstallP12) could not add identity to keychain."));
         return false;
     }
+    return true;
 }
 
 //from MSW: InstallCertToStore (wxMemoryBuffer &cert, wxString store_name)
@@ -369,6 +371,7 @@ bool SeruroCryptoMAC::InstallP12(wxMemoryBuffer &p12,
         return false;
     }
     
+    //wxString keychain_name = _(IDENTITY_KEYCHAIN);
     /* The import function will have a list of items. */
     CFDictionaryRef item;
     SecIdentityRef identity;
@@ -414,7 +417,7 @@ bool SeruroCryptoMAC::RemoveCA(wxString fingerprint) { return true; }
 bool SeruroCryptoMAC::RemoveCertificates(wxArrayString fingerprints)
 { return true; }
 
-bool FindFingerprintInKeychain(wxString &fingerprint, wxString &keychain_name)
+bool FindFingerprintInKeychain(wxString &fingerprint, wxString keychain_name)
 {
     // 1. Get SecKeychainRef
     // (item class is certificate, attr-list does not allow SHA1?)
@@ -431,19 +434,62 @@ bool FindFingerprintInKeychain(wxString &fingerprint, wxString &keychain_name)
     // Use  SecKeychainItemCopyAttributesAndData to get item data
     // Calculate SHA1
     // Compare
+    
+    return true;
 }
 
 /* Methods to query certificates by their name (meaning SHA1) */
-bool SeruroCryptoMAC::HaveCA(wxString server_name) { return true; }
+bool SeruroCryptoMAC::HaveCA(wxString server_name)
+{
+    if (! wxGetApp().config->HaveCA(server_name)) return false;
+	wxString ca_fingerprint = wxGetApp().config->GetCA(server_name);
+    
+    return FindFingerprintInKeychain(ca_fingerprint, _(CA_KEYCHAIN));
+}
 bool SeruroCryptoMAC::HaveCertificates(wxString server_name, wxString address)
 {
     /* Overview: since OSX cannot search a certificate using it's fingerprint.
      *   First find the CA certificate by matching SHA1 over all certificates in the given
      *   keychain. Then search all certificates matching the issues of that CA (and SHA1).
      */
-    return true;
+    
+    /* First get the fingerprint string from the config. */
+	if (! wxGetApp().config->HaveCertificates(server_name, address)) return false;
+	wxArrayString certificates = wxGetApp().config->GetCertificates(server_name, address);
+    
+	if (certificates.size() != 2) {
+		wxLogMessage(_("SeruroCrypto> (HaveCertificates) the address (%s) (%s) does not have 2 certificates?"),
+                     server_name, address);
+		return false;
+	}
+    
+	/* Looking at the address book store. */
+	bool cert_1 = FindFingerprintInKeychain(certificates[0], _(CERTIFICATE_KEYCHAIN));
+	bool cert_2 = FindFingerprintInKeychain(certificates[1], _(CERTIFICATE_KEYCHAIN));
+	wxLogMessage(_("SeruroCrypto> (HaveCertificates) address (%s) (%s) in store: (1: %s, 2: %s)."),
+                 server_name, address, (cert_1) ? "true" : "false", (cert_2) ? "true" : "false");
+	return (cert_1 && cert_2);
 }
-bool SeruroCryptoMAC::HaveIdentity(wxString server_name, wxString address) { return true; }
+
+bool SeruroCryptoMAC::HaveIdentity(wxString server_name, wxString address)
+{
+	/* First get the fingerprint string from the config. */
+	if (! wxGetApp().config->HaveIdentity(server_name, address)) return false;
+	wxArrayString identity = wxGetApp().config->GetIdentity(server_name, address);
+    
+	if (identity.size() != 2) {
+		wxLogMessage(_("SeruroCrypto> (HaveIdentity) the identity (%s) (%s) does not have 2 certificates?"),
+                     server_name, address);
+		return false;
+	}
+    
+	/* Looking at the trusted Root store. */
+	bool cert_1 = FindFingerprintInKeychain(identity[0], _(IDENTITY_KEYCHAIN));
+	bool cert_2 = FindFingerprintInKeychain(identity[1], _(IDENTITY_KEYCHAIN));
+	wxLogMessage(_("SeruroCrypto> (HaveIdentity) identity (%s) (%s) in store: (1: %s, 2: %s)."),
+                 server_name, address, (cert_1) ? "true" : "false", (cert_2) ? "true" : "false");
+	return (cert_1 && cert_2);
+}
 
 wxString SeruroCryptoMAC::GetFingerprint(wxMemoryBuffer &cert)
 {

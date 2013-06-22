@@ -8,6 +8,7 @@
 
 #include <wx/listctrl.h>
 #include <wx/splitter.h>
+#include <wx/button.h>
 
 class MenuWindow;
 class SettingsView;
@@ -80,7 +81,7 @@ public:
     
     /* Add action. */
     void SetActionLabel(wxString label) {
-        update_button->SetLabelText(label);
+        update_button->SetLabel(label);
     }
 
 	/* Todo: d-click to view certificate information. */
