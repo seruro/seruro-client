@@ -4,7 +4,7 @@
 
 #include <wx/log.h>
 #include <wx/base64.h>
-#include <wx/wx.h>
+
 
 /* Note: requires C++ flags: "-framework Security" */
 //#include <Security/Security.h>
@@ -27,10 +27,13 @@
 /* Code goes here */
 #include "../SeruroConfig.h"
 #include "SeruroCryptoMAC.h"
+#include "../SeruroClient.h"
 
 #define IDENTITY_KEYCHAIN       "login"
 #define CERTIFICATE_KEYCHAIN    "login"
 #define CA_KEYCHAIN             "System Roots"
+
+DECLARE_APP(SeruroClient);
 
 const char* AsChar(wxString &input)
 {

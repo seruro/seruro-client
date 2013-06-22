@@ -215,7 +215,10 @@ void AccountsWindow::DeselectServers()
 {
     /* Todo: hopefully this does not cause a deselection event */
     wxListItem item;
-    for (size_t i = servers_list->GetItemCount()-1; i >= 0; i--) {
+    int servers_count = servers_list->GetItemCount();
+    
+    for (int i = 0; i < servers_count; i++) {
+        //wxLogMessage(_("AccountsWindow> (DeselectServers) deselecting (%d)."), i);
         item.SetId(i);
         servers_list->SetItemState(item, 0, wxLIST_STATE_SELECTED);
     }
@@ -225,7 +228,10 @@ void AccountsWindow::DeselectAccounts()
 {
     /* Todo: hopefully this does not account a deselect event. */
     wxListItem item;
-    for (size_t i = accounts_list->GetItemCount()-1; i >= 0; i--) {
+    int accounts_count = accounts_list->GetItemCount();
+    
+    for (int i = 0; i < accounts_count; i++) {
+        //wxLogMessage(_("AccountsWindow> (DeselectAccounts) deselecting (%d)."), i);
         item.SetId(i);
         accounts_list->SetItemState(item, 0, wxLIST_STATE_SELECTED);
     }
@@ -235,6 +241,8 @@ void AccountsWindow::OnDeselect(wxListEvent &event)
 {
     this->server_name = wxEmptyString;
     this->address = wxEmptyString;
+    
+    //wxLogMessage(_("AccountsWindow> (OnDeselect) server/address deselected."));
     
     this->update_button->Disable();
     this->remove_button->Disable();
