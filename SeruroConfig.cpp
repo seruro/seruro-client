@@ -10,13 +10,13 @@
 /* Set the UserAppData location of the expected config file. */
 SeruroConfig::SeruroConfig()
 {
-    wxStandardPaths *paths = new wxStandardPaths();
-	wxString configPath = paths->GetUserDataDir() + wxString(wxT("/")) + wxString(wxT(SERURO_CONFIG_NAME));
+    wxStandardPaths paths = wxStandardPaths::Get();
+	wxString configPath = paths.GetUserDataDir() + wxString(wxT("/")) + wxString(wxT(SERURO_CONFIG_NAME));
 
 	VLDDisable();
     this->configFile = new wxTextFile(configPath);
 	VLDEnable();
-    delete paths;
+    //delete paths;
 
     wxLogStatus(wxT("Config file: " + this->configFile->GetName()));
     if (! this->configFile->Exists()) {
@@ -528,13 +528,13 @@ bool GetTokenFile(wxTextFile** token_file)
 	/* We will read and write the data JIT. */
 	bool results;
 
-    wxStandardPaths *paths = new wxStandardPaths();
-	wxString token_path = paths->GetUserDataDir() + wxString(wxT("/")) + wxString(wxT(SERURO_TOKENS_FILE));
+    wxStandardPaths paths = wxStandardPaths::Get();
+	wxString token_path = paths.GetUserDataDir() + wxString(wxT("/")) + wxString(wxT(SERURO_TOKENS_FILE));
 
 	VLDDisable();
     *token_file = new wxTextFile(token_path);
 	VLDEnable();
-    delete paths;
+    //delete paths;
 
 	/* If the token file does not exist, create and write a template. */
 	if (! (*token_file)->Exists()) {

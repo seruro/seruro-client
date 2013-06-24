@@ -10,6 +10,9 @@
 #include <wx/splitter.h>
 #include <wx/button.h>
 
+/* For applications view. */
+#include "../apps/SeruroApps.h"
+
 class MenuWindow;
 class SettingsView;
 
@@ -109,6 +112,22 @@ class ApplicationsWindow : public SettingsView
 {
 public:
     ApplicationsWindow(SeruroPanelSettings *window);
+    
+private:
+    bool account_selected;
+    
+    /* Information about the selection item. */
+    wxString app_name;
+    wxString account;
+    
+    /* Components. */
+    wxButton *configure_button;
+    wxButton *remove_button;
+    wxListCtrl *apps_list;
+    wxListCtrl *accounts_list;
+    
+    /* Helpers. */
+    SeruroApps apps_helper;
 };
 
 class ExtensionsWindow : public SettingsView

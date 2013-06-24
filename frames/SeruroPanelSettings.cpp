@@ -23,6 +23,7 @@ enum {
     SETTINGS_MENU_ID,
 	SETTINGS_SERVERS_LIST_ID,
 	SETTINGS_ACCOUNTS_LIST_ID,
+    SETTINGS_APPS_LIST_ID,
 
 	BUTTON_ADD_SERVER,
 	BUTTON_ADD_ACCOUNT,
@@ -91,7 +92,7 @@ SeruroPanelSettings::SeruroPanelSettings(wxBookCtrlBase *book) : SeruroPanel(boo
 	/* Only the general window is not hidden when created. */
     accounts_window = new AccountsWindow(this);
     sizer->Add(accounts_window, 1, wxEXPAND | wxRIGHT | wxTOP | wxBOTTOM, 10);
-    //accounts_window->Hide();
+    accounts_window->Hide();
     
 	applications_window = new ApplicationsWindow(this);
     sizer->Add(applications_window, 1, wxEXPAND | wxRIGHT | wxTOP | wxBOTTOM, 10);
@@ -408,12 +409,12 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
 	/* A sizer for ACTION buttons. */
 	//wxSizer *const actions_sizer = new wxBoxSizer(wxVERTICAL);
 	wxSizer *const actions_sizer = new wxBoxSizer(wxHORIZONTAL);
-	update_button = new wxButton(this, wxID_ANY, _("Update"));
+	update_button = new wxButton(this, BUTTON_UPDATE, _("Update"));
 	update_button->Disable();
-	remove_button = new wxButton(this, wxID_ANY, _("Remove"));
+	remove_button = new wxButton(this, BUTTON_REMOVE, _("Remove"));
 	remove_button->Disable();
-	wxButton *add_server_button = new wxButton(this, wxID_ANY, _("Add Server"));
-	wxButton *add_account_button = new wxButton(this, wxID_ANY, _("Add Account"));
+	wxButton *add_server_button = new wxButton(this, BUTTON_ADD_SERVER, _("Add Server"));
+	wxButton *add_account_button = new wxButton(this, BUTTON_ADD_ACCOUNT, _("Add Account"));
 	actions_sizer->Add(update_button, DIALOGS_SIZER_OPTIONS);
 	actions_sizer->Add(remove_button, DIALOGS_SIZER_OPTIONS);
 	actions_sizer->Add(add_server_button, DIALOGS_SIZER_OPTIONS);
@@ -452,13 +453,49 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
 
 ApplicationsWindow::ApplicationsWindow(SeruroPanelSettings *window) : SettingsView(window)
 {
-    wxSizer *const sizer = new wxBoxSizer(wxHORIZONTAL);
+    wxSizer *const sizer = new wxBoxSizer(wxVERTICAL);
     
-    //wxButton *button = new wxButton(this, wxID_ANY, _("Applications"));
-    //sizer->Add(button, DIALOGS_SIZER_OPTIONS);
+	//wxSizer *const servers_box = new wxStaticBoxSizer(wxVERTICAL, this, _("Servers List"));
+	apps_list = new wxListCtrl(this, SETTINGS_APPS_LIST_ID,
+        wxDefaultPosition, wxDefaultSize,
+        wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_THEME);
+	//apps_list->SetImageList(list_images, wxIMAGE_LIST_SMALL);
     
-    Text *warning = new Text(this, _("Application hooks are disabled."));
-    sizer->Add(warning, DIALOGS_SIZER_OPTIONS);
+	/* Server list columns. */
+	//wxListItem image_column;
+	//image_column.SetText(_(""));
+	//image_column.SetId(0);
+	//image_column.SetImage(0);
+	//servers_list->InsertColumn(0, image_column);
+    
+	apps_list->InsertColumn(0, _("Application"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
+	apps_list->InsertColumn(1, _("Version"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
+	apps_list->InsertColumn(2, _("Status"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
+    
+    /* Application access helper. */
+    //apps_helper = SeruroApps();
+    long item_index;
+	wxArrayString apps = apps_helper.GetAppList();
+    wxJSONValue app_info;
+	for (size_t i = 0; i < apps.size(); i++) {
+		item_index = apps_list->InsertItem(0, _(apps[i]));
+        
+        app_info = apps_helper.GetApp(apps[i]);
+        apps_list->SetItem(item_index, 1, app_info["version"].AsString());
+        apps_list->SetItem(item_index, 2, app_info["status"].AsString());
+	}
+    
+    wxArrayString accounts;
+    for (size_t i = 0; i < apps.size(); i++) {
+        accounts = apps_helper.GetAccountList(apps[i]);
+    }
+	/* Allow the server name column to take up the remaining space. */
+	//servers_list->SetColumnWidth(0, wxLIST_AUTOSIZE);
+	//servers_list->SetColumnWidth(0, 24);
+    
+	//servers_box->Add(servers_list, DIALOGS_SIZER_OPTIONS);
+	//lists_sizer->Add(servers_box, DIALOGS_BOXSIZER_SIZER_OPTIONS);
+	sizer->Add(apps_list, DIALOGS_SIZER_OPTIONS);
     
     this->SetSizer(sizer);
 }
