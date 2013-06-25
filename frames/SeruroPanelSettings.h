@@ -4,6 +4,7 @@
 
 #include "SeruroFrame.h"
 
+#include "../api/SeruroServerAPI.h"
 #include "../wxJSON/wx/jsonval.h"
 
 #include <wx/listctrl.h>
@@ -78,6 +79,8 @@ public:
 
 	void OnUpdate(wxCommandEvent &event);
 	void OnRemove(wxCommandEvent &event);
+	void OnCAResult(SeruroRequestEvent &event);
+	//void OnP12sResult(SeruroRequest &event);
 
 	void OnAddServer(wxCommandEvent &event);
 	void OnAddAccount(wxCommandEvent &event);

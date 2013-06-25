@@ -157,8 +157,9 @@ wxString SeruroRequest::GetAuthToken()
 	}
     
 	/* Warning, possible critical section. */
-    wxCriticalSectionLocker enter(wxGetApp().seruro_critSection);
-
+	/* Todo: this will throw an assert stating only the main thread can create the mutex. */
+    //wxCriticalSectionLocker enter(wxGetApp().seruro_critSection);
+	
 	/* If "result" (boolean) is true, update token store for "email", set "token". */
 	if (response.HasMember("error") || ! response["success"].AsBool() || ! response.HasMember("token")) {
 		wxLogMessage(wxT("SeruroRequest::GetAuthToken> failed (%s)."), response["error"].AsString());

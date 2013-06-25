@@ -45,6 +45,7 @@ RemoveDialog::RemoveDialog(const wxString &server_name, const wxString &address)
 
 	//remove_identities = (wxCheckBox* []) malloc(sizeof(wxCheckBox*) * addresses.size());
 	remove_identities = new wxCheckBox*[addresses.size()];
+	//remove_identities = (wxCheckBox[]) malloc(sizeof(wxCheckBox*) * addresses.size());
 	for (size_t i = 0; i < addresses.size(); i++) {
 		remove_identities[i] = new wxCheckBox(this, wxID_ANY, 
 			wxString::Format(_T("Remove identity: '%s'."), addresses[i]));
@@ -63,9 +64,10 @@ void RemoveDialog::DoRemove()
 	/* Todo: evaluate TOCTOU logic errors. */
 	/* Very important, this list must be iterated the same way it is created. */
 	for (size_t i = 0; i < identities_size; i++) {
-		if (this->remove_identities[i]->IsChecked()) {
+		/* Todo: this next line throws a memory access violation. */
+		//if (this->remove_identities[i]->IsChecked()) {
 
-		}
+		//}
 	}
 
 	/* Finally remove the data from the config (and the app). */

@@ -159,18 +159,18 @@ wxJSONValue SeruroServerAPI::GetAuth(const wxString &server, const wxString &add
 wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 {
 	wxJSONValue request;
-	wxJSONValue data;
+	//wxJSONValue data;
 
-	wxJSONValue query;
+	//wxJSONValue query;
 
 	/* Most API calls to the server are currently GETs. */
 	request["verb"] = _("GET");
 	request["flags"] = SERURO_SECURITY_OPTIONS_NONE;
     
 	/* (POST-DATA) Set multi-value (dict) "data" to a JSON Value. */
-	request["data"] = data;
+	request["data"] = wxJSONValue(wxJSONTYPE_OBJECT);
     /* (QUERY-STRING) Set multi-value (dict) "query" to a JSON value. */
-    request["query"] = query;
+    request["query"] = wxJSONValue(wxJSONTYPE_OBJECT);
     
 	/* Allow address pinning, for authentication */
 	//request["address"] = (params.HasMember("address")) ? params["address"] : wxEmptyString;

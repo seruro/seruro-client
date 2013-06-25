@@ -19,6 +19,15 @@
 #include "../frames/dialogs/AddAccountDialog.h"
 #include "../frames/dialogs/DecryptDialog.h"
 
+enum setup_type_t
+{
+	SERURO_SETUP_SERVER,
+	SERURO_SETUP_ACCOUNT,
+	SERURO_SETUP_IDENTITY,
+
+	SERURO_SETUP_INITIAL
+};
+
 class SeruroSetup;
 
 class SetupPage : public wxWizardPageSimple
@@ -52,7 +61,8 @@ public:
 	 * of Seruro), for a new server, and for a new account (address).
 	 */
 	SeruroSetup(wxFrame *parent, 
-		bool add_server= false, bool add_address= false);
+		setup_type_t type = SERURO_SETUP_INITIAL);
+		//bool add_server= false, bool add_address= false);
 
     wxWizardPage *GetInitialPage() const { 
 		return initial_page; 
@@ -61,7 +71,8 @@ public:
 	SetupPage* GetServerPage() { return server_page; }
 	SetupPage* GetAccountPage() { return account_page; }
 	bool HasServerInfo() { 
-		return (! this->address_setup);
+		//return (! this->address_setup);
+		return (! setup_type == SERURO_SETUP_ACCOUNT);
 	}
     
     /* Over write without validation for backbutton */
@@ -99,8 +110,9 @@ private:
 	wxString prev_button_orig;
 
 	/* Allow the constructor to create pages based on a setup type. */
-	bool server_setup;
-	bool address_setup;
+	//bool server_setup;
+	//bool address_setup;
+	setup_type_t setup_type;
 
     SetupPage *initial_page;
     SetupPage *server_page;
@@ -109,6 +121,11 @@ private:
     SetupPage *applications_page;
     SetupPage *settings_page;
     
+	//void InitInitial();
+	//void InitServer();
+	//void InitAccount();
+	//void InitIdentity();
+
     DECLARE_EVENT_TABLE()
 };
 
@@ -178,7 +195,8 @@ private:
 class IdentityPage : public SetupPage, public DecryptForm
 {
 public:
-	IdentityPage (SeruroSetup *parent, bool force_download = false);
+	IdentityPage (SeruroSetup *parent, 
+		bool force_download = false);
 
 	/* Check the 'install' identity box. */
 	//void OnToggleInstall(wxCommandEvent &event);

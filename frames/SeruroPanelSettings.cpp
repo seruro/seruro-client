@@ -1,11 +1,11 @@
 
 #include "SeruroPanelSettings.h"
 #include "UIDefs.h"
-#include "../api/SeruroServerAPI.h"
 #include "../SeruroClient.h"
 
 #include "dialogs/RemoveDialog.h"
 #include "../setup/SeruroSetup.h"
+#include "../crypto/SeruroCrypto.h"
 
 #include <wx/button.h>
 #include <wx/log.h>
@@ -48,7 +48,7 @@ BEGIN_EVENT_TABLE(AccountsWindow, SettingsView)
     EVT_LIST_ITEM_DESELECTED(wxID_ANY, AccountsWindow::OnDeselect)
 
     EVT_SERURO_REQUEST(SERURO_API_CALLBACK_CA, AccountsWindow::OnCAResult)
-    EVT_SERURO_REQUEST(SERURO_API_CALLBACK_P12S, AccountsWindow::OnP12sResult)
+    //EVT_SERURO_REQUEST(SERURO_API_CALLBACK_P12S, AccountsWindow::OnP12sResult)
 
 	EVT_BUTTON(BUTTON_ADD_SERVER, AccountsWindow::OnAddServer)
 	EVT_BUTTON(BUTTON_ADD_ACCOUNT, AccountsWindow::OnAddAccount)
@@ -252,6 +252,16 @@ void AccountsWindow::OnDeselect(wxListEvent &event)
     this->remove_button->Disable();
 }
 
+void AccountsWindow::OnCAResult(SeruroRequestEvent &event)
+{
+	wxJSONValue response = event.GetResponse();
+
+	/* Simple, there's no UI state to update based on the result. */
+	SeruroServerAPI *api = new SeruroServerAPI(this->GetEventHandler());
+	api->InstallCA(response);
+	delete api;
+}
+
 void AccountsWindow::OnUpdate(wxCommandEvent &event)
 {
     /* All actions must have a server to act on. */
@@ -277,8 +287,8 @@ void AccountsWindow::OnUpdate(wxCommandEvent &event)
     
     /* Open the setup wizard on the identity page. */
     /* Todo: have an event which updates the status of an identity. */
-	//SeruroSetup add_server_setup((wxFrame*) (wxGetApp().GetFrame()), false, false, true);
-	//add_server_setup.RunWizard(add_server_setup.GetInitialPage());
+	SeruroSetup identity_setup((wxFrame*) (wxGetApp().GetFrame()), SERURO_SETUP_IDENTITY);
+	identity_setup.RunWizard(identity_setup.GetInitialPage());
 }
 
 void AccountsWindow::OnRemove(wxCommandEvent &event)
@@ -326,7 +336,7 @@ void AccountsWindow::OnAddServer(wxCommandEvent &event)
     /* Todo: consider having a new account/new server event? */
     
 	/* Testing wizard-implementation. */
-	SeruroSetup add_server_setup((wxFrame*) (wxGetApp().GetFrame()), true);
+	SeruroSetup add_server_setup((wxFrame*) (wxGetApp().GetFrame()), SERURO_SETUP_SERVER);
 	add_server_setup.RunWizard(add_server_setup.GetInitialPage());
 	return;
 }
@@ -334,7 +344,7 @@ void AccountsWindow::OnAddServer(wxCommandEvent &event)
 void AccountsWindow::OnAddAccount(wxCommandEvent &event)
 {
 	/* Testing wizard-implementation. */
-	SeruroSetup add_account_setup((wxFrame*) (wxGetApp().GetFrame()), false, true);
+	SeruroSetup add_account_setup((wxFrame*) (wxGetApp().GetFrame()), SERURO_SETUP_ACCOUNT);
 	add_account_setup.RunWizard(add_account_setup.GetInitialPage());
 	return;
 }
@@ -370,9 +380,13 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
 	servers_list->InsertColumn(2, _("Expires"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
 	//servers_list->InsertColumn(3, _("Contacts"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
 
+	SeruroCrypto crypto; 
+	//bool cert_installed = false;
 	wxArrayString servers = wxGetApp().config->GetServerList();
 	for (size_t i = 0; i < servers.size(); i++) {
-		item_index = servers_list->InsertItem(0, _(""), 0);
+		/* Check if the server certificate is installed. */
+		//cert_installed = crypto_helper.HaveCA(servers[i]);
+		item_index = servers_list->InsertItem(0, _(""), (crypto.HaveCA(servers[i])) ? 0 : -1);
 		servers_list->SetItem(item_index, 1, _(servers[i]));
 		servers_list->SetItem(item_index, 2, _("0"));
 		//servers_list->SetItem(item_index, 3, _("0"));
@@ -403,7 +417,10 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
 	for (size_t i = 0; i < servers.size(); i++) {
 		accounts = wxGetApp().config->GetAddressList(servers[i]);
 		for (size_t j = 0; j < accounts.size(); j++) {
-			item_index = accounts_list->InsertItem(0, _(""));
+			//cert_installed = crypto_helper.HaveIdentity(servers[i], 
+			item_index = accounts_list->InsertItem(0, _(""), 
+				/* Display a key if the identity (cert/key) are installed. */
+				(crypto.HaveIdentity(servers[i], accounts[j])) ? 1 : -1);
 			accounts_list->SetItem(item_index, 1, accounts[j]);
 			accounts_list->SetItem(item_index, 2, servers[i]);
 			accounts_list->SetItem(item_index, 3, _("Never"));
