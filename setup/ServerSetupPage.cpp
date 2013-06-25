@@ -18,6 +18,9 @@ ServerPage::ServerPage(SeruroSetup *parent) : SetupPage(parent), AddServerForm(t
 {
     wxSizer *const vert_sizer = new wxBoxSizer(wxVERTICAL);
     
+    /* In case this page is started from a button. */
+    this->enable_next = true;
+    
     wxString msg_text = wxT("Please enter the hostname of your Seruro Server:");
     Text *msg = new Text(this, msg_text);
     vert_sizer->Add(msg, DIALOGS_SIZER_OPTIONS);

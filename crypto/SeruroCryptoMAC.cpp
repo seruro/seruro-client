@@ -146,7 +146,7 @@ bool InstallCertificateToKeychain(wxMemoryBuffer &cert_binary, wxString keychain
      * errSecDuplicateItem (–25299)
      */
     
-    OSStatus success;
+    OSStatus success = 0;
     /* Todo: there's a more generic SecItemAdd, which is avilable in iOS. */
     //success = SecCertificateAddToKeychain(certificate, keychain);
 
@@ -157,7 +157,9 @@ bool InstallCertificateToKeychain(wxMemoryBuffer &cert_binary, wxString keychain
     
     CFDictionarySetValue(cert_item, kSecClass, kSecClassCertificate);
     CFDictionarySetValue(cert_item, kSecValueRef, (const void *) certificate);
-    CFDictionarySetValue(cert_item, kSecUseKeychain, (const void *) keychain);
+    if (keychain != NULL) {
+        CFDictionarySetValue(cert_item, kSecUseKeychain, (const void *) keychain);
+    }
     
     /* Add to keychain. */
     success = SecItemAdd(cert_item, NULL);

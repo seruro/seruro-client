@@ -167,6 +167,7 @@ AccountPage::AccountPage(SeruroSetup *parent)
 	this->next_button = _("&Login");
 	//this->wizard->RequireAuth(true);
 	this->require_auth = true;
+    this->enable_next = true;
 
     wxString msg_text = wxT("Please enter the information for your account:");
     Text *msg = new Text(this, msg_text);

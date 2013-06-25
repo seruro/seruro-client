@@ -47,6 +47,9 @@ BEGIN_EVENT_TABLE(AccountsWindow, SettingsView)
 	EVT_LIST_ITEM_SELECTED(SETTINGS_ACCOUNTS_LIST_ID, AccountsWindow::OnAccountSelected)
     EVT_LIST_ITEM_DESELECTED(wxID_ANY, AccountsWindow::OnDeselect)
 
+    EVT_SERURO_REQUEST(SERURO_API_CALLBACK_CA, AccountsWindow::OnCAResult)
+    EVT_SERURO_REQUEST(SERURO_API_CALLBACK_P12S, AccountsWindow::OnP12sResult)
+
 	EVT_BUTTON(BUTTON_ADD_SERVER, AccountsWindow::OnAddServer)
 	EVT_BUTTON(BUTTON_ADD_ACCOUNT, AccountsWindow::OnAddAccount)
 	EVT_BUTTON(BUTTON_UPDATE, AccountsWindow::OnUpdate)
@@ -256,15 +259,26 @@ void AccountsWindow::OnUpdate(wxCommandEvent &event)
         return;
     }
     
+    wxJSONValue params;
+    SeruroServerAPI *api = new SeruroServerAPI(this->GetEventHandler());
+    
+    params["server"] = wxGetApp().config->GetServer(this->server_name);
+    
     /* If updating/installing the server certificate. */
     if (! this->account_selected) {
         /* Create API request to download certificate. */
         /* On callback update the UI based on the status of the cert. */
+        
+        api->CreateRequest(SERURO_API_CA, params, SERURO_API_CALLBACK_CA)->Run();
+        delete api;
+        
         return;
     }
     
     /* Open the setup wizard on the identity page. */
     /* Todo: have an event which updates the status of an identity. */
+	//SeruroSetup add_server_setup((wxFrame*) (wxGetApp().GetFrame()), false, false, true);
+	//add_server_setup.RunWizard(add_server_setup.GetInitialPage());
 }
 
 void AccountsWindow::OnRemove(wxCommandEvent &event)
@@ -389,12 +403,10 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
 	for (size_t i = 0; i < servers.size(); i++) {
 		accounts = wxGetApp().config->GetAddressList(servers[i]);
 		for (size_t j = 0; j < accounts.size(); j++) {
-			for (size_t k = 0; k < 10; k++) {
-			item_index = accounts_list->InsertItem(0, _(""), k);
+			item_index = accounts_list->InsertItem(0, _(""));
 			accounts_list->SetItem(item_index, 1, accounts[j]);
 			accounts_list->SetItem(item_index, 2, servers[i]);
 			accounts_list->SetItem(item_index, 3, _("Never"));
-			}
 		}
 	}
 
