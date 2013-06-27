@@ -91,14 +91,16 @@ bool InstallIdentityToKeychain(SecIdentityRef &identity, wxString keychain_name)
 
     /* Find the identity item, add it to a dictionary, add it to the keychain. */
     CFMutableDictionaryRef identity_item;
-    identity_item = CFDictionaryCreateMutable(kCFAllocatorDefault, 0,
+    identity_item = CFDictionaryCreateMutable(kCFAllocatorDefault, 3,
         &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
     
     //key = CFStringGetCStringPtr(kSecValueRef, kCFStringEncodingASCII);
     //CFDictionarySetValue(identity_item, (const void *) key, (const void *) itentity);
-    CFDictionarySetValue(identity_item, kSecClass, kSecClassIdentity);
-    CFDictionarySetValue(identity_item, kSecValueRef, (const void *) identity);
-    CFDictionarySetValue(identity_item, kSecUseKeychain, (const void *) keychain);
+    //CFDictionarySetValue(identity_item, kSecClass, kSecClassIdentity); /* givens -50. */
+    CFDictionarySetValue(identity_item, kSecValueRef, identity);
+    if (keychain != NULL) {
+        CFDictionarySetValue(identity_item, kSecUseKeychain, keychain);
+    }
     
     /* Add the identity to the key chain, without error handling. */
     success = SecItemAdd(identity_item, NULL);
@@ -342,17 +344,24 @@ bool SeruroCryptoMAC::InstallP12(wxMemoryBuffer &p12,
     
     OSStatus success;
     CFDataRef p12_data;
-    const char *key;
-    const char *password_data;
+    //char *key;
+    //const char *key;
+    CFStringRef password_data;
+    //const char *password_data;
     
     /* Set the password as an option. */
     CFMutableDictionaryRef options;
-    key = CFStringGetCStringPtr(kSecImportExportPassphrase, kCFStringEncodingASCII);
-    password_data = AsChar(password);
+    //key = (char *) malloc(sizeof(char) * (CFStringGetLength(kSecImportExportPassphrase)/2));
+    //CFStringGetCString(kSecImportExportPassphrase, key, CFStringGetLength(kSecImportExportPassphrase), kCFStringEncodingASCII);
+    //key = CFStringGetCStringPtr(kSecImportExportPassphrase, kCFStringEncodingASCII);
+    //password_data = AsChar(password);
+    password_data = CFStringCreateWithCString(kCFAllocatorDefault, AsChar(password), kCFStringEncodingASCII);
     
-    options = CFDictionaryCreateMutable(kCFAllocatorDefault, 0,
+    options = CFDictionaryCreateMutable(kCFAllocatorDefault, 3,
         &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
-    CFDictionaryAddValue(options, (const void *) key, (const void *) password_data);
+    //CFDictionaryAddValue(options, (const void *) key, (const void *) password_data);
+    CFDictionaryAddValue(options, kSecImportExportPassphrase, password_data);
+    //delete key;
     
     /* Convert type of p12. */
     p12_data = CFDataCreate(kCFAllocatorDefault,
@@ -385,8 +394,12 @@ bool SeruroCryptoMAC::InstallP12(wxMemoryBuffer &p12,
         item = (CFDictionaryRef) CFArrayGetValueAtIndex(p12_items, i);
         
         /* Install P12s to keychain. */
-        key = CFStringGetCStringPtr(kSecImportItemIdentity, kCFStringEncodingASCII);
-        identity = (SecIdentityRef) CFDictionaryGetValue(item, (const void *) key);
+        //key = (char *) malloc(sizeof(char) * (CFStringGetLength(kSecImportItemIdentity)/2));
+        //key = CFStringGetCStringPtr(kSecImportItemIdentity, kCFStringEncodingASCII);
+        //CFStringGetCString(kSecImportExportPassphrase, key, CFStringGetLength(kSecImportItemIdentity), kCFStringEncodingASCII);
+        //identity = (SecIdentityRef) CFDictionaryGetValue(item, (const void *) key);
+        identity = (SecIdentityRef) CFDictionaryGetValue(item, kSecImportItemIdentity);
+        //delete key;
         
         if (! InstallIdentityToKeychain(identity, _(IDENTITY_KEYCHAIN))) {
             return false;

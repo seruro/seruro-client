@@ -74,6 +74,8 @@ public:
 		//return (! this->address_setup);
 		return (! setup_type == SERURO_SETUP_ACCOUNT);
 	}
+    wxJSONValue GetServerInfo();
+    wxString GetAccount();
     
     /* Over write without validation for backbutton */
     void GoPrev(wxCommandEvent& event);

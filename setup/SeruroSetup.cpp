@@ -10,6 +10,8 @@ BEGIN_EVENT_TABLE(SeruroSetup, wxWizard)
 	EVT_WIZARD_BEFORE_PAGE_CHANGED(SERURO_SETUP_ID, SeruroSetup::OnChanging)
 END_EVENT_TABLE()
 
+DECLARE_APP(SeruroClient);
+
 SetupPage::SetupPage(SeruroSetup *parent) : wxWizardPageSimple(parent), wizard(parent),
 	enable_prev(true), require_auth(false)
 {
@@ -107,6 +109,22 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type) : setup_type(type)
 	applications_page->SetPrev(identity_page);
 
     this->GetPageAreaSizer()->Add(this->initial_page);
+}
+
+wxJSONValue SeruroSetup::GetServerInfo()
+{
+    if (setup_type == SERURO_SETUP_SERVER || setup_type == SERURO_SETUP_INITIAL) {
+        return this->GetServerPage()->GetValues();
+    }
+    return wxGetApp().config->GetServer(this->server);
+}
+
+wxString SeruroSetup::GetAccount()
+{
+    if (setup_type != SERURO_SETUP_IDENTITY) {
+        return this->GetAccountPage()->GetValue();
+    }
+    return this->account;
 }
 
 /* Implemented in wxWizard at: wxwidgets\src\generic. 
