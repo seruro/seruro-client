@@ -287,7 +287,8 @@ void AccountsWindow::OnUpdate(wxCommandEvent &event)
     
     /* Open the setup wizard on the identity page. */
     /* Todo: have an event which updates the status of an identity. */
-	SeruroSetup identity_setup((wxFrame*) (wxGetApp().GetFrame()), SERURO_SETUP_IDENTITY);
+	SeruroSetup identity_setup((wxFrame*) (wxGetApp().GetFrame()), SERURO_SETUP_IDENTITY,
+        this->server_name, this->address);
 	identity_setup.RunWizard(identity_setup.GetInitialPage());
 }
 

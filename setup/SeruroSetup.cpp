@@ -47,7 +47,8 @@ InitialPage::InitialPage(SeruroSetup *parent) : SetupPage(parent)
 }
 
 //SeruroSetup::SeruroSetup(wxFrame *parent, bool add_server, bool add_address) : 
-SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type) : setup_type(type)
+SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
+    wxString server, wxString account) : setup_type(type), server_name(server), account(account)
 	//server_setup(type), address_setup(type)
 {
 	/* Set title based on type of setup. */
@@ -114,15 +115,17 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type) : setup_type(type)
 wxJSONValue SeruroSetup::GetServerInfo()
 {
     if (setup_type == SERURO_SETUP_SERVER || setup_type == SERURO_SETUP_INITIAL) {
-        return this->GetServerPage()->GetValues();
+        return ((ServerPage*) this->GetServerPage())->GetValues();
     }
-    return wxGetApp().config->GetServer(this->server);
+    return wxGetApp().config->GetServer(this->server_name);
 }
 
 wxString SeruroSetup::GetAccount()
 {
     if (setup_type != SERURO_SETUP_IDENTITY) {
-        return this->GetAccountPage()->GetValue();
+        wxJSONValue account_values;
+        account_values = ((AccountPage*)this->GetAccountPage())->GetValues();
+        return account_values["address"].AsString();
     }
     return this->account;
 }

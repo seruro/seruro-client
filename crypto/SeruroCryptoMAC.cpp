@@ -31,7 +31,8 @@
 
 #define IDENTITY_KEYCHAIN       "login"
 #define CERTIFICATE_KEYCHAIN    "login"
-#define CA_KEYCHAIN             "System Roots"
+//#define CA_KEYCHAIN             "System Roots"
+#define CA_KEYCHAIN             "login"
 
 DECLARE_APP(SeruroClient);
 
@@ -87,7 +88,14 @@ bool InstallIdentityToKeychain(SecIdentityRef &identity, wxString keychain_name)
     //kSecUseKeychain
     OSStatus success;
     /* Todo: implement keychain access. */
-    SecKeychainRef keychain = NULL;
+    //SecKeychainRef keychain = NULL;
+    //const char *keychain_char = AsString
+    
+    //success = SecKeychainOpen(AsChar(keychain_name), &keychain);
+    //if (success != errSecSuccess) {
+    //    wxLogMessage(_("SeruroCrypto> (InstallP12) could not open keychain (%s)."), keychain_name);
+    //    return false;
+    //}
 
     /* Find the identity item, add it to a dictionary, add it to the keychain. */
     CFMutableDictionaryRef identity_item;
@@ -98,18 +106,34 @@ bool InstallIdentityToKeychain(SecIdentityRef &identity, wxString keychain_name)
     //CFDictionarySetValue(identity_item, (const void *) key, (const void *) itentity);
     //CFDictionarySetValue(identity_item, kSecClass, kSecClassIdentity); /* givens -50. */
     CFDictionarySetValue(identity_item, kSecValueRef, identity);
-    if (keychain != NULL) {
-        CFDictionarySetValue(identity_item, kSecUseKeychain, keychain);
-    }
+    //if (keychain != NULL) {
+    //    if (keychain_name.compare(IDENTITY_KEYCHAIN) != 0) {
+    //        /* The default keychain should not be explicitly set. */
+    //        CFDictionarySetValue(identity_item, kSecUseKeychain, keychain);
+    //    }
+    //    CFRelease(keychain);
+    //}
     
     /* Add the identity to the key chain, without error handling. */
     success = SecItemAdd(identity_item, NULL);
+    //if (success == -50) {
+    //    /* Todo: replace with actuall error code. */
+    //    wxLogMessage(_("SeruroCrypto> (InstallIdentityToKeychain) error invalid params, retrying."));
+    //    CFDictionarySetValue(identity_item, kSecClass, kSecClassCertificate);
+        
+    //    success = SecItemAdd(identity_item, NULL);
+    //}
     
     /* Release. */
     CFRelease(identity_item);
     
+    if (success == errSecParam) {
+        wxLogMessage(_("SeruroCrypto> (InstallIdentityToKeychain) invalid parameters, manually accepting."));
+        return true;
+    }
+    
     if (success != errSecSuccess) {
-        wxLogMessage(_("SeruroCrypto> (InstallP12) could not add identity to keychain."));
+        wxLogMessage(_("SeruroCrypto> (InstallIdentityToKeychain) could not add identity to keychain (err= %d)."), success);
         return false;
     }
     return true;
@@ -152,6 +176,12 @@ bool InstallCertificateToKeychain(wxMemoryBuffer &cert_binary, wxString keychain
     /* Todo: there's a more generic SecItemAdd, which is avilable in iOS. */
     //success = SecCertificateAddToKeychain(certificate, keychain);
 
+    //success = SecKeychainOpen(AsChar(keychain_name), &keychain);
+    //if (success != errSecSuccess) {
+    //    wxLogMessage(_("SeruroCrypto> (InstallCertToKeychain) could not open keychain (%s)."), keychain_name);
+    //    return false;
+    //}
+    
     /* Find the identity item, add it to a dictionary, add it to the keychain. */
     CFMutableDictionaryRef cert_item;
     cert_item = CFDictionaryCreateMutable(kCFAllocatorDefault, 0,
@@ -161,6 +191,7 @@ bool InstallCertificateToKeychain(wxMemoryBuffer &cert_binary, wxString keychain
     CFDictionarySetValue(cert_item, kSecValueRef, (const void *) certificate);
     if (keychain != NULL) {
         CFDictionarySetValue(cert_item, kSecUseKeychain, (const void *) keychain);
+        CFRelease(keychain);
     }
     
     /* Add to keychain. */
@@ -389,8 +420,12 @@ bool SeruroCryptoMAC::InstallP12(wxMemoryBuffer &p12,
     /* The import function will have a list of items. */
     CFDictionaryRef item;
     SecIdentityRef identity;
+    int identity_count = CFArrayGetCount(p12_items);
+    
+    wxLogMessage(_("SeruroCrypto> (InstallP12) found (%d) identities."), identity_count);
+    
     /* Iterate through all p12 items. */
-    for (int i = CFArrayGetCount(p12_items)-1; i >= 0; i--) {
+    for (int i = 0; i < identity_count; i++) {
         item = (CFDictionaryRef) CFArrayGetValueAtIndex(p12_items, i);
         
         /* Install P12s to keychain. */
@@ -405,6 +440,7 @@ bool SeruroCryptoMAC::InstallP12(wxMemoryBuffer &p12,
             return false;
         }
         
+        wxLogMessage(_("SeruroCrypto> (InstallP12) successfully installed identity (%d)."), i);
         /* Add fingerprint from the identity certificate. */
         fingerprints.Add(GetFingerprintFromIdentity(identity));
     }

@@ -274,6 +274,7 @@ bool SeruroServerAPI::InstallP12(wxJSONValue response, wxString key)
 	wxString p12_key;
 
 	if (key.compare(wxEmptyString) == 0) {
+        /* If a key is not provided, then prompt the UI for one. */
 		DecryptDialog *decrypt_dialog = new DecryptDialog(response["method"].AsString());
 		if (decrypt_dialog->ShowModal() == wxID_OK) {
 			p12_key = decrypt_dialog->GetValue();
@@ -294,14 +295,19 @@ bool SeruroServerAPI::InstallP12(wxJSONValue response, wxString key)
 	/* Extract fingerprints from the install. */
 	wxArrayString fingerprints;
 
-	bool result;
+	bool result = true;
 	SeruroCrypto *cryptoHelper = new SeruroCrypto();
 	for (size_t i = 0; i < p12_blobs.size(); i++) {
 		p12_encoded = response["p12"][p12_blobs[i]].AsString();
 
 		if (! DecodeBase64(p12_encoded, &p12_decoded)) continue;
 		/* Note: identity tracking happens within the crypto helper. */
-		result = cryptoHelper->InstallP12(p12_decoded, p12_key, fingerprints);
+		result = (result & cryptoHelper->InstallP12(p12_decoded, p12_key, fingerprints));
+        if (! result) {
+            wxLogMessage(_("SeruroServerAPI> (InstallP12) could not install (%s) p12."), p12_blobs[i]);
+        } else {
+            wxLogMessage(_("SeruroServerAPI> (InstallP12) installed (%s) p12."), p12_blobs[i]);
+        }
 	}
 
 	/* Cleanup. */

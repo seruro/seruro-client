@@ -18,8 +18,10 @@ END_EVENT_TABLE()
 void IdentityPage::DownloadIdentity()
 {
     wxJSONValue params; /* no params */
-	wxJSONValue server_info = ((ServerPage *) wizard->GetServerPage())->GetValues();
-	wxJSONValue account_info = ((AccountPage *) wizard->GetAccountPage())->GetValues();
+	//wxJSONValue server_info = ((ServerPage *) wizard->GetServerPage())->GetValues();
+	//wxJSONValue account_info = ((AccountPage *) wizard->GetAccountPage())->GetValues();
+    wxJSONValue server_info = wizard->GetServerInfo();
+    wxString account = wizard->GetAccount();
     
 	/* Disable interaction while thread is running. */
 	this->DisablePage();
@@ -29,7 +31,8 @@ void IdentityPage::DownloadIdentity()
 	//params["server"] = api->GetServer(this->server_name);
 	params["server"] = api->GetServer(server_info["name"].AsString());
 	//params["address"] = this->address;
-	params["address"] = account_info["address"].AsString();
+	//params["address"] = account_info["address"].AsString();
+    params["address"] = account;
     
 	api->CreateRequest(SERURO_API_P12S, params, SERURO_API_CALLBACK_P12S)->Run();
 	delete api;
@@ -114,6 +117,7 @@ IdentityPage::IdentityPage(SeruroSetup *parent, bool force_download)
 
 	/* Add decryption input. */
 	this->AddForms(decrypt_form);
+    this->DisableForm();
 
 	//decrypt_form->Add(decrypt_grid_sizer, DIALOGS_BOXSIZER_OPTIONS);
 	vert_sizer->Add(decrypt_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);

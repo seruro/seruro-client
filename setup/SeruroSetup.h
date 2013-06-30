@@ -61,7 +61,8 @@ public:
 	 * of Seruro), for a new server, and for a new account (address).
 	 */
 	SeruroSetup(wxFrame *parent, 
-		setup_type_t type = SERURO_SETUP_INITIAL);
+		setup_type_t type = SERURO_SETUP_INITIAL,
+        wxString server = wxEmptyString, wxString address = wxEmptyString);
 		//bool add_server= false, bool add_address= false);
 
     wxWizardPage *GetInitialPage() const { 
@@ -122,6 +123,10 @@ private:
 	SetupPage *identity_page;
     SetupPage *applications_page;
     SetupPage *settings_page;
+    
+    /* Set by caller when setup begins after server or account. */
+    wxString server_name;
+    wxString account;
     
 	//void InitInitial();
 	//void InitServer();
