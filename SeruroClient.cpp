@@ -78,6 +78,11 @@ bool SeruroClient::OnInit()
     return true;
 }
 
+void SeruroClient::AddEvent(wxEvent &event)
+{
+	this->AddPendingEvent(event);
+}
+
 wxWindow* SeruroClient::GetFrame()
 {
 	return (wxWindow *) this->mainFrame;

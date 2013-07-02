@@ -22,27 +22,39 @@ enum state_types_t
 {
 	STATE_TYPE_SERVER,
 	STATE_TYPE_ACCOUNT,
-	STATE_TYPE_CERTIFICATE
+	STATE_TYPE_CERTIFICATE,
 };
 
-DECLARE_EVENT_TYPE(SERURO_STATE_CHANGE, -1);
+//IMPLEMENT_DYNAMIC_CLASS( SeruroStateEvent, wxCommandEvent )
+//wxDECLARE_EVENT_TYPE(SERURO_STATE_CHANGE, -1);
+//class SeruroStateEvent;
+//wxDECLARE_EVENT(SERURO_STATE_CHANGE, wxCommandEvent);
+
+//wxDEFINE_EVENT(SERURO_STATE_CHANGE, SeruroStateEvent);
+//extern const wxEventType SERURO_STATE_CHANGE;
 
 class SeruroStateEvent : public wxCommandEvent
 {
 public:
-	SeruroStateEvent(int id= 0, wxEventType command_type = SERURO_STATE_CHANGE)
-		: wxCommandEvent(command_type, id) {}
+	SeruroStateEvent(int type= 0, int action=0);
 
 	SeruroStateEvent(const SeruroStateEvent &event)
 		: wxCommandEvent(event) { this->SetStateChange(event.GetStateChange()); }
+	virtual wxEvent *Clone() const { return new SeruroStateEvent(*this); }
 	
 	wxJSONValue GetStateChange() const { return state_data; }
 	void SetStateChange(wxJSONValue state) { state_data = state; }
 
 	/* A state change will always have a server_name. */
 	wxString GetServerName() { return state_data["server_name"].AsString(); }
-	//wxString GetAction() const
+	void SetServerName(wxString server_name) { state_data["server_name"] = server_name; }
+	wxString GetValue(wxString key) { return state_data[key].AsString(); }
+	void SetValue(wxString key, wxString value) { state_data[key] = value; }
+	/* Every state has an associated action. */
 	int GetAction() { return state_data["action"].AsInt(); }
+	void SetAction(int action) { state_data["action"] = action; }
+
+	//DECLARE_DYNAMIC_CLASS( SeruroStateEvent )
 
 private:
 	/* Should be formatted:
@@ -54,9 +66,17 @@ private:
 	wxJSONValue state_data;
 };
 
+//wxDEFINE_EVENT(SERURO_STATE_CHANGE, SeruroStateEvent);
+wxDECLARE_EVENT(SERURO_STATE_CHANGE, SeruroStateEvent);
+
+//DEFINE_EVENT_TYPE(SERURO_STATE_CHANGE);
+
 /* Define a event type for State changes. */
 typedef void (wxEvtHandler::*SeruroStateEventFunction) (SeruroStateEvent &);
+#define SeruroStateEventHandler(func) wxEVENT_HANDLER_CAST(SeruroStateEventFunction, func)
+//#define 
 
+/*
 #define SeruroStateEventHandler(func) \
     (wxObjectEventFunction)(wxEventFunction)(wxCommandEventFunction) \
     wxStaticCastEvent(SeruroRequestEventFunction, &func)
@@ -65,5 +85,6 @@ typedef void (wxEvtHandler::*SeruroStateEventFunction) (SeruroStateEvent &);
 	DECLARE_EVENT_TABLE_ENTRY(SERURO_API_RESULT, type, -1, \
 	(wxObjectEventFunction)(wxEventFunction)(wxCommandEventFunction) \
 	wxStaticCastEvent(SeruroStateEventFunction, &fn), (wxObject*) NULL),
+*/
 
 #endif 

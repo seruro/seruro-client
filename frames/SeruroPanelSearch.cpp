@@ -31,7 +31,8 @@ BEGIN_EVENT_TABLE(SeruroPanelSearch, wxPanel)
     EVT_SERURO_REQUEST(SERURO_API_CALLBACK_SEARCH, SeruroPanelSearch::OnSearchResult)
     EVT_SERURO_REQUEST(SERURO_API_CALLBACK_CERTS, SeruroPanelSearch::OnInstallResult)
 
-	EVT_SERURO_STATE(STATE_TYPE_SERVER, SeruroPanelSearch::OnServerStateChange)
+	/* Defined using a dynamic bind. */
+	//EVT_SERURO_STATE(STATE_TYPE_SERVER, SeruroPanelSearch::OnServerStateChange)
 
 	EVT_SET_FOCUS(SeruroPanelSearch::OnFocus)
 END_EVENT_TABLE()
@@ -50,9 +51,14 @@ BEGIN_EVENT_TABLE(CheckedListCtrl, wxListCtrl)
 	EVT_LIST_COL_BEGIN_DRAG(SERURO_SEARCH_LIST_ID, CheckedListCtrl::OnColumnDrag)
 END_EVENT_TABLE()
 
-void SeruroPanelSearch::OnServerStateChange(SeruroStateEvent &event);
+void SeruroPanelSearch::OnServerStateChange(SeruroStateEvent &event)
 {
+	if (event.GetAction() == STATE_ACTION_REMOVE) {
+		wxLogMessage(_("SeruroPanelSearch> (OnServerStateChange) removing server (%s)."), event.GetServerName());
+	}
 
+	wxLogMessage(_("SeruroPanelServer> (OnServerStateChange)"));
+	event.Skip();
 }
 
 /* Check or uncheck the checkbox, the appropriateness and applicability of this function
@@ -397,6 +403,9 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
     
 	/* Testing default focus */
 	DoFocus();
+
+	/* Create dynamic event binders. */
+	wxGetApp().Bind(SERURO_STATE_CHANGE, &SeruroPanelSearch::OnServerStateChange, this, STATE_TYPE_SERVER);
 
 	this->Layout();
 }

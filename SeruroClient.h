@@ -10,6 +10,7 @@
 
 #include <wx/notebook.h>
 #include <wx/thread.h>
+#include <wx/event.h>
 
 /* Sample icon to use for everything while testing. */
 #include "resources/icon_good.xpm"
@@ -44,6 +45,8 @@ public:
 	wxCriticalSection seruro_critSection;
 	wxArrayThread seruro_threads;
 	//wxSemaphore seruro_semFinished;
+
+	void AddEvent(wxEvent &event);
 
 public:
 	SeruroConfig *config;

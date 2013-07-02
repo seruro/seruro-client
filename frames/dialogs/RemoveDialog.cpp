@@ -3,6 +3,7 @@
 #include "../UIDefs.h"
 
 #include "../../SeruroClient.h"
+#include "../../api/SeruroStateEvents.h"
 
 #include <wx/grid.h>
 #include <wx/log.h>
@@ -73,7 +74,20 @@ void RemoveDialog::DoRemove()
 	/* Finally remove the data from the config (and the app). */
 	if (this->remove_server) {
 		wxGetApp().config->RemoveServer(this->server_name);
+
+		SeruroStateEvent event(STATE_TYPE_SERVER, STATE_ACTION_REMOVE);
+		event.SetServerName(this->server_name);
+		//wxGetApp().AddEvent(event);
+		this->ProcessWindowEvent(event);
 	} else {
 		wxGetApp().config->RemoveAddress(this->server_name, this->address);
+
+		SeruroStateEvent event(STATE_TYPE_ACCOUNT, STATE_ACTION_REMOVE);
+		event.SetServerName(this->server_name);
+		event.SetValue(_("address"), this->address);
+		//wxGetApp().AddEvent(event);
+		this->ProcessWindowEvent(event);
 	}
+
+	
 }

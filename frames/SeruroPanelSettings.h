@@ -88,6 +88,7 @@ public:
 
 	/* What happens when the UI or OS events change settings!? */
 	void OnServerStateChange(SeruroStateEvent &event);
+	void OnAccountStateChange(SeruroStateEvent &event);
     
     /* Add action. */
     void SetActionLabel(wxString label) {

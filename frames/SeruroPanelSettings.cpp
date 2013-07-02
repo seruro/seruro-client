@@ -51,7 +51,8 @@ BEGIN_EVENT_TABLE(AccountsWindow, SettingsView)
     //EVT_SERURO_REQUEST(SERURO_API_CALLBACK_P12S, AccountsWindow::OnP12sResult)
 
 	/* When components / OS actions change seruro data. */
-	EVT_SERURO_STATE(STATE_TYPE_SERVER, AccountsWindow::OnServerStateChange)
+	/* Defined using a dynamic bind. */
+	//EVT_SERURO_STATE(STATE_TYPE_SERVER, AccountsWindow::OnServerStateChange)
 
 	EVT_BUTTON(BUTTON_ADD_SERVER, AccountsWindow::OnAddServer)
 	EVT_BUTTON(BUTTON_ADD_ACCOUNT, AccountsWindow::OnAddAccount)
@@ -68,7 +69,18 @@ DECLARE_APP(SeruroClient);
 
 void AccountsWindow::OnServerStateChange(SeruroStateEvent &event)
 {
+	SeruroStateEvent *state_event = (SeruroStateEvent *) &event;
+	if (state_event->GetAction() == STATE_ACTION_REMOVE) {
+		wxLogMessage(_("AccountsWindow> (OnServerStateChange) removing server (%s)."), state_event->GetServerName());
+	}
+	wxLogMessage(_("AccountsWindow> (OnServerStateChange)"));
+	event.Skip();
+}
 
+void AccountsWindow::OnAccountStateChange(SeruroStateEvent &event)
+{
+	wxLogMessage(_("AccountsWindow> (OnAccountStateChange)"));
+	event.Skip();
 }
 
 void SeruroPanelSettings::OnSelected(wxListEvent &event)
@@ -463,6 +475,9 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
 	//sizer->Add(lists_sizer, DIALOGS_SIZER_OPTIONS);
 	lists_sizer->Add(actions_sizer, DIALOGS_SIZER_OPTIONS.FixedMinSize().Bottom());
 
+	/* Set up event handler bindings. */
+	wxGetApp().Bind(SERURO_STATE_CHANGE, &AccountsWindow::OnServerStateChange, this, STATE_TYPE_SERVER);
+	wxGetApp().Bind(SERURO_STATE_CHANGE, &AccountsWindow::OnAccountStateChange, this, STATE_TYPE_ACCOUNT);
 
 	/* Try to set the max height of the lists. */
 	//size_t list_height;
