@@ -6,6 +6,7 @@
 
 #include "../api/SeruroServerAPI.h"
 #include "../wxJSON/wx/jsonval.h"
+#include "../api/SeruroStateEvents.h"
 
 #include <wx/listctrl.h>
 #include <wx/choice.h>
@@ -81,6 +82,8 @@ public:
 	}
 	/* Apply the focuing logic */
 	void DoFocus();
+
+	void OnServerStateChange(SeruroStateEvent &event);
 
 private:
     CheckedListCtrl *list_control;

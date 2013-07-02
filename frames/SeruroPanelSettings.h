@@ -6,6 +6,7 @@
 
 #include "../api/SeruroServerAPI.h"
 #include "../wxJSON/wx/jsonval.h"
+#include "../api/SeruroStateEvents.h"
 
 #include <wx/listctrl.h>
 #include <wx/splitter.h>
@@ -84,6 +85,9 @@ public:
 
 	void OnAddServer(wxCommandEvent &event);
 	void OnAddAccount(wxCommandEvent &event);
+
+	/* What happens when the UI or OS events change settings!? */
+	void OnServerStateChange(SeruroStateEvent &event);
     
     /* Add action. */
     void SetActionLabel(wxString label) {

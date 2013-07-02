@@ -50,6 +50,9 @@ BEGIN_EVENT_TABLE(AccountsWindow, SettingsView)
     EVT_SERURO_REQUEST(SERURO_API_CALLBACK_CA, AccountsWindow::OnCAResult)
     //EVT_SERURO_REQUEST(SERURO_API_CALLBACK_P12S, AccountsWindow::OnP12sResult)
 
+	/* When components / OS actions change seruro data. */
+	EVT_SERURO_STATE(STATE_TYPE_SERVER, AccountsWindow::OnServerStateChange)
+
 	EVT_BUTTON(BUTTON_ADD_SERVER, AccountsWindow::OnAddServer)
 	EVT_BUTTON(BUTTON_ADD_ACCOUNT, AccountsWindow::OnAddAccount)
 	EVT_BUTTON(BUTTON_UPDATE, AccountsWindow::OnUpdate)
@@ -62,6 +65,11 @@ DECLARE_APP(SeruroClient);
 //#undef DIALOGS_BOXSIZER_SIZER_OPTIONS
 //#define DIALOGS_SIZER_OPTIONS wxSizerFlags().Border(wxTOP | wxRIGHT | wxLEFT, 5)
 //#define DIALOGS_BOXSIZER_SIZER_OPTIONS DIALOGS_SIZER_OPTIONS
+
+void AccountsWindow::OnServerStateChange(SeruroStateEvent &event)
+{
+
+}
 
 void SeruroPanelSettings::OnSelected(wxListEvent &event)
 {

@@ -31,6 +31,8 @@ BEGIN_EVENT_TABLE(SeruroPanelSearch, wxPanel)
     EVT_SERURO_REQUEST(SERURO_API_CALLBACK_SEARCH, SeruroPanelSearch::OnSearchResult)
     EVT_SERURO_REQUEST(SERURO_API_CALLBACK_CERTS, SeruroPanelSearch::OnInstallResult)
 
+	EVT_SERURO_STATE(STATE_TYPE_SERVER, SeruroPanelSearch::OnServerStateChange)
+
 	EVT_SET_FOCUS(SeruroPanelSearch::OnFocus)
 END_EVENT_TABLE()
 
@@ -48,6 +50,10 @@ BEGIN_EVENT_TABLE(CheckedListCtrl, wxListCtrl)
 	EVT_LIST_COL_BEGIN_DRAG(SERURO_SEARCH_LIST_ID, CheckedListCtrl::OnColumnDrag)
 END_EVENT_TABLE()
 
+void SeruroPanelSearch::OnServerStateChange(SeruroStateEvent &event);
+{
+
+}
 
 /* Check or uncheck the checkbox, the appropriateness and applicability of this function
  * should be determined by the event handler registrations, eg. LEFT_DCLICK, LEFT_DOWN
