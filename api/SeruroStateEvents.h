@@ -25,14 +25,6 @@ enum state_types_t
 	STATE_TYPE_CERTIFICATE,
 };
 
-//IMPLEMENT_DYNAMIC_CLASS( SeruroStateEvent, wxCommandEvent )
-//wxDECLARE_EVENT_TYPE(SERURO_STATE_CHANGE, -1);
-//class SeruroStateEvent;
-//wxDECLARE_EVENT(SERURO_STATE_CHANGE, wxCommandEvent);
-
-//wxDEFINE_EVENT(SERURO_STATE_CHANGE, SeruroStateEvent);
-//extern const wxEventType SERURO_STATE_CHANGE;
-
 class SeruroStateEvent : public wxCommandEvent
 {
 public:
@@ -48,13 +40,14 @@ public:
 	/* A state change will always have a server_name. */
 	wxString GetServerName() { return state_data["server_name"].AsString(); }
 	void SetServerName(wxString server_name) { state_data["server_name"] = server_name; }
+    wxString GetAccount() { return state_data["account"].AsString(); }
+    void SetAccount(wxString account) { state_data["account"] = account; }
+    
 	wxString GetValue(wxString key) { return state_data[key].AsString(); }
 	void SetValue(wxString key, wxString value) { state_data[key] = value; }
 	/* Every state has an associated action. */
 	int GetAction() { return state_data["action"].AsInt(); }
 	void SetAction(int action) { state_data["action"] = action; }
-
-	//DECLARE_DYNAMIC_CLASS( SeruroStateEvent )
 
 private:
 	/* Should be formatted:
@@ -66,15 +59,11 @@ private:
 	wxJSONValue state_data;
 };
 
-//wxDEFINE_EVENT(SERURO_STATE_CHANGE, SeruroStateEvent);
 wxDECLARE_EVENT(SERURO_STATE_CHANGE, SeruroStateEvent);
-
-//DEFINE_EVENT_TYPE(SERURO_STATE_CHANGE);
 
 /* Define a event type for State changes. */
 typedef void (wxEvtHandler::*SeruroStateEventFunction) (SeruroStateEvent &);
 #define SeruroStateEventHandler(func) wxEVENT_HANDLER_CAST(SeruroStateEventFunction, func)
-//#define 
 
 /*
 #define SeruroStateEventHandler(func) \

@@ -221,6 +221,7 @@ bool SeruroServerAPI::InstallCA(wxJSONValue response)
 
 	wxString ca_encoded;
 	wxMemoryBuffer ca_decoded;
+    wxString server_name = response["server_name"].AsString();
 
 	ca_encoded = response["ca"].AsString();
 	if (! DecodeBase64(ca_encoded, &ca_decoded)) return false;
@@ -230,11 +231,16 @@ bool SeruroServerAPI::InstallCA(wxJSONValue response)
 	result = cryptoHelper->InstallCA(ca_decoded);
 
 	/* Set the CA fingerprint. */
-	wxGetApp().config->SetCAFingerprint(response["server_name"].AsString(),
-		cryptoHelper->GetFingerprint(ca_decoded));
-
+    if (result) {
+        wxGetApp().config->SetCAFingerprint(server_name,
+            cryptoHelper->GetFingerprint(ca_decoded));
+    }
+    
 	delete cryptoHelper;
 
+    wxLogMessage(_("SeruroServerAPI> (InstallCA) CA for (%s) status: %s"),
+        server_name, (result) ? _("success") : _("failed"));
+    
 	return result;
 }
 
@@ -245,22 +251,27 @@ bool SeruroServerAPI::InstallCertificate(wxJSONValue response)
 
 	wxString cert_encoded;
 	wxMemoryBuffer cert_decoded;
+    wxString server_name = response["server_name"].AsString();
 
 	SeruroCrypto *cryptoHelper = new SeruroCrypto();
 
-	bool result;
+	bool result = true;
 	//wxArrayString cert_blobs = response["certs"].GetMemberNames();
 	for (int i = 0; i < response["certs"].Size(); i++) {
 		cert_encoded = response["certs"][i].AsString();
 
 		if (! DecodeBase64(cert_encoded, &cert_decoded)) continue;
 
-		result = cryptoHelper->InstallCertificate(cert_decoded);
+		result = (result && cryptoHelper->InstallCertificate(cert_decoded));
+        if (! result) continue;
 
 		/* Track this certificate. */
-		wxGetApp().config->AddCertificate(response["server_name"].AsString(), 
-			response["address"].AsString(), cryptoHelper->GetFingerprint(cert_decoded));
+		wxGetApp().config->AddCertificate(server_name, response["address"].AsString(),
+            cryptoHelper->GetFingerprint(cert_decoded));
 	}
+    
+    wxLogMessage(_("SeruroServerAPI> (InstallCertificate) Certificate for (%s, %s) status: %s"),
+        server_name, response["address"].AsString(), (result) ? _("success") : _("failed"));
 
 	delete cryptoHelper;
 	return result;

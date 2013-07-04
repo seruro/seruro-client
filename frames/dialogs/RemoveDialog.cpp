@@ -60,7 +60,8 @@ RemoveDialog::RemoveDialog(const wxString &server_name, const wxString &address)
 
 void RemoveDialog::DoRemove() 
 {
-	size_t identities_size = wxGetApp().config->GetAddressList(server_name).size();
+    wxArrayString accounts = wxGetApp().config->GetAddressList(server_name);
+	size_t identities_size = accounts.size();
 
 	/* Todo: evaluate TOCTOU logic errors. */
 	/* Very important, this list must be iterated the same way it is created. */
@@ -77,15 +78,15 @@ void RemoveDialog::DoRemove()
 
 		SeruroStateEvent event(STATE_TYPE_SERVER, STATE_ACTION_REMOVE);
 		event.SetServerName(this->server_name);
-		//wxGetApp().AddEvent(event);
 		this->ProcessWindowEvent(event);
+        
+        /* The event handlers must know when a server is removed, accounts will also be removed. */
 	} else {
 		wxGetApp().config->RemoveAddress(this->server_name, this->address);
 
 		SeruroStateEvent event(STATE_TYPE_ACCOUNT, STATE_ACTION_REMOVE);
 		event.SetServerName(this->server_name);
-		event.SetValue(_("address"), this->address);
-		//wxGetApp().AddEvent(event);
+		event.SetAccount(this->address);
 		this->ProcessWindowEvent(event);
 	}
 

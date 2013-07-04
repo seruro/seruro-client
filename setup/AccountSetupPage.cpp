@@ -4,6 +4,7 @@
 #include "../frames/dialogs/AddAccountDialog.h"
 
 #include "../crypto/SeruroCrypto.h"
+#include "../api/SeruroStateEvents.h"
 
 BEGIN_EVENT_TABLE(AccountPage, SetupPage)
 	EVT_SERURO_REQUEST(SERURO_API_CALLBACK_PING, AccountPage::OnPingResult)
@@ -28,7 +29,6 @@ void AccountPage::OnCAResult(SeruroRequestEvent &event)
 	delete api;
 
 	/* Check that the (now-known) CA hash exists within the trusted Root store. */
-	//this->has_ca = HasServerCertificate(response["server_name"].AsString());
 	SeruroCrypto crypto_helper;
 	this->has_ca = crypto_helper.HaveCA(response["server_name"].AsString());
 
@@ -36,17 +36,25 @@ void AccountPage::OnCAResult(SeruroRequestEvent &event)
 	if (! has_ca) {
 		/* Remove the account and server which was saved to the config. */
 		wxJSONValue account_info = this->GetValues();
-		//wxGetApp().config->RemoveAddress(response["server_name"], account_info["address"]);
+
 		wxGetApp().config->RemoveServer(response["server_name"].AsString());
 		SetAccountStatus(_("Unable to install server."));
 
+        /* Process remove server event. */
+        SeruroStateEvent state_event(STATE_TYPE_SERVER, STATE_ACTION_REMOVE);
+		state_event.SetServerName(response["server_name"].AsString());
+		this->ProcessWindowEvent(state_event);
+        
 		/* Allow the login to "try-again". */
 		this->FocusForm();
 		this->login_success = false;
 		return;
 	}
-
-	//SetServerStatus(_("Success."));
+    
+    /* Process update server event (now with certificate). */
+    SeruroStateEvent state_event(STATE_TYPE_SERVER, STATE_ACTION_UPDATE);
+    state_event.SetServerName(response["server_name"].AsString());
+    this->ProcessWindowEvent(state_event);
 	
 	/* This result handler may be able to proceed the setup. */
 	if (response.HasMember("meta") && response["meta"].HasMember("go_forward")) {
@@ -69,7 +77,6 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 		if (response["error"].AsString().compare(_(SERURO_API_ERROR_CONNECTION)) == 0) {
 			SetAccountStatus(response["error"].AsString());
 		} else {
-			//SetServerStatus(_("Login failed."));
 			SetAccountStatus(_("Invalid account information."));
 		}
 
@@ -90,25 +97,29 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	}
 
 	/* Try to add the server to the config, will fail if server existed. */
+    server_name = response["meta"]["name"].AsString();
 	new_server = wxGetApp().config->AddServer(response["meta"]);
 	if (new_server) {
-		/* Add the server panel before potentially adding the address panel. */
-		//this->MainPanel()->AddTreeItem(SETTINGS_VIEW_TYPE_SERVER, response["meta"]["name"].AsString());
+        /* Create new server event. */
+        SeruroStateEvent event(STATE_TYPE_SERVER, STATE_ACTION_ADD);
+		event.SetServerName(server_name);
+		this->ProcessWindowEvent(event);
 	}
 
 	/* Regardless of the addServer response, the addAddress will determine a UI update.
 	 * (If the server was new, and it fails, the address will fail.)
 	 * (If the server was new, and it successes, but the address fails, there is a larger problem.)
 	 */
-	server_name = response["meta"]["name"].AsString();
 	address = response["address"].AsString();
 	if (! wxGetApp().config->AddAddress(server_name, address)) {
 		SetAccountStatus(_("Account already exists."));
 		goto enable_form;
-	} else {
-		/* Add an address panel under the server panel. */
-		//this->MainPanel()->AddTreeItem(SETTINGS_VIEW_TYPE_ADDRESS, 
-		//	response["address"].AsString(), response["meta"]["name"].AsString());
+	} else {        
+        /* Create new server event. */
+        SeruroStateEvent event(STATE_TYPE_ACCOUNT, STATE_ACTION_ADD);
+		event.SetServerName(server_name);
+        event.SetAccount(address);
+		this->ProcessWindowEvent(event);
 	}
 
 	/* Only set login_success if the address has been added. */
@@ -127,7 +138,6 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	
 		/* There are no more callback-actions. */
 		this->EnablePage();
-		//SetServerStatus(_("Success."));
 
 		/* Call GoForward, but indicate that this call is from a callback. */
 		this->GoNext(true);
@@ -165,7 +175,6 @@ AccountPage::AccountPage(SeruroSetup *parent)
     wxSizer *const vert_sizer = new wxBoxSizer(wxVERTICAL);
     
 	this->next_button = _("&Login");
-	//this->wizard->RequireAuth(true);
 	this->require_auth = true;
     this->enable_next = true;
 
@@ -187,7 +196,6 @@ AccountPage::AccountPage(SeruroSetup *parent)
 	}
 
     wxSizer *const account_form = new wxStaticBoxSizer(wxVERTICAL, this, "&Account Information");
-	//wxFlexGridSizer *const account_grid_sizer = new wxFlexGridSizer(2, 2, 5, 10);
 	wxSizer *const status_sizer = new wxBoxSizer(wxHORIZONTAL);
 	status_sizer->Add(new Text(this, _("Login status: ")), DIALOGS_SIZER_OPTIONS);
 	this->account_status = new Text(this, _("Please login."));
@@ -196,21 +204,12 @@ AccountPage::AccountPage(SeruroSetup *parent)
 
 	/* Add the form, which is itself, a grid sizer. */
     this->AddForm(account_form);
-	//account_grid_sizer->AddGrowableCol(0);
 
-	//account_form->Add(account_grid_sizer, DIALOGS_SIZER_OPTIONS);
 	vert_sizer->Add(account_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 
 	/* Show textual status messages for the account (login success) and server
 	 * (connectivity/CA installation success).
 	 */
-	
-	//status_grid_sizer->Add(new Text(this, _("Server status: ")));
-	//this->server_status = new Text(this, _("Please login."));
-	//status_grid_sizer->Add(this->server_status);
-
-	//;
-	//vert_sizer->Add(status_grid_sizer, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 
     this->SetSizer(vert_sizer);
 }
@@ -284,8 +283,6 @@ bool AccountPage::GoNext(bool from_callback) {
 
 	/* Create a 'ping' request, and within the callback, call 'GoForward' again. */
 	SeruroServerAPI *api = new SeruroServerAPI(this);
-	//SeruroRequest *request = api->Ping(params);
-	//request->Run();
 	api->Ping(params)->Run();
 	delete api;
 

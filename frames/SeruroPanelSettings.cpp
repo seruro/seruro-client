@@ -6,12 +6,14 @@
 #include "dialogs/RemoveDialog.h"
 #include "../setup/SeruroSetup.h"
 #include "../crypto/SeruroCrypto.h"
+#include "../api/SeruroStateEvents.h"
 
 #include <wx/button.h>
 #include <wx/log.h>
 #include <wx/listctrl.h>
 
 /* Include image data. */
+#include "../resources/images/blank.png.h"
 #include "../resources/images/general_icon_42_flat.png.h"
 #include "../resources/images/accounts_icon_42_flat.png.h"
 #include "../resources/images/applications_icon_42_flat.png.h"
@@ -69,17 +71,31 @@ DECLARE_APP(SeruroClient);
 
 void AccountsWindow::OnServerStateChange(SeruroStateEvent &event)
 {
-	SeruroStateEvent *state_event = (SeruroStateEvent *) &event;
-	if (state_event->GetAction() == STATE_ACTION_REMOVE) {
-		wxLogMessage(_("AccountsWindow> (OnServerStateChange) removing server (%s)."), state_event->GetServerName());
+    wxLogMessage(_("AccountsWindow> (OnServerStateChange)"));
+    wxListItem item_server;
+
+    /* Set constant mask and column. */
+    item_server.SetMask(wxLIST_MASK_TEXT);
+    item_server.SetColumn(SERVERS_LIST_NAME_COLUMN);
+    
+    this->GenerateServersList();
+	if (event.GetAction() == STATE_ACTION_REMOVE) {
+		wxLogMessage(_("AccountsWindow> (OnServerStateChange) removing server (%s)."), event.GetServerName());
+        
+        /* The accounts list will change when a server is removed, without an explicit event. */
+        this->GenerateAccountsList();
 	}
-	wxLogMessage(_("AccountsWindow> (OnServerStateChange)"));
+
+    /* Allow other handlers. */
 	event.Skip();
 }
 
 void AccountsWindow::OnAccountStateChange(SeruroStateEvent &event)
 {
 	wxLogMessage(_("AccountsWindow> (OnAccountStateChange)"));
+    
+    this->GenerateAccountsList();
+    
 	event.Skip();
 }
 
@@ -279,6 +295,12 @@ void AccountsWindow::OnCAResult(SeruroRequestEvent &event)
 	/* Simple, there's no UI state to update based on the result. */
 	SeruroServerAPI *api = new SeruroServerAPI(this->GetEventHandler());
 	api->InstallCA(response);
+    
+    /* Create (potential) updated server event. */
+    SeruroStateEvent state_event(STATE_TYPE_SERVER, STATE_ACTION_UPDATE);
+    state_event.SetServerName(response["server_name"].AsString());
+    this->ProcessWindowEvent(state_event);
+    
 	delete api;
 }
 
@@ -370,21 +392,58 @@ void AccountsWindow::OnAddAccount(wxCommandEvent &event)
 	return;
 }
 
+void AccountsWindow::GenerateServersList()
+{
+	SeruroCrypto crypto;
+	//bool cert_installed = false;
+    long item_index;
+	wxArrayString servers = wxGetApp().config->GetServerList();
+    
+    servers_list->DeleteAllItems();
+	for (size_t i = 0; i < servers.size(); i++) {
+		/* Check if the server certificate is installed. */
+		//cert_installed = crypto_helper.HaveCA(servers[i]);
+		item_index = servers_list->InsertItem(0, _(""),
+            (crypto.HaveCA(servers[i])) ? 1 : 0);
+		servers_list->SetItem(item_index, 1, _(servers[i]));
+		servers_list->SetItem(item_index, 2, _("0"));
+		//servers_list->SetItem(item_index, 3, _("0"));
+	}
+}
+
+void AccountsWindow::GenerateAccountsList()
+{
+    SeruroCrypto crypto;
+    long item_index;
+	wxArrayString accounts;
+    wxArrayString servers = wxGetApp().config->GetServerList();
+    
+    accounts_list->DeleteAllItems();
+	for (size_t i = 0; i < servers.size(); i++) {
+		accounts = wxGetApp().config->GetAddressList(servers[i]);
+		for (size_t j = 0; j < accounts.size(); j++) {
+			//cert_installed = crypto_helper.HaveIdentity(servers[i],
+			item_index = accounts_list->InsertItem(0, _(""),
+                /* Display a key if the identity (cert/key) are installed. */
+                (crypto.HaveIdentity(servers[i], accounts[j])) ? 2 : 0);
+			accounts_list->SetItem(item_index, 1, accounts[j]);
+			accounts_list->SetItem(item_index, 2, servers[i]);
+			accounts_list->SetItem(item_index, 3, _("Never"));
+		}
+	}
+}
+
 AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(window),
 	account_selected(false)
 {
-    //wxSizer *const sizer = new wxBoxSizer(wxHORIZONTAL);
-	//wxSizer *const sizer = new wxBoxSizer(wxVERTICAL);
-	long item_index;
-    
 	/* This will hold the column of lists. */
 	wxSizer *const lists_sizer = new wxBoxSizer(wxVERTICAL);
 
 	wxImageList *list_images = new wxImageList(12, 12, true);
+    list_images->Add(wxGetBitmapFromMemory(blank));
 	list_images->Add(wxGetBitmapFromMemory(certificate_icon_12_flat));
 	list_images->Add(wxGetBitmapFromMemory(identity_icon_12_flat));
 
-	//wxSizer *const servers_box = new wxStaticBoxSizer(wxVERTICAL, this, _("Servers List"));
 	servers_list = new wxListCtrl(this, SETTINGS_SERVERS_LIST_ID,
 		wxDefaultPosition, wxDefaultSize, 
 		wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_THEME);
@@ -392,115 +451,63 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
 
 	/* Server list columns. */
 	wxListItem image_column;
-	//image_column.SetText(_(""));
 	image_column.SetId(0);
-	image_column.SetImage(0);
+	image_column.SetImage(1);
 	servers_list->InsertColumn(0, image_column);
 
 	servers_list->InsertColumn(1, _("Server Name"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
 	servers_list->InsertColumn(2, _("Expires"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
-	//servers_list->InsertColumn(3, _("Contacts"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
 
-	SeruroCrypto crypto; 
-	//bool cert_installed = false;
-	wxArrayString servers = wxGetApp().config->GetServerList();
-	for (size_t i = 0; i < servers.size(); i++) {
-		/* Check if the server certificate is installed. */
-		//cert_installed = crypto_helper.HaveCA(servers[i]);
-		item_index = servers_list->InsertItem(0, _(""), (crypto.HaveCA(servers[i])) ? 0 : -1);
-		servers_list->SetItem(item_index, 1, _(servers[i]));
-		servers_list->SetItem(item_index, 2, _("0"));
-		//servers_list->SetItem(item_index, 3, _("0"));
-	}
+    this->GenerateServersList();
 
 	/* Allow the server name column to take up the remaining space. */
-	//servers_list->SetColumnWidth(0, wxLIST_AUTOSIZE);
 	servers_list->SetColumnWidth(0, 24);
+    servers_list->SetColumnWidth(SERVERS_LIST_NAME_COLUMN, wxLIST_AUTOSIZE);
 
-	//servers_box->Add(servers_list, DIALOGS_SIZER_OPTIONS);
-	//lists_sizer->Add(servers_box, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 	lists_sizer->Add(servers_list, DIALOGS_SIZER_OPTIONS);
 
-	//wxSizer *const accounts_box = new wxStaticBoxSizer(wxVERTICAL, this, _("Accounts List"));
 	accounts_list = new wxListCtrl(this, SETTINGS_ACCOUNTS_LIST_ID,
 		wxDefaultPosition, wxDefaultSize,
 		wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_THEME);
 	accounts_list->SetImageList(list_images, wxIMAGE_LIST_SMALL);
 
 	/* Column for an icon? */
-	image_column.SetImage(1);
+	image_column.SetImage(2);
 	accounts_list->InsertColumn(0, image_column);
 	accounts_list->InsertColumn(1, _("Address"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
 	accounts_list->InsertColumn(2, _("Server"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
 	accounts_list->InsertColumn(3, _("Expires"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
 
-	wxArrayString accounts;
-	for (size_t i = 0; i < servers.size(); i++) {
-		accounts = wxGetApp().config->GetAddressList(servers[i]);
-		for (size_t j = 0; j < accounts.size(); j++) {
-			//cert_installed = crypto_helper.HaveIdentity(servers[i], 
-			item_index = accounts_list->InsertItem(0, _(""), 
-				/* Display a key if the identity (cert/key) are installed. */
-				(crypto.HaveIdentity(servers[i], accounts[j])) ? 1 : -1);
-			accounts_list->SetItem(item_index, 1, accounts[j]);
-			accounts_list->SetItem(item_index, 2, servers[i]);
-			accounts_list->SetItem(item_index, 3, _("Never"));
-		}
-	}
+    this->GenerateAccountsList();
 
 	/* Allow the account/address name column to take up the remaining space. */
-	//accounts_list->SetColumnWidth(0, wxLIST_AUTOSIZE);
 	accounts_list->SetColumnWidth(0, 24);
+    /* Size the server first, then allow the account name to override. */
+    accounts_list->SetColumnWidth(ACCOUNTS_LIST_SERVER_COLUMN, wxLIST_AUTOSIZE);
+    accounts_list->SetColumnWidth(ACCOUNTS_LIST_NAME_COLUMN, wxLIST_AUTOSIZE);
 
-	//accounts_box->Add(accounts_list, DIALOGS_SIZER_OPTIONS);
-	//lists_sizer->Add(accounts_box, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 	lists_sizer->Add(accounts_list, DIALOGS_SIZER_OPTIONS.Proportion(1).Top().Bottom());
 
 	/* A sizer for ACTION buttons. */
-	//wxSizer *const actions_sizer = new wxBoxSizer(wxVERTICAL);
 	wxSizer *const actions_sizer = new wxBoxSizer(wxHORIZONTAL);
 	update_button = new wxButton(this, BUTTON_UPDATE, _("Update"));
 	update_button->Disable();
 	remove_button = new wxButton(this, BUTTON_REMOVE, _("Remove"));
 	remove_button->Disable();
-	wxButton *add_server_button = new wxButton(this, BUTTON_ADD_SERVER, _("Add Server"));
+	
+    wxButton *add_server_button = new wxButton(this, BUTTON_ADD_SERVER, _("Add Server"));
 	wxButton *add_account_button = new wxButton(this, BUTTON_ADD_ACCOUNT, _("Add Account"));
 	actions_sizer->Add(update_button, DIALOGS_SIZER_OPTIONS);
 	actions_sizer->Add(remove_button, DIALOGS_SIZER_OPTIONS);
 	actions_sizer->Add(add_server_button, DIALOGS_SIZER_OPTIONS);
 	actions_sizer->Add(add_account_button, DIALOGS_SIZER_OPTIONS);
 
-	//sizer->Add(lists_sizer, DIALOGS_SIZER_OPTIONS);
-	//sizer->Add(actions_sizer, DIALOGS_SIZER_OPTIONS);
-	//sizer->Add(lists_sizer, DIALOGS_SIZER_OPTIONS);
 	lists_sizer->Add(actions_sizer, DIALOGS_SIZER_OPTIONS.FixedMinSize().Bottom());
 
 	/* Set up event handler bindings. */
 	wxGetApp().Bind(SERURO_STATE_CHANGE, &AccountsWindow::OnServerStateChange, this, STATE_TYPE_SERVER);
 	wxGetApp().Bind(SERURO_STATE_CHANGE, &AccountsWindow::OnAccountStateChange, this, STATE_TYPE_ACCOUNT);
 
-	/* Try to set the max height of the lists. */
-	//size_t list_height;
-	//wxSize list_max_size(-1, -1);
-	//wxRect item_rect;
-	/* Server list. */
-	//if (servers_list->GetItemCount() > 0) {
-	//	if (servers_list->GetItemRect(0, item_rect)) {
-	//		list_height = item_rect.GetHeight();
-	//	} else {
-			/* Guess what the height should be? */
-	//		list_height = 20;
-	//	}
-	//}
-	/* some number of items, plus an offset for the header. */
-	//list_height = (list_height * 3) + 20;
-	//list_max_size.SetHeight(list_height);
-	//servers_list->SetSize(list_max_size);
-
-	//wxSize actions_size(-1, 30);
-	//actions_sizer->SetMinSize(actions_size);
-
-    //this->SetSizer(sizer);
 	this->SetSizer(lists_sizer);
 }
 

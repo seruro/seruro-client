@@ -53,11 +53,14 @@ END_EVENT_TABLE()
 
 void SeruroPanelSearch::OnServerStateChange(SeruroStateEvent &event)
 {
+    wxLogMessage(_("SeruroPanelServer> (OnServerStateChange)"));
 	if (event.GetAction() == STATE_ACTION_REMOVE) {
 		wxLogMessage(_("SeruroPanelSearch> (OnServerStateChange) removing server (%s)."), event.GetServerName());
 	}
-
-	wxLogMessage(_("SeruroPanelServer> (OnServerStateChange)"));
+    
+    /* Focus should update the servers list and filter results. */
+    this->DoFocus();
+    /* Allow other handlers. */
 	event.Skip();
 }
 

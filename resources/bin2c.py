@@ -19,9 +19,9 @@ for path in sys.argv[1:]:
 	m = r.match(filename)
 	# Allow only filenames that make sense
 	# as C variable names
-	if not(m):
-		print "Skipped file (unsuitable filename): " + filename
-		continue
+	#if not(m):
+	#	print "Skipped file (unsuitable filename): " + filename
+	#	continue
  
 	# Read PNG file as character array
 	bytes = array.array('B', open(path, "rb").read())

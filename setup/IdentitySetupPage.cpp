@@ -1,6 +1,7 @@
 
 #include "../frames/dialogs/DecryptDialog.h"
 #include "../crypto/SeruroCrypto.h"
+#include "../api/SeruroStateEvents.h"
 
 #include "SeruroSetup.h"
 #include "../frames/UIDefs.h"
@@ -18,8 +19,6 @@ END_EVENT_TABLE()
 void IdentityPage::DownloadIdentity()
 {
     wxJSONValue params; /* no params */
-	//wxJSONValue server_info = ((ServerPage *) wizard->GetServerPage())->GetValues();
-	//wxJSONValue account_info = ((AccountPage *) wizard->GetAccountPage())->GetValues();
     wxJSONValue server_info = wizard->GetServerInfo();
     wxString account = wizard->GetAccount();
     
@@ -28,10 +27,7 @@ void IdentityPage::DownloadIdentity()
 
     SeruroServerAPI *api = new SeruroServerAPI(this->GetEventHandler());
     
-	//params["server"] = api->GetServer(this->server_name);
 	params["server"] = api->GetServer(server_info["name"].AsString());
-	//params["address"] = this->address;
-	//params["address"] = account_info["address"].AsString();
     params["address"] = account;
     
 	api->CreateRequest(SERURO_API_P12S, params, SERURO_API_CALLBACK_P12S)->Run();
@@ -111,7 +107,6 @@ IdentityPage::IdentityPage(SeruroSetup *parent, bool force_download)
 	wxSizer *const decrypt_form = new wxStaticBoxSizer(wxVERTICAL, this, "&Decrypt Identity");
 	wxSizer *const status_sizer = new wxBoxSizer(wxHORIZONTAL);
 	
-	//wxFlexGridSizer *const decrypt_grid_sizer = new wxFlexGridSizer(2, 5, 10);
 	status_sizer->Add(new Text(this, _("Download status: ")), DIALOGS_SIZER_OPTIONS);
 	identity_status = new Text(this, _("Not downloaded."));
 	status_sizer->Add(this->identity_status, DIALOGS_SIZER_OPTIONS);
@@ -121,7 +116,6 @@ IdentityPage::IdentityPage(SeruroSetup *parent, bool force_download)
 	this->AddForms(decrypt_form);
     this->DisableForm();
 
-	//decrypt_form->Add(decrypt_grid_sizer, DIALOGS_BOXSIZER_OPTIONS);
 	vert_sizer->Add(decrypt_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 
     this->SetSizer(vert_sizer);
@@ -131,7 +125,6 @@ void IdentityPage::EnablePage()
 {
     if (! this->identity_downloaded) {
         download_button->Enable();
-        //download_button->SetLabelText("&Download");
     } else {
 		this->wizard->EnableNext(true);
 	}
@@ -143,7 +136,6 @@ void IdentityPage::DisablePage()
 {
 	if (! this->identity_downloaded) {
 		download_button->Enable(false);
-		//download_button->SetLabelText("&Downloaded");
 	}
 	this->DisableForm();
 }
@@ -185,6 +177,12 @@ bool IdentityPage::GoNext(bool from_callback)
 		this->EnablePage();
 		return false;
 	}
+    
+    /* Create identity installed event. */
+    SeruroStateEvent event(STATE_TYPE_ACCOUNT, STATE_ACTION_UPDATE);
+    event.SetServerName(download_response["server_name"].AsString());
+    event.SetAccount(download_response["address"].AsString());
+    this->ProcessWindowEvent(event);
 
 	/* Proceed to the next page. */
 	this->SetIdentityStatus(_("Success."));

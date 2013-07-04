@@ -72,8 +72,6 @@ public:
 	/* Event handlers. */
 	void OnServerSelected(wxListEvent &event);
 	void OnAccountSelected(wxListEvent &event);
-    //void OnServerDeselected(wxListEvent &event);
-    //void OnAccountDeselected(wxListEvent &event);
     void OnDeselect(wxListEvent &event);
 	void DeselectServers();
 	void DeselectAccounts();
@@ -81,7 +79,6 @@ public:
 	void OnUpdate(wxCommandEvent &event);
 	void OnRemove(wxCommandEvent &event);
 	void OnCAResult(SeruroRequestEvent &event);
-	//void OnP12sResult(SeruroRequest &event);
 
 	void OnAddServer(wxCommandEvent &event);
 	void OnAddAccount(wxCommandEvent &event);
@@ -89,7 +86,7 @@ public:
 	/* What happens when the UI or OS events change settings!? */
 	void OnServerStateChange(SeruroStateEvent &event);
 	void OnAccountStateChange(SeruroStateEvent &event);
-    
+        
     /* Add action. */
     void SetActionLabel(wxString label) {
         update_button->SetLabel(label);
@@ -98,7 +95,11 @@ public:
 	/* Todo: d-click to view certificate information. */
 
 private:
-	/* Determine if an account is selected. */
+    /* Add servers/accounts to lists. */
+    void GenerateServersList();
+    void GenerateAccountsList();
+	
+    /* Determine if an account is selected. */
 	bool account_selected;
 
 	/* Information about the selected item. */
