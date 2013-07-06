@@ -23,7 +23,9 @@ class SeruroRequestEvent : public wxCommandEvent
 public:
     /* The ID specifies the callback, the developer should not need to modify the command_type. */
 	SeruroRequestEvent(int id = 0, wxEventType command_type = SERURO_API_RESULT)
-        : wxCommandEvent(command_type, id) {}
+        : wxCommandEvent(command_type, id) {
+		response_data = wxJSONValue(wxJSONTYPE_OBJECT);
+	}
 
 	SeruroRequestEvent(const SeruroRequestEvent &event) 
 		: wxCommandEvent(event) { this->SetResponse(event.GetResponse()); }
