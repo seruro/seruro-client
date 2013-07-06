@@ -44,7 +44,7 @@ public:
         return this->servers_control->GetString(index);
     }
 
-	void OnSearch(wxCommandEvent &event);
+	void OnSearch(wxCommandEvent &event) { DoSearch(); }
 	void DoSearch();
 	void OnSearchResult(SeruroRequestEvent &event);
     
@@ -62,7 +62,8 @@ public:
 	 * OS has the cert installed, and if the cert is updated.
 	 */
 	void AddResult(const wxString &address, 
-	const wxString &first_name, const wxString &last_name);
+		const wxString &first_name, const wxString &last_name);
+	void DisableResult(long item) { list_control->DisableRow(item); }
 
 	//void OnInstallCert(wxCommandEvent &event);
 	//void OnUninstallCerl(wxCommandEvent &event);

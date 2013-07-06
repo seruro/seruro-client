@@ -4,14 +4,10 @@
 
 #include <wx/renderer.h>
 
-#define SEARCH_LIST_IMAGE_COLUMN 0
-#define SEARCH_LIST_ADDRESS_COLUMN 1
-#define SEARCH_LIST_SERVER_COLUMN 4
-
-#define SEARCH_LIST_ITEM_UNCHECKED 0
-#define SEARCH_LIST_ITEM_CHECKED 1
-
 BEGIN_EVENT_TABLE(CheckedListCtrl, wxListCtrl)
+	/* Make sure they cannot select a disabled row. */
+	EVT_LIST_ITEM_SELECTED(SERURO_SEARCH_LIST_ID, CheckedListCtrl::OnItemSelected)
+
 	/* User clicks a list row. */
     EVT_LEFT_DCLICK(CheckedListCtrl::OnMouseEvent)
 	EVT_LEFT_DOWN(CheckedListCtrl::OnMouseEvent)
@@ -27,6 +23,13 @@ int wxCALLBACK CompareAddresses(wxIntPtr item1, wxIntPtr item2, wxIntPtr WXUNUSE
     if (item1 > item2)
         return -1;
     return 0;
+}
+
+/* Add an image to the automatically-generated list of checkboxes. */
+int CheckedListCtrl::AddImage(const wxBitmap &bitmap)
+{
+	this->m_imageList.Add(bitmap);
+	return this->m_imageList.GetImageCount() - 1;
 }
 
 /* Check or uncheck the checkbox, the appropriateness and applicability of this function
@@ -110,8 +113,45 @@ CheckedListCtrl::CheckedListCtrl(wxWindow* parent, wxWindowID id,
 
 	/* Add a 0th column, which cannot be resized, to hold the checkmark. */
 	wxListItem list_column;
-	list_column.SetText(wxT("*")); /* A checkmark. */
+	//list_column.SetText(wxT("*")); /* A checkmark. */
 	this->InsertColumn(SEARCH_LIST_IMAGE_COLUMN, list_column);
+}
+
+void CheckedListCtrl::SetCheckboxColumn(wxListItem column)
+{
+	this->SetColumn(SEARCH_LIST_IMAGE_COLUMN, column);
+}
+
+void CheckedListCtrl::DisableRow(long item, bool checked)
+{
+	/* Do not worry about the checkbox for a disabled row. */
+
+	//for (int i = 0; i < this->GetColumnCount(); i++) {}
+	this->SetItemImage(item, (checked) ? DISABLED_CHECKED : DISABLED_UNCHECKED);
+	this->SetItemTextColour(item, wxColour(DISABLED_TEXT_COLOR));
+	this->SetItemBackgroundColour(item, wxColour(DISABLED_BACKGROUND_COLOR));
+}
+
+void CheckedListCtrl::OnItemSelected(wxListEvent &event)
+{
+	/* Do not allow a disabled row to be selected. */
+	wxLogMessage(_("CheckedListCtrl> (OnItemSelected) item (%d) trying to select."), event.GetId());
+	if (IsDisabled(event.GetId())) {
+		wxLogMessage(_("CheckedListCtrl> (OnItemSelected) item is disabled."));
+		SetItemState(event.GetId(), 0, wxLIST_STATE_SELECTED);
+		event.Veto();
+	}
+}
+
+bool CheckedListCtrl::IsDisabled(long item) const
+{
+	wxListItem info;
+	info.SetId(item);
+	info.SetMask(wxLIST_MASK_IMAGE);
+	if (GetItem(info)) {
+		return (info.GetImage() == DISABLED_UNCHECKED || info.GetImage() == DISABLED_CHECKED);
+	}
+	return false;
 }
 
 bool CheckedListCtrl::IsChecked(long item) const
@@ -130,10 +170,11 @@ bool CheckedListCtrl::IsChecked(long item) const
 /* The user has checked/unchecked an item. */
 void CheckedListCtrl::DoCheck(long item, bool checked)
 {
-    //IdentityItem info;
-    //wxJSONValue identity;
     wxListItem address, server;
     
+	/* Do now allow actions on a disabled item. */
+	if (IsDisabled(item)) return;
+
     /* Set the mask as the type of information requested using GetItem. */
     address.SetMask(wxLIST_MASK_TEXT);
     address.SetId(item);
@@ -149,7 +190,6 @@ void CheckedListCtrl::DoCheck(long item, bool checked)
         return;
     }
     this->GetItem(server);
-    //identity = info.GetIdentity();
     
 	if (this->IsChecked(item)) {
 		/* No uninstalling as of now. */

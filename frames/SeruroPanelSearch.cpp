@@ -10,6 +10,9 @@
 #include "../wxJSON/wx/jsonreader.h"
 #include "../wxJSON/wx/jsonwriter.h"
 
+/* Image data. */
+#include "../resources/images/certificate_icon_18_flat.png.h"
+
 DECLARE_APP(SeruroClient);
 
 BEGIN_EVENT_TABLE(SeruroPanelSearch, wxPanel)
@@ -122,23 +125,29 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	/* The results sizer holds only the list control. */
 	wxBoxSizer *results_sizer = new wxBoxSizer(wxHORIZONTAL);
 
+	//wxImageList *list_images = new wxImageList(12, 12, true);
+	//list_images->Add(wxGetBitmapFromMemory(certificate_icon_12_flat));
+
 	/* The list control is a report-view displaying search results. */
 	list_control = new CheckedListCtrl(this, SERURO_SEARCH_LIST_ID, 
 		wxDefaultPosition, wxDefaultSize, (wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_SIMPLE));
+	//list_control->SetImageList(list_images, wxIMAGE_LIST_SMALL);
 
-	wxListItem list_column;
-
+	/* Set a column image for the checkbox column. */
+	int mail_icon_index = list_control->AddImage(wxGetBitmapFromMemory(certificate_icon_18_flat));
+	wxListItem check_box_column;
+	check_box_column.SetId(0);
+	check_box_column.SetImage(mail_icon_index);
+	list_control->SetCheckboxColumn(check_box_column);
+	list_control->SetColumnWidth(0, 24);
+	
 	/* Create all of the column for the search results response. 
 	 * This must start at the integer 1, where 0 is the place holder for the checkmark. 
 	 */
-	list_column.SetText(wxT("Email Address"));
-	list_control->InsertColumn(1, list_column);
-	list_column.SetText(wxT("First Name"));
-	list_control->InsertColumn(2, list_column);
-	list_column.SetText(wxT("Last Name"));
-	list_control->InsertColumn(3, list_column);
-    list_column.SetText(wxT("Server"));
-    list_control->InsertColumn(4, list_column);
+	list_control->InsertColumn(1, _("Email Address"), wxLIST_FORMAT_LEFT);
+	list_control->InsertColumn(2, _("First Name"), wxLIST_FORMAT_LEFT);
+	list_control->InsertColumn(3, _("Last Name"), wxLIST_FORMAT_LEFT);
+	list_control->InsertColumn(4, _("Server"), wxLIST_FORMAT_LEFT);
 
 	/* Add the list-control to the UI. */
 	results_sizer->Add(list_control, 1, wxALL | wxEXPAND, 5);
@@ -178,8 +187,8 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
     this->list_control->SetColumnWidth(4, SEARCH_PANEL_COLUMN_WIDTH/4);
 
     /* Debug for now, show a "nothing message" in the list. */
-	this->AddResult(wxString("No Email Address"),
-        wxString("No First Name"), wxString("No Last Name"));
+	this->AddResult(wxString("No Email Address"), wxString("No First Name"), wxString("No Last Name"));
+	this->DisableResult(0);
     
 	/* Testing default focus */
 	DoFocus();
@@ -213,11 +222,6 @@ void SeruroPanelSearch::AddResult(const wxString &address,
 	list_control->SetItem(item_index, 2, first_name);
 	list_control->SetItem(item_index, 3, last_name);
     list_control->SetItem(item_index, 4, server_name);
-}
-
-void SeruroPanelSearch::OnSearch(wxCommandEvent &event)
-{
-	this->DoSearch();
 }
 
 void SeruroPanelSearch::DoSearch()

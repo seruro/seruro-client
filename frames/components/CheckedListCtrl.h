@@ -7,6 +7,18 @@
 
 /* The side of a square checkbox. */
 #define CHECKBOX_SIZE 18
+#define DISABLED_BACKGROUND_COLOR "light grey"
+#define DISABLED_TEXT_COLOR "grey"
+
+#define DISABLED_CHECKED 4
+#define DISABLED_UNCHECKED 3
+
+#define SEARCH_LIST_IMAGE_COLUMN 0
+#define SEARCH_LIST_ADDRESS_COLUMN 1
+#define SEARCH_LIST_SERVER_COLUMN 4
+
+#define SEARCH_LIST_ITEM_UNCHECKED 0
+#define SEARCH_LIST_ITEM_CHECKED 1
 
 enum checked_list_ids_t
 {
@@ -27,15 +39,23 @@ public:
 	void OnMouseEvent(wxMouseEvent &event);
 	/* Do not allow the user to resize the first column. */
 	void OnColumnDrag(wxListEvent &event);
+	void OnItemSelected(wxListEvent &event);
 
 	/* Provide helper methods which toggle the checkbox. */
 	bool IsChecked(long item) const;
     void DoCheck(long item, bool checked);
     void SetCheck(long item, bool checked);
     void SetCheck(const wxString &address, bool checked);
-    
+
+	/* Allow the caller to add to the image list. */
+	int AddImage(const wxBitmap &bitmap);
+	/* Allow the caller to modify the checkbox column. */
+	void SetCheckboxColumn(wxListItem column);
+
 	/* Remove results from servers which may not exist. */
 	void FilterResultsByServers(wxArrayString servers);
+	void DisableRow(long item, bool checked = false);
+	bool IsDisabled(long item) const;
 
 private:
 	/* Save an imagelist of rendered checkbox states. */
