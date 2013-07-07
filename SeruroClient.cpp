@@ -43,26 +43,17 @@ bool SeruroClient::OnInit()
 	/* Create a frame, but do not start sub frames, which may depend on config. */
 	mainFrame = new SeruroFrameMain(wxT(SERURO_APP_NAME), 
 		SERURO_APP_DEFAULT_WIDTH, SERURO_APP_DEFAULT_HEIGHT);
+    this->SetTopWindow(mainFrame);
 
 	/* Start logger */
-//#if defined(__DEBUG__) || defined(__WXDEBUG__)
 	InitLogger();
-//#endif
+
 
 	/* User config instance */
     this->config = new SeruroConfig();
 
 	/* Now safe to start sub-frames (panels). */
 	mainFrame->AddPanels();
-
-	//wxJSONValue port;
-	//port["port"] = 443;
-	//wxLogMessage(_("Port test (%d) (%s)."), port["port"].AsInt(), port["port"].AsString());
-	//wxLogMessage(_("Port test (%d) (%s)."), port["port"].AsString().ToLong(
-	//wxArrayString servers = config->GetServers();
-	//wxLogStatus(servers[0]);
-
-	//mainFrame->Show(); /* for debugging */
 
 	/* There is an optional setup wizard. */
 	if (! this->config->HasConfig() || SERURO_DEBUG_SETUP) {

@@ -54,9 +54,8 @@ public:
     void DisableSearch();
     void EnableSearch();
 
-    void Install(const wxString& address, const wxString& server_name);
-    void Uninstall(const wxString& address, 
-		const wxString& server_name = wxEmptyString);
+    void Install(const wxString& server_name, const wxString& address);
+    void Uninstall(const wxString& server_name, const wxString& address);
 	void OnInstallResult(SeruroRequestEvent &event);
 
 	/* Searches if the address exists, and adds the result line to the

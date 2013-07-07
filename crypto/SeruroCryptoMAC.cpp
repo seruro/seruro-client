@@ -466,7 +466,7 @@ bool SeruroCryptoMAC::InstallCertificate(wxMemoryBuffer &cert)
     return InstallCertificateToKeychain(cert, _(CERTIFICATE_KEYCHAIN));
 }
 
-bool SeruroCryptoMAC::RemoveIdentity(wxString fingerprint) { return true; }
+bool SeruroCryptoMAC::RemoveIdentity(wxArrayString fingerprints) { return true; }
 bool SeruroCryptoMAC::RemoveCA(wxString fingerprint) { return true; }
 bool SeruroCryptoMAC::RemoveCertificates(wxArrayString fingerprints)
 { return true; }

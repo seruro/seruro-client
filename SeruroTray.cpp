@@ -7,12 +7,15 @@
 
 #include "SeruroTray.h"
 #include "frames/SeruroFrameMain.h"
+#include "SeruroClient.h"
 
 /* OSX Hack for active focus */
 #if defined(__WXMAC__) || defined(__WXOSX__)
 #include <Carbon/Carbon.h>
 extern "C" { void CPSEnableForegroundOperation(ProcessSerialNumber *psn); }
 #endif
+
+DECLARE_APP(SeruroClient);
 
 BEGIN_EVENT_TABLE(SeruroTray, wxTaskBarIcon)
 	EVT_TASKBAR_LEFT_DCLICK(SeruroTray::OnLeftDoubleClick)
@@ -28,14 +31,12 @@ END_EVENT_TABLE()
 
 void SeruroTray::RaiseFrame()
 {
-    if (! mainFrame)
-		return;
-	if (mainFrame->IsIconized())
-        mainFrame->Iconize(false);
+    if (! mainFrame) return;
+	if (mainFrame->IsIconized()) mainFrame->Iconize(false);
+    
     mainFrame->SetFocus();
     mainFrame->Raise();
-	//if (! mainFrame->IsShown())
-        mainFrame->Show(true);
+    mainFrame->Show(true);
     
     /* Hardcore */
 #if defined(__WXMAC__) || defined(__WXOSX__)
@@ -46,8 +47,8 @@ void SeruroTray::RaiseFrame()
     ProcessSerialNumber psn;
     GetCurrentProcess(&psn);
     //CPSEnableForegroundOperation(&psn);
-    TransformProcessType(&psn, kProcessTransformToForegroundApplication);
-    //SetFrontProcess(&psn);
+    //TransformProcessType(&psn, kProcessTransformToForegroundApplication);
+    SetFrontProcess(&psn);
 #endif
 }
 

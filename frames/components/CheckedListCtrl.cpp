@@ -187,20 +187,15 @@ void CheckedListCtrl::DoCheck(long item, bool checked)
     server.SetColumn(SEARCH_LIST_SERVER_COLUMN);
     
     /* Request the text for the item (item). */
-    if (! this->GetItem(address)) {
+    if (! this->GetItem(address) || ! this->GetItem(server)) {
         wxLogMessage(wxT("CheckedListCtrl:Check> Cannot find an item at index (%d)."), item);
         return;
     }
-    this->GetItem(server);
     
 	if (this->IsChecked(item)) {
-		/* No uninstalling as of now. */
-        wxLogMessage(_("debug: cannot uninstall certificate."));
-		return;
-        
-        //this->parent->Uninstall(identity);
+        ((SeruroPanelSearch *) this->parent)->Uninstall(server.GetText(), address.GetText());
 	} else {
-        ((SeruroPanelSearch *) this->parent)->Install(address.GetText(), server.GetText());
+        ((SeruroPanelSearch *) this->parent)->Install(server.GetText(), address.GetText());
     }
 }
 
@@ -209,26 +204,30 @@ void CheckedListCtrl::SetCheck(long item, bool checked)
     SetItemImage(item, (checked ? 1 : 0), -1);
 }
 
-void CheckedListCtrl::SetCheck(const wxString &address, bool checked)
+void CheckedListCtrl::SetCheck(const wxString &server_name, const wxString &address, bool checked)
 {
-    wxListItem item_address;
+    wxListItem item_address, item_server;
 
     /* Set constant mask and column. */
     item_address.SetMask(wxLIST_MASK_TEXT);
     item_address.SetColumn(SEARCH_LIST_ADDRESS_COLUMN);
+    item_server.SetMask(wxLIST_MASK_TEXT);
+    item_server.SetColumn(SEARCH_LIST_SERVER_COLUMN);
     
     for (long i = this->GetItemCount()-1; i >= 0; i--) {
         item_address.SetId(i);
-        if (!this->GetItem(item_address)) {
+        item_server.SetId(i);
+        if (!this->GetItem(item_address) || !this->GetItem(item_server)) {
             wxLogMessage(wxT("SetCheck> could not get item (%d)."), i);
             continue;
         }
         
-        wxLogMessage(wxT("SetCheck> trying (%d) with address of (%s)."), i, item_address.GetText());
+        wxLogMessage(wxT("SetCheck> trying (%d) with address of (%s) (%s)."), i,
+            item_server.GetText(), item_address.GetText());
         
         /* If this is a valid item, compare the address to the installed address. */
-        if (item_address.GetText().compare(address) == 0) {
-            wxLogMessage(wxT("SetCheck> checking item (%d) with address (%s)."), i, address);
+        if (item_address.GetText().compare(address) == 0 && item_server.GetText().compare(server_name) == 0) {
+            wxLogMessage(wxT("SetCheck> checking item (%d) with address (%s) (%s)."), i, server_name, address);
             this->SetCheck(i, checked);
         }
     }

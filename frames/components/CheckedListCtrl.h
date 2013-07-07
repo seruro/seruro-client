@@ -45,7 +45,7 @@ public:
 	bool IsChecked(long item) const;
     void DoCheck(long item, bool checked);
     void SetCheck(long item, bool checked);
-    void SetCheck(const wxString &address, bool checked);
+    void SetCheck(const wxString &server_name, const wxString &address, bool checked);
 
 	/* Allow the caller to add to the image list. */
 	int AddImage(const wxBitmap &bitmap);

@@ -396,7 +396,7 @@ bool SeruroConfig::RemoveFingerprints(wxString location, wxString server_name, w
 	if (! configData["servers"][server_name].HasMember(location)) return false;
 	if (! configData["servers"][server_name][location].HasMember(address)) return false;
 
-	configData["servers"][server_name]["identities"].Remove(address);
+	configData["servers"][server_name][location].Remove(address);
 
 finished:
 	return WriteConfig();

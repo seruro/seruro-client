@@ -51,7 +51,7 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
 	tray = new SeruroTray();
 	tray->SetMainFrame(this);
 
-	wxIconBundle icon_bundle;// = new wxIconBundle();
+	wxIconBundle icon_bundle;
 	wxIcon icon;
 
 	icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_block_256_flat));
@@ -68,31 +68,9 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
 	this->SetIcons(icon_bundle);
 	tray->SetIcon(icon, _(SERURO_APP_NAME));
 
-	/* Todo: replace icon */
-	//#if defined(__WXMSW__)
-    	//SetIcon(wxIcon(icon_good));
-	//	tray->SetIcon(wxICON(main), wxT("Seruro Client"));
-	//#endif
-    //#if defined(__WXMAC__)
-        //tray->SetIcon(wxIcon(icon_good), wxT(SERURO_APP_NAME));
-    //#endif
-
-	/* Testing IMGCTRL */
-	//const wxSize imageSize(32, 32);
-	//wxImageList *list = new wxImageList(imageSize.GetWidth(), imageSize.GetHeight());
-	//list->Add(wxArtProvider::GetIcon(wxART_INFORMATION, wxART_OTHER, imageSize));
-
 	/* Add singular panel */
 	wxPanel *panel = new wxPanel(this, wxID_ANY);
 	book = new wxNotebook(panel, SERURO_NOTEBOOK_ID, wxPoint(-1, -1), wxSize(-1, -1), wxNB_TOP);
-	//book->SetImageList(list);
-
-	//wxPanel *page1 = new wxPanel(book, wxID_ANY);
-	//wxStaticText *page1_t = new wxStaticText(page1, wxID_ANY, wxT("This is a page1."));
-
-	//book->AddPage(page1, wxT("Page 1"), false, 0);
-	//book->AddPage(page1, wxT("Page 2"), false, 0);
-
 	/* Footer sizer */
 	wxBoxSizer *panelSizer = new wxBoxSizer(wxVERTICAL);
 	panelSizer->Add(book, 1, wxEXPAND);
@@ -100,10 +78,6 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
 	panel->Layout();
 
 	this->mainSizer->Add(panel, 1, wxEXPAND, 5);
-	/*
-	SeruroFrameConfigure	*configure	= new SeruroFrameConfigure(wxT("Seruro Client: Configure"));
-	SeruroFrameSearch		*search		= new SeruroFrameSearch(wxT("Seruro Client: Search"));
-	*/
 }
 
 /* The frame's (book's) panels may depend on objects created after the first frame,
@@ -155,7 +129,8 @@ void SeruroFrameMain::OnChange(wxBookCtrlEvent &event)
 void SeruroFrameMain::OnClose(wxCloseEvent &event)
 {
 	if (event.CanVeto()) {
-		Show(false);
+        //this->Iconize(true); /* On OSX this will cause the application to be minimized. */
+		this->Show(false);
 		event.Veto();
 		return;
 	}
@@ -171,14 +146,13 @@ void SeruroFrameMain::OnClose(wxCloseEvent &event)
 
 void SeruroFrameMain::OnIconize(wxIconizeEvent& WXUNUSED(event))
 {
-	// Remove program from taskbar
-	Hide();
+	this->Hide();
 }
 
 void SeruroFrameMain::OnQuit(wxCommandEvent& WXUNUSED(event))
 {
     // true is to force the frame to close
-    Close(true);
+    this->Close(true);
 }
 
 void SeruroFrameMain::OnSetupRun(wxCommandEvent &event)

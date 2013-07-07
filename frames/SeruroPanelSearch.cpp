@@ -70,7 +70,7 @@ void SeruroPanelSearch::DoFocus()
 	}
 }
 
-void SeruroPanelSearch::Install(const wxString& address, const wxString& server_name)
+void SeruroPanelSearch::Install(const wxString& server_name, const wxString& address)
 {
     wxJSONValue params;
     wxJSONValue server;
@@ -104,14 +104,17 @@ void SeruroPanelSearch::OnInstallResult(SeruroRequestEvent &event)
     
     /* Check the corresponding item(s) in the list control. */
     if (api->InstallCertificate(response)) {
-        this->list_control->SetCheck(response["address"].AsString(), true);
+        list_control->SetCheck(response["server_name"].AsString(), response["address"].AsString(), true);
     }
 }
 
 /* There is no callback for uninstall, this happens locally. */
-void SeruroPanelSearch::Uninstall(const wxString& address, const wxString& server_name)
+void SeruroPanelSearch::Uninstall(const wxString& server_name, const wxString& address)
 {
-    
+    wxLogMessage(_("SeruroPanelSearch> (Uninstall) trying to uninstall (%s) (%s)."), server_name, address);
+    if (api->UninstallAddress(server_name, address)) {
+        list_control->SetCheck(server_name, address, false);
+    }
 }
 
 SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, wxT("Search"))
@@ -211,7 +214,7 @@ void SeruroPanelSearch::AddResult(const wxString &address,
     /* When the certificate is requested, it must know what server manages the identity. */
 	item_index = this->list_control->InsertItem(0, wxT(" "));
     if (item_index < 0) {
-        wxLogMessage(wxT("SeruroPanelSearch:AddResult> could not insert identity (%s)."), address);
+        wxLogMessage(wxT("SeruroPanelSearch:AddResult> could not insert result (%s)."), address);
         return;
     }
     
@@ -241,7 +244,7 @@ void SeruroPanelSearch::DoSearch()
     if (query.compare(wxEmptyString) == 0) return;
     if (query.Length() < SERURO_MIN_SEARCH_LENGTH) return;
     /* Do not duplicate searches. */
-    if (server_name.compare(searched_server_name) == 0 && query.compare(searched_query) == 0) return;
+    //if (server_name.compare(searched_server_name) == 0 && query.compare(searched_query) == 0) return;
     
 	wxJSONValue server = this->api->GetServer(server_name);
 	/* Sanity check for no servers, but an interactive search input. */
@@ -278,6 +281,11 @@ void SeruroPanelSearch::OnSearchResult(SeruroRequestEvent &event)
 
 	if (! response.HasMember("success") || ! response["success"].AsBool()) {
 		wxLogMessage(wxT("SeruroPanelSearch> (Search) Bad Result."));
+        
+        /* Clear "cached" results, allow the user to re-submit search. */
+        searched_server_name = _(wxEmptyString);
+        searched_query = _(wxEmptyString);
+        
 		return;
 	}
 

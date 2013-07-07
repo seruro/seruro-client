@@ -70,6 +70,11 @@ public:
 		wxString key = wxEmptyString);
 	bool InstallCA(wxJSONValue response);
 	bool InstallCertificate(wxJSONValue response);
+    
+    /* Todo: maybe this isn't the best place for removals. */
+    bool UninstallIdentity(wxString server_name, wxString address);
+    bool UninstallAddress(wxString server_name, wxString address);
+    bool UninstallCA(wxString server_name);
 
 protected:
 	/* Return an auth object {"auth": {"token": "", "have_token": bool}}.

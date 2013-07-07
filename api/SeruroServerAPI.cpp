@@ -345,3 +345,49 @@ bool SeruroServerAPI::InstallP12(wxJSONValue response, wxString key)
 	return true;
 }
 
+bool SeruroServerAPI::UninstallIdentity(wxString server_name, wxString address)
+{
+    wxArrayString fingerprints;
+    SeruroCrypto crypto;
+    
+    fingerprints = wxGetApp().config->GetIdentity(server_name, address);
+    if (fingerprints.size() == 0) return false;
+    
+    if (! crypto.RemoveIdentity(fingerprints)) {
+        wxLogMessage(_("SeruroServerAPI> (UninstallIdentity) could not remove (%s) (%s)."), server_name, address);
+        return false;
+    }
+    return wxGetApp().config->RemoveIdentity(server_name, address, true);
+}
+
+bool SeruroServerAPI::UninstallAddress(wxString server_name, wxString address)
+{
+    wxArrayString fingerprints;
+    SeruroCrypto crypto;
+    
+    fingerprints = wxGetApp().config->GetCertificates(server_name, address);
+    if (fingerprints.size() == 0) return false;
+    
+    if (! crypto.RemoveCertificates(fingerprints)) {
+        wxLogMessage(_("SeruroServerAPI> (UninstallAddress) could not remove (%s) (%s)."), server_name, address);
+        return false;
+    }
+    return wxGetApp().config->RemoveCertificates(server_name, address, true);
+}
+
+bool SeruroServerAPI::UninstallCA(wxString server_name)
+{
+    wxString fingerprint;
+    SeruroCrypto crypto;
+    
+    fingerprint = wxGetApp().config->GetCA(server_name);
+    if (fingerprint.compare(wxEmptyString) == 0) return false;
+    
+    if (! crypto.RemoveCA(fingerprint)) {
+        wxLogMessage(_("SeruroServerAPI> (UninstallCA) could not remove (%s)."), server_name);
+        return false;
+    }
+    return wxGetApp().config->RemoveCACertificate(server_name, true);
+}
+
+

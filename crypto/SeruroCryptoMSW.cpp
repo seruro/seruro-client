@@ -455,7 +455,7 @@ bool SeruroCryptoMSW::HaveCertificates(wxString server_name, wxString address)
 	return (cert_1 && cert_2);
 }
 
-bool SeruroCryptoMSW::RemoveIdentity(wxString fingerprint) { return false; }
+bool SeruroCryptoMSW::RemoveIdentity(wxArrayString fingerprints) { return false; }
 
 bool SeruroCryptoMSW::RemoveCA(wxString fingerprint) { return false; }
 

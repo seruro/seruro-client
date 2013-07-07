@@ -44,7 +44,7 @@ SeruroPanelSettings::SeruroPanelSettings(wxBookCtrlBase *book) : SeruroPanel(boo
 
     general_window = new GeneralWindow(this);
     sizer->Add(general_window, 1, wxEXPAND | wxRIGHT | wxTOP | wxBOTTOM, 10);
-    general_window->Hide();
+    //general_window->Hide();
 
 	/* Only the general window is not hidden when created. */
     accounts_window = new AccountsWindow(this);
@@ -58,6 +58,9 @@ SeruroPanelSettings::SeruroPanelSettings(wxBookCtrlBase *book) : SeruroPanel(boo
 	extensions_window = new ExtensionsWindow(this);
     sizer->Add(extensions_window, 1, wxEXPAND | wxRIGHT | wxTOP | wxBOTTOM, 10);
     extensions_window->Hide();
+    
+    /* Select the first item, General. */
+    //menu->SetItemState(0, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
 
     this->SetSizer(sizer);
     //container_sizer->SetSizerHints(this);
@@ -89,9 +92,6 @@ void SeruroPanelSettings::AddMenu(wxSizer *sizer)
     menu->InsertItem(1, _("Accounts"), 1);
 	menu->InsertItem(2, _("Applications"), 2);
 	menu->InsertItem(3, _("Extensions"), 3);
-    
-    /* Select the first item, General. */
-    menu->SetItemState(0, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
     
 	sizer->Add(menu, 0, wxEXPAND | wxALL, 10);
 }

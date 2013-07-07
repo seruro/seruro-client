@@ -29,7 +29,7 @@ public:
 	/* Todo: consider using Install Cert with an optional store name. */
 	//bool InstallTLSCert(wxMemoryBuffer &cert);
     
-	bool RemoveIdentity(wxString fingerprint);
+	bool RemoveIdentity(wxArrayString fingerprints);
 	bool RemoveCA(wxString fingerprint);
 	bool RemoveCertificates(wxArrayString fingerprints);
     
