@@ -139,6 +139,51 @@ bool InstallIdentityToKeychain(SecIdentityRef &identity, wxString keychain_name)
     return true;
 }
 
+/* Sets trust of x509 extensions for the certificate. */
+bool SetTrustPolicy(SecCertificateRef &cert)
+{
+    OSStatus result;
+    CFMutableArrayRef trust_settings_list;
+    CFMutableDictionaryRef trust_setting;
+    CFNumberRef trust_decision;
+    SecPolicyRef x509_policy;
+    
+    /* Create a basic x509 policy. */
+    x509_policy = SecPolicyCreateBasicX509();
+    
+    /* Create a list of trust settings, and a single trust setting (dictionary). */
+    trust_settings_list = CFArrayCreateMutable (NULL, 0, &kCFTypeArrayCallBacks);
+    trust_setting = CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+    
+    /* Set the setting to confirm trust. */
+    SecTrustSettingsResult trust_action = kSecTrustResultConfirm;
+    trust_decision = CFNumberCreate(NULL, kCFNumberSInt32Type, &trust_action);
+    
+    /* Set the policy for the trust setting. */
+    CFDictionaryAddValue(trust_setting, kSecTrustSettingsPolicy, x509_policy);
+    CFDictionaryReplaceValue(trust_setting, kSecTrustSettingsResult, trust_decision);
+    CFArrayAppendValue(trust_settings_list, trust_setting);
+    
+    /* Apply trust settings to certificate (OSX). */
+    result = SecTrustSettingsSetTrustSettings(cert, kSecTrustSettingsDomainUser, trust_settings_list);
+    
+    CFRelease(x509_policy);
+    CFRelease(trust_settings_list);
+    CFRelease(trust_setting);
+    CFRelease(trust_decision);
+    
+    if (! result == errSecSuccess) {
+        wxLogMessage(_("SeruroCrypto> (SetTrustPolicy) failed (err= %d)."), result);
+    }
+    
+    /* Allow invalid parameters, for leaf certificates which have trusted issuers. */
+    if (result == errSecParam || result == errSecSuccess) {
+        return true;
+    }
+    
+    return false;
+}
+
 //from MSW: InstallCertToStore (wxMemoryBuffer &cert, wxString store_name)
 bool InstallCertificateToKeychain(wxMemoryBuffer &cert_binary, wxString keychain_name)
 {
@@ -162,6 +207,8 @@ bool InstallCertificateToKeychain(wxMemoryBuffer &cert_binary, wxString keychain
     
     if (certificate == NULL) {
         wxLogMessage(_("SeruroCrypto> (InstallToKeychain) certificate is null."));
+        
+        CFRelease(cert_data);
         return false;
     }
     
@@ -181,6 +228,14 @@ bool InstallCertificateToKeychain(wxMemoryBuffer &cert_binary, wxString keychain
     //    wxLogMessage(_("SeruroCrypto> (InstallCertToKeychain) could not open keychain (%s)."), keychain_name);
     //    return false;
     //}
+    
+    /* Apply a basic x509 trust policy to certificate. */
+    if (! SetTrustPolicy(certificate)) {
+        /* This is a priviledged action, which can fail if the user cannot/does not authenticate. */
+        CFRelease(cert_data);
+        CFRelease(certificate);
+        return false;
+    }
     
     /* Find the identity item, add it to a dictionary, add it to the keychain. */
     CFMutableDictionaryRef cert_item;
