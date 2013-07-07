@@ -15,6 +15,8 @@
 
 /* The size of the components view. */
 #define SEARCH_UI_COMPONENTS_HEIGHT 100
+/* Min size of search queries. */
+#define SERURO_MIN_SEARCH_LENGTH 3
 
 enum search_actions_t
 {
@@ -87,6 +89,10 @@ private:
 	wxChoice *servers_control;
 	SearchBox *search_control;
 	wxBoxSizer *components_sizer;
+    
+    /* Previous search. */
+    wxString searched_server_name;
+    wxString searched_query;
 
 	SeruroServerAPI *api;
 
@@ -102,11 +108,13 @@ public:
 		wxEmptyString, wxDefaultPosition, wxDefaultSize,
         /* Make sure to handle ENTER events normally. */
         wxTE_PROCESS_ENTER),
-    parent(parent_obj) {}
+    parent(parent_obj) {
+        ShowSearchButton(true);
+        ShowCancelButton(true);
+        SetDescriptiveText(_("Search for contact certificates by email or name"));
+    }
     
-	void OnSearch(wxCommandEvent &event) {
-		this->parent->DoSearch();
-	}
+	void OnSearch(wxCommandEvent &event) { parent->DoSearch(); }
 private:
 	SeruroPanelSearch *parent;
 	DECLARE_EVENT_TABLE();

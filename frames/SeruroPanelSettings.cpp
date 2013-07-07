@@ -90,5 +90,8 @@ void SeruroPanelSettings::AddMenu(wxSizer *sizer)
 	menu->InsertItem(2, _("Applications"), 2);
 	menu->InsertItem(3, _("Extensions"), 3);
     
+    /* Select the first item, General. */
+    menu->SetItemState(0, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
+    
 	sizer->Add(menu, 0, wxEXPAND | wxALL, 10);
 }

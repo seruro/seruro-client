@@ -59,7 +59,7 @@ public:
 	SeruroRequest(wxJSONValue params, wxEvtHandler *parent, int parentEvtId);
 	virtual ~SeruroRequest();
     
-	virtual void *Entry(); /* thread execution starts */
+	virtual ExitCode Entry(); /* thread execution starts */
 	/* Todo: consider an OnExit() is the thread can be terminated by user action. */
     
 	/* Create the response event type and add it to the provided event handler. */

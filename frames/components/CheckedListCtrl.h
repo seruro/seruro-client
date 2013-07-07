@@ -54,7 +54,7 @@ public:
 
 	/* Remove results from servers which may not exist. */
 	void FilterResultsByServers(wxArrayString servers);
-	void DisableRow(long item, bool checked = false);
+	void DisableRow(long item);
 	bool IsDisabled(long item) const;
 
 private:

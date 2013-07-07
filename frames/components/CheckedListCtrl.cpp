@@ -2,7 +2,9 @@
 #include "CheckedListCtrl.h"
 #include "../SeruroPanelSearch.h"
 
+#include <wx/log.h>
 #include <wx/renderer.h>
+#include <wx/dcmemory.h>
 
 BEGIN_EVENT_TABLE(CheckedListCtrl, wxListCtrl)
 	/* Make sure they cannot select a disabled row. */
@@ -122,12 +124,12 @@ void CheckedListCtrl::SetCheckboxColumn(wxListItem column)
 	this->SetColumn(SEARCH_LIST_IMAGE_COLUMN, column);
 }
 
-void CheckedListCtrl::DisableRow(long item, bool checked)
+void CheckedListCtrl::DisableRow(long item)
 {
 	/* Do not worry about the checkbox for a disabled row. */
 
 	//for (int i = 0; i < this->GetColumnCount(); i++) {}
-	this->SetItemImage(item, (checked) ? DISABLED_CHECKED : DISABLED_UNCHECKED);
+	this->SetItemImage(item, (IsChecked(item)) ? DISABLED_CHECKED : DISABLED_UNCHECKED);
 	this->SetItemTextColour(item, wxColour(DISABLED_TEXT_COLOR));
 	this->SetItemBackgroundColour(item, wxColour(DISABLED_BACKGROUND_COLOR));
 }

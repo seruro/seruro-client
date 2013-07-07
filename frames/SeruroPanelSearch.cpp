@@ -48,7 +48,7 @@ void SeruroPanelSearch::DoFocus()
 {
 	wxArrayString servers = wxGetApp().config->GetServerList();
 	wxLogMessage(_("SeruroPanelSearch> (DoFocus) focusing the search."));
-
+    
 	/* If the config has changed, regenerate the list of servers. */
 	if (servers.size() != servers_control->GetCount()) {
 		this->servers_control->Clear();
@@ -206,6 +206,7 @@ void SeruroPanelSearch::AddResult(const wxString &address,
 	
 	/* place appropriately marked checkbox. */
     wxString server_name = this->GetSelectedServer();
+    wxString display_address = address;
     
     /* When the certificate is requested, it must know what server manages the identity. */
 	item_index = this->list_control->InsertItem(0, wxT(" "));
@@ -215,10 +216,16 @@ void SeruroPanelSearch::AddResult(const wxString &address,
     }
     
     /* Determine if certificate is installed. */
-    list_control->SetCheck(item_index, false);
-	
+    bool have_certificate = wxGetApp().config->HaveCertificates(server_name, address);
+    bool have_identity = wxGetApp().config->HaveIdentity(server_name, address);
+    list_control->SetCheck(item_index, have_certificate);
+	if (have_identity) {
+        list_control->DisableRow(item_index);
+        display_address = display_address + _(" (you)");
+    }
+    
     /* Add the textual (UI) information. */
-	list_control->SetItem(item_index, 1, address);
+	list_control->SetItem(item_index, 1, display_address);
 	list_control->SetItem(item_index, 2, first_name);
 	list_control->SetItem(item_index, 3, last_name);
     list_control->SetItem(item_index, 4, server_name);
@@ -230,6 +237,12 @@ void SeruroPanelSearch::DoSearch()
     wxString server_name = this->GetSelectedServer();
 	wxString query = this->search_control->GetValue();
 
+    /* Do not search an empty string. */
+    if (query.compare(wxEmptyString) == 0) return;
+    if (query.Length() < SERURO_MIN_SEARCH_LENGTH) return;
+    /* Do not duplicate searches. */
+    if (server_name.compare(searched_server_name) == 0 && query.compare(searched_query) == 0) return;
+    
 	wxJSONValue server = this->api->GetServer(server_name);
 	/* Sanity check for no servers, but an interactive search input. */
 	if (! server.HasMember("host")) {
@@ -243,6 +256,10 @@ void SeruroPanelSearch::DoSearch()
 
 	/* Disable the search box until the query completes. */
 	this->DisableSearch();
+    
+    /* Cache results to prevent duplicate searches. */
+    this->searched_server_name = server_name;
+    this->searched_query = query;
 	
 	SeruroRequest *request = api->CreateRequest(SERURO_API_SEARCH, params, SERURO_API_CALLBACK_SEARCH);
 	request->Run();

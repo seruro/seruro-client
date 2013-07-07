@@ -9,6 +9,7 @@
 
 const char hexa[] = {"0123456789ABCDEFabcdef"};
 const char nonencode[] = {"abcdefghijklmnopqrstuvwqyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_~"};
+
 void URLEncode(char* dest, const char* source, int length)
 {
 	/* Used to encode POST data. */
@@ -120,9 +121,9 @@ wxString encodeData(wxJSONValue data)
 
 wxJSONValue getAuthFromPrompt(wxString &server, const wxString &address = wxEmptyString, int selected = 0)
 {
-    /* Todo: Get all users (emails) for given server. */
     wxJSONValue auth;
     
+    /* Selected forces the user to use the provided address. Otherwise they may choose any. */
 	AuthDialog *dialog = new AuthDialog(server, address, selected);
 	if (dialog->ShowModal() == wxID_OK) {
 		wxLogMessage(wxT("SeruroServerAPI::getAuthFromPrompt> OK"));
