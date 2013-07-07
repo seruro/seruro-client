@@ -222,21 +222,20 @@ bool SeruroServerAPI::InstallCA(wxJSONValue response)
 	wxString ca_encoded;
 	wxMemoryBuffer ca_decoded;
     wxString server_name = response["server_name"].AsString();
+    wxString ca_fingerprint;
 
 	ca_encoded = response["ca"].AsString();
 	if (! DecodeBase64(ca_encoded, &ca_decoded)) return false;
 
 	bool result;
-	SeruroCrypto *cryptoHelper = new SeruroCrypto();
-	result = cryptoHelper->InstallCA(ca_decoded);
+	SeruroCrypto crypto;
+    ca_fingerprint = wxEmptyString;
+	result = crypto.InstallCA(ca_decoded, ca_fingerprint);
 
 	/* Set the CA fingerprint. */
     if (result) {
-        wxGetApp().config->SetCAFingerprint(server_name,
-            cryptoHelper->GetFingerprint(ca_decoded));
+        wxGetApp().config->SetCAFingerprint(server_name, ca_fingerprint);
     }
-    
-	delete cryptoHelper;
 
     wxLogMessage(_("SeruroServerAPI> (InstallCA) CA for (%s) status: %s"),
         server_name, (result) ? _("success") : _("failed"));
@@ -252,8 +251,9 @@ bool SeruroServerAPI::InstallCertificate(wxJSONValue response)
 	wxString cert_encoded;
 	wxMemoryBuffer cert_decoded;
     wxString server_name = response["server_name"].AsString();
+    wxString cert_fingerprint;
 
-	SeruroCrypto *cryptoHelper = new SeruroCrypto();
+	SeruroCrypto crypto;
 
 	bool result = true;
 	//wxArrayString cert_blobs = response["certs"].GetMemberNames();
@@ -262,18 +262,21 @@ bool SeruroServerAPI::InstallCertificate(wxJSONValue response)
 
 		if (! DecodeBase64(cert_encoded, &cert_decoded)) continue;
 
-		result = (result && cryptoHelper->InstallCertificate(cert_decoded));
+        cert_fingerprint = wxEmptyString; /* must reset the fingerprint */
+		result = (result && crypto.InstallCertificate(cert_decoded, cert_fingerprint));
         if (! result) continue;
 
 		/* Track this certificate. */
-		wxGetApp().config->AddCertificate(server_name, response["address"].AsString(),
-            cryptoHelper->GetFingerprint(cert_decoded));
+		wxGetApp().config->AddCertificate(server_name, response["address"].AsString(), cert_fingerprint);
 	}
     
     wxLogMessage(_("SeruroServerAPI> (InstallCertificate) Certificate for (%s, %s) status: %s"),
         server_name, response["address"].AsString(), (result) ? _("success") : _("failed"));
+    
+    if (! result) {
+        /* Roll back any changes. */
+    }
 
-	delete cryptoHelper;
 	return result;
 }
 

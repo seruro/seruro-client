@@ -126,7 +126,7 @@ bool HaveCertificateByFingerprint(wxString fingerprint, wxString store_name)
 }
 
 /* Calculate SHA1 for thumbprinting. */
-wxString SeruroCryptoMSW::GetFingerprint(wxMemoryBuffer &cert)
+wxString GetFingerprintFromBuffer(wxMemoryBuffer &cert)
 {
 	HCRYPTPROV crypto_provider;
 	HCRYPTHASH hash;
@@ -299,16 +299,25 @@ finished:
 	return responseString;
 }
 
-bool SeruroCryptoMSW::InstallCA(wxMemoryBuffer &ca)
+bool SeruroCryptoMSW::InstallCA(const wxMemoryBuffer &ca, wxString &fingerprint)
 {
-	return InstallCertToStore(ca, CERTIFICATE_STORE_TRUSTED_ROOT);
+    bool status;
+    
+	status = InstallCertToStore(ca, _(CERTIFICATE_STORE_TRUSTED_ROOT));
+    fingerprint.Append(GetFingerprintFromBuffer(ca));
+    
+    return status;
 }
 
-bool SeruroCryptoMSW::InstallCertificate(wxMemoryBuffer &cert)
+bool SeruroCryptoMSW::InstallCertificate(const wxMemoryBuffer &cert, wxString &fingerprint)
 {
 	/* Store name: AddressBook */
-	//return true;
-	return InstallCertToStore(cert, CERTIFICATE_STORE_CONTACTS);
+    bool status;
+    
+	status = InstallCertToStore(cert, _(CERTIFICATE_STORE_CONTACTS));
+    fingerprint.Append(GetFingerprintFromBuffer(cert));
+    
+    return status;
 }
 
 bool SeruroCryptoMSW::InstallP12(wxMemoryBuffer &p12, wxString &p_password, 
@@ -371,7 +380,7 @@ bool SeruroCryptoMSW::InstallP12(wxMemoryBuffer &p12, wxString &p_password,
 		wxMemoryBuffer cert_buffer;
 		cert_buffer.AppendData(cert->pbCertEncoded, cert->cbCertEncoded);
 		//wxGetApp().config->AddIdentity(server_name, address, GetFingerprint(cert_buffer));
-		fingerprints.Add(GetFingerprint(cert_buffer));
+		fingerprints.Add(GetFingerprintFromBuffer(cert_buffer));
 
 		bResult = CertAddCertificateContextToStore(myStore, cert, CERT_STORE_ADD_NEW, 0);
 		if (! bResult && GetLastError() == CRYPT_E_EXISTS) {

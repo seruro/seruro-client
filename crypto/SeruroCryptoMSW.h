@@ -30,9 +30,9 @@ public:
 		/* Place fingerprints here. */
 		wxArrayString &fingerprints);	
 
-	bool InstallCA(wxMemoryBuffer &ca);
+	bool InstallCA(wxMemoryBuffer &ca, wxString &fingerprint);
 	/* Todo: change name to Certificate. */
-	bool InstallCertificate(wxMemoryBuffer &cert);
+	bool InstallCertificate(wxMemoryBuffer &cert, wxString &fingerprint);
 
 	/* Todo: consider using Install Cert with an optional store name. */
 	//bool InstallTLSCert(wxMemoryBuffer &cert);
@@ -46,7 +46,7 @@ public:
 	bool HaveCertificates(wxString server_name, wxString address);
 	bool HaveIdentity(wxString server_name, wxString address);
 
-	wxString GetFingerprint(wxMemoryBuffer &cert);
+	//wxString GetFingerprint(wxMemoryBuffer &cert);
 };
 
 #endif 

@@ -36,12 +36,13 @@
 
 DECLARE_APP(SeruroClient);
 
-const char* AsChar(wxString &input)
+const char* AsChar(const wxString &input)
 {
 	return input.mb_str(wxConvUTF8);
 }
 
-wxString GetFingerprintFromBuffer(wxMemoryBuffer &cert)
+/* Returns SHA1 of a wxMemoryBuffer. */
+wxString GetFingerprintFromBuffer(const wxMemoryBuffer &cert)
 {
     /* Documentation missing from offline view. */
     CC_SHA1_CTX hash_ctx;
@@ -63,7 +64,8 @@ wxString GetFingerprintFromBuffer(wxMemoryBuffer &cert)
     return wxBase64Encode(hash_buffer);
 }
 
-wxString GetFingerprintFromIdentity(SecIdentityRef &identity)
+/* Returns SHA1 from an identity reference (certificate). */
+wxString GetFingerprintFromIdentity(const SecIdentityRef &identity)
 {
     /* The certificate is extracted from the identity to find the fingerprint. */
     SecCertificateRef identity_cert;
@@ -83,60 +85,25 @@ wxString GetFingerprintFromIdentity(SecIdentityRef &identity)
     return GetFingerprintFromBuffer(cert_buffer);
 }
 
-bool InstallIdentityToKeychain(SecIdentityRef &identity, wxString keychain_name)
+/* Returns a "fingerprint" meaning a SHA1 of a keychain persistent data reference. */
+wxString GetFingerprintFromReference(const CFDataRef &item)
 {
-    //kSecUseKeychain
-    OSStatus success;
-    /* Todo: implement keychain access. */
-    //SecKeychainRef keychain = NULL;
-    //const char *keychain_char = AsString
+    wxMemoryBuffer item_buffer;
     
-    //success = SecKeychainOpen(AsChar(keychain_name), &keychain);
-    //if (success != errSecSuccess) {
-    //    wxLogMessage(_("SeruroCrypto> (InstallP12) could not open keychain (%s)."), keychain_name);
-    //    return false;
-    //}
+    item_buffer.AppendData(CFDataGetBytePtr(item), CFDataGetLength(item));
+    return wxBase64Encode(item_buffer);
+}
 
-    /* Find the identity item, add it to a dictionary, add it to the keychain. */
-    CFMutableDictionaryRef identity_item;
-    identity_item = CFDictionaryCreateMutable(kCFAllocatorDefault, 3,
-        &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+/* Sets item to the persistent data reference held in fingerprint. */
+CFDataRef CreateReferenceFromFingerprint(const wxString &fingerprint)
+{
+    CFDataRef item;
+    wxMemoryBuffer item_buffer;
     
-    //key = CFStringGetCStringPtr(kSecValueRef, kCFStringEncodingASCII);
-    //CFDictionarySetValue(identity_item, (const void *) key, (const void *) itentity);
-    //CFDictionarySetValue(identity_item, kSecClass, kSecClassIdentity); /* givens -50. */
-    CFDictionarySetValue(identity_item, kSecValueRef, identity);
-    //if (keychain != NULL) {
-    //    if (keychain_name.compare(IDENTITY_KEYCHAIN) != 0) {
-    //        /* The default keychain should not be explicitly set. */
-    //        CFDictionarySetValue(identity_item, kSecUseKeychain, keychain);
-    //    }
-    //    CFRelease(keychain);
-    //}
+    item_buffer = wxBase64Decode(fingerprint);
+    item = CFDataCreate(kCFAllocatorDefault, (UInt8 *) item_buffer.GetData(), item_buffer.GetDataLen());
     
-    /* Add the identity to the key chain, without error handling. */
-    success = SecItemAdd(identity_item, NULL);
-    //if (success == -50) {
-    //    /* Todo: replace with actuall error code. */
-    //    wxLogMessage(_("SeruroCrypto> (InstallIdentityToKeychain) error invalid params, retrying."));
-    //    CFDictionarySetValue(identity_item, kSecClass, kSecClassCertificate);
-        
-    //    success = SecItemAdd(identity_item, NULL);
-    //}
-    
-    /* Release. */
-    CFRelease(identity_item);
-    
-    if (success == errSecParam) {
-        wxLogMessage(_("SeruroCrypto> (InstallIdentityToKeychain) invalid parameters, manually accepting."));
-        return true;
-    }
-    
-    if (success != errSecSuccess) {
-        wxLogMessage(_("SeruroCrypto> (InstallIdentityToKeychain) could not add identity to keychain (err= %d)."), success);
-        return false;
-    }
-    return true;
+    return item;
 }
 
 /* Sets trust of x509 extensions for the certificate. */
@@ -184,26 +151,54 @@ bool SetTrustPolicy(SecCertificateRef &cert)
     return false;
 }
 
+bool InstallIdentityToKeychain(SecIdentityRef &identity, wxString keychain_name, CFDataRef &reference)
+{
+    OSStatus success;
+    CFDataRef test_reference = NULL;
+    /* Todo: implement keychain access. */
+
+    /* Find the identity item, add it to a dictionary, add it to the keychain. */
+    CFMutableDictionaryRef identity_item;
+    identity_item = CFDictionaryCreateMutable(kCFAllocatorDefault, 3,
+        &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+    
+    CFDictionarySetValue(identity_item, kSecValueRef, identity);
+    /* Tell the keychain that we could like a presistent reference to this item. */
+    CFDictionarySetValue(identity_item, kSecReturnPersistentRef, kCFBooleanTrue);
+    
+    /* Add the identity to the key chain, without error handling. */
+    success = SecItemAdd(identity_item, (CFTypeRef *) &test_reference);
+    
+    /* Release. */
+    CFRelease(identity_item);
+    
+    if (success == errSecParam) {
+        wxLogMessage(_("SeruroCrypto> (InstallIdentityToKeychain) invalid parameters, manually accepting."));
+        return true;
+    }
+    
+    if (success != errSecSuccess) {
+        wxLogMessage(_("SeruroCrypto> (InstallIdentityToKeychain) could not add identity to keychain (err= %d)."), success);
+        return false;
+    }
+    return true;
+}
+
 //from MSW: InstallCertToStore (wxMemoryBuffer &cert, wxString store_name)
-bool InstallCertificateToKeychain(wxMemoryBuffer &cert_binary, wxString keychain_name)
+bool InstallCertificateToKeychain(const wxMemoryBuffer &cert_binary, wxString keychain_name, CFDataRef &reference)
 {
     /* By default all certificates go to the default (login) keychain. */
     SecKeychainRef keychain = NULL;
     /* Todo: add to specific keychain if name is given. */
     
     SecCertificateRef certificate;
+    CFDataRef test_reference = NULL;
     CFDataRef cert_data;
     
     /* The memory buffer will hold the DER in byte form. */
     cert_data = CFDataCreate(kCFAllocatorDefault,
         (UInt8 *) cert_binary.GetData(), cert_binary.GetDataLen());
     certificate = SecCertificateCreateWithData(kCFAllocatorDefault, cert_data);
-    
-    /* SecCertificateRef SecCertificateCreateWithData ( //from: SecCertificate.h
-     *   CFAllocatorRef allocator, //NULL for the default allocator?
-     *   CFDataRef data); //a DER-encoded representation of x509
-     * Notes: SecCertificateRef will be NULL if the data is not formatted correctly
-     */
     
     if (certificate == NULL) {
         wxLogMessage(_("SeruroCrypto> (InstallToKeychain) certificate is null."));
@@ -212,22 +207,7 @@ bool InstallCertificateToKeychain(wxMemoryBuffer &cert_binary, wxString keychain
         return false;
     }
     
-    /* OSStatus SecCertificateAddToKeychain ( //from: SecCertificate.h
-     *   SecCertificateRef certificate, //cert object
-     *   SecKeychainRef keychain); //NULL to add to the default keychain
-     * Notes: if the certificate already exists in the keychain then:
-     * errSecDuplicateItem (–25299)
-     */
-    
     OSStatus success = 0;
-    /* Todo: there's a more generic SecItemAdd, which is avilable in iOS. */
-    //success = SecCertificateAddToKeychain(certificate, keychain);
-
-    //success = SecKeychainOpen(AsChar(keychain_name), &keychain);
-    //if (success != errSecSuccess) {
-    //    wxLogMessage(_("SeruroCrypto> (InstallCertToKeychain) could not open keychain (%s)."), keychain_name);
-    //    return false;
-    //}
     
     /* Apply a basic x509 trust policy to certificate. */
     if (! SetTrustPolicy(certificate)) {
@@ -239,18 +219,22 @@ bool InstallCertificateToKeychain(wxMemoryBuffer &cert_binary, wxString keychain
     
     /* Find the identity item, add it to a dictionary, add it to the keychain. */
     CFMutableDictionaryRef cert_item;
-    cert_item = CFDictionaryCreateMutable(kCFAllocatorDefault, 0,
+    cert_item = CFDictionaryCreateMutable(kCFAllocatorDefault, 4,
         &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
     
     CFDictionarySetValue(cert_item, kSecClass, kSecClassCertificate);
     CFDictionarySetValue(cert_item, kSecValueRef, (const void *) certificate);
+    /* Tell the keychain that we could like a presistent reference to this item. */
+    CFDictionarySetValue(cert_item, kSecReturnPersistentRef, kCFBooleanTrue);
+    
     if (keychain != NULL) {
         CFDictionarySetValue(cert_item, kSecUseKeychain, (const void *) keychain);
         CFRelease(keychain);
     }
     
     /* Add to keychain. */
-    success = SecItemAdd(cert_item, NULL);
+    success = SecItemAdd(cert_item, (CFTypeRef *) &test_reference);
+    //int ref_length = CFDataGetLength(test_reference);
     
     /* Release objects. */
     CFRelease(certificate);
@@ -405,49 +389,19 @@ finished:
 
 /* Errors should be events. */
 
-bool SeruroCryptoMAC::InstallP12(wxMemoryBuffer &p12,
-    wxString &password, wxArrayString &fingerprints)
+bool SeruroCryptoMAC::InstallP12(const wxMemoryBuffer &p12, const wxString &password, wxArrayString &fingerprints)
 {
-    /* OSStatus SecPKCS12Import (
-     *   CFDataRef pkcs12_data, //p12 data
-     *   CFDictionaryRef options, //options?
-     *   CFArrayRef *items); //array of two dictionaries, identities and certificates
-     * Notes: should return SecIdentityRef and SecCertificateRef. 
-     * Errors: (errSecDecode) if p12 is bad, ( errSecAuthFailed) is password is bad,
-     *   or the data in the p12 was damaged.
-     *
-     * Options: extern CFStringRef kSecImportExportPassphrase; (CFStringRef)
-     *   extern CFStringRef kSecImportExportKeychain; (SecKeychainRef)
-     *   extern CFStringRef kSecImportExportAccess; (SecAccessRef)
-     *
-     * To use: (1) iterate through the returned CFArrayRef (each dictionary)
-     *   will have (keys: kSecImportItemIdentity, kSecImportItemCertChain)
-     *   (2) first iterate through the cert_chain, of CFArrayRef type (SecCertificateRef)
-     *   (3) then import the identity of SecIdentityRef type
-     */
-    
-    /* Todo: what if kSecImportExportAccess is missing? */
-    
     OSStatus success;
     CFDataRef p12_data;
-    //char *key;
-    //const char *key;
     CFStringRef password_data;
-    //const char *password_data;
     
     /* Set the password as an option. */
     CFMutableDictionaryRef options;
-    //key = (char *) malloc(sizeof(char) * (CFStringGetLength(kSecImportExportPassphrase)/2));
-    //CFStringGetCString(kSecImportExportPassphrase, key, CFStringGetLength(kSecImportExportPassphrase), kCFStringEncodingASCII);
-    //key = CFStringGetCStringPtr(kSecImportExportPassphrase, kCFStringEncodingASCII);
-    //password_data = AsChar(password);
     password_data = CFStringCreateWithCString(kCFAllocatorDefault, AsChar(password), kCFStringEncodingASCII);
     
     options = CFDictionaryCreateMutable(kCFAllocatorDefault, 3,
         &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
-    //CFDictionaryAddValue(options, (const void *) key, (const void *) password_data);
     CFDictionaryAddValue(options, kSecImportExportPassphrase, password_data);
-    //delete key;
     
     /* Convert type of p12. */
     p12_data = CFDataCreate(kCFAllocatorDefault,
@@ -470,10 +424,10 @@ bool SeruroCryptoMAC::InstallP12(wxMemoryBuffer &p12,
         wxLogMessage(_("SeruroCrypto> (InstallP12) auth failed or corrupted p12 data."));
         return false;
     }
-    
-    //wxString keychain_name = _(IDENTITY_KEYCHAIN);
+
     /* The import function will have a list of items. */
     CFDictionaryRef item;
+    CFDataRef item_reference;
     SecIdentityRef identity;
     int identity_count = CFArrayGetCount(p12_items);
     
@@ -484,41 +438,47 @@ bool SeruroCryptoMAC::InstallP12(wxMemoryBuffer &p12,
         item = (CFDictionaryRef) CFArrayGetValueAtIndex(p12_items, i);
         
         /* Install P12s to keychain. */
-        //key = (char *) malloc(sizeof(char) * (CFStringGetLength(kSecImportItemIdentity)/2));
-        //key = CFStringGetCStringPtr(kSecImportItemIdentity, kCFStringEncodingASCII);
-        //CFStringGetCString(kSecImportExportPassphrase, key, CFStringGetLength(kSecImportItemIdentity), kCFStringEncodingASCII);
-        //identity = (SecIdentityRef) CFDictionaryGetValue(item, (const void *) key);
         identity = (SecIdentityRef) CFDictionaryGetValue(item, kSecImportItemIdentity);
-        //delete key;
         
-        if (! InstallIdentityToKeychain(identity, _(IDENTITY_KEYCHAIN))) {
+        if (! InstallIdentityToKeychain(identity, _(IDENTITY_KEYCHAIN), item_reference)) {
             return false;
         }
         
         wxLogMessage(_("SeruroCrypto> (InstallP12) successfully installed identity (%d)."), i);
-        /* Add fingerprint from the identity certificate. */
-        fingerprints.Add(GetFingerprintFromIdentity(identity));
+        
+        /* Add fingerprint from the identity certificate (the persistent keychain reference). */
+        fingerprints.Add(GetFingerprintFromReference(item_reference));
     }
     
     /* Release array of dictionaries. */
     if (CFArrayGetCount(p12_items) > 0) {
         /* All item from the store are held by the arrey store. */
-        //CFRelease(item);
     }
     CFRelease(p12_items);
-    //CFRelease(identity_item);
     
     return true;
 }
 
-bool SeruroCryptoMAC::InstallCA(wxMemoryBuffer &ca)
+bool SeruroCryptoMAC::InstallCA(const wxMemoryBuffer &ca, wxString &fingerprint)
 {
-    return InstallCertificateToKeychain(ca, _(CA_KEYCHAIN));
+    bool status;
+    CFDataRef item_reference = NULL;
+    
+    status = InstallCertificateToKeychain(ca, _(CA_KEYCHAIN), item_reference);
+    fingerprint.Append(GetFingerprintFromReference(item_reference));
+    
+    return status;
 }
 
-bool SeruroCryptoMAC::InstallCertificate(wxMemoryBuffer &cert)
+bool SeruroCryptoMAC::InstallCertificate(const wxMemoryBuffer &cert, wxString &fingerprint)
 {
-    return InstallCertificateToKeychain(cert, _(CERTIFICATE_KEYCHAIN));
+    bool status;
+    CFDataRef item_reference = NULL;
+    
+    status = InstallCertificateToKeychain(cert, _(CERTIFICATE_KEYCHAIN), item_reference);
+    fingerprint.Append(GetFingerprintFromReference(item_reference));
+    
+    return status;
 }
 
 bool SeruroCryptoMAC::RemoveIdentity(wxArrayString fingerprints) { return true; }
@@ -600,10 +560,12 @@ bool SeruroCryptoMAC::HaveIdentity(wxString server_name, wxString address)
 	return (cert_1 && cert_2);
 }
 
+/*
 wxString SeruroCryptoMAC::GetFingerprint(wxMemoryBuffer &cert)
 {
     return GetFingerprintFromBuffer(cert);
 }
+*/
 
 
 #endif

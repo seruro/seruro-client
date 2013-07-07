@@ -18,13 +18,13 @@ public:
 	/* wxJSONValue For easy overloading access. */
 	wxString TLSRequest(wxJSONValue params);
     
-	bool InstallP12(wxMemoryBuffer &p12, wxString &password,
+	bool InstallP12(const wxMemoryBuffer &p12, const wxString &password,
         /* Place fingerprints here. */
         wxArrayString &fingerprints);
     
-	bool InstallCA(wxMemoryBuffer &ca);
+	bool InstallCA(const wxMemoryBuffer &ca, wxString &fingerprint);
 	/* Todo: change name to Certificate. */
-	bool InstallCertificate(wxMemoryBuffer &cert);
+	bool InstallCertificate(const wxMemoryBuffer &cert, wxString &fingerprint);
     
 	/* Todo: consider using Install Cert with an optional store name. */
 	//bool InstallTLSCert(wxMemoryBuffer &cert);
@@ -38,7 +38,7 @@ public:
 	bool HaveCertificates(wxString server_name, wxString address);
 	bool HaveIdentity(wxString server_name, wxString address);
     
-	wxString GetFingerprint(wxMemoryBuffer &cert);
+	//wxString GetFingerprint(wxMemoryBuffer &cert);
 };
 
 #endif 
