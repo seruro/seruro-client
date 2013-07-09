@@ -80,6 +80,7 @@ private:
     /* Add servers/accounts to lists. */
     void GenerateServersList();
     void GenerateAccountsList();
+	void AlignLists();
 	
     /* Determine if an account is selected. */
 	bool account_selected;

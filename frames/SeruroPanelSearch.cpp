@@ -142,7 +142,7 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	check_box_column.SetId(0);
 	check_box_column.SetImage(mail_icon_index);
 	list_control->SetCheckboxColumn(check_box_column);
-	list_control->SetColumnWidth(0, 24);
+	list_control->SetColumnWidth(0, 28);
 	
 	/* Create all of the column for the search results response. 
 	 * This must start at the integer 1, where 0 is the place holder for the checkmark. 
@@ -190,8 +190,8 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
     this->list_control->SetColumnWidth(4, SEARCH_PANEL_COLUMN_WIDTH/4);
 
     /* Debug for now, show a "nothing message" in the list. */
-	this->AddResult(wxString("No Email Address"), wxString("No First Name"), wxString("No Last Name"));
-	this->DisableResult(0);
+	//this->AddResult(wxString("No Email Address"), wxString("No First Name"), wxString("No Last Name"));
+	//this->DisableResult(0);
     
 	/* Testing default focus */
 	DoFocus();

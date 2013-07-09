@@ -60,6 +60,7 @@ void AccountsWindow::OnServerStateChange(SeruroStateEvent &event)
 		this->DoDeselect();
 	}
 
+	this->AlignLists();
     /* Allow other handlers. */
 	event.Skip();
 }
@@ -73,6 +74,8 @@ void AccountsWindow::OnAccountStateChange(SeruroStateEvent &event)
 		this->DeselectAccounts();
 		this->DoDeselect();
 	}
+
+	this->AlignLists();
 
 	event.Skip();
 }
@@ -317,6 +320,13 @@ void AccountsWindow::GenerateAccountsList()
 	}
 }
 
+void AccountsWindow::AlignLists()
+{
+	wxListCtrl *lists[] = {servers_list, accounts_list};
+	MaximizeAndAlignLists(lists, 2, 1);
+	//delete lists;
+}
+
 AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(window),
 	account_selected(false)
 {
@@ -397,5 +407,7 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
 	wxGetApp().Bind(SERURO_STATE_CHANGE, &AccountsWindow::OnAccountStateChange, this, STATE_TYPE_ACCOUNT);
 
 	this->SetSizer(lists_sizer);
+
+	this->AlignLists();
 }
 

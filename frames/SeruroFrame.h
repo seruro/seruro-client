@@ -6,6 +6,8 @@
 #include <wx/panel.h>
 #include <wx/sizer.h>
 
+#define LISTCTRL_ALIGN_RIGHT_PADDING 5
+
 class wxBookCtrlBase;
 class wxListCtrl;
 

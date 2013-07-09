@@ -25,7 +25,7 @@ DECLARE_APP(SeruroClient);
 #define CERTIFICATE_STORE_PERSONAL	   "My"
 
 /* Helper function to convert wxString to a L, the caller is responsible for memory. */
-BSTR AsLongString(wxString &input)
+BSTR AsLongString(const wxString &input)
 {
 	int size = lstrlenA(input.mb_str(wxConvUTF8));
 	BSTR long_object = SysAllocStringLen(NULL, size);
@@ -33,7 +33,7 @@ BSTR AsLongString(wxString &input)
 	return long_object;
 }
 
-void AsMultiByte(wxString &input, LPSTR *result)
+void AsMultiByte(const wxString &input, LPSTR *result)
 {
 	BSTR object = AsLongString(input);
 	*result = _com_util::ConvertBSTRToString(object);
@@ -54,7 +54,7 @@ void SeruroCryptoMSW::OnInit()
 	//TLSRequest(none, 0, verb, object, data); /* SERURO_SECURITY_OPTIONS_DATA */
 }
 
-bool InstallCertToStore(wxMemoryBuffer &cert, wxString store_name)
+bool InstallCertToStore(const wxMemoryBuffer &cert, wxString store_name)
 {
 	BOOL bResult;
 	DWORD error;
@@ -126,7 +126,7 @@ bool HaveCertificateByFingerprint(wxString fingerprint, wxString store_name)
 }
 
 /* Calculate SHA1 for thumbprinting. */
-wxString GetFingerprintFromBuffer(wxMemoryBuffer &cert)
+wxString GetFingerprintFromBuffer(const wxMemoryBuffer &cert)
 {
 	HCRYPTPROV crypto_provider;
 	HCRYPTHASH hash;
@@ -320,7 +320,7 @@ bool SeruroCryptoMSW::InstallCertificate(const wxMemoryBuffer &cert, wxString &f
     return status;
 }
 
-bool SeruroCryptoMSW::InstallP12(wxMemoryBuffer &p12, wxString &p_password, 
+bool SeruroCryptoMSW::InstallP12(const wxMemoryBuffer &p12, const wxString &p_password, 
 	wxArrayString &fingerprints)
 {
 	CRYPT_DATA_BLOB blob;

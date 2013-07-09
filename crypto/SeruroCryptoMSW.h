@@ -26,13 +26,14 @@ public:
 	 * future development allowing for arbitrary (to the max supported)
 	 * intermediary CAs. 
 	 */
-	bool InstallP12(wxMemoryBuffer &p12, wxString &password,
+	bool InstallP12(const wxMemoryBuffer &p12, const wxString &password,
 		/* Place fingerprints here. */
 		wxArrayString &fingerprints);	
 
-	bool InstallCA(wxMemoryBuffer &ca, wxString &fingerprint);
+	bool InstallCA(const wxMemoryBuffer &ca, wxString &fingerprint);
 	/* Todo: change name to Certificate. */
-	bool InstallCertificate(wxMemoryBuffer &cert, wxString &fingerprint);
+	bool InstallCertificate(const wxMemoryBuffer &cert, 
+		wxString &fingerprint);
 
 	/* Todo: consider using Install Cert with an optional store name. */
 	//bool InstallTLSCert(wxMemoryBuffer &cert);
