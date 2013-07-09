@@ -4,9 +4,19 @@
 #include <wx/bookctrl.h>
 #include <wx/listctrl.h>
 
-void MaximizeAndAlignLists(wxListCtrl **lists, size_t count)
+void MaximizeAndAlignLists(wxListCtrl **lists, size_t count, size_t first_column)
 {
-
+    // 
+    /* Try to show all the values in the list (columns) with a preference for the first. */
+    size_t first_min_size, first_column_size;
+    
+    for (size_t i = 0; i < count; i++) {
+        first_column_size = ((wxListCtrl *) lists[i])->GetColumnWidth(first_column);
+        first_min_size = (first_min_size > first_column_size) ? first_min_size : first_column_size;
+    }
+    
+    /* Then try to give the first row the extra room in the list (pushing the rest to the right). */
+    
 }
 
 SeruroFrame::SeruroFrame(const wxString &title) : wxFrame(NULL, wxID_ANY, title)

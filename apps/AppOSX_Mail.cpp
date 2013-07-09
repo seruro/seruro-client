@@ -6,6 +6,8 @@
 #include <wx/log.h>
 
 #include "AppOSX_Mail.h"
+#include "../SeruroClient.h"
+#include "../crypto/SeruroCrypto.h"
 
 /* When looking up OSX applications ( from PLIST ):
  * <key>CFBundleIdentifier</key>
@@ -20,6 +22,8 @@
 
 #define BUNDLE_ID "com.apple.mail"
 #define MAILDATA_PLIST "/Library/Mail/V2/MailData/Accounts.plist"
+
+DECLARE_APP(SeruroClient);
 
 /* Read the MailData PList. */
 bool ReadDataPList(CFMutableDictionaryRef &results_dict)
@@ -184,9 +188,24 @@ wxArrayString AppOSX_Mail::GetAccountList()
 
 bool AppOSX_Mail::IsIdentityInstalled(wxString account_name)
 {
+    wxArrayString server_list, account_list;
+    SeruroCrypto crypto;
+    
     if (! GetInfo()) return false;
 
-    return true;
+    /* OSX will use a matching identity automatically. */
+    /* Check for any account with an installed identity, matching the account name. */
+    server_list = wxGetApp().config->GetServerList();
+    for (size_t i = 0; i < server_list.size(); i++) {
+        account_list = wxGetApp().config->GetAddressList(server_list[i]);
+        
+        for (size_t j = 0; j < account_list.size(); j++) {
+            if (account_name.compare(account_list[j]) != 0) continue;
+            if (crypto.HaveIdentity(server_list[i], account_list[j])) return true;
+        }
+    }
+    
+    return false;
 }
 
 bool AppOSX_Mail::GetInfo()

@@ -131,7 +131,7 @@ void CheckedListCtrl::DisableRow(long item)
 	//for (int i = 0; i < this->GetColumnCount(); i++) {}
 	this->SetItemImage(item, (IsChecked(item)) ? DISABLED_CHECKED : DISABLED_UNCHECKED);
 	this->SetItemTextColour(item, wxColour(DISABLED_TEXT_COLOR));
-	this->SetItemBackgroundColour(item, wxColour(DISABLED_BACKGROUND_COLOR));
+	//this->SetItemBackgroundColour(item, wxColour(DISABLED_BACKGROUND_COLOR));
 }
 
 void CheckedListCtrl::OnItemSelected(wxListEvent &event)

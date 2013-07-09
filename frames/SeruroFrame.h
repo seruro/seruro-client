@@ -11,7 +11,7 @@ class wxListCtrl;
 
 /*** Utility functions. ***/
 
-void MaximizeAndAlignLists(wxListCtrl **lists, size_t count);
+void MaximizeAndAlignLists(wxListCtrl **lists, size_t count, size_t first_column = 0);
 
 /*** End: utility functions. ***/
 
