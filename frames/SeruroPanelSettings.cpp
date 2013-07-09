@@ -5,6 +5,7 @@
 #include "settings/SettingsWindows.h"
 
 #include <wx/log.h>
+#include <wx/imaglist.h>
 
 #include "../resources/images/general_icon_42_flat.png.h"
 #include "../resources/images/accounts_icon_42_flat.png.h"

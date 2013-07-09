@@ -3,52 +3,77 @@
 #include "../SeruroPanelSettings.h"
 #include "../UIDefs.h"
 
-ApplicationsWindow::ApplicationsWindow(SeruroPanelSettings *window) : SettingsView(window)
+void ApplicationsWindow::GenerateApplicationsList()
 {
-    wxSizer *const sizer = new wxBoxSizer(wxVERTICAL);
-    
-	//wxSizer *const servers_box = new wxStaticBoxSizer(wxVERTICAL, this, _("Servers List"));
-	apps_list = new wxListCtrl(this, SETTINGS_APPS_LIST_ID,
-        wxDefaultPosition, wxDefaultSize,
-        wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_THEME);
-	//apps_list->SetImageList(list_images, wxIMAGE_LIST_SMALL);
-    
-	/* Server list columns. */
-	//wxListItem image_column;
-	//image_column.SetText(_(""));
-	//image_column.SetId(0);
-	//image_column.SetImage(0);
-	//servers_list->InsertColumn(0, image_column);
-    
-	apps_list->InsertColumn(0, _("Application"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
-	apps_list->InsertColumn(1, _("Version"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
-	apps_list->InsertColumn(2, _("Status"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
-    
-    /* Application access helper. */
-    //apps_helper = SeruroApps();
     long item_index;
-	wxArrayString apps = apps_helper.GetAppList();
+	wxArrayString apps;
     wxJSONValue app_info;
+    
+    apps = apps_helper.GetAppList();
 	for (size_t i = 0; i < apps.size(); i++) {
 		item_index = apps_list->InsertItem(0, _(apps[i]));
         
+        /* Todo: set image based on status. */
         app_info = apps_helper.GetApp(apps[i]);
         apps_list->SetItem(item_index, 1, app_info["version"].AsString());
         apps_list->SetItem(item_index, 2, app_info["status"].AsString());
 	}
-    
+}
+
+void ApplicationsWindow::GenerateAccountsList()
+{
+    long item_index;
+    bool identity_installed;
+    wxArrayString apps;
     wxArrayString accounts;
+    
+    apps = apps_helper.GetAppList();
     for (size_t i = 0; i < apps.size(); i++) {
         accounts = apps_helper.GetAccountList(apps[i]);
+        
+        for (size_t j = 0; j < accounts.size(); j++) {
+            item_index = accounts_list->InsertItem(0, _(accounts[j]));
+            identity_installed = apps_helper.IsIdentityInstalled(apps[i], accounts[j]);
+            
+            /* Todo: set image based on status. */
+            accounts_list->SetItem(item_index, 1, _(apps[i]));
+            accounts_list->SetItem(item_index, 2, (identity_installed) ? _("Installed") : _("Not installed"));
+        }
     }
-	/* Allow the server name column to take up the remaining space. */
-	//servers_list->SetColumnWidth(0, wxLIST_AUTOSIZE);
-	//servers_list->SetColumnWidth(0, 24);
+}
+
+ApplicationsWindow::ApplicationsWindow(SeruroPanelSettings *window) : SettingsView(window)
+{
+    wxSizer *const sizer = new wxBoxSizer(wxVERTICAL);
     
-	//servers_box->Add(servers_list, DIALOGS_SIZER_OPTIONS);
-	//lists_sizer->Add(servers_box, DIALOGS_BOXSIZER_SIZER_OPTIONS);
+	apps_list = new wxListCtrl(this, SETTINGS_APPS_LIST_ID,
+        wxDefaultPosition, wxDefaultSize,
+        wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_THEME);
+    
+    /* Add columns for applications list. */
+	apps_list->InsertColumn(0, _("Application"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
+	apps_list->InsertColumn(1, _("Version"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
+	apps_list->InsertColumn(2, _("Status"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
+    
+    this->GenerateApplicationsList();
+    
+    accounts_list = new wxListCtrl(this, SETTINGS_APP_ACCOUNTS_LIST_ID, wxDefaultPosition, wxDefaultSize,
+        wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_THEME);
+    
+    /* Add columns for accounts list. */
+    accounts_list->InsertColumn(0, _("Account Address"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
+    accounts_list->InsertColumn(1, _("Application"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
+    accounts_list->InsertColumn(2, _("Status"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
+    
+    this->GenerateAccountsList();
+    
+
 	sizer->Add(apps_list, DIALOGS_SIZER_OPTIONS);
+    sizer->Add(accounts_list, DIALOGS_SIZER_OPTIONS.Proportion(1).Top().Bottom());
     
     this->SetSizer(sizer);
 }
+
+
+
 

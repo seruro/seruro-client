@@ -1,6 +1,7 @@
 
 #if defined(__WXOSX__) || defined(__WXMAC__)
 
+#include <wx/filename.h>
 #include <wx/string.h>
 #include <wx/log.h>
 
@@ -18,7 +19,7 @@
 #include <ApplicationServices/ApplicationServices.h>
 
 #define BUNDLE_ID "com.apple.mail"
-#define MAILDATA_PLIST "/Users/theo/Library/Mail/V2/MailData/Accounts.plist"
+#define MAILDATA_PLIST "/Library/Mail/V2/MailData/Accounts.plist"
 
 /* Read the MailData PList. */
 bool ReadDataPList(CFMutableDictionaryRef &results_dict)
@@ -33,7 +34,13 @@ bool ReadDataPList(CFMutableDictionaryRef &results_dict)
     bool success;
     
     /* Get url to account data. */
-    plist_url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, CFSTR(MAILDATA_PLIST), kCFURLPOSIXPathStyle, false);
+    // use wxFileName::GetHomeDir()
+    wxString plist_url_path;
+    CFStringRef plist_url_cfpath;
+    
+    plist_url_path = wxString(wxFileName::GetHomeDir() + _(MAILDATA_PLIST));
+    plist_url_cfpath = CFStringCreateWithCString(kCFAllocatorDefault, plist_url_path.mb_str(wxConvUTF8), kCFStringEncodingMacRoman);
+    plist_url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, plist_url_cfpath, kCFURLPOSIXPathStyle, false);
     /* Load file contents. */
     success = CFURLCreateDataAndPropertiesFromResource(kCFAllocatorDefault, plist_url, &resource_data, NULL, NULL, &error_code);
     CFRelease(plist_url);

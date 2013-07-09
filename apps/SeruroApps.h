@@ -59,6 +59,8 @@ public:
     bool IsIdentityInstalled(wxString app_name, wxString account);
 
 private:
+    AppHelper* GetHelper(wxString app_name);
+    
     /* A cheap way to implement a map, since the API/doc is not available in offline OSX. */
     wxArrayString app_names;
     AppHelper *app_helpers[32];

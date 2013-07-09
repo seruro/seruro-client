@@ -89,9 +89,8 @@ SeruroApps::SeruroApps()
 #endif
 }
 
-wxArrayString SeruroApps::GetAccountList(wxString app_name)
+AppHelper* SeruroApps::GetHelper(wxString app_name)
 {
-    wxArrayString accounts;
     AppHelper *helper = 0;
     
     for (size_t i = 0; i < app_names.size(); i++) {
@@ -99,6 +98,15 @@ wxArrayString SeruroApps::GetAccountList(wxString app_name)
             helper = app_helpers[i];
         }
     }
+    return helper;
+}
+
+wxArrayString SeruroApps::GetAccountList(wxString app_name)
+{
+    wxArrayString accounts;
+    AppHelper *helper;
+    
+    helper = this->GetHelper(app_name);
     
     if (helper == 0) return accounts;
     return helper->GetAccountList();
@@ -107,14 +115,10 @@ wxArrayString SeruroApps::GetAccountList(wxString app_name)
 wxJSONValue SeruroApps::GetApp(wxString app_name)
 {
     wxJSONValue app_info;
-    AppHelper *helper = 0;
+    AppHelper *helper;
     
     /* Search the list of supported apps for the app given by name. */
-    for (size_t i = 0; i < app_names.size(); i++) {
-        if (app_name.compare(app_names[i]) == 0) {
-            helper = app_helpers[i];
-        }
-    }
+    helper = this->GetHelper(app_name);
     
     /* Did not find the app, this should not happen. */
     if (helper == 0) return app_info;
@@ -131,6 +135,16 @@ wxJSONValue SeruroApps::GetApp(wxString app_name)
     }
     
     return app_info;
+}
+
+bool SeruroApps::IsIdentityInstalled(wxString app_name, wxString account_name)
+{
+    AppHelper *helper;
+    
+    helper = this->GetHelper(app_name);
+    if (helper == 0) return false;
+    
+    return helper->IsIdentityInstalled(account_name);
 }
 
 void SeruroApps::AddAppHelper(wxString app_name, AppHelper *app_helper)

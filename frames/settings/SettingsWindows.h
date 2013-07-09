@@ -16,6 +16,7 @@ enum settings_ids_t {
 	SETTINGS_SERVERS_LIST_ID,
 	SETTINGS_ACCOUNTS_LIST_ID,
     SETTINGS_APPS_LIST_ID,
+    SETTINGS_APP_ACCOUNTS_LIST_ID,
 
 	BUTTON_ADD_SERVER,
 	BUTTON_ADD_ACCOUNT,
@@ -102,6 +103,9 @@ class ApplicationsWindow : public SettingsView
 {
 public:
     ApplicationsWindow(SeruroPanelSettings *window);
+    
+    void GenerateApplicationsList();
+    void GenerateAccountsList();
     
 private:
     bool account_selected;
