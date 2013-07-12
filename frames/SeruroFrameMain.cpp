@@ -69,15 +69,15 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
 	tray->SetIcon(icon, _(SERURO_APP_NAME));
 
 	/* Add singular panel */
-	wxPanel *panel = new wxPanel(this, wxID_ANY);
-	book = new wxNotebook(panel, SERURO_NOTEBOOK_ID, wxPoint(-1, -1), wxSize(-1, -1), wxNB_TOP);
+	//wxPanel *panel = new wxPanel(this, wxID_ANY);
+	book = new wxNotebook(this, SERURO_NOTEBOOK_ID);
 	/* Footer sizer */
-	wxBoxSizer *panelSizer = new wxBoxSizer(wxVERTICAL);
-	panelSizer->Add(book, 1, wxEXPAND);
-	panel->SetSizer(panelSizer);
-	panel->Layout();
+	//wxBoxSizer *panelSizer = new wxBoxSizer(wxVERTICAL);
+	//panelSizer->Add(book, 1, wxEXPAND);
+	//panel->SetSizer(panelSizer);
+	//panel->Layout();
 
-	this->mainSizer->Add(panel, 1, wxEXPAND, 5);
+	this->mainSizer->Add(book, 1, wxEXPAND, 5);
 }
 
 /* The frame's (book's) panels may depend on objects created after the first frame,
@@ -122,7 +122,7 @@ void SeruroFrameMain::OnChange(wxBookCtrlEvent &event)
 	/* The search panel may need to update it's UI if servers were added/removed. */
 	wxLogMessage(_("Notebook panel changed (%d)."), event.GetSelection());
 	if (seruro_panels_ids[event.GetSelection()] == SERURO_PANEL_SEARCH_ID) {
-		((SeruroPanelSearch*) this->search_panel)->DoFocus();
+		//((SeruroPanelSearch*) this->search_panel)->DoFocus();
 	}
 }
 

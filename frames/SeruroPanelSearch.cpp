@@ -9,6 +9,7 @@
 #include "../wxJSON/wx/jsonval.h"
 #include "../wxJSON/wx/jsonreader.h"
 #include "../wxJSON/wx/jsonwriter.h"
+#include <wx/checkbox.h>
 
 /* Image data. */
 #include "../resources/images/certificate_icon_18_flat.png.h"
@@ -18,6 +19,7 @@ DECLARE_APP(SeruroClient);
 BEGIN_EVENT_TABLE(SeruroPanelSearch, wxPanel)
 	EVT_SERURO_REQUEST(SERURO_API_CALLBACK_SEARCH, SeruroPanelSearch::OnSearchResult)
     EVT_SERURO_REQUEST(SERURO_API_CALLBACK_CERTS, SeruroPanelSearch::OnInstallResult)
+	EVT_CHECKBOX(SERURO_SEARCH_ALL_SERVERS_ID, SeruroPanelSearch::OnAllServersCheck)
 
 	/* Defined using a dynamic bind. */
 	//EVT_SERURO_STATE(STATE_TYPE_SERVER, SeruroPanelSearch::OnServerStateChange)
@@ -117,6 +119,16 @@ void SeruroPanelSearch::Uninstall(const wxString& server_name, const wxString& a
     }
 }
 
+void SeruroPanelSearch::OnAllServersCheck(wxCommandEvent &event)
+{
+	/* Simply update the servers_control to reflect the status of 'all_servers'. */
+	if (this->all_servers_control->IsChecked()) {
+		this->servers_control->Disable();
+	} else {
+		this->servers_control->Enable();
+	}
+}
+
 SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, wxT("Search"))
 {
 	/* Create an API object for searching. */
@@ -128,13 +140,10 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	/* The results sizer holds only the list control. */
 	wxBoxSizer *results_sizer = new wxBoxSizer(wxHORIZONTAL);
 
-	//wxImageList *list_images = new wxImageList(12, 12, true);
-	//list_images->Add(wxGetBitmapFromMemory(certificate_icon_12_flat));
-
 	/* The list control is a report-view displaying search results. */
 	list_control = new CheckedListCtrl(this, SERURO_SEARCH_LIST_ID, 
 		wxDefaultPosition, wxDefaultSize, (wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_SIMPLE));
-	//list_control->SetImageList(list_images, wxIMAGE_LIST_SMALL);
+	should_clear_list = false;
 
 	/* Set a column image for the checkbox column. */
 	int mail_icon_index = list_control->AddImage(wxGetBitmapFromMemory(certificate_icon_18_flat));
@@ -165,9 +174,12 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	Text *servers_text = new Text(this, wxT("Select server:"));
 	
 	this->servers_control = GetServerChoice(this);
+	/* When checked/unchecked the servers_control is disabled/enabled. */
+	this->all_servers_control = new wxCheckBox(this, SERURO_SEARCH_ALL_SERVERS_ID, _("Search all servers"));
 
 	servers_sizer->Add(servers_text, 0, wxRIGHT, 5);
 	servers_sizer->Add(this->servers_control, 0, wxRIGHT, 5);
+	servers_sizer->Add(this->all_servers_control, 0, wxRight, 5);
 	
 	/* Create search text-field. */
 	this->search_control = new SearchBox(this);
@@ -237,7 +249,8 @@ void SeruroPanelSearch::AddResult(const wxString &address,
 void SeruroPanelSearch::DoSearch()
 {
 	/* Todo this should pick up the selected (or ONLY) server. */
-    wxString server_name = this->GetSelectedServer();
+    wxString server_name;
+	wxJSONValue server;
 	wxString query = this->search_control->GetValue();
 
     /* Do not search an empty string. */
@@ -246,26 +259,41 @@ void SeruroPanelSearch::DoSearch()
     /* Do not duplicate searches. */
     //if (server_name.compare(searched_server_name) == 0 && query.compare(searched_query) == 0) return;
     
-	wxJSONValue server = this->api->GetServer(server_name);
-	/* Sanity check for no servers, but an interactive search input. */
-	if (! server.HasMember("host")) {
-		wxLogMessage(_("SeruroPanelServer> (DoSearch) Invalid server selected."));
-		return;
-	}
-	
 	wxJSONValue params;
 	params["query"] = query;
-	params["server"] = server;
 
 	/* Disable the search box until the query completes. */
 	this->DisableSearch();
-    
-    /* Cache results to prevent duplicate searches. */
-    this->searched_server_name = server_name;
+
+	/* Cache results to prevent duplicate searches. */
     this->searched_query = query;
-	
-	SeruroRequest *request = api->CreateRequest(SERURO_API_SEARCH, params, SERURO_API_CALLBACK_SEARCH);
-	request->Run();
+	/* Allow the callback to clear the list once. */
+	this->should_clear_list = true;
+
+	if (! this->all_servers_control->IsChecked()) {
+		server_name = this->GetSelectedServer();
+		server = this->api->GetServer(server_name);
+		/* Sanity check for no servers, but an interactive search input. */
+		//if (! server.HasMember("host")) {
+		//	wxLogMessage(_("SeruroPanelServer> (DoSearch) Invalid server selected."));
+		//	return;
+		//}
+
+		this->searched_server_name = server_name;
+		params["server"] = server;
+
+		api->CreateRequest(SERURO_API_SEARCH, params, SERURO_API_CALLBACK_SEARCH)->Run();
+	} else {
+		/* Send the request to all servers. */
+		wxArrayString servers_list = wxGetApp().config->GetServerList();
+		this->searched_server_name = wxEmptyString;
+		for (size_t i = 0; i < servers_list.size(); i++) {
+			server = this->api->GetServer(servers_list[i]);
+			params["server"] = server;
+
+			api->CreateRequest(SERURO_API_SEARCH, params, SERURO_API_CALLBACK_SEARCH)->Run();
+		}
+	}
 }
 
 void SeruroPanelSearch::OnSearchResult(SeruroRequestEvent &event)
@@ -273,7 +301,10 @@ void SeruroPanelSearch::OnSearchResult(SeruroRequestEvent &event)
 	wxJSONValue response = event.GetResponse();
 
 	/* Clear the results list. */
-	this->list_control->DeleteAllItems();
+	if (this->should_clear_list) {
+		this->should_clear_list = false;
+		this->list_control->DeleteAllItems();
+	}
 
 	/* Set the cursor back to the input field. */
 	this->EnableSearch();
@@ -316,3 +347,8 @@ void SeruroPanelSearch::EnableSearch()
     this->servers_control->Enable(true);
 }
 
+void SeruroPanelSearch::AlignList()
+{
+	wxListCtrl *lists[] = {list_control};
+	MaximizeAndAlignLists(lists, 1, 1);
+}
