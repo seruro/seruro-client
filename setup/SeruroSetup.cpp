@@ -4,6 +4,8 @@
 
 #include <wx/event.h>
 
+#include "../resources/images/logo_block_128_flat.png.h"
+
 BEGIN_EVENT_TABLE(SeruroSetup, wxWizard)
     EVT_BUTTON(wxID_BACKWARD, SeruroSetup::GoPrev)
 	EVT_WIZARD_PAGE_CHANGED(SERURO_SETUP_ID, SeruroSetup::OnChanged)
@@ -57,9 +59,11 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
 	if (type == SERURO_SETUP_ACCOUNT) setup_title = _("Add Account Setup");
 	if (type == SERURO_SETUP_IDENTITY) setup_title = _("Install Identity");
 
+    wxIcon setup_icon;
+    setup_icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_block_128_flat));
     this->Create(parent, SERURO_SETUP_ID, setup_title,
         /* Todo: replace icon */
-        wxIcon(icon_good), wxDefaultPosition,
+        setup_icon, wxDefaultPosition,
         wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
 
 	/* Set the default values of the navigation buttons. */

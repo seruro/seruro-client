@@ -40,14 +40,9 @@ void SeruroTray::RaiseFrame()
     
     /* Hardcore */
 #if defined(__WXMAC__) || defined(__WXOSX__)
-    //wxTheApp->SetFrontProcess();
-    //wxTheApp->SetActive(true, NULL);
-    //wx::MacSetFrontProcess();
-    //wxTheApp->MacReopenApp();
     ProcessSerialNumber psn;
     GetCurrentProcess(&psn);
-    //CPSEnableForegroundOperation(&psn);
-    //TransformProcessType(&psn, kProcessTransformToForegroundApplication);
+    TransformProcessType(&psn, kProcessTransformToForegroundApplication);
     SetFrontProcess(&psn);
 #endif
 }

@@ -13,7 +13,6 @@
 #include <wx/event.h>
 
 /* Sample icon to use for everything while testing. */
-#include "resources/icon_good.xpm"
 #include "SeruroConfig.h"
 
 //class SeruroConfig;

@@ -17,11 +17,21 @@
 #include "SeruroPanelTest.h"
 #endif
 
+/* Potential MSW icons. */
 #include "../resources/images/logo_block_256_flat.png.h"
 #include "../resources/images/logo_block_128_flat.png.h"
 #include "../resources/images/logo_block_64_flat.png.h"
 #include "../resources/images/logo_block_32_flat.png.h"
 #include "../resources/images/logo_block_16_flat.png.h"
+ 
+/* Potential OSX icons. */
+#include "../resources/images/tray_osx_black_flat.png.h"
+
+/* OSX Hack for active focus */
+#if defined(__WXMAC__) || defined(__WXOSX__)
+#include <Carbon/Carbon.h>
+extern "C" { void CPSEnableForegroundOperation(ProcessSerialNumber *psn); }
+#endif
 
 #include <wx/iconbndl.h>
 
@@ -54,6 +64,7 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
 	wxIconBundle icon_bundle;
 	wxIcon icon;
 
+#ifdef __WXMSW__
 	icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_block_256_flat));
 	icon_bundle.AddIcon(icon);
 	icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_block_128_flat));
@@ -64,6 +75,12 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
 	icon_bundle.AddIcon(icon);
 	icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_block_16_flat));
 	icon_bundle.AddIcon(icon);
+#endif
+    
+#if defined(__WXOSX__) || defined(__WXMAC__)
+    icon.CopyFromBitmap(wxGetBitmapFromMemory(tray_osx_black_flat));
+    icon_bundle.AddIcon(icon);
+#endif
 
 	this->SetIcons(icon_bundle);
 	tray->SetIcon(icon, _(SERURO_APP_NAME));
@@ -132,6 +149,15 @@ void SeruroFrameMain::OnClose(wxCloseEvent &event)
         //this->Iconize(true); /* On OSX this will cause the application to be minimized. */
 		this->Show(false);
 		event.Veto();
+        
+        /* Hardcore */
+#if defined(__WXMAC__) || defined(__WXOSX__)
+        ProcessSerialNumber psn;
+        GetCurrentProcess(&psn);
+        TransformProcessType(&psn, kProcessTransformToUIElementApplication);
+        SetFrontProcess(&psn);
+#endif
+        
 		return;
 	}
 	
