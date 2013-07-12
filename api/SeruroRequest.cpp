@@ -166,6 +166,8 @@ wxString SeruroRequest::GetAuthToken()
 	/* Warning: depends on response["email"] */
 	wrote_token = wxGetApp().config->WriteToken(auth_params["server"]["name"].AsString(),
 		response["email"].AsString(), response["token"].AsString());
+	wrote_token = (wrote_token && wxGetApp().config->SetActiveToken(auth_params["server"]["name"].AsString(),
+		response["email"].AsString()));
 	if (! wrote_token) {
 		wxLogMessage(wxT("SeruroRequest::GetAuthToken> failed to write token."));
 	}

@@ -32,6 +32,12 @@ class SettingsView : public wxWindow
 public:
 	/* Defined in GeneralWindow. */
     SettingsView(SeruroPanelSettings *window);
+	void OnColumnDrag(wxListEvent &event) {
+		/* This could be better defined, assumes image=0. */
+		if (event.GetColumn() == 0) {
+			event.Veto();
+		}
+	}
     
 protected:
     SeruroPanelSettings *parent;

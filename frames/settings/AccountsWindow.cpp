@@ -25,6 +25,7 @@
 BEGIN_EVENT_TABLE(AccountsWindow, SettingsView)
 	EVT_LIST_ITEM_SELECTED(SETTINGS_SERVERS_LIST_ID, AccountsWindow::OnServerSelected)
 	EVT_LIST_ITEM_SELECTED(SETTINGS_ACCOUNTS_LIST_ID, AccountsWindow::OnAccountSelected)
+	EVT_LIST_COL_BEGIN_DRAG(wxID_ANY, AccountsWindow::OnColumnDrag)
     EVT_LIST_ITEM_DESELECTED(wxID_ANY, AccountsWindow::OnDeselect)
 
     EVT_SERURO_REQUEST(SERURO_API_CALLBACK_CA, AccountsWindow::OnCAResult)

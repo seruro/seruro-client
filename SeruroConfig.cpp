@@ -7,6 +7,110 @@
 
 #include <wx/stdpaths.h>
 
+/* Token management methods.
+ * Tokens are stored in (DataDir)/tokens, or the file name listed in Defs.h.
+ * The format is as such:
+ * { "tokens": { "server_name": { "address": "token", ...} ...} }
+ * This means server names must be unique and a single server cannot have duplicat addresses.
+ * This also means server names and addresses must be formatted correctly.
+ */
+bool GetTokenFile(wxTextFile** token_file);
+bool WriteTokenData(wxJSONValue token_data);
+wxJSONValue GetTokenData();
+
+bool GetTokenFile(wxTextFile** token_file)
+{
+	/* We will read and write the data JIT. */
+	bool results;
+
+    wxStandardPaths paths = wxStandardPaths::Get();
+	wxString token_path = paths.GetUserDataDir() + wxString(wxT("/")) + wxString(wxT(SERURO_TOKENS_FILE));
+
+	VLDDisable();
+    *token_file = new wxTextFile(token_path);
+	VLDEnable();
+
+	/* If the token file does not exist, create and write a template. */
+	if (! (*token_file)->Exists()) {
+		results = (*token_file)->Create();
+		if (! results) {
+			/* Could not create the token file, bail. */
+			wxLogMessage(wxT("Error while handling token data, this is serious."));
+			delete *token_file;
+			return false;
+		}
+
+		wxLogMessage(wxT("Token file did not exist, successfully created."));
+	}
+	return true;
+}
+
+bool WriteTokenData(wxJSONValue token_data)
+{
+	bool results;
+
+	/* Get pointer to token file, or fail. */
+	wxTextFile *token_file;
+	results = GetTokenFile(&token_file);
+	if (! results) {
+		return false;
+	}
+
+	/* Write the data into a string for saving. */
+	wxJSONWriter token_writer(wxJSONWRITER_STYLED);
+	wxString token_string;
+	token_writer.Write(token_data, token_string);
+
+	/* Add the line and write, either way delete the memory and return the results. */
+	token_file->Open();
+	token_file->Clear();
+	token_file->InsertLine(token_string, 0);
+	results = token_file->Write();
+	token_file->Close();
+	delete token_file;
+
+	wxLogMessage(wxT("Wrote token data: %s"), token_string);
+
+	return results;
+}
+
+/* Read all of the token data. */
+wxJSONValue GetTokenData()
+{
+	wxJSONValue token_data;
+	bool results;
+
+	/* Get pointer to token file, or fail. */
+	wxTextFile *token_file;
+	results = GetTokenFile(&token_file);
+	if (! results) {
+		return token_data;
+	}
+
+	/* Read entire file into string. */
+	wxString token_string;
+	token_file->Open();
+	for (token_string = token_file->GetFirstLine(); !token_file->Eof();
+		token_string += token_file->GetNextLine() + wxT("\n"));
+	token_file->Close();
+	delete token_file;
+
+	wxLogMessage(wxT("Read token data: %s"), token_string);
+
+	/* Parse that string as a JSON value. */
+	wxJSONReader token_reader;
+	VLDDisable();
+    int num_errors = token_reader.Parse(token_string, &token_data);
+	VLDEnable();
+
+	if (num_errors > 0) {
+		wxLogMessage(wxT("Error parsing token data (could be a blank token file)."));
+	}
+ 
+	/* Either way they'll get a wxJSONValue, might be empty. */
+	return token_data;
+}
+
 /* Set the UserAppData location of the expected config file. */
 SeruroConfig::SeruroConfig()
 {
@@ -88,6 +192,103 @@ void SeruroConfig::LoadConfig()
     this->configValid = true;
 }
 
+/*****************************************************************************************/
+/************** TOKEN MANIPULATOR/ACCESSORS **********************************************/
+/*****************************************************************************************/
+
+wxString SeruroConfig::GetToken(const wxString &server, const wxString &address)
+{
+	wxString token = wxEmptyString;
+
+	/* Get current token data, check if the requested token exists and return, else an empty string. */
+	wxJSONValue token_data = GetTokenData();
+	if (token_data.HasMember(server) && token_data[server].HasMember(address)) {
+		token = token_data[server][address].AsString();	
+	}
+
+	return token;
+}
+
+bool SeruroConfig::RemoveTokens(const wxString &server_name)
+{
+	bool results;
+
+	wxJSONValue token_data = GetTokenData();
+	if (! token_data.HasMember(server_name)) {
+		return true;
+	}
+
+	token_data.Remove(server_name);
+	results = WriteTokenData(token_data);
+
+	return results;
+}
+
+bool SeruroConfig::RemoveToken(const wxString &server_name, const wxString &address)
+{
+	bool results;
+
+	wxJSONValue token_data = GetTokenData();
+	if (! token_data.HasMember(server_name) || ! token_data[server_name].HasMember(address)) {
+		/* Unexpected, maybe there was never a token for this account, 
+		 * and it was the only for the given server?
+		 */
+		return true;
+	}
+
+	token_data[server_name].Remove(address);
+	results = WriteTokenData(token_data);
+
+	return results;
+}
+
+bool SeruroConfig::WriteToken(const wxString &server, const wxString &address, const wxString &token)
+{
+	bool results;
+
+	/* Get current token data, then add this server,address entry. */
+	wxJSONValue token_data = GetTokenData();
+	if (! token_data.HasMember(server)) {
+		wxLogMessage(wxT("Token file does not contain server: %s"), server);
+		wxJSONValue server_value;
+		token_data[server] = server_value;
+	}
+
+	token_data[server][address] = token;
+	results = WriteTokenData(token_data);
+
+	return results;
+}
+
+bool SeruroConfig::SetActiveToken(const wxString &server_name, const wxString &account)
+{
+	if (! configData["servers"].HasMember(server_name)) return false;
+
+	configData["servers"][server_name]["active_token"] = account;
+	this->WriteConfig();
+	return true;
+}
+
+wxString SeruroConfig::GetActiveToken(const wxString &server_name)
+{
+	wxString account; 
+
+	if (! configData["servers"].HasMember(server_name)) return wxEmptyString;
+	if (! configData["servers"][server_name].HasMember("active_token")) {
+		/* Return the first account. */
+		wxArrayString account_list = GetAddressList(server_name);
+		/* There may not be any accounts? */
+		if (account_list.size() == 0) return wxEmptyString;
+		return account_list[0];
+	}
+	
+	return configData["servers"][server_name]["active_token"].AsString();
+}
+
+/*****************************************************************************************/
+/************** SERVER/ACCOUNT MANIPULATORS **********************************************/
+/*****************************************************************************************/
+
 bool SeruroConfig::RemoveServer(wxString server_name)
 {
 	if (! configData["servers"].HasMember(server_name)) {
@@ -133,36 +334,6 @@ bool SeruroConfig::AddServer(wxJSONValue server_info)
 	return this->WriteConfig();
 }
 
-long SeruroConfig::GetPort(wxString server_name)
-{
-	/* If this server does not exist, return an error state (0). */
-	if (! HasConfig() || ! configData.HasMember("servers") || 
-		! configData["servers"].HasMember(server_name)) {
-		return 0;
-	}
-
-	return GetPortFromServer(configData["servers"][server_name]);
-}
-
-long SeruroConfig::GetPortFromServer(wxJSONValue server_info)
-{
-	long port = 0;
-	wxString port_string;
-
-	/* The server entry may or may not have an explicit port. */
-	if (server_info.HasMember("port")) {
-		port_string = server_info["port"].AsString();
-	} else {
-		port_string = _(SERURO_DEFAULT_PORT);
-	}
-
-	port_string.ToLong(&port, 10);
-	wxLogMessage(_("SeruroConfig> (GetPortFromServer) port for (%s) is (%s)= (%d)."), 
-		server_info["name"].AsString(), port_string, port);
-
-	return port;
-}
-
 bool SeruroConfig::RemoveAddress(wxString server_name, wxString address)
 {
 	/* Todo: should this remove the token too? yes! */
@@ -202,6 +373,40 @@ bool SeruroConfig::AddAddress(const wxString &server_name, const wxString &addre
 
 	wxLogMessage(_("SeruroConfig> Adding address (%s) (%s)."), server_name, address);
 	return this->WriteConfig();
+}
+
+/*****************************************************************************************/
+/************** SERVER/ACCOUNT ACCESSORS *************************************************/
+/*****************************************************************************************/
+
+long SeruroConfig::GetPort(wxString server_name)
+{
+	/* If this server does not exist, return an error state (0). */
+	if (! HasConfig() || ! configData.HasMember("servers") || 
+		! configData["servers"].HasMember(server_name)) {
+		return 0;
+	}
+
+	return GetPortFromServer(configData["servers"][server_name]);
+}
+
+long SeruroConfig::GetPortFromServer(wxJSONValue server_info)
+{
+	long port = 0;
+	wxString port_string;
+
+	/* The server entry may or may not have an explicit port. */
+	if (server_info.HasMember("port")) {
+		port_string = server_info["port"].AsString();
+	} else {
+		port_string = _(SERURO_DEFAULT_PORT);
+	}
+
+	port_string.ToLong(&port, 10);
+	wxLogMessage(_("SeruroConfig> (GetPortFromServer) port for (%s) is (%s)= (%d)."), 
+		server_info["name"].AsString(), port_string, port);
+
+	return port;
 }
 
 bool SeruroConfig::ServerExists(wxJSONValue server_info)
@@ -341,11 +546,9 @@ wxArrayString SeruroConfig::GetMemberArray(const wxString &member)
 	return values;
 }
 
-bool SeruroConfig::HasConfig()
-{
-	/* Make a decision to run the SeruroSetup wizard. */
-    return (this->configFile->Exists() && this->configValid);
-}
+/*****************************************************************************************/
+/************** CERTIFICATE / FINGERPRINTING *********************************************/
+/*****************************************************************************************/
 
 /* Certificate tracking methods.
  */
@@ -512,180 +715,5 @@ wxString SeruroConfig::GetCA(wxString server_name)
 	return ca;
 }
 
-/* Token management methods.
- * Tokens are stored in (DataDir)/tokens, or the file name listed in Defs.h.
- * The format is as such:
- * { "tokens": { "server_name": { "address": "token", ...} ...} }
- * This means server names must be unique and a single server cannot have duplicat addresses.
- * This also means server names and addresses must be formatted correctly.
- */
-bool GetTokenFile(wxTextFile** token_file);
-bool WriteTokenData(wxJSONValue token_data);
-wxJSONValue GetTokenData();
-
-bool GetTokenFile(wxTextFile** token_file)
-{
-	/* We will read and write the data JIT. */
-	bool results;
-
-    wxStandardPaths paths = wxStandardPaths::Get();
-	wxString token_path = paths.GetUserDataDir() + wxString(wxT("/")) + wxString(wxT(SERURO_TOKENS_FILE));
-
-	VLDDisable();
-    *token_file = new wxTextFile(token_path);
-	VLDEnable();
-    //delete paths;
-
-	/* If the token file does not exist, create and write a template. */
-	if (! (*token_file)->Exists()) {
-		results = (*token_file)->Create();
-		if (! results) {
-			/* Could not create the token file, bail. */
-			wxLogMessage(wxT("Error while handling token data, this is serious."));
-			delete *token_file;
-			return false;
-		}
-		/* Write out the root. */
-		//(*token_file)->Open();
-		//(*token_file)->InsertLine(wxT("{\"tokens\": {}}"), 0);
-		//results = (*token_file)->Write();
-		//(*token_file)->Close();
-
-		wxLogMessage(wxT("Token file did not exist, successfully created."));
-	}
-	return true;
-}
-
-bool WriteTokenData(wxJSONValue token_data)
-{
-	bool results;
-
-	/* Get pointer to token file, or fail. */
-	wxTextFile *token_file;
-	results = GetTokenFile(&token_file);
-	if (! results) {
-		return false;
-	}
-
-	/* Write the data into a string for saving. */
-	wxJSONWriter token_writer(wxJSONWRITER_STYLED);
-	wxString token_string;
-	token_writer.Write(token_data, token_string);
-
-	/* Add the line and write, either way delete the memory and return the results. */
-	token_file->Open();
-	token_file->Clear();
-	token_file->InsertLine(token_string, 0);
-	results = token_file->Write();
-	token_file->Close();
-	delete token_file;
-
-	wxLogMessage(wxT("Wrote token data: %s"), token_string);
-
-	return results;
-}
-
-/* Read all of the token data. */
-wxJSONValue GetTokenData()
-{
-	wxJSONValue token_data;
-	bool results;
-
-	/* Get pointer to token file, or fail. */
-	wxTextFile *token_file;
-	results = GetTokenFile(&token_file);
-	if (! results) {
-		return token_data;
-	}
-
-	/* Read entire file into string. */
-	wxString token_string;
-	token_file->Open();
-	for (token_string = token_file->GetFirstLine(); !token_file->Eof();
-		token_string += token_file->GetNextLine() + wxT("\n"));
-	token_file->Close();
-	delete token_file;
-
-	wxLogMessage(wxT("Read token data: %s"), token_string);
-
-	/* Parse that string as a JSON value. */
-	wxJSONReader token_reader;
-	VLDDisable();
-    int num_errors = token_reader.Parse(token_string, &token_data);
-	VLDEnable();
-
-	if (num_errors > 0) {
-		wxLogMessage(wxT("Error parsing token data (could be a blank token file)."));
-	}
- 
-	/* Either way they'll get a wxJSONValue, might be empty. */
-	return token_data;
-}
-
-wxString SeruroConfig::GetToken(const wxString &server, const wxString &address)
-{
-	wxString token;
-
-	/* Get current token data, check if the requested token exists and return, else an empty string. */
-	wxJSONValue token_data = GetTokenData();
-	if (token_data.HasMember(server) && token_data[server].HasMember(address)) {
-		token = token_data[server][address].AsString();	
-	} else {
-		token = wxT("");
-	}
-
-	return token;
-}
-
-bool SeruroConfig::RemoveTokens(const wxString &server_name)
-{
-	bool results;
-
-	wxJSONValue token_data = GetTokenData();
-	if (! token_data.HasMember(server_name)) {
-		return true;
-	}
-
-	token_data.Remove(server_name);
-	results = WriteTokenData(token_data);
-
-	return results;
-}
-
-bool SeruroConfig::RemoveToken(const wxString &server_name, const wxString &address)
-{
-	bool results;
-
-	wxJSONValue token_data = GetTokenData();
-	if (! token_data.HasMember(server_name) || ! token_data[server_name].HasMember(address)) {
-		/* Unexpected, maybe there was never a token for this account, 
-		 * and it was the only for the given server?
-		 */
-		return true;
-	}
-
-	token_data[server_name].Remove(address);
-	results = WriteTokenData(token_data);
-
-	return results;
-}
-
-bool SeruroConfig::WriteToken(const wxString &server, const wxString &address, const wxString &token)
-{
-	bool results;
-
-	/* Get current token data, then add this server,address entry. */
-	wxJSONValue token_data = GetTokenData();
-	if (! token_data.HasMember(server)) {
-		wxLogMessage(wxT("Token file does not contain server: %s"), server);
-		wxJSONValue server_value;
-		token_data[server] = server_value;
-	}
-
-	token_data[server][address] = token;
-	results = WriteTokenData(token_data);
-
-	return results;
-}
 
 

@@ -135,14 +135,14 @@ wxJSONValue SeruroServerAPI::GetAuth(const wxString &server, const wxString &add
 	 */
 	if (address.compare(wxEmptyString) == 0) {
 		wxString token;
-		wxArrayString address_list = wxGetApp().config->GetAddressList(server);
-		for (size_t i = 0; i < address_list.size(); i++) {
-			token = wxGetApp().config->GetToken(server, address_list[i]);
-			if (token.compare(wxEmptyString) != 0) {
-				break;
-			}
-		}
-		auth["token"] = token;
+		//wxArrayString address_list = wxGetApp().config->GetAddressList(server);
+		//for (size_t i = 0; i < address_list.size(); i++) {
+			//token = wxGetApp().config->GetToken(server, address_list[i]);
+			//if (token.compare(wxEmptyString) != 0) {
+				//break;
+			//}
+		//}
+		auth["token"] = wxGetApp().config->GetActiveToken(server);
 	} else {
 		auth["token"] = wxGetApp().config->GetToken(server, address);
 	}

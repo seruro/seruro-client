@@ -17,7 +17,7 @@ public:
     /* Other components may refresh the views. */
     void RefreshAccounts();
     void RefreshExtensions();
-    
+
     /* Todo: consider having a log for extensions. */
     
 	/* event handlers. */

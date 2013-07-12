@@ -9,7 +9,7 @@
 #include "../wxJSON/wx/jsonval.h"
 #include "../api/SeruroStateEvents.h"
 
-//#include <wx/listctrl.h>
+
 #include <wx/choice.h>
 #include <wx/srchctrl.h>
 
@@ -26,12 +26,14 @@ enum search_actions_t
 
 enum search_ids_t
 {
-	SERURO_SEARCH_TEXT_INPUT_ID
+	SERURO_SEARCH_TEXT_INPUT_ID,
+	SERURO_SEARCH_ALL_SERVERS_ID,
 };
 
 typedef wxJSONValue* IdentityItemPtr;
 
 class SearchBox;
+class wxCheckBox;
 
 // Define a new frame type: this is going to be our main frame
 class SeruroPanelSearch : public SeruroPanel
@@ -49,10 +51,12 @@ public:
 	void OnSearch(wxCommandEvent &event) { DoSearch(); }
 	void DoSearch();
 	void OnSearchResult(SeruroRequestEvent &event);
+	void OnAllServersCheck(wxCommandEvent &event);
     
     /* UI helpers during search requests, and results processing. */
     void DisableSearch();
     void EnableSearch();
+	void AlignList();
 
     void Install(const wxString& server_name, const wxString& address);
     void Uninstall(const wxString& server_name, const wxString& address);
@@ -83,9 +87,12 @@ public:
 
 private:
     CheckedListCtrl *list_control;
+	/* If set, the search callback will clear results. */
+	bool should_clear_list;
     
 	/* User inputs. */
 	wxChoice *servers_control;
+	wxCheckBox *all_servers_control;
 	SearchBox *search_control;
 	wxBoxSizer *components_sizer;
     
