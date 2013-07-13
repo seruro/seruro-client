@@ -25,7 +25,7 @@
 #include "../resources/images/logo_block_16_flat.png.h"
  
 /* Potential OSX icons. */
-#include "../resources/images/tray_osx_black_flat.png.h"
+#include "../resources/images/tray_osx_hard_black.png.h"
 
 /* OSX Hack for active focus */
 #if defined(__WXMAC__) || defined(__WXOSX__)
@@ -78,8 +78,8 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
 #endif
     
 #if defined(__WXOSX__) || defined(__WXMAC__)
-    icon.CopyFromBitmap(wxGetBitmapFromMemory(tray_osx_black_flat));
-    icon_bundle.AddIcon(icon);
+    icon.CopyFromBitmap(wxGetBitmapFromMemory(tray_osx_hard_black));
+    //icon_bundle.AddIcon(icon);
 #endif
 
 	this->SetIcons(icon_bundle);

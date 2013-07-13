@@ -11,6 +11,7 @@
 #include "../UIDefs.h"
 
 #include <wx/log.h>
+#include <wx/imaglist.h>
 
 /* Include image data. */
 #include "../../resources/images/blank.png.h"
@@ -354,12 +355,7 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
 	servers_list->InsertColumn(2, _("Expires"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
 
     this->GenerateServersList();
-
-	/* Allow the server name column to take up the remaining space. */
 	servers_list->SetColumnWidth(0, 24);
-	if (servers_list->GetItemCount() > 0) {
-		servers_list->SetColumnWidth(SERVERS_LIST_NAME_COLUMN, wxLIST_AUTOSIZE);
-	}
 
 	lists_sizer->Add(servers_list, DIALOGS_SIZER_OPTIONS);
 
@@ -376,14 +372,7 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
 	accounts_list->InsertColumn(3, _("Expires"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
 
     this->GenerateAccountsList();
-
-	/* Allow the account/address name column to take up the remaining space. */
 	accounts_list->SetColumnWidth(0, 24);
-	if (accounts_list->GetItemCount() > 0) {
-		/* Size the server first, then allow the account name to override. */
-		accounts_list->SetColumnWidth(ACCOUNTS_LIST_SERVER_COLUMN, wxLIST_AUTOSIZE);
-		accounts_list->SetColumnWidth(ACCOUNTS_LIST_NAME_COLUMN, wxLIST_AUTOSIZE);
-	}
 
 	lists_sizer->Add(accounts_list, DIALOGS_SIZER_OPTIONS.Proportion(1).Top().Bottom());
 

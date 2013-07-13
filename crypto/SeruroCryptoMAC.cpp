@@ -6,13 +6,6 @@
 #include <wx/base64.h>
 #include <wx/osx/core/cfstring.h>
 
-
-/* Note: requires C++ flags: "-framework Security" */
-//#include <Security/Security.h>
-//#include <netinet/ip.h>
-//#include <netdb.h>
-//#include <sys/socket.h>
-
 /* For making HTTP/TLS reqeusts. */
 #include <CFNetwork/CFNetwork.h>
 #include <Security/Security.h>
@@ -350,6 +343,7 @@ wxString SeruroCryptoMAC::TLSRequest(wxJSONValue params)
     
     /* Add request headers "Accept: application/json", calculate length. */
     CFHTTPMessageSetHeaderFieldValue(request, CFSTR("Accept"), CFSTR("application/json"));
+    CFHTTPMessageSetHeaderFieldValue(request, CFSTR("User-Agent"), CFSTR(SERURO_DEFAULT_USER_AGENT));
     
     /* This will make a copy of the request, 
      * which can be released afterward (this will open the request!). */

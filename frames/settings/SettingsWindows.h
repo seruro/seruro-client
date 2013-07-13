@@ -6,8 +6,6 @@
 #include "../../wxJSON/wx/jsonval.h"
 #include "../../api/SeruroStateEvents.h"
 
-#include "../../apps/SeruroApps.h"
-
 #include <wx/button.h>
 #include <wx/listctrl.h>
 
@@ -21,7 +19,10 @@ enum settings_ids_t {
 	BUTTON_ADD_SERVER,
 	BUTTON_ADD_ACCOUNT,
 	BUTTON_UPDATE,
-	BUTTON_REMOVE
+	BUTTON_REMOVE,
+    BUTTON_ASSIGN,
+    BUTTON_UNASSIGN,
+    BUTTON_REFRESH
 };
 
 class SeruroPanelSettings;
@@ -110,11 +111,30 @@ class ApplicationsWindow : public SettingsView
 {
 public:
     ApplicationsWindow(SeruroPanelSettings *window);
+    ~ApplicationsWindow();
     
     void GenerateApplicationsList();
     void GenerateAccountsList();
     
+    /* Button event handlers. */
+    void OnAssign(wxCommandEvent &event);
+    void OnUnassign(wxCommandEvent &event);
+    void OnRefresh(wxCommandEvent &event);
+    
+    /* Selection handlers. */
+    void OnAppSelected(wxListEvent &event);
+	void OnAccountSelected(wxListEvent &event);
+    void OnDeselect(wxListEvent &event) { DoDeselect(); }
+	void DoDeselect();
+	void DeselectApps();
+	void DeselectAccounts();
+    
+    /* The client changes something about an account. */
+    void OnAccountStateChange(SeruroStateEvent &event);
+    
 private:
+    void AlignLists();
+    
     bool account_selected;
     
     /* Information about the selection item. */
@@ -122,13 +142,15 @@ private:
     wxString account;
     
     /* Components. */
-    wxButton *configure_button;
-    wxButton *remove_button;
+    wxButton *assign_button;
+    wxButton *unassign_button;
     wxListCtrl *apps_list;
     wxListCtrl *accounts_list;
     
     /* Helpers. */
-    SeruroApps apps_helper;
+    SeruroApps *apps_helper;
+    
+    DECLARE_EVENT_TABLE()
 };
 
 class ExtensionsWindow : public SettingsView
