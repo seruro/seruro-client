@@ -28,6 +28,12 @@
 //#define CA_KEYCHAIN             "System Roots"
 #define CA_KEYCHAIN             "login"
 
+enum search_types_t
+{
+    CRYPTO_SEARCH_CERT,
+    CRYPTO_SEARCH_IDENTITY
+};
+
 DECLARE_APP(SeruroClient);
 
 const char* AsChar(const wxString &input)
@@ -35,27 +41,92 @@ const char* AsChar(const wxString &input)
 	return input.mb_str(wxConvUTF8);
 }
 
-/* Returns SHA1 of a wxMemoryBuffer. */
-wxString GetFingerprintFromBuffer(const wxMemoryBuffer &cert)
+bool GetReferenceFromSubjectKeyID(wxString subject_key, search_types_t type, wxString keychain_name, CFTypeRef *reference)
 {
-    /* Documentation missing from offline view. */
-    CC_SHA1_CTX hash_ctx;
-    CC_SHA1_Init(&hash_ctx);
+    /* Find the base64 encoded subject key ID. */
+    OSStatus result;
+    wxMemoryBuffer subject_key_buffer;
+    CFDataRef subject_key_data;
+    CFMutableDictionaryRef query;
     
-    /* Add contents of memory buffer. */
-    CC_SHA1_Update(&hash_ctx, (const void *)cert.GetData(), (CC_LONG)cert.GetDataLen());
+    /* Create subject data reference. */
+    subject_key_buffer = wxBase64Decode(subject_key);
+    subject_key_data = CFDataCreate(kCFAllocatorDefault,
+        (UInt8 *) subject_key_buffer.GetData(), subject_key_buffer.GetDataLen());
     
-    /* Store byte-data of hash in character buffer. */
-    unsigned char hash_digest[CC_SHA1_DIGEST_LENGTH];
-    CC_SHA1_Final(hash_digest, &hash_ctx);
+    /* Create search query. */
+    query = CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+    if (type == CRYPTO_SEARCH_IDENTITY) {
+        CFDictionaryAddValue(query, kSecClass, kSecClassIdentity);
+    } else if (type == CRYPTO_SEARCH_CERT) {
+        CFDictionaryAddValue(query, kSecClass, kSecClassCertificate);
+    }
+    CFDictionaryAddValue(query, kSecAttrSubjectKeyID, subject_key_data);
+    CFDictionaryAddValue(query, kSecMatchTrustedOnly, kCFBooleanTrue);
+    CFRelease(subject_key_data);
     
-    /* Store in memory buffer. */
-    wxMemoryBuffer hash_buffer;
-    hash_buffer.AppendData( (void *) hash_digest, 20);
+    /* If a reference pointer is provided then return the search result. */
+    if (reference != NULL) {
+        CFDictionaryAddValue(query, kSecReturnRef, kCFBooleanTrue);
+        result = SecItemCopyMatching(query, reference);
+    } else {
+        result = SecItemCopyMatching(query, NULL);
+    }
+    CFRelease(query);
     
-    /* Todo: (Optional), zero out digest buffer. */
+    if (! result == errSecSuccess) {
+        wxLogMessage(_("SeruroCrypto> (FindSubjectKeyIDInKeychain) failed (err= %d)."), result);
+        return false;
+    }
+    return true;
+}
+
+bool FindSubjectKeyIDInKeychain(wxString subject_key, search_types_t type, wxString keychain_name)
+{
+    bool result_matches;
+    CFTypeRef result_data;
     
-    return wxBase64Encode(hash_buffer);
+    if (! GetReferenceFromSubjectKeyID(subject_key, type, keychain_name, &result_data)) {
+        /* Could not match search query. */
+        return false;
+    }
+    
+    /* The return type may be any keychain value, make sure it matches the expected. */
+    result_matches = false;
+    if (CFGetTypeID(result_data) == SecCertificateGetTypeID() && type == CRYPTO_SEARCH_CERT) {
+        result_matches = true;
+    } else if (CFGetTypeID(result_data) == SecIdentityGetTypeID() && type == CRYPTO_SEARCH_IDENTITY) {
+        result_matches = true;
+    }
+    
+    CFRelease(result_data);
+    return result_matches;
+}
+
+bool DeleteSubjectKeyIDInKeychain(wxString subject_key, search_types_t type, wxString keychain_name)
+{
+    OSStatus result;
+    CFTypeRef result_data;
+    CFMutableDictionaryRef query;
+    
+    /* Use a 'delete-by-transient-reference' method, using get reference. */
+    if (! GetReferenceFromSubjectKeyID(subject_key, type, keychain_name, &result_data)) {
+        return false;
+    }
+    
+    /* The search dictionary is simply a match list of the single result_data. */
+    query = CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+    CFDictionaryAddValue(query, kSecMatchItemList, result_data);
+    CFRelease(result_data);
+    
+    result = SecItemDelete(query);
+    CFRelease(query);
+    
+    if (! result == errSecSuccess) {
+        wxLogMessage(_("SeruroCrypto> (DeleteSubjectKeyIDInKeychain) failed (err= %d)."), result);
+        return false;
+    }
+    return true;
 }
 
 wxString GetSubjectKeyIDFromCertificate(SecCertificateRef &cert)
@@ -71,7 +142,7 @@ wxString GetSubjectKeyIDFromCertificate(SecCertificateRef &cert)
     
     /* Set the list of attributes. */
     keys = CFArrayCreateMutable (NULL, 0, &kCFTypeArrayCallBacks);
-    CFArrayAppendValue(keys, kSecOIDSubjectKeyIdentifier);
+    CFArrayAppendValue(keys, kSecOIDSubjectKeyIdentifier); /* SecCertificateOIDs.h */
     
     /* Request dictionary of dictionaries (one for each attribute). */
     certificate_values = SecCertificateCopyValues(cert, keys, NULL);
@@ -105,48 +176,6 @@ wxString GetSubjectKeyIDFromCertificate(SecCertificateRef &cert)
     
     wxLogMessage(_("GetSubjectKeyIDFromCertificate: %s."), wxBase64Encode(subject_data));
     return wxBase64Encode(subject_data);
-}
-
-/* Returns SHA1 from an identity reference (certificate). */
-wxString GetFingerprintFromIdentity(const SecIdentityRef &identity)
-{
-    /* The certificate is extracted from the identity to find the fingerprint. */
-    SecCertificateRef identity_cert;
-    CFDataRef cert_data;
-    wxMemoryBuffer cert_buffer;
-    
-    /* Place the fingerprint belonging to the identity into result fingerprints. */
-    SecIdentityCopyCertificate(identity, &identity_cert);
-    cert_data = SecCertificateCopyData(identity_cert);
-    
-    cert_buffer.AppendData(CFDataGetBytePtr(cert_data), CFDataGetLength(cert_data));
-    
-    /* Release created objects. */
-    CFRelease(identity_cert);
-    CFRelease(cert_data);
-    
-    return GetFingerprintFromBuffer(cert_buffer);
-}
-
-/* Returns a "fingerprint" meaning a SHA1 of a keychain persistent data reference. */
-wxString GetFingerprintFromReference(const CFDataRef &item)
-{
-    wxMemoryBuffer item_buffer;
-    
-    item_buffer.AppendData(CFDataGetBytePtr(item), CFDataGetLength(item));
-    return wxBase64Encode(item_buffer);
-}
-
-/* Sets item to the persistent data reference held in fingerprint. */
-CFDataRef CreateReferenceFromFingerprint(const wxString &fingerprint)
-{
-    CFDataRef item;
-    wxMemoryBuffer item_buffer;
-    
-    item_buffer = wxBase64Decode(fingerprint);
-    item = CFDataCreate(kCFAllocatorDefault, (UInt8 *) item_buffer.GetData(), item_buffer.GetDataLen());
-    
-    return item;
 }
 
 /* Sets trust of x509 extensions for the certificate. */
@@ -517,40 +546,51 @@ bool SeruroCryptoMAC::InstallCertificate(const wxMemoryBuffer &cert, wxString &f
     return status;
 }
 
-bool SeruroCryptoMAC::RemoveIdentity(wxArrayString fingerprints) { return true; }
-bool SeruroCryptoMAC::RemoveCA(wxString fingerprint) { return true; }
-bool SeruroCryptoMAC::RemoveCertificates(wxArrayString fingerprints)
-{ return true; }
-
-bool FindFingerprintInKeychain(wxString &fingerprint, wxString keychain_name)
+bool SeruroCryptoMAC::RemoveIdentity(wxArrayString fingerprints)
 {
-    // 1. Get SecKeychainRef
-    // (item class is certificate, attr-list does not allow SHA1?)
+    bool status;
     
-    /* Todo: this is deprecated. */
-    /* OSStatus SecKeychainSearchCreateFromAttributes (
-     *   CFTypeRef keychainOrArray, // can be a SecKeychainRef
-     *   SecItemClass itemClass, //kSecCertificateItemClass
-     *   const SecKeychainAttributeList *attrList,
-     *   SecKeychainSearchRef *searchRef);
-     */
-    
-    // Use SecKeychainSearchCopyNext to get a keychain item
-    // Use  SecKeychainItemCopyAttributesAndData to get item data
-    // Calculate SHA1
-    // Compare
-    
+    for (size_t i = 0; i < fingerprints.size(); i++) {
+        status = DeleteSubjectKeyIDInKeychain(fingerprints[i], CRYPTO_SEARCH_IDENTITY, _(IDENTITY_KEYCHAIN));
+        if (! status) return false;
+    }
     return true;
 }
+
+bool SeruroCryptoMAC::RemoveCA(wxString fingerprint)
+{
+    bool status;
+    
+    status = DeleteSubjectKeyIDInKeychain(fingerprint, CRYPTO_SEARCH_CERT, _(CA_KEYCHAIN));
+    return status;
+}
+
+bool SeruroCryptoMAC::RemoveCertificates(wxArrayString fingerprints)
+{
+    bool status;
+    
+    for (size_t i = 0; i < fingerprints.size(); i++) {
+        status = DeleteSubjectKeyIDInKeychain(fingerprints[i], CRYPTO_SEARCH_CERT, _(CERTIFICATE_KEYCHAIN));
+        if (! status) return false;
+    }
+    return true;
+}
+
 
 /* Methods to query certificates by their name (meaning SHA1) */
 bool SeruroCryptoMAC::HaveCA(wxString server_name)
 {
+    bool status;
+    
     if (! wxGetApp().config->HaveCA(server_name)) return false;
 	wxString ca_fingerprint = wxGetApp().config->GetCA(server_name);
     
-    return FindFingerprintInKeychain(ca_fingerprint, _(CA_KEYCHAIN));
+    status = FindSubjectKeyIDInKeychain(ca_fingerprint, CRYPTO_SEARCH_CERT, _(CA_KEYCHAIN));
+    
+    wxLogMessage(_("SeruroCrypto> (HaveCA) server (%s) in store: (%s)."), server_name, (status) ? _("true") : _("false"));
+    return status;
 }
+
 bool SeruroCryptoMAC::HaveCertificates(wxString server_name, wxString address)
 {
     /* Overview: since OSX cannot search a certificate using it's fingerprint.
@@ -569,8 +609,8 @@ bool SeruroCryptoMAC::HaveCertificates(wxString server_name, wxString address)
 	}
     
 	/* Looking at the address book store. */
-	bool cert_1 = FindFingerprintInKeychain(certificates[0], _(CERTIFICATE_KEYCHAIN));
-	bool cert_2 = FindFingerprintInKeychain(certificates[1], _(CERTIFICATE_KEYCHAIN));
+	bool cert_1 = FindSubjectKeyIDInKeychain(certificates[0], CRYPTO_SEARCH_CERT, _(CERTIFICATE_KEYCHAIN));
+	bool cert_2 = FindSubjectKeyIDInKeychain(certificates[1], CRYPTO_SEARCH_CERT, _(CERTIFICATE_KEYCHAIN));
 	wxLogMessage(_("SeruroCrypto> (HaveCertificates) address (%s) (%s) in store: (1: %s, 2: %s)."),
                  server_name, address, (cert_1) ? "true" : "false", (cert_2) ? "true" : "false");
 	return (cert_1 && cert_2);
@@ -589,8 +629,8 @@ bool SeruroCryptoMAC::HaveIdentity(wxString server_name, wxString address)
 	}
     
 	/* Looking at the trusted Root store. */
-	bool cert_1 = FindFingerprintInKeychain(identity[0], _(IDENTITY_KEYCHAIN));
-	bool cert_2 = FindFingerprintInKeychain(identity[1], _(IDENTITY_KEYCHAIN));
+	bool cert_1 = FindSubjectKeyIDInKeychain(identity[0], CRYPTO_SEARCH_IDENTITY, _(IDENTITY_KEYCHAIN));
+	bool cert_2 = FindSubjectKeyIDInKeychain(identity[1], CRYPTO_SEARCH_IDENTITY, _(IDENTITY_KEYCHAIN));
 	wxLogMessage(_("SeruroCrypto> (HaveIdentity) identity (%s) (%s) in store: (1: %s, 2: %s)."),
                  server_name, address, (cert_1) ? "true" : "false", (cert_2) ? "true" : "false");
 	return (cert_1 && cert_2);

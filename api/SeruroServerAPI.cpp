@@ -129,12 +129,12 @@ SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue param
 wxJSONValue SeruroServerAPI::GetAuth(const wxString &server, const wxString &address)
 {
 	wxJSONValue auth;
+    wxString token;
 
 	/* Determine address to request token for (from given server).
 	 * If an address is not given, search for ANY token for this server. 
 	 */
 	if (address.compare(wxEmptyString) == 0) {
-		wxString token;
 		//wxArrayString address_list = wxGetApp().config->GetAddressList(server);
 		//for (size_t i = 0; i < address_list.size(); i++) {
 			//token = wxGetApp().config->GetToken(server, address_list[i]);

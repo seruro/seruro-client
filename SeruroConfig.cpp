@@ -282,7 +282,8 @@ wxString SeruroConfig::GetActiveToken(const wxString &server_name)
 		return account_list[0];
 	}
 	
-	return configData["servers"][server_name]["active_token"].AsString();
+    /* Lookup token from tokens file using the active token (account). */
+	return GetToken(server_name, configData["servers"][server_name]["active_token"].AsString());
 }
 
 /*****************************************************************************************/
