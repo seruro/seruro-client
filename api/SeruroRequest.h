@@ -7,12 +7,18 @@
 #include <wx/thread.h>
 #include <wx/event.h>
 
-/* When an API command finished it will add a SERURO_API_RESULT event.
+enum seruro_request_callbacks_t
+{
+    /* The token auth was invalid, prompt for credentials. */
+    SERURO_REQUEST_CALLBACK_AUTH
+};
+    
+/* When an API command finished it will add a SERURO_REQUEST_RESULT event.
  * This event should be caught by a single function and the event object
  * should be inspected to determine which API call returned, and the resultant
  * response parameters.
  */
-DECLARE_EVENT_TYPE(SERURO_API_RESULT, -1);
+DECLARE_EVENT_TYPE(SERURO_REQUEST_RESULT, -1);
 
 /* Create a new event type which holds JSON data, to prevent reading and 
  * writing JSON/string data for every request-response.
@@ -22,7 +28,7 @@ class SeruroRequestEvent : public wxCommandEvent
 {
 public:
     /* The ID specifies the callback, the developer should not need to modify the command_type. */
-	SeruroRequestEvent(int id = 0, wxEventType command_type = SERURO_API_RESULT)
+	SeruroRequestEvent(int id = 0, wxEventType command_type = SERURO_REQUEST_RESULT)
         : wxCommandEvent(command_type, id) {
 		response_data = wxJSONValue(wxJSONTYPE_OBJECT);
 	}
@@ -46,7 +52,7 @@ typedef void (wxEvtHandler::*SeruroRequestEventFunction) (SeruroRequestEvent &);
     wxStaticCastEvent(SeruroRequestEventFunction, &func)
 
 #define EVT_SERURO_API_RESPONSE(type, fn) \
-	DECLARE_EVENT_TABLE_ENTRY(SERURO_API_RESULT, type, -1, \
+	DECLARE_EVENT_TABLE_ENTRY(SERURO_REQUEST_RESULT, type, -1, \
 	(wxObjectEventFunction)(wxEventFunction)(wxCommandEventFunction) \
 	wxStaticCastEvent(SeruroRequestEventFunction, &fn), (wxObject*) NULL),
 
@@ -67,7 +73,9 @@ public:
 
 protected:
     /* Creates a TLS Request (as an attempt) to create an authentication token. */
-	wxString GetAuthToken();
+	//wxString GetAuthToken();
+    bool DoAuth();
+    
     /* Performs the TLS Request (all of which require an authentication token. */
 	wxJSONValue DoRequest();
     

@@ -61,10 +61,8 @@ void SeruroRequest::Reply(wxJSONValue response)
  */
 wxThread::ExitCode SeruroRequest::Entry()
 {
-    //wxJSONWriter writer;
     wxJSONValue response;
-    //wxString event_string;
-	bool requested_token;
+    wxString error_string;
     
 	wxLogMessage("SeruroRequest> (Entry) Thread started...");
     
@@ -73,108 +71,78 @@ wxThread::ExitCode SeruroRequest::Entry()
 	wxLogMessage(wxT("SeruroRequest> (Entry) have token (%s), token (%s)."),
 		params["auth"]["have_token"].AsString(), params["auth"]["token"].AsString());
     
-	if (! params["auth"].HasMember("have_token") || ! params["auth"]["have_token"].AsBool()) {
-		wxLogMessage(wxT("SeruroRequest> (Entry) no auth token present."));
-		params["auth"]["token"] = this->GetAuthToken();
-
-		requested_token = true;
-	}
-
+    /* If there is no have_token boolean set, we must create one. */
+    if (! params["auth"].HasMember("have_token") || ! params["auth"]["have_token"].AsBool()) {
+        if (! params["auth"].HasMember("address") || ! params["auth"].HasMember("password")) {
+            wxLogMessage(_("SeruroRequest> (Entry) no auth and missing an address/password."));
+            //stop and create missing_auth event.
+        }
+        
+        /* If we failed at receiving a token. */
+        if (! this->DoAuth()) {
+            wxLogMessage(_("SeruroRequest> (Entry) auth failed."));
+            if (params.HasMember("password")) {
+                //there was an explicit password used, fail this request.
+                //meaning reply with something helpful.
+            } else {
+                //stop and create missing_auth event.
+            }
+        }
+    }
+    
     /* Perform Request, receive JSON response. */
     response = this->DoRequest();
+    error_string = (response.HasMember("error")) ? response["error"].AsString() : _("General Failure");
     
-    /* Match error of "Invalid authentication token." if true, perform GetAuthToken. */
-    if (::wxStricmp(response["error"].AsString(), wxT(SERURO_API_ERROR_INVALID_AUTH)) == 0) {
-		/* If true, perform request again (as token may have been outdated), receive JSON response. */
-		if (! requested_token) {
-			wxLogMessage(wxT("SeruroRequest::Entry> invalid auth token detected (retrying)."));
-			/* If we requested the token during this "request" then bubble error to caller. */
-			params["auth"]["token"] = this->GetAuthToken();
-			response = this->DoRequest();
-		}
+    /* Match error of "Invalid authentication token." if true, the auth failed. */
+    if (error_string.compare(_(SERURO_API_ERROR_INVALID_AUTH)) == 0) {
+        //stop and create missing_auth event.
 	}
     
 	wxLogMessage("SeruroRequest> Thread finished...");
-
 	this->Reply(response);
-
 	return (ExitCode)0;
 }
 
-wxString SeruroRequest::GetAuthToken()
+bool SeruroRequest::DoAuth()
 {
-	wxJSONValue response;
-	wxJSONValue auth_params, data_string;
-	wxString address, password, server_name;
-	bool wrote_token;
-	int selected_address = 0;
+    wxJSONValue response;
+    wxJSONValue auth_params, data_string;
     
-	/* Perform TLS request to create API session, receive a raw content (string) response. */
-	wxLogMessage(wxT("SeruroRequest> (GetAuthToken) requesting token."));
-
+    wxLogMessage(_("SeruroRequest> (DoAuth) requesting token."));
+    
 	auth_params["flags"] = SERURO_SECURITY_OPTIONS_DATA;
 	auth_params["server"] = this->params["server"];
 	auth_params["object"] = _(SERURO_API_OBJECT_LOGIN);
 	auth_params["verb"] = _("POST");
     
-	/* If there was an explicit address set in the request parameters. */
-	address = (params.HasMember("address")) ? params["address"].AsString() : _(wxEmptyString);
-    /* If there was an explicit password set in the request. */
-	password = (params.HasMember("password")) ? params["password"].AsString() : _(wxEmptyString);
-
-	/* The application is making a request without a valid token for an address in this server. 
-	 * The address may be explicit, for example with a P12s request. 
-	 */
-	if (password.compare(wxEmptyString) == 0 || address.compare(wxEmptyString) == 0) {
-        do {
-			server_name = this->params["server"]["name"].AsString();
-			data_string = getAuthFromPrompt(server_name, address, selected_address);
-			if (! data_string.HasMember(SERURO_API_AUTH_FIELD_EMAIL)) {
-				/* The user canceled the request for auth. */
-				break;
-			}
-        
-			selected_address = (data_string.HasMember("selected")) ? data_string["selected"].AsInt() : 0;
-			data_string.Remove("selected");
-        
-			/* Todo: data_string potentially contains a user's password, ensure proper cleanup. */
-			auth_params["data_string"] = encodeData(data_string);
-			response = performRequest(auth_params);
-		} while (! response.HasMember("success") || response["success"].AsBool() == false);
-	} else {
-		data_string[SERURO_API_AUTH_FIELD_EMAIL] = address;
-		data_string[SERURO_API_AUTH_FIELD_PASSWORD] = password;
-		auth_params["data_string"] = encodeData(data_string);
-		response = performRequest(auth_params);
-		/* Set a special flag known to the API handler to assure the request is not repeated. */
-		response["no_repeat"] = true;
-	}
+    /* There must be an account/password. */
+    data_string[SERURO_API_AUTH_FIELD_EMAIL] = address;
+    data_string[SERURO_API_AUTH_FIELD_PASSWORD] = password;
+    auth_params["data_string"] = encodeData(data_string);
     
-	/* Warning, possible critical section. */
-	/* Todo: this will throw an assert stating only the main thread can create the mutex. */
-    //wxCriticalSectionLocker enter(wxGetApp().seruro_critSection);
-	
+    /* Perform auth request. */
+    response = performRequest(auth_params);
+    
 	/* If "result" (boolean) is true, update token store for "email", set "token". */
 	if (response.HasMember("error") || ! response["success"].AsBool() || ! response.HasMember("token")) {
-		wxLogMessage(wxT("SeruroRequest::GetAuthToken> failed (%s)."), response["error"].AsString());
-		response["token"] = wxEmptyString;
-		goto finished;
+		wxLogMessage(wxT("SeruroRequest> (Do Auth) failed (%s)."), response["error"].AsString());
+        return false;
 	}
-
-	wxLogMessage(wxT("SeruroRequest::GetAuthToken> received token (%s)."), response["token"].AsString());
+    
+	wxLogMessage(_("SeruroRequest> (Do Auth) received token (%s)."), response["token"].AsString());
     
 	/* Warning: depends on response["email"] */
 	wrote_token = wxGetApp().config->WriteToken(auth_params["server"]["name"].AsString(),
-		response["email"].AsString(), response["token"].AsString());
+            response["email"].AsString(), response["token"].AsString());
 	wrote_token = (wrote_token && wxGetApp().config->SetActiveToken(auth_params["server"]["name"].AsString(),
-		response["email"].AsString()));
+            response["email"].AsString()));
 	if (! wrote_token) {
-		wxLogMessage(wxT("SeruroRequest::GetAuthToken> failed to write token."));
+		wxLogMessage(_("SeruroRequest> (Do Auth) failed to write token."));
+        return false;
 	}
     
-finished:
-    /* Respond with "token" as string. */
-    return response["token"].AsString();
+    return true;
 }
 
 wxJSONValue SeruroRequest::DoRequest()

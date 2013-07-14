@@ -12,11 +12,13 @@
 #include <wx/thread.h>
 #include <wx/event.h>
 
-/* Sample icon to use for everything while testing. */
+/* Inlcude the Config header so all classes may use wxGetApp().config. */
 #include "SeruroConfig.h"
 
 //class SeruroConfig;
 class SeruroFrameMain;
+class SeruroRequestEvent;
+class SeruroConfig;
 
 /* Source: thread samples */
 #include <wx/dynarray.h>
@@ -39,6 +41,8 @@ public:
 
 	void InitLogger();
 	wxWindow *GetFrame();
+    
+    void OnInvalidAuth(SeruroRequestEvent &event);
 
 	/* Todo: Consider accessor methods */
 	wxCriticalSection seruro_critSection;
