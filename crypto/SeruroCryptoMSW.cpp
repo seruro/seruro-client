@@ -20,9 +20,11 @@
 
 DECLARE_APP(SeruroClient);
 
-#define CERTIFICATE_STORE_TRUSTED_ROOT "Root"
-#define CERTIFICATE_STORE_CONTACTS	   "AddressBook"
-#define CERTIFICATE_STORE_PERSONAL	   "My"
+#define CERTSTORE_TRUSTED_ROOT "Root"
+#define CERTSTORE_CONTACTS	   "AddressBook"
+#define CERTSTORE_PERSONAL	   "My"
+
+wxString GetSubjectKeyIDFromCertificate(PCCERT_CONTEXT &cert);
 
 /* Helper function to convert wxString to a L, the caller is responsible for memory. */
 BSTR AsLongString(const wxString &input)
@@ -54,12 +56,13 @@ void SeruroCryptoMSW::OnInit()
 	//TLSRequest(none, 0, verb, object, data); /* SERURO_SECURITY_OPTIONS_DATA */
 }
 
-bool InstallCertToStore(const wxMemoryBuffer &cert, wxString store_name)
+bool InstallCertificateToStore(const wxMemoryBuffer &cert, wxString store_name, wxString &fingerprint)
 {
 	BOOL bResult;
-	DWORD error;
+	DWORD error_num;
 
 	HCERTSTORE cert_store;
+	PCCERT_CONTEXT cert_context;
 	BSTR store = AsLongString(store_name);
 
 	/* The canonical name of the certificate store is passed to the function */
@@ -76,18 +79,68 @@ bool InstallCertToStore(const wxMemoryBuffer &cert, wxString store_name)
 	BYTE *data = (BYTE *) cert.GetData();
 	DWORD len = cert.GetDataLen();
 
+	/* Add the encoded certificate, receive the decoded context (for fingerprinting). */
 	bResult = CertAddEncodedCertificateToStore(cert_store, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
-		data, len, CERT_STORE_ADD_REPLACE_EXISTING, NULL);
+		data, len, CERT_STORE_ADD_REPLACE_EXISTING, &cert_context);
 
 	if (bResult == false) {
-		error = GetLastError();
-		wxLogMessage(wxT("SeruroCrypto::InstallCA> could not decode cert (%u)."), error);
+		error_num = GetLastError();
+		wxLogMessage(wxT("SeruroCrypto::InstallCA> could not decode cert (%u)."), error_num);
 		CertCloseStore(cert_store, 0);
 		return false;
 	}
 
+	/* Retreive the subject key ID as the certificate fingerprint. */
+	fingerprint.Append(GetSubjectKeyIDFromCertificate(cert_context));
+
 	wxLogMessage(wxT("SeruroCrypto::InstallCA> cert installed."));
 	CertCloseStore(cert_store, 0);
+	return true;
+}
+
+bool InstallIdentityToStore(const PCCERT_CONTEXT &identity, wxString store_name)
+{
+	BOOL result;
+	HCERTSTORE identity_store;
+	//wxString store_name = _(CERTIFICATE_STORE_PERSONAL);
+	BSTR store = AsLongString(store_name);
+
+	/* This should set the "existing" flag and MUST set the "CURRENT_USER" high word. */
+	/* This is the user's "Personal" store, while iterating, this should identify included
+	 * CA certificates and potentially handle them differently. */
+	identity_store = CertOpenStore(CERT_STORE_PROV_SYSTEM, 0, 0, 
+		CERT_STORE_OPEN_EXISTING_FLAG | CERT_SYSTEM_STORE_CURRENT_USER, store);
+
+	if (identity_store == NULL) {
+		wxLogMessage(_("SeruroCrypto::InstallP12> could not open CURRENT_USER/(%s) store."), store_name); 
+		return false;
+	}
+
+	/* Get a display-representation of the certificate name (for logging). */
+	wchar_t cert_name[256];
+	result = CertGetNameString(identity, CERT_NAME_FRIENDLY_DISPLAY_TYPE, 0, 0, cert_name, 256);
+	cert_name[256-1] = 0;
+
+	if (! result) {
+		wxLogMessage(wxT("SeruroCrypto::InstallP12> could not get certificate display name."));
+	} else {
+		wxLogMessage(wxT("SeruroCrypto::InstallP12> found certificate: %s"), cert_name);
+	}
+
+	/* Add the certificate to the store as a "NEW" certificate, to detect potential duplicates. */
+	result = CertAddCertificateContextToStore(identity_store, identity, CERT_STORE_ADD_NEW, 0);
+	if (! result && GetLastError() == CRYPT_E_EXISTS) {
+		wxLogMessage(_("SeruroCrypto> (InstallP12) Warning! certificate exists, replacing."));
+		result = CertAddCertificateContextToStore(identity_store, identity, CERT_STORE_ADD_REPLACE_EXISTING, 0);
+	}
+
+	CertCloseStore(identity_store, 0);
+
+	if (! result) {
+		/* At this point we should also backup and remove any certs added. */
+		wxLogMessage(_("SeruroCrypto> (InstallP12) problem overwriting certificate."));
+		return false;
+	}
 	return true;
 }
 
@@ -151,6 +204,26 @@ wxString GetFingerprintFromBuffer(const wxMemoryBuffer &cert)
 	hash_buffer.AppendData((void *) hash_value, 20);
 
 	return wxBase64Encode(hash_buffer);
+}
+
+/* Get subject key id from certificate context. */
+wxString GetSubjectKeyIDFromCertificate(PCCERT_CONTEXT &cert)
+{
+	bool result;
+	BYTE *id_data;
+	DWORD id_size, error_num;
+
+	/* Get the "szOID_SUBJECT_KEY_IDENTIFIER" or hash of public key from certificate. */
+	result = CertGetCertificateContextProperty(cert, CERT_KEY_IDENTIFIER_PROP_ID, NULL, &id_size);
+
+	if (! result || id_size <= 0) {
+		// error 
+		error_num = GetLastError();
+		wxLogMessage(_("SeruroCrypto> (GetSubjectKeyIDFromCert) cannot get size of key data (%u)."), error_num);
+	}
+
+	id_data = (BYTE *) malloc(sizeof(BYTE) * id_size);
+	result = CertGetCertificateContextProperty(cert, CERT_KEY_IDENTIFIER_PROP_ID, , id_size);
 }
 
 /* Todo: Errors should be events. */
@@ -303,8 +376,8 @@ bool SeruroCryptoMSW::InstallCA(const wxMemoryBuffer &ca, wxString &fingerprint)
 {
     bool status;
     
-	status = InstallCertToStore(ca, _(CERTIFICATE_STORE_TRUSTED_ROOT));
-    fingerprint.Append(GetFingerprintFromBuffer(ca));
+	status = InstallCertificateToStore(ca, _(CERTIFICATE_STORE_TRUSTED_ROOT), fingerprint);
+    //fingerprint.Append(GetFingerprintFromBuffer(ca));
     
     return status;
 }
@@ -314,8 +387,8 @@ bool SeruroCryptoMSW::InstallCertificate(const wxMemoryBuffer &cert, wxString &f
 	/* Store name: AddressBook */
     bool status;
     
-	status = InstallCertToStore(cert, _(CERTIFICATE_STORE_CONTACTS));
-    fingerprint.Append(GetFingerprintFromBuffer(cert));
+	status = InstallCertificateToStore(cert, _(CERTIFICATE_STORE_CONTACTS), fingerprint);
+    //fingerprint.Append(GetFingerprintFromBuffer(cert));
     
     return status;
 }
@@ -336,77 +409,29 @@ bool SeruroCryptoMSW::InstallP12(const wxMemoryBuffer &p12, const wxString &p_pa
 	}
 
 	/* Create temporary store (MSDN does not say if this means in-memory). */
-	HCERTSTORE pfxStore;
+	HCERTSTORE pfx_store;
 	BSTR password = AsLongString(p_password);
-	pfxStore = PFXImportCertStore(&blob, password, CRYPT_USER_KEYSET | CRYPT_EXPORTABLE);
+	pfx_store = PFXImportCertStore(&blob, password, CRYPT_USER_KEYSET | CRYPT_EXPORTABLE);
 	::SysFreeString(password);
 
 	/* PFXImport... will not return a valid handle if the operation was unsuccessfull.
 	 * GetLastError() will yield the exact error. */
-	if (pfxStore == NULL) {
+	if (pfx_store == NULL) {
 		wxLogMessage(wxT("SeruroCrypto::InstallP12> could not decrypt P12."));
 		return false;
 	}
 
-	HCERTSTORE myStore;
-	wxString store_name = _(CERTIFICATE_STORE_PERSONAL);
-	BSTR store = AsLongString(store_name);
-	/* This should set the "existing" flag and MUST set the "CURRENT_USER" high word. */
-	/* This is the user's "Personal" store, while iterating, this should identify included
-	 * CA certificates and potentially handle them differently. */
-	myStore = CertOpenStore(CERT_STORE_PROV_SYSTEM, 0, 0, 
-		CERT_STORE_OPEN_EXISTING_FLAG | CERT_SYSTEM_STORE_CURRENT_USER, store);
-
-	if (myStore == NULL) {
-		wxLogMessage(_("SeruroCrypto::InstallP12> could not open CURRENT_USER/(%s) store."), store_name); 
-		CertCloseStore(pfxStore, 0);
-		return false;
-	}
-
 	PCCERT_CONTEXT cert = NULL;
-	BOOL bResult;
-	wchar_t certName[256];
+	BOOL result;
 	/* Iterate through certificates within P12 cert store, using the current cert as a "previous" iterator. */
-	while (NULL != (cert = CertEnumCertificatesInStore(pfxStore, cert))) {
-		bResult = CertGetNameString(cert, CERT_NAME_FRIENDLY_DISPLAY_TYPE, 0, 0, certName, 256);
-		certName[256-1] = 0;
-		if (! bResult) {
-			wxLogMessage(wxT("SeruroCrypto::InstallP12> could not get certificate display name."));
-		} else {
-			wxLogMessage(wxT("SeruroCrypto::InstallP12> found certificate: %s"), certName);
-		}
-
-		/* fingerprint of P12. */
-		wxMemoryBuffer cert_buffer;
-		cert_buffer.AppendData(cert->pbCertEncoded, cert->cbCertEncoded);
-		//wxGetApp().config->AddIdentity(server_name, address, GetFingerprint(cert_buffer));
-		fingerprints.Add(GetFingerprintFromBuffer(cert_buffer));
-
-		bResult = CertAddCertificateContextToStore(myStore, cert, CERT_STORE_ADD_NEW, 0);
-		if (! bResult && GetLastError() == CRYPT_E_EXISTS) {
-			wxLogMessage(wxT("SeruroCrypto::InstallP12> Warning! certificate exists, replacing."));
-			bResult = CertAddCertificateContextToStore(myStore, cert, CERT_STORE_ADD_REPLACE_EXISTING, 0);
-			if (! bResult) {
-				/* At this point we should also backup and remove any certs added. */
-				wxLogMessage(wxT("SeruroCrypto::InstallP12> problem overwriting certificate."));
-				//delete [] certName;
-				CertCloseStore(myStore, 0);
-				CertCloseStore(pfxStore, 0);
-				return false;
-			}
-		} else if (! bResult) {
-			/* At this point we should also backup and remove any certs added. */
-			wxLogMessage(wxT("SeruroCrypto::InstallP12> unhandled error while adding certificate."));
-			//delete [] certName;
-			CertCloseStore(myStore, 0);
-			CertCloseStore(pfxStore, 0);
-			return false;
+	while (NULL != (cert = CertEnumCertificatesInStore(pfx_store, cert))) {
+		result = InstallIdentityToStore(cert, _(CERTSTORE_PERSONAL));
+		if (result) {
+			fingerprints.Add(GetSubjectKeyIDFromCertificate(cert));
 		}
 	}
 
-	//delete [] certName;
-	CertCloseStore(myStore, 0);
-	CertCloseStore(pfxStore, 0);
+	CertCloseStore(pfx_store, 0);
 
 	return true;
 }
@@ -424,8 +449,8 @@ bool SeruroCryptoMSW::HaveIdentity(wxString server_name, wxString address)
 	}
 
 	/* Looking at the trusted Root store. */
-	bool cert_1 = HaveCertificateByFingerprint(identity[0], CERTIFICATE_STORE_PERSONAL);
-	bool cert_2 = HaveCertificateByFingerprint(identity[1], CERTIFICATE_STORE_PERSONAL);
+	bool cert_1 = HaveCertificateByFingerprint(identity[0], CERTSTORE_PERSONAL);
+	bool cert_2 = HaveCertificateByFingerprint(identity[1], CERTSTORE_PERSONAL);
 	wxLogMessage(_("SeruroCrypto> (HaveIdentity) identity (%s) (%s) in store: (1: %s, 2: %s)."), 
 		server_name, address, (cert_1) ? "true" : "false", (cert_2) ? "true" : "false");
 	return (cert_1 && cert_2);
@@ -438,7 +463,7 @@ bool SeruroCryptoMSW::HaveCA(wxString server_name)
 	wxString ca_fingerprint = wxGetApp().config->GetCA(server_name);
 
 	/* Looking at the personal (my) store. */
-	bool in_store = HaveCertificateByFingerprint(ca_fingerprint, CERTIFICATE_STORE_TRUSTED_ROOT);
+	bool in_store = HaveCertificateByFingerprint(ca_fingerprint, CERTTORE_TRUSTED_ROOT);
 	wxLogMessage(_("SeruroCrypto> (HaveCA) certificate (%s) in store: (%s)."), 
 		server_name, (in_store) ? "true" : "false");
 	return in_store;
@@ -457,8 +482,8 @@ bool SeruroCryptoMSW::HaveCertificates(wxString server_name, wxString address)
 	}
 
 	/* Looking at the address book store. */
-	bool cert_1 = HaveCertificateByFingerprint(identity[0], CERTIFICATE_STORE_CONTACTS);
-	bool cert_2 = HaveCertificateByFingerprint(identity[1], CERTIFICATE_STORE_CONTACTS);
+	bool cert_1 = HaveCertificateByFingerprint(identity[0], CERTSTORE_CONTACTS);
+	bool cert_2 = HaveCertificateByFingerprint(identity[1], CERTSTORE_CONTACTS);
 	wxLogMessage(_("SeruroCrypto> (HaveCertificates) address (%s) (%s) in store: (1: %s, 2: %s)."), 
 		server_name, address, (cert_1) ? "true" : "false", (cert_2) ? "true" : "false");
 	return (cert_1 && cert_2);
