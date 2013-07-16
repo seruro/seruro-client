@@ -1,6 +1,6 @@
 
 #include "../crypto/SeruroCrypto.h"
-#include "../frames/dialogs/AuthDialog.h"
+//#include "../frames/dialogs/AuthDialog.h"
 
 #include "../wxJSON/wx/jsonreader.h"
 
@@ -75,16 +75,14 @@ wxJSONValue performRequest(wxJSONValue params)
     wxString raw_response;
     
 	/* Get a crypto helper object for TLS requests. */
-	SeruroCrypto *cryptoHelper = new SeruroCrypto();
+	SeruroCrypto crypto;
     
 	/* Show debug statement, list the request. */
 	wxLogMessage(wxT("SeruroRequest (request)> Server (%s), Verb (%s), Object (%s)."),
                  params["server"]["host"].AsString(), params["verb"].AsString(), params["object"].AsString());
     
 	/* Perform the request, receive a raw content (string) response. */
-	raw_response = cryptoHelper->TLSRequest(params);
-    
-	delete [] cryptoHelper;
+	raw_response = crypto.TLSRequest(params);
     
     /* Try to parse response as JSON (on failure, bail, meaning fill in JSON error ourselves). */
     response = parseResponse(raw_response);
@@ -119,18 +117,3 @@ wxString encodeData(wxJSONValue data)
 	return data_string;
 }
 
-wxJSONValue getAuthFromPrompt(wxString &server, const wxString &address = wxEmptyString, int selected = 0)
-{
-    wxJSONValue auth;
-    
-    /* Selected forces the user to use the provided address. Otherwise they may choose any. */
-	AuthDialog *dialog = new AuthDialog(server, address, selected);
-	if (dialog->ShowModal() == wxID_OK) {
-		wxLogMessage(wxT("SeruroServerAPI::getAuthFromPrompt> OK"));
-		auth = dialog->GetValues();
-	}
-	/* Todo: password_control potentially contains a user's password, ensure proper cleanup. */
-	delete dialog;
-    
-	return auth;
-}

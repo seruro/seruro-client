@@ -468,6 +468,7 @@ bool SeruroCryptoMAC::InstallP12(const wxMemoryBuffer &p12, const wxString &pass
     
     /* Set the password as an option. */
     CFMutableDictionaryRef options;
+
     password_data = CFStringCreateWithCString(kCFAllocatorDefault, AsChar(password), kCFStringEncodingASCII);
     
     options = CFDictionaryCreateMutable(kCFAllocatorDefault, 3,
@@ -493,6 +494,11 @@ bool SeruroCryptoMAC::InstallP12(const wxMemoryBuffer &p12, const wxString &pass
     
     if (success == errSecAuthFailed) {
         wxLogMessage(_("SeruroCrypto> (InstallP12) auth failed or corrupted p12 data."));
+        return false;
+    }
+    
+    if (success != errSecSuccess || p12_items == NULL) {
+        wxLogMessage(_("SeruroCrypto> (InstallP12) no p12 items found (err=%d)."), success);
         return false;
     }
 

@@ -65,15 +65,5 @@ wxDECLARE_EVENT(SERURO_STATE_CHANGE, SeruroStateEvent);
 typedef void (wxEvtHandler::*SeruroStateEventFunction) (SeruroStateEvent &);
 #define SeruroStateEventHandler(func) wxEVENT_HANDLER_CAST(SeruroStateEventFunction, func)
 
-/*
-#define SeruroStateEventHandler(func) \
-    (wxObjectEventFunction)(wxEventFunction)(wxCommandEventFunction) \
-    wxStaticCastEvent(SeruroRequestEventFunction, &func)
-
-#define EVT_SERURO_STATE(type, fn) \
-	DECLARE_EVENT_TABLE_ENTRY(SERURO_API_RESULT, type, -1, \
-	(wxObjectEventFunction)(wxEventFunction)(wxCommandEventFunction) \
-	wxStaticCastEvent(SeruroStateEventFunction, &fn), (wxObject*) NULL),
-*/
 
 #endif 

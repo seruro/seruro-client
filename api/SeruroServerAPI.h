@@ -67,13 +67,13 @@ public:
 
 	/* API callbacks */
 	bool InstallP12(wxJSONValue response, 
-		wxString key = wxEmptyString);
+		wxString key = wxEmptyString, bool force_install = false);
 	bool InstallCA(wxJSONValue response);
 	bool InstallCertificate(wxJSONValue response);
     
     /* Todo: maybe this isn't the best place for removals. */
     bool UninstallIdentity(wxString server_name, wxString address);
-    bool UninstallAddress(wxString server_name, wxString address);
+    bool UninstallCertificates(wxString server_name, wxString address);
     bool UninstallCA(wxString server_name);
 
 protected:
@@ -82,8 +82,9 @@ protected:
 	 * Finally auth["data"] will be filled in appropriately.
 	 * Otherwise token will be assembled and passed as a query variable.
 	 */
-	wxJSONValue GetAuth(const wxString &server,
-		const wxString &address = wxEmptyString);
+	//wxJSONValue GetAuth(const wxString &server,
+	//	const wxString &address = wxEmptyString);
+    wxJSONValue GetAuth(wxJSONValue params);
 
 	/* Given an API identifier, this function will return a JSON propery with
 	 * the required REQUEST parameters (including verb, object, servername.

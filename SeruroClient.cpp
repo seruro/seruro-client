@@ -14,6 +14,7 @@
 
 #include "crypto/SeruroCrypto.h"
 #include "setup/SeruroSetup.h"
+#include "api/SeruroRequest.h"
 
 #include "frames/UIDefs.h"
 #include "frames/SeruroFrameMain.h"
@@ -48,9 +49,11 @@ bool SeruroClient::OnInit()
 	/* Start logger */
 	InitLogger();
 
-
 	/* User config instance */
     this->config = new SeruroConfig();
+    
+    /* Listen for invalid request events (which require UI actions and a request-restart). */
+    Bind(SERURO_REQUEST_RESPONSE, &SeruroClient::OnInvalidAuth, this, SERURO_REQUEST_CALLBACK_AUTH);
 
 	/* Now safe to start sub-frames (panels). */
 	mainFrame->AddPanels();
@@ -87,4 +90,14 @@ void SeruroClient::InitLogger()
     logger->GetFrame()->SetSize( wxRect(800,350,500,500) );
     wxLog::SetActiveTarget(logger);
     wxLogStatus(wxT("Seruro Client started."));
+}
+
+/*****************************************************************************************/
+/************** GLOBAL REQUEST HANDLERS **************************************************/
+/*****************************************************************************************/
+
+void SeruroClient::OnInvalidAuth(SeruroRequestEvent &event)
+{
+    /* (From api/SeruroRequest) Perform UI actions, then create identical request. */
+    PerformRequestAuth(event);
 }

@@ -35,8 +35,7 @@ AuthDialog::AuthDialog(const wxString &server, const wxString &address, int sele
 	}
     
     
-	address_control = new wxChoice(this, wxID_ANY, 
-		wxDefaultPosition, wxDefaultSize, address_list);
+	address_control = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, address_list);
 	address_control->SetSelection(selected);
     
 	sizerInfo->Add(address_control, DIALOGS_BOXSIZER_OPTIONS);
@@ -64,7 +63,7 @@ wxJSONValue AuthDialog::GetValues()
 	int selected = this->address_control->GetSelection();
     
 	/* Save the selected index for a better user experience. */
-	values["selected"] = selected;
+	values["selected_address"] = selected;
 	values[SERURO_API_AUTH_FIELD_EMAIL] = this->address_control->GetString(selected);
 	values[SERURO_API_AUTH_FIELD_PASSWORD] = this->password_control->GetValue();
     

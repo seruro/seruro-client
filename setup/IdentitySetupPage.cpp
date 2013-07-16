@@ -141,7 +141,7 @@ void IdentityPage::DisablePage()
 }
 
 bool IdentityPage::GoNext(bool from_callback)
-{
+{    
 	/* Either a subsequent click or a callback success. */
 	if (this->identity_installed) {
 		if (from_callback) {
@@ -156,17 +156,23 @@ bool IdentityPage::GoNext(bool from_callback)
 	if (! identity_downloaded) return false;
 
 	/* About to do some security-related work, which may block for a while. */
+    wxString key = this->GetValue();
 	this->DisablePage();
 
 	SeruroServerAPI *api = new SeruroServerAPI(this);
-	/* Try to install with the saved response, and the input key. */
-	bool try_install = api->InstallP12(this->download_response, this->GetValue());
+	/* Try to install with the saved response, and the input key, force the install incase there is an empty input. */
+	bool try_install = api->InstallP12(this->download_response, key, true);
+    
+    /* Clean up. */
+    key.Clear();
+    delete api;
+    
 	if (! try_install) {
 		this->EnablePage();
 		this->SetIdentityStatus(_("Unable to install (incorrect key?)."));
 		return false;
 	}
-	delete api;
+    
 
 	/* Make sure the certificates are available. */
 	SeruroCrypto crypto_helper;

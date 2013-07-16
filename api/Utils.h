@@ -10,7 +10,7 @@ wxJSONValue performRequest(wxJSONValue params);
 
 wxString encodeData(wxJSONValue data);
 
-wxJSONValue getAuthFromPrompt(wxString &server,
-    const wxString &address = wxEmptyString, int selected = 0);
+//wxJSONValue getAuthFromPrompt(wxString &server,
+//    const wxString &address = wxEmptyString, int selected = 0);
 
 #endif
