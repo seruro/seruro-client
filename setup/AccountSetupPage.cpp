@@ -283,6 +283,7 @@ bool AccountPage::GoNext(bool from_callback) {
 	params["meta"] = server_info;
 	params["server"] = server_info;
 
+    //wxLogMessage(_("(asp) password: %s"), params["password"].AsString());
 	/* Create a 'ping' request, and within the callback, call 'GoForward' again. */
 	SeruroServerAPI *api = new SeruroServerAPI(this);
 	api->Ping(params)->Run();

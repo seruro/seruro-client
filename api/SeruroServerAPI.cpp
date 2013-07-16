@@ -127,9 +127,9 @@ wxJSONValue SeruroServerAPI::GetAuth(wxJSONValue params)
 
     if (params.HasMember("password")) {
         /* There was a password provided. */
-        params["auth"]["password"] = params["password"];
+        auth["password"] = params["password"];
         /* An auth attempt may require an explicit password (if another UI is handling login), else a UI prompt may appear. */
-        params["auth"]["require_password"] = params.HasMember("require_password");
+        auth["require_password"] = params.HasMember("require_password");
     }
 
     /* Set a boolean indicating weather a token is available. */
@@ -139,15 +139,13 @@ wxJSONValue SeruroServerAPI::GetAuth(wxJSONValue params)
 		wxLogMessage(wxT("SeruroServerAPI::GetAuth> failed to find valid auth token."));
 	}
 
+    //wxLogMessage(_("(api) password: %s"), params["auth"]["password"].AsString());
 	return auth;
 }
 
 wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 {
 	wxJSONValue request;
-	//wxJSONValue data;
-
-	//wxJSONValue query;
 
 	/* Most API calls to the server are currently GETs. */
 	request["verb"] = _("GET");
@@ -157,13 +155,6 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 	request["data"] = wxJSONValue(wxJSONTYPE_OBJECT);
     /* (QUERY-STRING) Set multi-value (dict) "query" to a JSON value. */
     request["query"] = wxJSONValue(wxJSONTYPE_OBJECT);
-    
-	/* Allow address pinning, for authentication */
-	//request["address"] = (params.HasMember("address")) ? params["address"] : wxEmptyString;
-
-	/* Debug log. */
-	//wxLogMessage(wxT("ServerAPI::GetRequest> Current auth token (%s)."), 
-	//	params["auth"]["token"].AsString());
 
 	/* Switch over each API call and set it's URL */
 	switch (name) {
@@ -196,7 +187,6 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 
 	/* Todo: Check to make sure server is in the params. */
 	request["server"] = params["server"];
-	//request["auth"] = params["auth"];
 
 	return request;
 }

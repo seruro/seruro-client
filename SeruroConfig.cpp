@@ -47,12 +47,12 @@ bool GetTokenFile(wxTextFile** token_file)
 
 bool WriteTokenData(wxJSONValue token_data)
 {
-	bool results;
-
+    wxTextFile *token_file;
+    bool results;
+    
 	/* Get pointer to token file, or fail. */
-	wxTextFile *token_file;
-	results = GetTokenFile(&token_file);
-	if (! results) {
+	if (! GetTokenFile(&token_file)) {
+        wxLogMessage(_("SeruroConfig> (WriteTokenData) could not run GetTokenFile."));
 		return false;
 	}
 
@@ -67,10 +67,12 @@ bool WriteTokenData(wxJSONValue token_data)
 	token_file->InsertLine(token_string, 0);
 	results = token_file->Write();
 	token_file->Close();
+    
+    /* Clean up. */
+    token_string.Clear();
 	delete token_file;
-
-	wxLogMessage(wxT("Wrote token data: %s"), token_string);
-
+    
+	//wxLogMessage(wxT("Wrote token data: %s"), token_string);
 	return results;
 }
 
@@ -78,12 +80,11 @@ bool WriteTokenData(wxJSONValue token_data)
 wxJSONValue GetTokenData()
 {
 	wxJSONValue token_data;
-	bool results;
+    wxTextFile *token_file;
 
 	/* Get pointer to token file, or fail. */
-	wxTextFile *token_file;
-	results = GetTokenFile(&token_file);
-	if (! results) {
+	if (! GetTokenFile(&token_file)) {
+        wxLogMessage(_("SeruroConfig> (GetTokenData) could not run GetTokenFile."));
 		return token_data;
 	}
 
@@ -95,7 +96,7 @@ wxJSONValue GetTokenData()
 	token_file->Close();
 	delete token_file;
 
-	wxLogMessage(wxT("Read token data: %s"), token_string);
+	//wxLogMessage(wxT("Read token data: %s"), token_string);
 
 	/* Parse that string as a JSON value. */
 	wxJSONReader token_reader;
@@ -104,7 +105,7 @@ wxJSONValue GetTokenData()
 	VLDEnable();
 
 	if (num_errors > 0) {
-		wxLogMessage(wxT("Error parsing token data (could be a blank token file)."));
+		wxLogMessage(_("SeruroConfig> (GetTokenData) error parsing token data (could be a blank token file)."));
 	}
  
 	/* Either way they'll get a wxJSONValue, might be empty. */
@@ -122,10 +123,10 @@ SeruroConfig::SeruroConfig()
 	VLDEnable();
     //delete paths;
 
-    wxLogStatus(wxT("Config file: " + this->configFile->GetName()));
+    wxLogMessage(_("SeruroConfig> Config file: (%s)."), this->configFile->GetName());
     if (! this->configFile->Exists()) {
 		/* A config will be written using the SeruroSetup wizard. */
-        wxLogMessage(wxT("Config does not exist"));
+        wxLogMessage(_("SeruoConfig> Config does not exist."));
 	}
     
     this->configValid = false;
@@ -176,7 +177,7 @@ void SeruroConfig::LoadConfig()
 	VLDEnable();
     if (numErrors > 0) {
         //wxLogMessage(reader.GetErrors());
-        wxLogStatus(wxT("Error: could not parse config file."));
+        wxLogStatus(_("SeruroConfig> (LoadConfig) could not parse config file."));
         return;
     }
 
@@ -184,7 +185,7 @@ void SeruroConfig::LoadConfig()
     
 	/* Config must have an array of "servers". */
 	if (! configData.HasMember("servers") || ! configData["servers"].IsObject()) {
-		wxLogStatus(wxT("Config: could not find a 'servers' object."));
+		wxLogStatus(_("SeruroConfig> (LoadConfig) could not find a 'servers' object."));
 		return;
 	}
 
@@ -200,6 +201,7 @@ wxString SeruroConfig::GetToken(const wxString &server, const wxString &address)
 {
 	wxString token = wxEmptyString;
 
+    wxLogMessage(_("SeruroConfig> (GetToken) requested token (%s) (%s)."), server, address);
 	/* Get current token data, check if the requested token exists and return, else an empty string. */
 	wxJSONValue token_data = GetTokenData();
 	if (token_data.HasMember(server) && token_data[server].HasMember(address)) {
@@ -249,9 +251,8 @@ bool SeruroConfig::WriteToken(const wxString &server, const wxString &address, c
 	/* Get current token data, then add this server,address entry. */
 	wxJSONValue token_data = GetTokenData();
 	if (! token_data.HasMember(server)) {
-		wxLogMessage(wxT("Token file does not contain server: %s"), server);
-		wxJSONValue server_value;
-		token_data[server] = server_value;
+		wxLogMessage(_("SeruroConfig> (WriteToken) note: token file does not contain server (%s)."), server);
+		token_data[server] = wxJSONValue(wxJSONTYPE_OBJECT);
 	}
 
 	token_data[server][address] = token;
@@ -264,6 +265,7 @@ bool SeruroConfig::SetActiveToken(const wxString &server_name, const wxString &a
 {
 	if (! configData["servers"].HasMember(server_name)) return false;
 
+    /* Allow a token to be written before a server name exists. */
 	configData["servers"][server_name]["active_token"] = account;
 	this->WriteConfig();
 	return true;
@@ -271,15 +273,16 @@ bool SeruroConfig::SetActiveToken(const wxString &server_name, const wxString &a
 
 wxString SeruroConfig::GetActiveToken(const wxString &server_name)
 {
-	wxString account; 
-
+    wxLogMessage(_("SeruroConfig> (GetActiveToken) requested active token (%s)."), server_name);
+    
 	if (! configData["servers"].HasMember(server_name)) return wxEmptyString;
 	if (! configData["servers"][server_name].HasMember("active_token")) {
 		/* Return the first account. */
 		wxArrayString account_list = GetAddressList(server_name);
 		/* There may not be any accounts? */
 		if (account_list.size() == 0) return wxEmptyString;
-		return account_list[0];
+		//return account_list[0];
+        return GetToken(server_name, account_list[0]);
 	}
 	
     /* Lookup token from tokens file using the active token (account). */
