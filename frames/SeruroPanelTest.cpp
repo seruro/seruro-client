@@ -27,10 +27,10 @@ BEGIN_EVENT_TABLE(SeruroPanelTest, wxPanel)
 	EVT_BUTTON(BUTTON_SEARCH, SeruroPanelTest::OnSearch)
 
 	/* Request events */
-	EVT_COMMAND(SERURO_API_CALLBACK_CA, SERURO_API_RESULT, SeruroPanelTest::OnGetCAResult)
+	//EVT_COMMAND(SERURO_API_CALLBACK_CA, SERURO_API_RESULT, SeruroPanelTest::OnGetCAResult)
 	//EVT_COMMAND(SERURO_API_CALLBACK_GET_P12, SERURO_API_RESULT, SeruroPanelTest::OnGetP12Result)
     EVT_SERURO_RESPONSE(SERURO_API_CALLBACK_P12S, SeruroPanelTest::OnGetP12Result)
-	EVT_COMMAND(SERURO_API_CALLBACK_SEARCH, SERURO_API_RESULT, SeruroPanelTest::OnSearchResult)
+	//EVT_COMMAND(SERURO_API_CALLBACK_SEARCH, SERURO_API_RESULT, SeruroPanelTest::OnSearchResult)
 END_EVENT_TABLE()
 
 SeruroPanelTest::SeruroPanelTest(wxBookCtrlBase *book) : SeruroPanel(book, wxT("API Test"))

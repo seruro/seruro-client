@@ -23,7 +23,7 @@ void AccountPage::OnCAResult(SeruroRequestEvent &event)
 	/* There are no more callback actions. */
 	this->EnablePage();
 
-	SeruroServerAPI *api = new SeruroServerAPI(this->GetEventHandler());
+	SeruroServerAPI *api = new SeruroServerAPI(this);
 	/* This is a boolean, which indicates a successful add, but the user may deny. */
 	api->InstallCA(response);
 	delete api;
@@ -70,7 +70,7 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
     bool new_server;
 
 	/* The server's CA/CRL might need installing. */
-	SeruroServerAPI *api = new SeruroServerAPI(this->GetEventHandler());
+	SeruroServerAPI *api = new SeruroServerAPI(this);
 
 	if (! response["success"].AsBool() || ! response.HasMember("address")) {
 		wxLogMessage(_("AccountPage> (OnPingResult) failed to ping server."));
@@ -270,6 +270,8 @@ bool AccountPage::GoNext(bool from_callback) {
 	/* Get values from AddAddressForm. */
 	address_info = this->GetValues();
 	params["address"] = address_info["address"];
+    /* Prevent the "bad-auth" UI component, return errors directly to this handler. */
+    params["require_password"] = true;
 	if (address_info["password"].AsString().compare(wxEmptyString) == 0) {
 		/* If the user did not enter a password, fill un null. */
 		params["password"] = "null";

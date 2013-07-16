@@ -60,20 +60,20 @@ DecryptDialog::DecryptDialog(const wxString &method) :
 
 void DecryptForm::DisableForm()
 {
-#if defined(__WXOSX__) || defined(__WXMAC__)
-    password_control->SetWindowStyle(password_control->GetWindowStyle() | wxTE_READONLY);
-#else
+//#if defined(__WXOSX__) || defined(__WXMAC__)
+//    password_control->SetWindowStyle(password_control->GetWindowStyle() | wxTE_READONLY);
+//#else
     this->password_control->Disable();
-#endif
+//#endif
 }
 
 void DecryptForm::EnableForm()
 {
-#if defined(__WXOSX__) || defined(__WXMAC__)
-	password_control->SetWindowStyle(wxTE_PASSWORD);
-#else
+//#if defined(__WXOSX__) || defined(__WXMAC__)
+//	password_control->SetWindowStyle(wxTE_PASSWORD);
+//#else
     password_control->Enable(true);
-#endif
+//#endif
 }
 
 void DecryptForm::FocusForm()

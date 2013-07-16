@@ -62,6 +62,7 @@ wxJSONValue SeruroServerAPI::GetServer(const wxString &server)
  * |--server = {name, host, [port]}, the name is used in an auth prompt (for a token).
  * |--[address], used to bind the request to a specific account/address (i.e., for P12s).
  * |--[password], if a token does not exist, do not use an auth prompt, instead this password.
+ * |--[require_password], if the provided password should not be re-entered/changed.
  * |--[meta], a list of key/value pairs to pass back to the generated event (callback data).
  * The following additional params members are created corresponding to the API:
  * |--auth = {token, have_token}, a token if the an account exists for the server, a boolean.
@@ -80,28 +81,11 @@ wxJSONValue SeruroServerAPI::GetServer(const wxString &server)
  */
 SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue params, int evtId)
 {
-	/* Add to params with GetAuth / GetRequest */
-    wxString server_name, address;
-
 	/* Create the request based on the API call. (Fills in object, verb, method, data, query.) */
-	params["request"] = GetRequest(name, params);
+	params["request"] = this->GetRequest(name, params);
 
-	/* (Optionally) Pin this request to an address. */
-	if (params.HasMember("address")) {
-		address = params["address"].AsString();
-		params["request"]["address"] = address;
-	} else {
-		address = wxEmptyString;
-	}
-	
-	/* (Optionally) This request has a pinned password provided. */
-	if (params.HasMember("password")) {
-		params["request"]["password"] = params["password"];
-	}
-
-	/* Request auth */
-	server_name = params["server"]["name"].AsString();
-	params["request"]["auth"] = GetAuth(server_name, address);
+    /* Create the auth structure for the request. */
+    params["request"]["auth"] = this->GetAuth(params);
 
 	if (params["request"].HasMember("data")) {
 		params["request"]["data_string"] = encodeData(params["request"]["data"]);
@@ -119,34 +103,36 @@ SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue param
 		wxLogError(wxT("SeruroServerAPI::CreateRequest> Could not create thread."));
 	}
 
-	/* Add to datastructure accessed by thread */
+	/* Add to data structure accessed by thread */
 	wxCriticalSectionLocker enter(wxGetApp().seruro_critSection);
 	wxGetApp().seruro_threads.Add(thread);
 
 	return thread;
 }
 
-wxJSONValue SeruroServerAPI::GetAuth(const wxString &server, const wxString &address)
+//wxJSONValue SeruroServerAPI::GetAuth(const wxString &server, const wxString &address)
+wxJSONValue SeruroServerAPI::GetAuth(wxJSONValue params)
 {
 	wxJSONValue auth;
     wxString token;
 
-	/* Determine address to request token for (from given server).
-	 * If an address is not given, search for ANY token for this server. 
-	 */
-	if (address.compare(wxEmptyString) == 0) {
-		//wxArrayString address_list = wxGetApp().config->GetAddressList(server);
-		//for (size_t i = 0; i < address_list.size(); i++) {
-			//token = wxGetApp().config->GetToken(server, address_list[i]);
-			//if (token.compare(wxEmptyString) != 0) {
-				//break;
-			//}
-		//}
-		auth["token"] = wxGetApp().config->GetActiveToken(server);
+	/* Determine address to request token for (from given server). If an address is not given, search for ANY token for this server. */
+	if (params.HasMember("address")) {
+        /* Pin this request to an address. If the auth fails, the UI control will not allow the user to auth with another address. */
+        auth["address"] = params["address"];
+		auth["token"] = wxGetApp().config->GetToken(params["server"]["name"].AsString(), params["address"].AsString());
 	} else {
-		auth["token"] = wxGetApp().config->GetToken(server, address);
-	}
+        auth["token"] = wxGetApp().config->GetActiveToken(params["server"]["name"].AsString());
+    }
 
+    if (params.HasMember("password")) {
+        /* There was a password provided. */
+        params["auth"]["password"] = params["password"];
+        /* An auth attempt may require an explicit password (if another UI is handling login), else a UI prompt may appear. */
+        params["auth"]["require_password"] = params.HasMember("require_password");
+    }
+
+    /* Set a boolean indicating weather a token is available. */
 	auth["have_token"] = (auth["token"].AsString().size() > 0) ? true : false;
 
 	if (! auth["have_token"].AsBool()) {
@@ -280,15 +266,15 @@ bool SeruroServerAPI::InstallCertificate(wxJSONValue response)
 	return result;
 }
 
-bool SeruroServerAPI::InstallP12(wxJSONValue response, wxString key)
+bool SeruroServerAPI::InstallP12(wxJSONValue response, wxString key, bool force_install)
 {
 	if (! CheckResponse(response, "p12")) return false;
 
 	/* Get password from user for p12 containers. */
 	wxString p12_key;
 
-	if (key.compare(wxEmptyString) == 0) {
-        /* If a key is not provided, then prompt the UI for one. */
+	if (key.compare(wxEmptyString) == 0 && force_install == false) {
+        /* If a key is not provided, then prompt the UI for one, unless the install is forced. */
 		DecryptDialog *decrypt_dialog = new DecryptDialog(response["method"].AsString());
 		if (decrypt_dialog->ShowModal() == wxID_OK) {
 			p12_key = decrypt_dialog->GetValue();
