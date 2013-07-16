@@ -349,7 +349,7 @@ bool SeruroServerAPI::UninstallIdentity(wxString server_name, wxString address)
     return wxGetApp().config->RemoveIdentity(server_name, address, true);
 }
 
-bool SeruroServerAPI::UninstallAddress(wxString server_name, wxString address)
+bool SeruroServerAPI::UninstallCertificates(wxString server_name, wxString address)
 {
     wxArrayString fingerprints;
     SeruroCrypto crypto;

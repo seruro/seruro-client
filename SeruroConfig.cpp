@@ -674,6 +674,30 @@ bool SeruroConfig::HaveCA(wxString server_name)
 	return false;
 }
 
+wxArrayString SeruroConfig::GetIdentityList(wxString server_name)
+{
+    wxArrayString identities;
+    
+    if (! HasConfig() || ! configData["servers"].HasMember(server_name) ||
+        ! configData["servers"][server_name].HasMember("identities")) {
+        return identities;
+    }
+    
+    return configData["servers"][server_name]["identities"].GetMemberNames();
+}
+
+wxArrayString SeruroConfig::GetCertificatesList(wxString server_name)
+{
+    wxArrayString certificates;
+    
+    if (! HasConfig() || ! configData["servers"].HasMember(server_name) ||
+        ! configData["servers"][server_name].HasMember("certificates")) {
+        return certificates;
+    }
+    
+    return configData["servers"][server_name]["certificates"].GetMemberNames();
+}
+
 wxArrayString SeruroConfig::GetCertificates(wxString server_name, wxString address)
 {
 	wxArrayString certificates;

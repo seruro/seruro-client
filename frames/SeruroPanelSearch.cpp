@@ -114,7 +114,7 @@ void SeruroPanelSearch::OnInstallResult(SeruroRequestEvent &event)
 void SeruroPanelSearch::Uninstall(const wxString& server_name, const wxString& address)
 {
     wxLogMessage(_("SeruroPanelSearch> (Uninstall) trying to uninstall (%s) (%s)."), server_name, address);
-    if (api->UninstallAddress(server_name, address)) {
+    if (api->UninstallCertificates(server_name, address)) {
         list_control->SetCheck(server_name, address, false);
     }
 }

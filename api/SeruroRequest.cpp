@@ -29,7 +29,8 @@ void SendFailureEvent(wxEvtHandler *handler, int event_id)
     /* Create and send response. */
     SeruroRequestEvent event(event_id);
     event.SetResponse(response);
-    handler->AddPendingEvent(event);
+    //handler->AddPendingEvent(event);
+    wxGetApp().AddEvent(event);
 }
 
 void PerformRequestAuth(SeruroRequestEvent &event)

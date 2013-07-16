@@ -101,6 +101,9 @@ public:
 	bool HaveCA(wxString server_name);
 
 	/* Fingerprint/thumbprint/hash retreival. */
+    wxArrayString GetIdentityList(wxString server_name);
+    wxArrayString GetCertificatesList(wxString server_name);
+    
 	wxArrayString GetCertificates(wxString server_name, wxString address);
 	wxArrayString GetIdentity(wxString server_name, wxString address);
 	wxString GetCA(wxString server_name);

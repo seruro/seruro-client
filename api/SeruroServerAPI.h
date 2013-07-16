@@ -73,7 +73,7 @@ public:
     
     /* Todo: maybe this isn't the best place for removals. */
     bool UninstallIdentity(wxString server_name, wxString address);
-    bool UninstallAddress(wxString server_name, wxString address);
+    bool UninstallCertificates(wxString server_name, wxString address);
     bool UninstallCA(wxString server_name);
 
 protected:
