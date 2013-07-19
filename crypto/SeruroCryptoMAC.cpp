@@ -62,7 +62,7 @@ bool GetReferenceFromSubjectKeyID(wxString subject_key, search_types_t type, wxS
         CFDictionaryAddValue(query, kSecClass, kSecClassCertificate);
     }
     CFDictionaryAddValue(query, kSecAttrSubjectKeyID, subject_key_data);
-    CFDictionaryAddValue(query, kSecMatchTrustedOnly, kCFBooleanTrue);
+    //CFDictionaryAddValue(query, kSecMatchTrustedOnly, kCFBooleanTrue);
     CFRelease(subject_key_data);
     
     /* If a reference pointer is provided then return the search result. */

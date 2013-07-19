@@ -236,6 +236,8 @@ bool SeruroRequest::DoAuth()
         return false;
 	}
     
+    this->params["auth"]["token"] = response["token"];
+    this->params["auth"]["have_token"] = true;
     return true;
 }
 

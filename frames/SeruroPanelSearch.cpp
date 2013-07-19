@@ -339,12 +339,14 @@ void SeruroPanelSearch::DisableSearch()
 {
     this->search_control->Enable(false);
     this->servers_control->Enable(false);
+    this->all_servers_control->Enable(false);
 }
 
 void SeruroPanelSearch::EnableSearch()
 {
     this->search_control->Enable(true);
     this->servers_control->Enable(true);
+    this->all_servers_control->Enable(true);
 }
 
 void SeruroPanelSearch::AlignList()
