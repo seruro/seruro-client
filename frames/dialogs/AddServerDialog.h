@@ -15,14 +15,15 @@
 
 /* Helper function to show a list of servers. */
 wxChoice* GetServerChoice(wxWindow *parent, 
-	const wxString &server_name = wxEmptyString);
+	const wxString &server_name = wxEmptyString
+	);
 
 class AddServerForm
 {
 public:
     AddServerForm(wxWindow *parent_obj) : parent(parent_obj) {}
     void AddForm(wxSizer *sizer,
-        const wxString &name = wxEmptyString, 
+        //const wxString &name = wxEmptyString, 
 		const wxString &host = wxEmptyString,
         const wxString &port = SERURO_DEFAULT_PORT);
     wxJSONValue GetValues();
@@ -39,7 +40,7 @@ public:
 protected:
     wxWindow *parent;
     
-	wxTextCtrl *server_name;
+	//wxTextCtrl *server_name;
 	wxTextCtrl *server_host;
 	wxTextCtrl *server_port;
 	/* A checkbox to enable port editing. */
@@ -51,8 +52,7 @@ protected:
 class AddServerDialog : public AddServerForm, public wxDialog
 {
 public:
-	AddServerDialog(const wxString &name = wxEmptyString,
-		const wxString &host = wxEmptyString, 
+	AddServerDialog(const wxString &host = wxEmptyString, 
 		const wxString &port = SERURO_DEFAULT_PORT);
 
 	void OnForm_OnCustomPort(wxCommandEvent &event);

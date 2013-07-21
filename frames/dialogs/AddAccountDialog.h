@@ -16,7 +16,8 @@ class AddAccountForm
 {
 public:
     AddAccountForm(wxWindow *parent_obj) : parent(parent_obj) {}
-    void AddForm(wxSizer *sizer, const wxString &address = wxEmptyString,
+    void AddForm(wxSizer *sizer, 
+		const wxString &address = wxEmptyString,
 		const wxString &server_name = wxEmptyString);
     wxJSONValue GetValues();
     

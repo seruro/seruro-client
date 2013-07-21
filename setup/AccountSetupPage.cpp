@@ -35,7 +35,7 @@ void AccountPage::OnCAResult(SeruroRequestEvent &event)
 	/* If the user canceled the install, stop. */
 	if (! has_ca) {
 		/* Remove the account and server which was saved to the config. */
-		wxJSONValue account_info = this->GetValues();
+		wxJSONValue account_info = AddAccountForm::GetValues();
 
 		wxGetApp().config->RemoveServer(response["server_name"].AsString());
 		SetAccountStatus(_("Unable to install server."));
@@ -170,7 +170,8 @@ void AccountPage::DisablePage()
 }
 
 AccountPage::AccountPage(SeruroSetup *parent) 
-	: SetupPage(parent), AddAccountForm(this), login_success(false), has_ca(false)
+	: SetupPage(parent), AddAccountForm(this), AddServerForm(this),
+	  login_success(false), has_ca(false)
 {
     wxSizer *const vert_sizer = new wxBoxSizer(wxVERTICAL);
     
@@ -193,6 +194,12 @@ AccountPage::AccountPage(SeruroSetup *parent)
 		servers_sizer->Add(this->server_menu, 0, wxRIGHT, 5);
 		servers_box->Add(servers_sizer, DIALOGS_BOXSIZER_OPTIONS);
 		vert_sizer->Add(servers_box, DIALOGS_BOXSIZER_SIZER_OPTIONS);
+	} else {
+		/* No pre-existing server, the user is adding a server. */
+		wxSizer *const server_form = new wxStaticBoxSizer(wxVERTICAL, this, "&Server Information");
+    
+		AddServerForm::AddForm(server_form);
+		vert_sizer->Add(server_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 	}
 
     wxSizer *const account_form = new wxStaticBoxSizer(wxVERTICAL, this, "&Account Information");
@@ -203,7 +210,7 @@ AccountPage::AccountPage(SeruroSetup *parent)
 	account_form->Add(status_sizer, DIALOGS_BOXSIZER_OPTIONS);
 
 	/* Add the form, which is itself, a grid sizer. */
-    this->AddForm(account_form);
+    AddAccountForm::AddForm(account_form);
 
 	vert_sizer->Add(account_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 
@@ -264,11 +271,12 @@ bool AccountPage::GoNext(bool from_callback) {
 
 	if (this->wizard->HasServerInfo()) {
 		/* The server information was entered on a previous page. */
-		server_info = ((ServerPage *) this->wizard->GetServerPage())->GetValues();
+		//server_info = ((ServerPage *) this->wizard->GetServerPage())->GetValues();
+		server_info = AddServerForm::GetValues();
 	}
 
 	/* Get values from AddAddressForm. */
-	address_info = this->GetValues();
+	address_info = AddAccountForm::GetValues();
 	params["address"] = address_info["address"];
     /* Prevent the "bad-auth" UI component, return errors directly to this handler. */
     params["require_password"] = true;

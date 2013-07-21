@@ -69,7 +69,7 @@ public:
 		return initial_page; 
 	}
 
-	SetupPage* GetServerPage() { return server_page; }
+	//SetupPage* GetServerPage() { return server_page; }
 	SetupPage* GetAccountPage() { return account_page; }
 	bool HasServerInfo() { 
 		//return (! this->address_setup);
@@ -118,7 +118,7 @@ private:
 	setup_type_t setup_type;
 
     SetupPage *initial_page;
-    SetupPage *server_page;
+    //SetupPage *server_page;
     SetupPage *account_page;
 	SetupPage *identity_page;
     SetupPage *applications_page;
@@ -156,7 +156,8 @@ private:
 };
 
 /* Should be very similar to /frames/dialogs/AddAccountDialog */
-class AccountPage : public SetupPage, public AddAccountForm
+class AccountPage : public SetupPage, 
+	public AddAccountForm, public AddServerForm
 {
 public:
     AccountPage (SeruroSetup *parent);

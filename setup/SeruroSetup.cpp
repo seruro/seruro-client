@@ -73,23 +73,24 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
     /* Page creation, a welcome page for the initial setup. */
 	if (type == SERURO_SETUP_INITIAL) {
 		this->initial_page  = new InitialPage(this);
-        this->server_page   = new ServerPage(this);
+        //this->server_page   = new ServerPage(this);
 		this->account_page  = new AccountPage(this);
 
-		initial_page->SetNext(server_page);
-		server_page->SetPrev(initial_page);
-		server_page->SetNext(account_page);
-		account_page->SetPrev(server_page);
+		initial_page->SetNext(account_page);
+		//server_page->SetPrev(initial_page);
+		//server_page->SetNext(account_page);
+		account_page->SetPrev(account_page);
 	}
 
 	/* Only show if in the initial setup or a server setup. */
 	if (type == SERURO_SETUP_SERVER) {
-		this->server_page   = new ServerPage(this);
+		//this->server_page   = new ServerPage(this);
 		this->account_page  = new AccountPage(this);
-		this->initial_page  = this->server_page;
+		//this->initial_page  = this->server_page;
+		this->initial_page  = this->account_page;
 
-		initial_page->SetNext(account_page);
-		account_page->SetPrev(initial_page);
+		//initial_page->SetNext(account_page);
+		//account_page->SetPrev(initial_page);
 	}
 
 	if (type == SERURO_SETUP_ACCOUNT) {
@@ -119,7 +120,7 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
 wxJSONValue SeruroSetup::GetServerInfo()
 {
     if (setup_type == SERURO_SETUP_SERVER || setup_type == SERURO_SETUP_INITIAL) {
-        return ((ServerPage*) this->GetServerPage())->GetValues();
+        return ((ServerPage*) this->GetAccountPage())->GetValues();
     }
     return wxGetApp().config->GetServer(this->server_name);
 }
@@ -128,7 +129,7 @@ wxString SeruroSetup::GetAccount()
 {
     if (setup_type != SERURO_SETUP_IDENTITY) {
         wxJSONValue account_values;
-        account_values = ((AccountPage*)this->GetAccountPage())->GetValues();
+        account_values = ((AddAccountForm*)this->GetAccountPage())->GetValues();
         return account_values["address"].AsString();
     }
     return this->account;
