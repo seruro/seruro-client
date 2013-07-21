@@ -70,9 +70,9 @@ bool InstallCertificateToStore(const wxMemoryBuffer &cert, wxString store_name, 
 		CERT_STORE_OPEN_EXISTING_FLAG | CERT_SYSTEM_STORE_CURRENT_USER, store);
 
 	if (cert_store == NULL) {
-		error = GetLastError();
+		error_num = GetLastError();
 		wxLogMessage(wxT("SeruroCrypto::InstallCA> could not open CURRENT_USER/'%s' store (%u)."), 
-			store_name, error); 
+			store_name, error_num); 
 		return false;
 	}
 
@@ -209,7 +209,7 @@ wxString GetFingerprintFromBuffer(const wxMemoryBuffer &cert)
 /* Get subject key id from certificate context. */
 wxString GetSubjectKeyIDFromCertificate(PCCERT_CONTEXT &cert)
 {
-	bool result;
+	BOOL result;
 	BYTE *id_data;
 	DWORD id_size, error_num;
 
@@ -220,10 +220,22 @@ wxString GetSubjectKeyIDFromCertificate(PCCERT_CONTEXT &cert)
 		// error 
 		error_num = GetLastError();
 		wxLogMessage(_("SeruroCrypto> (GetSubjectKeyIDFromCert) cannot get size of key data (%u)."), error_num);
+		return wxEmptyString;
 	}
 
 	id_data = (BYTE *) malloc(sizeof(BYTE) * id_size);
-	result = CertGetCertificateContextProperty(cert, CERT_KEY_IDENTIFIER_PROP_ID, , id_size);
+	result = CertGetCertificateContextProperty(cert, CERT_KEY_IDENTIFIER_PROP_ID, id_data, &id_size);
+
+	if (! result) { 
+		error_num = GetLastError();
+		wxLogMessage(_("SeruroCrypto> (GetSubjectKeyIDFromCert) cannot get key data (%u)."), error_num);
+		return wxEmptyString;
+	}
+
+	wxMemoryBuffer id_buffer;
+	id_buffer.AppendData(id_data, id_size);
+
+	return wxBase64Encode(id_buffer);
 }
 
 /* Todo: Errors should be events. */
@@ -376,7 +388,7 @@ bool SeruroCryptoMSW::InstallCA(const wxMemoryBuffer &ca, wxString &fingerprint)
 {
     bool status;
     
-	status = InstallCertificateToStore(ca, _(CERTIFICATE_STORE_TRUSTED_ROOT), fingerprint);
+	status = InstallCertificateToStore(ca, _(CERTSTORE_TRUSTED_ROOT), fingerprint);
     //fingerprint.Append(GetFingerprintFromBuffer(ca));
     
     return status;
@@ -387,7 +399,7 @@ bool SeruroCryptoMSW::InstallCertificate(const wxMemoryBuffer &cert, wxString &f
 	/* Store name: AddressBook */
     bool status;
     
-	status = InstallCertificateToStore(cert, _(CERTIFICATE_STORE_CONTACTS), fingerprint);
+	status = InstallCertificateToStore(cert, _(CERTSTORE_CONTACTS), fingerprint);
     //fingerprint.Append(GetFingerprintFromBuffer(cert));
     
     return status;
@@ -463,7 +475,7 @@ bool SeruroCryptoMSW::HaveCA(wxString server_name)
 	wxString ca_fingerprint = wxGetApp().config->GetCA(server_name);
 
 	/* Looking at the personal (my) store. */
-	bool in_store = HaveCertificateByFingerprint(ca_fingerprint, CERTTORE_TRUSTED_ROOT);
+	bool in_store = HaveCertificateByFingerprint(ca_fingerprint, CERTSTORE_TRUSTED_ROOT);
 	wxLogMessage(_("SeruroCrypto> (HaveCA) certificate (%s) in store: (%s)."), 
 		server_name, (in_store) ? "true" : "false");
 	return in_store;
