@@ -37,7 +37,7 @@ void SeruroPanelSearch::OnServerStateChange(SeruroStateEvent &event)
 {
     wxLogMessage(_("SeruroPanelServer> (OnServerStateChange)"));
 	if (event.GetAction() == STATE_ACTION_REMOVE) {
-		wxLogMessage(_("SeruroPanelSearch> (OnServerStateChange) removing server (%s)."), event.GetServerName());
+		wxLogMessage(_("SeruroPanelSearch> (OnServerStateChange) removing server (%s)."), event.GetServerUUID());
 	}
     
     /* Focus should update the servers list and filter results. */
@@ -48,21 +48,22 @@ void SeruroPanelSearch::OnServerStateChange(SeruroStateEvent &event)
 
 void SeruroPanelSearch::DoFocus()
 {
-	wxArrayString servers = wxGetApp().config->GetServerList();
+	wxArrayString server_names;
 	wxLogMessage(_("SeruroPanelSearch> (DoFocus) focusing the search."));
     
+    server_names = wxGetApp().config->GetServerNames();
 	/* If the config has changed, regenerate the list of servers. */
-	if (servers.size() != servers_control->GetCount()) {
+	if (server_names.size() != servers_control->GetCount()) {
 		this->servers_control->Clear();
-		this->servers_control->Append(servers);
+		this->servers_control->Append(server_names);
 		this->servers_control->SetSelection(0);
 
 		/* Filter search results for potentially-removed servers. */
-		this->list_control->FilterResultsByServers(servers);
+		this->list_control->FilterResultsByServers(server_names);
 	}
 
 	/* Depending on the number of servers, enable/disable the controls. */
-	if (servers.size() == 0) {
+	if (server_names.size() == 0) {
 		/* This may have been active before, and there may be dangling text. */
 		this->search_control->Clear();
 		this->DisableSearch();
@@ -75,12 +76,12 @@ void SeruroPanelSearch::DoFocus()
 void SeruroPanelSearch::Install(const wxString& server_name, const wxString& address)
 {
     wxJSONValue params;
-    wxJSONValue server;
+    wxJSONValue server_info;
     
-    wxLogMessage(wxT("SeruroPanelSearch:Install> requesting certificate for (%s) (%s)."), address, server_name);
+    wxLogMessage(wxT("SeruroPanelSearch:Install> requesting certificate for (name= %s) (%s)."), server_name, address);
     
-    server = api->GetServer(server_name);
-    params["server"] = server;
+    server_info = api->GetServer(wxGetApp().config->GetServerUUID(server_name));
+    params["server"] = server_info;
     params["request_address"] = address;
     
 	SeruroRequest *request = api->CreateRequest(SERURO_API_CERTS, params, SERURO_API_CALLBACK_CERTS);
@@ -91,10 +92,11 @@ void SeruroPanelSearch::Install(const wxString& server_name, const wxString& add
 void SeruroPanelSearch::OnInstallResult(SeruroRequestEvent &event)
 {
 	/* The event data should include the address which was updated. */
-    wxJSONValue response = event.GetResponse();
+    wxJSONValue response;
+    wxString server_name;
     
-    if (! response.HasMember("success") || ! response["success"].AsBool()
-        || ! response.HasMember("address")) {
+    response = event.GetResponse();
+    if (! response.HasMember("success") || ! response["success"].AsBool() || ! response.HasMember("address")) {
         wxLogMessage(wxT("OnInstallResults> Bad Result."));
         return;
     }
@@ -105,16 +107,20 @@ void SeruroPanelSearch::OnInstallResult(SeruroRequestEvent &event)
     }
     
     /* Check the corresponding item(s) in the list control. */
+    server_name = wxGetApp().config->GetServerName(response["server_uuid"].AsString());
     if (api->InstallCertificate(response)) {
-        list_control->SetCheck(response["server_name"].AsString(), response["address"].AsString(), true);
+        list_control->SetCheck(server_name, response["address"].AsString(), true);
     }
 }
 
 /* There is no callback for uninstall, this happens locally. */
 void SeruroPanelSearch::Uninstall(const wxString& server_name, const wxString& address)
 {
-    wxLogMessage(_("SeruroPanelSearch> (Uninstall) trying to uninstall (%s) (%s)."), server_name, address);
-    if (api->UninstallCertificates(server_name, address)) {
+    wxString server_uuid;
+    
+    server_uuid = wxGetApp().config->GetServerUUID(server_name);
+    wxLogMessage(_("SeruroPanelSearch> (Uninstall) trying to uninstall (name= %s) (%s)."), server_name, address);
+    if (api->UninstallCertificates(server_uuid, address)) {
         list_control->SetCheck(server_name, address, false);
     }
 }
@@ -159,7 +165,7 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	list_control->InsertColumn(1, _("Email Address"), wxLIST_FORMAT_LEFT);
 	list_control->InsertColumn(2, _("First Name"), wxLIST_FORMAT_LEFT);
 	list_control->InsertColumn(3, _("Last Name"), wxLIST_FORMAT_LEFT);
-	list_control->InsertColumn(4, _("Server"), wxLIST_FORMAT_LEFT);
+	list_control->InsertColumn(4, _("Server Name"), wxLIST_FORMAT_LEFT);
 
 	/* Add the list-control to the UI. */
 	results_sizer->Add(list_control, 1, wxALL | wxEXPAND, 5);
@@ -171,7 +177,7 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	wxBoxSizer *search_sizer = new wxBoxSizer(wxHORIZONTAL);
 	
 	/* Create search list. */
-	Text *servers_text = new Text(this, wxT("Select server:"));
+	Text *servers_text = new Text(this, wxT("Select server: "));
 	
 	this->servers_control = GetServerChoice(this);
 	/* When checked/unchecked the servers_control is disabled/enabled. */
@@ -220,8 +226,13 @@ void SeruroPanelSearch::AddResult(const wxString &address,
 	long item_index;
 	
 	/* place appropriately marked checkbox. */
-    wxString server_name = this->GetSelectedServer();
+    wxString server_name;
+    wxString server_uuid;
     wxString display_address = address;
+    
+    /* Get server info from selected server. */
+    server_name = this->GetSelectedServer();
+    server_uuid = wxGetApp().config->GetServerUUID(server_name);
     
     /* When the certificate is requested, it must know what server manages the identity. */
 	item_index = this->list_control->InsertItem(0, wxT(" "));
@@ -231,8 +242,8 @@ void SeruroPanelSearch::AddResult(const wxString &address,
     }
     
     /* Determine if certificate is installed. */
-    bool have_certificate = wxGetApp().config->HaveCertificates(server_name, address);
-    bool have_identity = wxGetApp().config->HaveIdentity(server_name, address);
+    bool have_certificate = wxGetApp().config->HaveCertificates(server_uuid, address);
+    bool have_identity = wxGetApp().config->HaveIdentity(server_uuid, address);
     list_control->SetCheck(item_index, have_certificate);
 	if (have_identity) {
         list_control->DisableRow(item_index);
@@ -250,10 +261,11 @@ void SeruroPanelSearch::DoSearch()
 {
 	/* Todo this should pick up the selected (or ONLY) server. */
     wxString server_name;
-	wxJSONValue server;
-	wxString query = this->search_control->GetValue();
+	wxString query;
+    wxJSONValue server_info;
 
     /* Do not search an empty string. */
+    query = this->search_control->GetValue();
     if (query.compare(wxEmptyString) == 0) return;
     if (query.Length() < SERURO_MIN_SEARCH_LENGTH) return;
     /* Do not duplicate searches. */
@@ -272,7 +284,7 @@ void SeruroPanelSearch::DoSearch()
 
 	if (! this->all_servers_control->IsChecked()) {
 		server_name = this->GetSelectedServer();
-		server = this->api->GetServer(server_name);
+		server_info = this->api->GetServer(wxGetApp().config->GetServerUUID(server_name));
 		/* Sanity check for no servers, but an interactive search input. */
 		//if (! server.HasMember("host")) {
 		//	wxLogMessage(_("SeruroPanelServer> (DoSearch) Invalid server selected."));
@@ -280,7 +292,7 @@ void SeruroPanelSearch::DoSearch()
 		//}
 
 		this->searched_server_name = server_name;
-		params["server"] = server;
+		params["server"] = server_info;
 
 		api->CreateRequest(SERURO_API_SEARCH, params, SERURO_API_CALLBACK_SEARCH)->Run();
 	} else {
@@ -288,8 +300,8 @@ void SeruroPanelSearch::DoSearch()
 		wxArrayString servers_list = wxGetApp().config->GetServerList();
 		this->searched_server_name = wxEmptyString;
 		for (size_t i = 0; i < servers_list.size(); i++) {
-			server = this->api->GetServer(servers_list[i]);
-			params["server"] = server;
+			server_info = this->api->GetServer(servers_list[i]);
+			params["server"] = server_info;
 
 			api->CreateRequest(SERURO_API_SEARCH, params, SERURO_API_CALLBACK_SEARCH)->Run();
 		}

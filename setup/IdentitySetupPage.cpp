@@ -1,10 +1,10 @@
 
-#include "../frames/dialogs/DecryptDialog.h"
+//#include "../frames/dialogs/DecryptDialog.h"
 #include "../crypto/SeruroCrypto.h"
 #include "../api/SeruroStateEvents.h"
 
 #include "SeruroSetup.h"
-#include "../frames/UIDefs.h"
+//#include "../frames/UIDefs.h"
 
 enum {
     BUTTON_DOWNLOAD_IDENTITY
@@ -25,9 +25,9 @@ void IdentityPage::DownloadIdentity()
 	/* Disable interaction while thread is running. */
 	this->DisablePage();
 
-    SeruroServerAPI *api = new SeruroServerAPI(this->GetEventHandler());
+    SeruroServerAPI *api = new SeruroServerAPI(this);
     
-	params["server"] = api->GetServer(server_info["name"].AsString());
+	params["server"] = server_info;
     params["address"] = account;
     
 	api->CreateRequest(SERURO_API_P12S, params, SERURO_API_CALLBACK_P12S)->Run();
@@ -176,7 +176,7 @@ bool IdentityPage::GoNext(bool from_callback)
 
 	/* Make sure the certificates are available. */
 	SeruroCrypto crypto_helper;
-	try_install = crypto_helper.HaveIdentity(download_response["server_name"].AsString(),
+	try_install = crypto_helper.HaveIdentity(download_response["server_uuid"].AsString(),
 		download_response["address"].AsString());
 	if (! try_install) {
 		this->SetIdentityStatus(_("Unable to install identity."));
@@ -186,7 +186,7 @@ bool IdentityPage::GoNext(bool from_callback)
     
     /* Create identity installed event. */
     SeruroStateEvent event(STATE_TYPE_ACCOUNT, STATE_ACTION_UPDATE);
-    event.SetServerName(download_response["server_name"].AsString());
+    event.SetServerUUID(download_response["server_uuid"].AsString());
     event.SetAccount(download_response["address"].AsString());
     this->ProcessWindowEvent(event);
 

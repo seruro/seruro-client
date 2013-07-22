@@ -1,7 +1,7 @@
 
 #include "SeruroSetup.h"
-#include "../frames/dialogs/AddServerDialog.h"
-#include "../frames/dialogs/AddAccountDialog.h"
+//#include "../frames/dialogs/AddServerDialog.h"
+//#include "../frames/dialogs/AddAccountDialog.h"
 
 #include "../crypto/SeruroCrypto.h"
 #include "../api/SeruroStateEvents.h"
@@ -30,19 +30,19 @@ void AccountPage::OnCAResult(SeruroRequestEvent &event)
 
 	/* Check that the (now-known) CA hash exists within the trusted Root store. */
 	SeruroCrypto crypto_helper;
-	this->has_ca = crypto_helper.HaveCA(response["server_name"].AsString());
+	this->has_ca = crypto_helper.HaveCA(response["server_uuid"].AsString());
 
 	/* If the user canceled the install, stop. */
 	if (! has_ca) {
 		/* Remove the account and server which was saved to the config. */
 		wxJSONValue account_info = AddAccountForm::GetValues();
 
-		wxGetApp().config->RemoveServer(response["server_name"].AsString());
+		wxGetApp().config->RemoveServer(response["server_uuid"].AsString());
 		SetAccountStatus(_("Unable to install server."));
 
         /* Process remove server event. */
         SeruroStateEvent state_event(STATE_TYPE_SERVER, STATE_ACTION_REMOVE);
-		state_event.SetServerName(response["server_name"].AsString());
+		state_event.SetServerUUID(response["server_uuid"].AsString());
 		this->ProcessWindowEvent(state_event);
         
 		/* Allow the login to "try-again". */
@@ -53,7 +53,7 @@ void AccountPage::OnCAResult(SeruroRequestEvent &event)
     
     /* Process update server event (now with certificate). */
     SeruroStateEvent state_event(STATE_TYPE_SERVER, STATE_ACTION_UPDATE);
-    state_event.SetServerName(response["server_name"].AsString());
+    state_event.SetServerUUID(response["server_uuid"].AsString());
     this->ProcessWindowEvent(state_event);
 	
 	/* This result handler may be able to proceed the setup. */
@@ -64,13 +64,14 @@ void AccountPage::OnCAResult(SeruroRequestEvent &event)
 
 void AccountPage::OnPingResult(SeruroRequestEvent &event)
 {
-	wxJSONValue response = event.GetResponse();
-	wxJSONValue params;
-	wxString server_name, address;
+	wxJSONValue response;
+	wxJSONValue params, server_info;
+	wxString address;
     bool new_server;
 
 	/* The server's CA/CRL might need installing. */
 	SeruroServerAPI *api = new SeruroServerAPI(this);
+    response = event.GetResponse();
 
 	if (! response["success"].AsBool() || ! response.HasMember("address")) {
 		wxLogMessage(_("AccountPage> (OnPingResult) failed to ping server."));
@@ -90,19 +91,26 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	 * In both cases, the server information must exists.
 	 * Also, try to add the server without intellegence. 
 	 */
-	if (! response.HasMember("meta") || ! response["meta"].HasMember("name")) {
-		wxLogMessage(_("RootAccounts> (AddAddressResult) no server name in meta."));
+	if (! response.HasMember("name")) {
+		wxLogMessage(_("RootAccounts> (AddAddressResult) no server name in response."));
 		SetAccountStatus(_("Invalid server response."));
 		goto enable_form;
 	}
 
-	/* Try to add the server to the config, will fail if server existed. */
-    server_name = response["meta"]["name"].AsString();
-	new_server = wxGetApp().config->AddServer(response["meta"]);
+    /* Set the instance variable for additiona pages to access. */
+    this->server_uuid = response["uuid"].AsString();
+    
+    /* Try to add the server to the config, will fail if server existed. */
+    server_info["uuid"] = this->server_uuid;
+    server_info["name"] = response["name"];
+    server_info["host"] = response["meta"]["host"];
+    server_info["port"] = response["meta"]["port"];
+	new_server = wxGetApp().config->AddServer(server_info);
+    
 	if (new_server) {
         /* Create new server event. */
         SeruroStateEvent event(STATE_TYPE_SERVER, STATE_ACTION_ADD);
-		event.SetServerName(server_name);
+		event.SetServerUUID(this->server_uuid);
 		this->ProcessWindowEvent(event);
 	}
 
@@ -111,13 +119,13 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	 * (If the server was new, and it successes, but the address fails, there is a larger problem.)
 	 */
 	address = response["address"].AsString();
-	if (! wxGetApp().config->AddAddress(server_name, address)) {
+	if (! wxGetApp().config->AddAddress(this->server_uuid, address)) {
 		SetAccountStatus(_("Account already exists."));
 		goto enable_form;
 	} else {        
         /* Create new server event. */
         SeruroStateEvent event(STATE_TYPE_ACCOUNT, STATE_ACTION_ADD);
-		event.SetServerName(server_name);
+		event.SetServerUUID(this->server_uuid);
         event.SetAccount(address);
 		this->ProcessWindowEvent(event);
 	}
@@ -127,7 +135,7 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	SetAccountStatus(_("Success."));
 
 	/* After the address has been added, and a token save, check if this is a new server. */
-	params["server"] = response["meta"];
+	params["server"] = server_info;
 	if (new_server) {
 		params["meta"]["go_forward"] = true;
 		api->CreateRequest(SERURO_API_CA, params, SERURO_API_CALLBACK_CA)->Run();
@@ -223,12 +231,14 @@ AccountPage::AccountPage(SeruroSetup *parent)
 
 void AccountPage::OnSelectServer(wxCommandEvent &event)
 {
-	wxString new_server = server_menu->GetString(server_menu->GetSelection());
-
-	SeruroCrypto crypto_helper;
-	wxLogMessage(_("AccountPage> (OnSelectServer) server (%s) was selected."), new_server);
-	this->server_name = new_server;
-	this->has_ca = crypto_helper.HaveCA(new_server);
+	wxString new_server_name;
+    SeruroCrypto crypto_helper;
+    
+    new_server_name = server_menu->GetString(server_menu->GetSelection());
+	wxLogMessage(_("AccountPage> (OnSelectServer) server (%s) was selected."), new_server_name);
+    
+	this->server_uuid = wxGetApp().config->GetServerUUID(new_server_name);
+	this->has_ca = crypto_helper.HaveCA(this->server_uuid);
 }
 
 void AccountPage::DoFocus()
@@ -240,14 +250,7 @@ void AccountPage::DoFocus()
 	if (! wizard->HasServerInfo()) return;
 
 	/* Otherwise the server name may have changed. */
-	//server_name = ((ServerPage*) wizard->GetServerPage())->GetValues()["name"].AsString();
-
-	//this->server_menu->Clear();
-	//this->server_menu->Disable();
-	//this->server_menu->Append(this->server_name);
-
 	/* This (should) cause the CA lookup (but it is not needed, only the UI update). */
-	//this->server_menu->SetSelection(0);
 }
 
 /* Use the information in the form to login, update the UI, and allow 
@@ -291,8 +294,7 @@ bool AccountPage::GoNext(bool from_callback) {
 	params["meta"] = server_info;
 	params["server"] = server_info;
 
-    //wxLogMessage(_("(asp) password: %s"), params["password"].AsString());
-	/* Create a 'ping' request, and within the callback, call 'GoForward' again. */
+    /* Create a 'ping' request, and within the callback, call 'GoForward' again. */
 	SeruroServerAPI *api = new SeruroServerAPI(this);
 	api->Ping(params)->Run();
 	delete api;

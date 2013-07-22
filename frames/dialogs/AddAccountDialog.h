@@ -19,7 +19,10 @@ public:
     void AddForm(wxSizer *sizer, 
 		const wxString &address = wxEmptyString,
 		const wxString &server_name = wxEmptyString);
+    
+    /* Value accessors. */
     wxJSONValue GetValues();
+    wxString GetAccount() { return this->address->GetValue(); };
     
 	/* Disallow/Allow form actions. */
 	void DisableForm();

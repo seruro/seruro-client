@@ -38,8 +38,8 @@ public:
 	void SetStateChange(wxJSONValue state) { state_data = state; }
 
 	/* A state change will always have a server_name. */
-	wxString GetServerName() { return state_data["server_name"].AsString(); }
-	void SetServerName(wxString server_name) { state_data["server_name"] = server_name; }
+	wxString GetServerUUID() { return state_data["server_uuid"].AsString(); }
+	void SetServerUUID(wxString server_uuid) { state_data["server_uuid"] = server_uuid; }
     wxString GetAccount() { return state_data["account"].AsString(); }
     void SetAccount(wxString account) { state_data["account"] = account; }
     
@@ -51,7 +51,7 @@ public:
 
 private:
 	/* Should be formatted:
-	 * {"server_name"
+	 * {"server_uuid"
 	 *  ["address"]
 	 *  "action" : {"update", "remove", "add"}
 	 * }

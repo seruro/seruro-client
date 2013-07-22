@@ -62,7 +62,8 @@ public:
 	 */
 	SeruroSetup(wxFrame *parent, 
 		setup_type_t type = SERURO_SETUP_INITIAL,
-        wxString server = wxEmptyString, wxString address = wxEmptyString);
+        wxString server_uuid = wxEmptyString,
+        wxString address = wxEmptyString);
 		//bool add_server= false, bool add_address= false);
 
     wxWizardPage *GetInitialPage() const { 
@@ -72,7 +73,6 @@ public:
 	//SetupPage* GetServerPage() { return server_page; }
 	SetupPage* GetAccountPage() { return account_page; }
 	bool HasServerInfo() { 
-		//return (! this->address_setup);
 		return (! setup_type == SERURO_SETUP_ACCOUNT);
 	}
     wxJSONValue GetServerInfo();
@@ -89,7 +89,6 @@ public:
 	void SetButtonText(wxString prev = wxEmptyString, 
 		wxString next = wxEmptyString);
 	void EnablePrev(bool enable) {
-		//this->m_btnPrev->Disable();
 		if (this->HasPrevPage(this->GetCurrentPage())) {
 			/* Only permit override if previous page exists. */
 			this->m_btnPrev->Enable(enable);
@@ -113,25 +112,17 @@ private:
 	wxString prev_button_orig;
 
 	/* Allow the constructor to create pages based on a setup type. */
-	//bool server_setup;
-	//bool address_setup;
 	setup_type_t setup_type;
 
     SetupPage *initial_page;
-    //SetupPage *server_page;
     SetupPage *account_page;
 	SetupPage *identity_page;
     SetupPage *applications_page;
     SetupPage *settings_page;
     
     /* Set by caller when setup begins after server or account. */
-    wxString server_name;
+    wxString server_uuid;
     wxString account;
-    
-	//void InitInitial();
-	//void InitServer();
-	//void InitAccount();
-	//void InitIdentity();
 
     DECLARE_EVENT_TABLE()
 };
@@ -140,19 +131,6 @@ class InitialPage : public SetupPage
 {
 public:
     InitialPage (SeruroSetup *parent);
-};
-
-/* Should be very similar to /frames/dialogs/AddServerDialog */
-class ServerPage : public SetupPage, public AddServerForm
-{
-public:
-    ServerPage(SeruroSetup *parent);
-
-	/* Handle the single checkbox click. */
-	void OnForm_OnCustomPort(wxCommandEvent &event);
-
-private:
-	DECLARE_EVENT_TABLE()
 };
 
 /* Should be very similar to /frames/dialogs/AddAccountDialog */
@@ -169,7 +147,8 @@ public:
 
 	/* Manage server/CA lookups. */
 	void OnSelectServer(wxCommandEvent &event);
-	//bool HasServerCertificate(wxString server_name);
+    wxString GetServerUUID() { return this->server_uuid; }
+    
 	/* Check if the name from the server page changed (and reselect). */
 	void DoFocus();
 
@@ -191,7 +170,7 @@ private:
 
 	/* Server list is a choice, even if there is only one. */
 	wxChoice *server_menu;
-	wxString server_name;
+	wxString server_uuid;
 
 	/* Textual messages indicating address/server install status. */
 	//Text *server_status;

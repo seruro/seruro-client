@@ -104,7 +104,7 @@ void RemoveDialog::RemoveServer()
     wxGetApp().config->RemoveServer(this->server_name);
     
     SeruroStateEvent event(STATE_TYPE_SERVER, STATE_ACTION_REMOVE);
-    event.SetServerName(this->server_name);
+    event.SetServerUUID(this->server_name);
     this->ProcessWindowEvent(event);
     
     api = new SeruroServerAPI(this);
@@ -130,7 +130,7 @@ void RemoveDialog::RemoveAddress()
     wxGetApp().config->RemoveAddress(this->server_name, this->address);
     
     SeruroStateEvent event(STATE_TYPE_ACCOUNT, STATE_ACTION_REMOVE);
-    event.SetServerName(this->server_name);
+    event.SetServerUUID(this->server_name);
     event.SetAccount(this->address);
     this->ProcessWindowEvent(event);
 }

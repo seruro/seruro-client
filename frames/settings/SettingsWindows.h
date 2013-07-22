@@ -93,7 +93,7 @@ private:
 	bool account_selected;
 
 	/* Information about the selected item. */
-	wxString server_name;
+	wxString server_uuid;
 	wxString address;
 
 	/* Button components, enable/disable, change label. */

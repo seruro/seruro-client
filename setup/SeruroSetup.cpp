@@ -1,6 +1,6 @@
 
 #include "SeruroSetup.h"
-#include "../frames/UIDefs.h"
+//#include "../frames/UIDefs.h"
 
 #include <wx/event.h>
 
@@ -50,7 +50,8 @@ InitialPage::InitialPage(SeruroSetup *parent) : SetupPage(parent)
 
 //SeruroSetup::SeruroSetup(wxFrame *parent, bool add_server, bool add_address) : 
 SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
-    wxString server, wxString account) : setup_type(type), server_name(server), account(account)
+    wxString server_uuid, wxString account)
+  : setup_type(type), server_uuid(server_uuid), account(account)
 	//server_setup(type), address_setup(type)
 {
 	/* Set title based on type of setup. */
@@ -73,27 +74,14 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
     /* Page creation, a welcome page for the initial setup. */
 	if (type == SERURO_SETUP_INITIAL) {
 		this->initial_page  = new InitialPage(this);
-        //this->server_page   = new ServerPage(this);
-		this->account_page  = new AccountPage(this);
+        this->account_page  = new AccountPage(this);
 
 		initial_page->SetNext(account_page);
-		//server_page->SetPrev(initial_page);
-		//server_page->SetNext(account_page);
 		account_page->SetPrev(account_page);
 	}
 
-	/* Only show if in the initial setup or a server setup. */
-	if (type == SERURO_SETUP_SERVER) {
-		//this->server_page   = new ServerPage(this);
-		this->account_page  = new AccountPage(this);
-		//this->initial_page  = this->server_page;
-		this->initial_page  = this->account_page;
-
-		//initial_page->SetNext(account_page);
-		//account_page->SetPrev(initial_page);
-	}
-
-	if (type == SERURO_SETUP_ACCOUNT) {
+	/* Only show if in the initial setup or a server/account setup. */
+	if (type == SERURO_SETUP_SERVER || type == SERURO_SETUP_ACCOUNT) {
 		this->account_page  = new AccountPage(this);
 		this->initial_page  = this->account_page;
 	}
@@ -106,6 +94,7 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
 		account_page->SetNext(identity_page);
 		identity_page->SetPrev(account_page);
 	} else {
+        wxLogMessage(_("SeruroSetup> Created with server UUID (%s)."), this->server_uuid);
 		initial_page = identity_page;
 	}
 
@@ -119,18 +108,24 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
 
 wxJSONValue SeruroSetup::GetServerInfo()
 {
-    if (setup_type == SERURO_SETUP_SERVER || setup_type == SERURO_SETUP_INITIAL) {
-        return ((ServerPage*) this->GetAccountPage())->GetValues();
+    wxString current_server_uuid;
+    
+    if (setup_type == SERURO_SETUP_SERVER || setup_type == SERURO_SETUP_INITIAL ||
+        setup_type == SERURO_SETUP_ACCOUNT) {
+        /* Check for "SERURO_SETUP_ACCOUNT"'s selected server name/uuid response. */
+        current_server_uuid = ((AccountPage*) this->GetAccountPage())->GetServerUUID();
+    } else {
+        current_server_uuid = this->server_uuid;
     }
-    return wxGetApp().config->GetServer(this->server_name);
+    
+    return wxGetApp().config->GetServer(current_server_uuid);
 }
 
 wxString SeruroSetup::GetAccount()
 {
     if (setup_type != SERURO_SETUP_IDENTITY) {
         wxJSONValue account_values;
-        account_values = ((AddAccountForm*)this->GetAccountPage())->GetValues();
-        return account_values["address"].AsString();
+        return ((AccountPage*) this->GetAccountPage())->GetAccount();
     }
     return this->account;
 }

@@ -54,7 +54,7 @@ void PerformRequestAuth(SeruroRequestEvent &event)
     }
     
     /* Selected forces the user to use the provided address. Otherwise they may choose any. */
-	dialog = new AuthDialog(og_params["server"]["server_name"].AsString(), address, selected_address);
+	dialog = new AuthDialog(og_params["server"]["uuid"].AsString(), address, selected_address);
 	if (dialog->ShowModal() == wxID_OK) {
 		wxLogMessage(wxT("SeruroRequest> (PerformRequestAuth) OK"));
 		new_auth = dialog->GetValues();
@@ -108,10 +108,14 @@ void SeruroRequest::Reply(wxJSONValue response)
 		response["meta"] = params["meta"];
 	}
 
-	/* Set the server name. */
-	response["server_name"] = params["server"]["name"];
+	/* Set the server uuid. */
+    if (response.HasMember("uuid")) {
+        response["server_uuid"] = response["uuid"];
+    } else {
+        wxLogMessage(_("SeruroRequest> (Reply) the server did not respond with a uuid?"));
+    }
 
-    /* Create a request/response event with the response data. 
+    /* Create a request/response event with the response data.
      * The ID determines which function receives the event. 
      */
     SeruroRequestEvent event(this->evtId);
@@ -220,17 +224,23 @@ bool SeruroRequest::DoAuth()
     response = performRequest(auth_params);
     
 	/* If "result" (boolean) is true, update token store for "email", set "token". */
-	if (response.HasMember("error") || ! response["success"].AsBool() || ! response.HasMember("token")) {
+	if (! response["success"].AsBool() || ! response.HasMember("token")) {
 		wxLogMessage(wxT("SeruroRequest> (Do Auth) failed (%s)."), response["error"].AsString());
         return false;
 	}
     
 	wxLogMessage(_("SeruroRequest> (Do Auth) received token (%s)."), response["token"].AsString());
     
-	/* Warning: depends on response["email"] */
-	wrote_token = wxGetApp().config->WriteToken(auth_params["server"]["name"].AsString(),
+	/* Warning: depends on response["email"], response["uuid"] */
+    wrote_token = false;
+    if (response.HasMember("email") && response.HasMember("uuid")) {
+        wrote_token = wxGetApp().config->WriteToken(response["uuid"].AsString(),
             response["email"].AsString(), response["token"].AsString());
-	wxGetApp().config->SetActiveToken(auth_params["server"]["name"].AsString(), response["email"].AsString());
+        wxGetApp().config->SetActiveToken(response["uuid"].AsString(), response["email"].AsString());
+    } else {
+        wxLogMessage(_("SeruroRequest (DoAuth) cannot find 'email' or 'uuid' in response?"));
+    }
+    
 	if (! wrote_token) {
 		wxLogMessage(_("SeruroRequest> (Do Auth) failed to write token."));
         return false;

@@ -54,7 +54,7 @@ void AccountsWindow::OnServerStateChange(SeruroStateEvent &event)
     
     this->GenerateServersList();
 	if (event.GetAction() == STATE_ACTION_REMOVE) {
-		wxLogMessage(_("AccountsWindow> (OnServerStateChange) removing server (%s)."), event.GetServerName());
+		wxLogMessage(_("AccountsWindow> (OnServerStateChange) removing server (%s)."), event.GetServerUUID());
         
         /* The accounts list will change when a server is removed, without an explicit event. */
         this->GenerateAccountsList();
@@ -100,10 +100,10 @@ void AccountsWindow::OnServerSelected(wxListEvent &event)
     DeselectAccounts();
     
     /* Server name is now available. */
-    this->server_name = item.GetText();
+    this->server_uuid = wxGetApp().config->GetServerUUID(item.GetText());
     this->account_selected = false;
     
-    if (! wxGetApp().config->HaveCA(server_name)) {
+    if (! wxGetApp().config->HaveCA(server_uuid)) {
         SetActionLabel(_("Install"));
     } else {
         SetActionLabel(_("Update"));
@@ -135,9 +135,9 @@ void AccountsWindow::OnAccountSelected(wxListEvent &event)
     /* Also need the server name for this account. */
     item.SetColumn(ACCOUNTS_LIST_SERVER_COLUMN);
     accounts_list->GetItem(item);
-    this->server_name = item.GetText();
+    this->server_uuid = wxGetApp().config->GetServerUUID(item.GetText());
     
-    if (! wxGetApp().config->HaveIdentity(server_name, address)) {
+    if (! wxGetApp().config->HaveIdentity(server_uuid, address)) {
         SetActionLabel(_("Install"));
     } else {
         SetActionLabel(_("Update"));
@@ -173,7 +173,7 @@ void AccountsWindow::DeselectAccounts()
 
 void AccountsWindow::DoDeselect()
 {
-    this->server_name = wxEmptyString;
+    this->server_uuid = wxEmptyString;
     this->address = wxEmptyString;
     
     this->update_button->Disable();
@@ -190,7 +190,7 @@ void AccountsWindow::OnCAResult(SeruroRequestEvent &event)
     
     /* Create (potential) updated server event. */
     SeruroStateEvent state_event(STATE_TYPE_SERVER, STATE_ACTION_UPDATE);
-    state_event.SetServerName(response["server_name"].AsString());
+    state_event.SetServerUUID(response["server_uuid"].AsString());
     this->ProcessWindowEvent(state_event);
     
 	delete api;
@@ -199,14 +199,14 @@ void AccountsWindow::OnCAResult(SeruroRequestEvent &event)
 void AccountsWindow::OnUpdate(wxCommandEvent &event)
 {
     /* All actions must have a server to act on. */
-    if (this->server_name.compare(wxEmptyString) == 0) {
+    if (this->server_uuid.compare(wxEmptyString) == 0) {
         return;
     }
     
     wxJSONValue params;
-    SeruroServerAPI *api = new SeruroServerAPI(this->GetEventHandler());
+    SeruroServerAPI *api = new SeruroServerAPI(this);
     
-    params["server"] = wxGetApp().config->GetServer(this->server_name);
+    params["server"] = wxGetApp().config->GetServer(this->server_uuid);
     
     /* If updating/installing the server certificate. */
     if (! this->account_selected) {
@@ -222,20 +222,20 @@ void AccountsWindow::OnUpdate(wxCommandEvent &event)
     /* Open the setup wizard on the identity page. */
     /* Todo: have an event which updates the status of an identity. */
 	SeruroSetup identity_setup((wxFrame*) (wxGetApp().GetFrame()), SERURO_SETUP_IDENTITY,
-        this->server_name, this->address);
+        this->server_uuid, this->address);
 	identity_setup.RunWizard(identity_setup.GetInitialPage());
 }
 
 void AccountsWindow::OnRemove(wxCommandEvent &event)
 {
     /* All actions must have a server to act on. */
-    if (this->server_name.compare(wxEmptyString) == 0) {
+    if (this->server_uuid.compare(wxEmptyString) == 0) {
         return;
     }
     
     /* UI is trying to remove a selected server. */
     if (! this->account_selected) {
-        RemoveDialog *dialog = new RemoveDialog(this->server_name);
+        RemoveDialog *dialog = new RemoveDialog(this->server_uuid);
         if (dialog->ShowModal() == wxID_OK) {
             wxLogMessage(wxT("ServerPanel> (OnRemove) OK"));
             dialog->DoRemove();
@@ -248,15 +248,15 @@ void AccountsWindow::OnRemove(wxCommandEvent &event)
     
     /* UI is trying to remove a selected account. */
     if (SERURO_MUST_HAVE_ACCOUNT &&
-        wxGetApp().config->GetAddressList(server_name).size() == 1) {
+        wxGetApp().config->GetAddressList(server_uuid).size() == 1) {
         /* Don't allow this account to be removed. */
         wxLogMessage(_("AddressPanel> (OnRemove) Cannot remove account for server (%s)."),
-                     server_name);
+                     server_uuid);
         /* Todo: display warnning message? */
         return;
     }
     
-    RemoveDialog *dialog = new RemoveDialog(this->server_name, this->address);
+    RemoveDialog *dialog = new RemoveDialog(this->server_uuid, this->address);
     if (dialog->ShowModal() == wxID_OK) {
         wxLogMessage(wxT("AddressPanel> (OnRemove) OK"));
         dialog->DoRemove();
@@ -289,13 +289,16 @@ void AccountsWindow::GenerateServersList()
 	SeruroCrypto crypto;
 	//bool cert_installed = false;
     long item_index;
-	wxArrayString servers = wxGetApp().config->GetServerList();
+	wxArrayString server_names;
+    
+    server_names = wxGetApp().config->GetServerNames();
     
     servers_list->DeleteAllItems();
-	for (size_t i = 0; i < servers.size(); i++) {
+	for (size_t i = 0; i < server_names.size(); i++) {
 		/* Check if the server certificate is installed. */
-		item_index = servers_list->InsertItem(0, _(""), (crypto.HaveCA(servers[i])) ? 1 : 0);
-		servers_list->SetItem(item_index, 1, _(servers[i]));
+		item_index = servers_list->InsertItem(0, _(""),
+            (crypto.HaveCA(wxGetApp().config->GetServerUUID(server_names[i]))) ? 1 : 0);
+		servers_list->SetItem(item_index, 1, _(server_names[i]));
 		servers_list->SetItem(item_index, 2, _("0"));
 	}
 }
@@ -305,18 +308,21 @@ void AccountsWindow::GenerateAccountsList()
     SeruroCrypto crypto;
     long item_index;
 	wxArrayString accounts;
-    wxArrayString servers = wxGetApp().config->GetServerList();
+    wxArrayString server_uuids;
+    
+    server_uuids = wxGetApp().config->GetServerList();
     
     accounts_list->DeleteAllItems();
-	for (size_t i = 0; i < servers.size(); i++) {
-		accounts = wxGetApp().config->GetAddressList(servers[i]);
+	for (size_t i = 0; i < server_uuids.size(); i++) {
+		accounts = wxGetApp().config->GetAddressList(server_uuids[i]);
+        
 		for (size_t j = 0; j < accounts.size(); j++) {
 			//cert_installed = crypto_helper.HaveIdentity(servers[i],
 			item_index = accounts_list->InsertItem(0, _(""),
                 /* Display a key if the identity (cert/key) are installed. */
-                (crypto.HaveIdentity(servers[i], accounts[j])) ? 2 : 0);
+                (crypto.HaveIdentity(server_uuids[i], accounts[j])) ? 2 : 0);
 			accounts_list->SetItem(item_index, 1, accounts[j]);
-			accounts_list->SetItem(item_index, 2, servers[i]);
+			accounts_list->SetItem(item_index, 2, wxGetApp().config->GetServerName(server_uuids[i]));
 			accounts_list->SetItem(item_index, 3, _("Never"));
 		}
 	}
@@ -368,7 +374,7 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
 	image_column.SetImage(2);
 	accounts_list->InsertColumn(0, image_column);
 	accounts_list->InsertColumn(1, _("Address"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
-	accounts_list->InsertColumn(2, _("Server"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
+	accounts_list->InsertColumn(2, _("Server Name"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
 	accounts_list->InsertColumn(3, _("Expires"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
 
     this->GenerateAccountsList();

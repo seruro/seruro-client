@@ -54,7 +54,8 @@ public:
 	/* Helper functions for those who do not want to DECLARE_APP 
 	 * for access to the config methods. 
 	 */
-	wxJSONValue GetServer(const wxString &server);
+	wxJSONValue GetServer(const wxString &server_uuid);
+    
 	/* Must provide the API name, params, and callback event ID */
 	SeruroRequest *CreateRequest(api_name_t name, 
 		wxJSONValue params, int evtId);
@@ -72,9 +73,9 @@ public:
 	bool InstallCertificate(wxJSONValue response);
     
     /* Todo: maybe this isn't the best place for removals. */
-    bool UninstallIdentity(wxString server_name, wxString address);
-    bool UninstallCertificates(wxString server_name, wxString address);
-    bool UninstallCA(wxString server_name);
+    bool UninstallIdentity(wxString server_uuid, wxString address);
+    bool UninstallCertificates(wxString server_uuid, wxString address);
+    bool UninstallCA(wxString server_uuid);
 
 protected:
 	/* Return an auth object {"auth": {"token": "", "have_token": bool}}.

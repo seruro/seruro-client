@@ -135,6 +135,8 @@ void ApplicationsWindow::GenerateApplicationsList()
     wxJSONValue app_info;
     
     apps = apps_helper->GetAppList();
+    
+    apps_list->DeleteAllItems();
 	for (size_t i = 0; i < apps.size(); i++) {
         item_index = apps_list->InsertItem(0, _(""), 0);
 		apps_list->SetItem(item_index, 1, _(apps[i]));
@@ -154,6 +156,8 @@ void ApplicationsWindow::GenerateAccountsList()
     wxArrayString accounts;
     
     apps = apps_helper->GetAppList();
+    
+    accounts_list->DeleteAllItems();
     for (size_t i = 0; i < apps.size(); i++) {
         accounts = apps_helper->GetAccountList(apps[i]);
         

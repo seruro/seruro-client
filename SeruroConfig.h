@@ -38,84 +38,87 @@ public:
 	wxString GetToken(const wxString &server, const wxString &address);
 	bool WriteToken(const wxString &server, const wxString &address, 
 		const wxString &token);
-	bool RemoveToken(const wxString &server_name, 
+	bool RemoveToken(const wxString &server_uuid,
 		const wxString &address);
-	bool RemoveTokens(const wxString &server_name);
+	bool RemoveTokens(const wxString &server_uuid);
 
 	/* Set/get the last-known-good token. */
-	bool SetActiveToken(const wxString &server_name, const wxString &account);
-	wxString GetActiveToken(const wxString &server_name);
+	bool SetActiveToken(const wxString &server_uuid, const wxString &account);
+	wxString GetActiveToken(const wxString &server_uuid);
 
 	/***********************************************************/
 	/************** SERVER/ACCOUNT MANIPULATORS ****************/
 	/***********************************************************/
 
 	bool AddServer(wxJSONValue server_info);
-	bool AddAddress(const wxString &server_name, 
+	bool AddAddress(const wxString &server_uuid,
 		const wxString &address);
 
-	bool RemoveServer(wxString server_name);
-	bool RemoveAddress(wxString server_name, wxString address);
+	bool RemoveServer(wxString server_uuid);
+	bool RemoveAddress(wxString server_uuid, wxString address);
 
 	/***********************************************************/
 	/************** SERVER/ACCOUNT ACCESSORS *******************/
 	/***********************************************************/
 
-	wxJSONValue GetServers();
-	wxJSONValue GetServer(const wxString &server);
-	wxArrayString GetAddressList(const wxString &server);
-	wxArrayString GetServerList();
-
+	wxJSONValue   GetServers();
+	wxJSONValue   GetServer(const wxString &server_uuid);
+    wxString      GetServerUUID(const wxString &server_name); /* should be server_name, translation. */
+    wxString      GetServerName(const wxString &server_uuid); /* reverse translation. */
+	wxArrayString GetServerList(); /* deprecated */ 
+    wxArrayString GetServerNames();
+    
+    wxArrayString GetAddressList(const wxString &server_uuid);
+    
 	bool ServerExists(wxJSONValue server_info);
-	bool AddressExists(wxString server_name, wxString address);
+	bool AddressExists(wxString server_uuid, wxString address);
 	/* Helper to always convert the port to a long. */
-	long GetPort(wxString server_name);
+	long GetPort(wxString server_uuid);
 	long GetPortFromServer(wxJSONValue server_info);
 
 	/* Reports the name (hostname:port) for the server. */
-	wxString GetServerString(wxString server);
+	wxString GetServerString(wxString server_uuid);
 
 	/***********************************************************/
 	/************** CERTIFICATE / FINGERPRINTING ***************/
 	/***********************************************************/
 
 	/* Identity related set/gets. */
-	bool SetCAFingerprint(wxString server_name,
+	bool SetCAFingerprint(wxString server_uuid,
 		wxString fingerprint);
 	//wxString GetCAFingerprint();
-	bool RemoveCACertificate(wxString server_name,
+	bool RemoveCACertificate(wxString server_uuid,
 		bool write_config = false);
-	bool AddIdentity(wxString server_name, wxString addresss,
+	bool AddIdentity(wxString server_uuid, wxString addresss,
 		wxString fingerprint);
-	bool RemoveIdentity(wxString server_name, wxString address,
+	bool RemoveIdentity(wxString server_uuid, wxString address,
 		bool write_config = false);
 	/* Each address under each server should be a list. */
-	bool AddCertificate(wxString server_name, wxString address,
+	bool AddCertificate(wxString server_uuid, wxString address,
 		wxString fingerprint);
-	bool RemoveCertificates(wxString server_name, wxString address,
+	bool RemoveCertificates(wxString server_uuid, wxString address,
 		bool write_config = false);
 
 	/* May search the OS certificate store for the fingerprint. */
-	bool HaveCertificates(wxString server_name, wxString address);
-	bool HaveIdentity(wxString server_name, wxString address);
-	bool HaveCA(wxString server_name);
+	bool HaveCertificates(wxString server_uuid, wxString address);
+	bool HaveIdentity(wxString server_uuid, wxString address);
+	bool HaveCA(wxString server_uuid);
 
 	/* Fingerprint/thumbprint/hash retreival. */
-    wxArrayString GetIdentityList(wxString server_name);
-    wxArrayString GetCertificatesList(wxString server_name);
+    wxArrayString GetIdentityList(wxString server_uuid);
+    wxArrayString GetCertificatesList(wxString server_uuid);
     
-	wxArrayString GetCertificates(wxString server_name, wxString address);
-	wxArrayString GetIdentity(wxString server_name, wxString address);
-	wxString GetCA(wxString server_name);
+	wxArrayString GetCertificates(wxString server_uuid, wxString address);
+	wxArrayString GetIdentity(wxString server_uuid, wxString address);
+	wxString GetCA(wxString server_uuid);
 
 protected:
 	/* Used in previous 'testing builds'. */
 	wxArrayString GetMemberArray(const wxString &member);
 
-	bool AddFingerprint(wxString location, wxString server_name,
-		wxString fingerprint, 
-		wxString address = wxEmptyString);
-	bool RemoveFingerprints(wxString location, wxString server_name,
+	bool AddFingerprint(wxString location, wxString server_uuid,
+		wxString fingerprint, wxString address = wxEmptyString);
+	bool RemoveFingerprints(wxString location, wxString server_uuid,
 		wxString address = wxEmptyString);
 
 private:

@@ -20,11 +20,10 @@ void AddAccountForm::AddForm(wxSizer *sizer, const wxString &address,
 	grid_sizer->AddGrowableCol(1, 1);
     
 	/* Address. */
-	grid_sizer->Add(new Text(parent, "&Email Address:"));
+	grid_sizer->Add(new Text(parent, "&Email Address: "));
     
     /* Address validator. */
 	wxTextValidator address_validator(wxFILTER_EMPTY | wxFILTER_INCLUDE_CHAR_LIST);
-	//name_validator.SetCharExcludes("\\\"");
 	address_validator.SetCharIncludes(SERURO_INPUT_ADDRESS_WHITELIST);
     
     /* Address controller. */
@@ -37,7 +36,7 @@ void AddAccountForm::AddForm(wxSizer *sizer, const wxString &address,
 	grid_sizer->Add(this->address, DIALOGS_BOXSIZER_OPTIONS);
 	
 	/* Password. */
-	grid_sizer->Add(new Text(parent, "&Password:"));
+	grid_sizer->Add(new Text(parent, "&Password: "));
     
     /* Host controller. */
 	this->password = new wxTextCtrl(parent, wxID_ANY, wxEmptyString,

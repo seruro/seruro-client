@@ -10,7 +10,7 @@
 /* Token management methods.
  * Tokens are stored in (DataDir)/tokens, or the file name listed in Defs.h.
  * The format is as such:
- * { "tokens": { "server_name": { "address": "token", ...} ...} }
+ * { "tokens": { "server_uuid": { "address": "token", ...} ...} }
  * This means server names must be unique and a single server cannot have duplicat addresses.
  * This also means server names and addresses must be formatted correctly.
  */
@@ -197,114 +197,111 @@ void SeruroConfig::LoadConfig()
 /************** TOKEN MANIPULATOR/ACCESSORS **********************************************/
 /*****************************************************************************************/
 
-wxString SeruroConfig::GetToken(const wxString &server, const wxString &address)
+wxString SeruroConfig::GetToken(const wxString &server_uuid, const wxString &address)
 {
 	wxString token = wxEmptyString;
 
-    wxLogMessage(_("SeruroConfig> (GetToken) requested token (%s) (%s)."), server, address);
+    wxLogMessage(_("SeruroConfig> (GetToken) requested token (%s) (%s)."), server_uuid, address);
 	/* Get current token data, check if the requested token exists and return, else an empty string. */
 	wxJSONValue token_data = GetTokenData();
-	if (token_data.HasMember(server) && token_data[server].HasMember(address)) {
-		token = token_data[server][address].AsString();	
+	if (token_data.HasMember(server_uuid) && token_data[server_uuid].HasMember(address)) {
+		token = token_data[server_uuid][address].AsString();
 	}
 
 	return token;
 }
 
-bool SeruroConfig::RemoveTokens(const wxString &server_name)
+bool SeruroConfig::RemoveTokens(const wxString &server_uuid)
 {
 	bool results;
 
 	wxJSONValue token_data = GetTokenData();
-	if (! token_data.HasMember(server_name)) {
+	if (! token_data.HasMember(server_uuid)) {
 		return true;
 	}
 
-	token_data.Remove(server_name);
+	token_data.Remove(server_uuid);
 	results = WriteTokenData(token_data);
 
 	return results;
 }
 
-bool SeruroConfig::RemoveToken(const wxString &server_name, const wxString &address)
+bool SeruroConfig::RemoveToken(const wxString &server_uuid, const wxString &address)
 {
 	bool results;
 
 	wxJSONValue token_data = GetTokenData();
-	if (! token_data.HasMember(server_name) || ! token_data[server_name].HasMember(address)) {
+	if (! token_data.HasMember(server_uuid) || ! token_data[server_uuid].HasMember(address)) {
 		/* Unexpected, maybe there was never a token for this account, 
 		 * and it was the only for the given server?
 		 */
 		return true;
 	}
 
-	token_data[server_name].Remove(address);
+	token_data[server_uuid].Remove(address);
 	results = WriteTokenData(token_data);
 
 	return results;
 }
 
-bool SeruroConfig::WriteToken(const wxString &server, const wxString &address, const wxString &token)
+bool SeruroConfig::WriteToken(const wxString &server_uuid, const wxString &address, const wxString &token)
 {
 	bool results;
 
 	/* Get current token data, then add this server,address entry. */
 	wxJSONValue token_data = GetTokenData();
-	if (! token_data.HasMember(server)) {
-		wxLogMessage(_("SeruroConfig> (WriteToken) note: token file does not contain server (%s)."), server);
-		token_data[server] = wxJSONValue(wxJSONTYPE_OBJECT);
+	if (! token_data.HasMember(server_uuid)) {
+		wxLogMessage(_("SeruroConfig> (WriteToken) note: token file does not contain server (%s)."), server_uuid);
+		token_data[server_uuid] = wxJSONValue(wxJSONTYPE_OBJECT);
 	}
 
-	token_data[server][address] = token;
+	token_data[server_uuid][address] = token;
 	results = WriteTokenData(token_data);
 
 	return results;
 }
 
-bool SeruroConfig::SetActiveToken(const wxString &server_name, const wxString &account)
+bool SeruroConfig::SetActiveToken(const wxString &server_uuid, const wxString &account)
 {
-	if (! configData["servers"].HasMember(server_name)) return false;
+	if (! configData["servers"].HasMember(server_uuid)) return false;
 
     /* Allow a token to be written before a server name exists. */
-	configData["servers"][server_name]["active_token"] = account;
+	configData["servers"][server_uuid]["active_token"] = account;
 	this->WriteConfig();
 	return true;
 }
 
-wxString SeruroConfig::GetActiveToken(const wxString &server_name)
+wxString SeruroConfig::GetActiveToken(const wxString &server_uuid)
 {
-    wxLogMessage(_("SeruroConfig> (GetActiveToken) requested active token (%s)."), server_name);
+    wxLogMessage(_("SeruroConfig> (GetActiveToken) requested active token (%s)."), server_uuid);
     
-	if (! configData["servers"].HasMember(server_name)) return wxEmptyString;
-	if (! configData["servers"][server_name].HasMember("active_token")) {
+	if (! configData["servers"].HasMember(server_uuid)) return wxEmptyString;
+	if (! configData["servers"][server_uuid].HasMember("active_token")) {
 		/* Return the first account. */
-		wxArrayString account_list = GetAddressList(server_name);
+		wxArrayString account_list = GetAddressList(server_uuid);
 		/* There may not be any accounts? */
 		if (account_list.size() == 0) return wxEmptyString;
-		//return account_list[0];
-        return GetToken(server_name, account_list[0]);
+        return GetToken(server_uuid, account_list[0]);
 	}
 	
     /* Lookup token from tokens file using the active token (account). */
-	return GetToken(server_name, configData["servers"][server_name]["active_token"].AsString());
+	return GetToken(server_uuid, configData["servers"][server_uuid]["active_token"].AsString());
 }
 
 /*****************************************************************************************/
 /************** SERVER/ACCOUNT MANIPULATORS **********************************************/
 /*****************************************************************************************/
 
-bool SeruroConfig::RemoveServer(wxString server_name)
+bool SeruroConfig::RemoveServer(wxString server_uuid)
 {
-	if (! configData["servers"].HasMember(server_name)) {
+	if (! configData["servers"].HasMember(server_uuid)) {
 		return true;
 	}
 
 	/* Remove tokens for all addresses belonging to this server. */
-	//wxArrayString address_list = GetAddressList(server_name);
-	//for (size_t i = 0; i < address_list.size(); i
-	RemoveTokens(server_name);
+	RemoveTokens(server_uuid);
 
-	configData["servers"].Remove(server_name);
+	configData["servers"].Remove(server_uuid);
 	return this->WriteConfig();
 }
 
@@ -314,12 +311,13 @@ bool SeruroConfig::AddServer(wxJSONValue server_info)
 	//wxJSONValue servers_list;
 
 	/* Only require a name and host to identity a server. */
-	if (! server_info.HasMember("name") || ! server_info.HasMember("host")) {
-		wxLogMessage(wxT("SeruroConfig> Cannot add a server without knowing the name and host."));
+	if (!server_info.HasMember("uuid") || ! server_info.HasMember("name") || ! server_info.HasMember("host")) {
+		wxLogMessage(wxT("SeruroConfig> Cannot add a server without knowing the uuid, name, and host."));
 		return false;
 	}
 
 	if (ServerExists(server_info)) {
+        wxLogMessage(_("SeruroConfig> (AddServer) the server with uuid (%s) already exists."), server_info["uuid"].AsString());
 		return false;
 	}
 
@@ -329,53 +327,58 @@ bool SeruroConfig::AddServer(wxJSONValue server_info)
 		configData["servers"] = wxJSONValue( wxJSONTYPE_OBJECT );
 	}
 
+    /* Todo, perform name conflict resolution? */
+    new_server["name"] = server_info["name"];
 	new_server["host"] = server_info["host"];
-	if (server_info.HasMember("port")) new_server["port"] = server_info["port"];
+	if (server_info.HasMember("port")) {
+        new_server["port"] = server_info["port"];
+    }
 
-	this->configData["servers"][server_info["name"].AsString()] = new_server;
+	//this->configData["servers"][server_info["name"].AsString()] = new_server;
+    configData["servers"][server_info["uuid"].AsString()] = new_server;
 
-	wxLogMessage(_("SeruroConfig> Adding server (%s)."), server_info["name"].AsString());
+	wxLogMessage(_("SeruroConfig> (AddServer) Adding (%s)."), server_info["name"].AsString());
 	return this->WriteConfig();
 }
 
-bool SeruroConfig::RemoveAddress(wxString server_name, wxString address)
+bool SeruroConfig::RemoveAddress(wxString server_uuid, wxString address)
 {
 	/* Todo: should this remove the token too? yes! */
-	if (! AddressExists(server_name, address)) {
+	if (! AddressExists(server_uuid, address)) {
 		return true;
 	}
 
 	/* Get list, and reset. */
-	wxArrayString address_list = GetAddressList(server_name);
-	configData["servers"][server_name]["addresses"] =  wxJSONValue(wxJSONTYPE_OBJECT);
+	wxArrayString address_list = GetAddressList(server_uuid);
+	configData["servers"][server_uuid]["addresses"] =  wxJSONValue(wxJSONTYPE_OBJECT);
 
 	for (size_t i = 0; i < address_list.size(); i++) {
 		if (address_list[i].compare(address) != 0) {
-			configData["servers"][server_name]["addresses"].Append(address_list[i]);
+			configData["servers"][server_uuid]["addresses"].Append(address_list[i]);
 		}
 	}
 
 	/* Remove token. */
-	RemoveToken(server_name, address);
+	RemoveToken(server_uuid, address);
 	return this->WriteConfig();
 }
 
-bool SeruroConfig::AddAddress(const wxString &server_name, const wxString &address)
+bool SeruroConfig::AddAddress(const wxString &server_uuid, const wxString &address)
 {
-	if (! this->configData["servers"].HasMember(server_name)) {
-		wxLogMessage(_("SeruroConfig> (AddAddress) Cannot find server (%s)."), server_name);
+	if (! this->configData["servers"].HasMember(server_uuid)) {
+		wxLogMessage(_("SeruroConfig> (AddAddress) Cannot find server (%s)."), server_uuid);
 		return false;
 	}
 
-	if (AddressExists(server_name, address)) {
+	if (AddressExists(server_uuid, address)) {
 		wxLogMessage(_("SeruroConfig> (AddAddress) Found duplicate address (%s) for (%s)."),
-				address, server_name);
+				address, server_uuid);
 		return false;
 	}
 
-	configData["servers"][server_name]["addresses"].Append(address);
+	configData["servers"][server_uuid]["addresses"].Append(address);
 
-	wxLogMessage(_("SeruroConfig> Adding address (%s) (%s)."), server_name, address);
+	wxLogMessage(_("SeruroConfig> Adding address (%s) (%s)."), server_uuid, address);
 	return this->WriteConfig();
 }
 
@@ -383,15 +386,15 @@ bool SeruroConfig::AddAddress(const wxString &server_name, const wxString &addre
 /************** SERVER/ACCOUNT ACCESSORS *************************************************/
 /*****************************************************************************************/
 
-long SeruroConfig::GetPort(wxString server_name)
+long SeruroConfig::GetPort(wxString server_uuid)
 {
 	/* If this server does not exist, return an error state (0). */
 	if (! HasConfig() || ! configData.HasMember("servers") || 
-		! configData["servers"].HasMember(server_name)) {
+		! configData["servers"].HasMember(server_uuid)) {
 		return 0;
 	}
 
-	return GetPortFromServer(configData["servers"][server_name]);
+	return GetPortFromServer(configData["servers"][server_uuid]);
 }
 
 long SeruroConfig::GetPortFromServer(wxJSONValue server_info)
@@ -449,9 +452,9 @@ bool SeruroConfig::ServerExists(wxJSONValue server_info)
 	return false;
 }
 
-bool SeruroConfig::AddressExists(wxString server_name, wxString address)
+bool SeruroConfig::AddressExists(wxString server_uuid, wxString address)
 {
-	wxArrayString address_list = GetAddressList(server_name);
+	wxArrayString address_list = GetAddressList(server_uuid);
 	/* Check for a duplicate address for this server. */
 	for (size_t i = 0; i < address_list.size(); i++) {
 		if (address_list[i].compare(address) == 0) {
@@ -466,44 +469,41 @@ wxJSONValue SeruroConfig::GetServers()
 	wxJSONValue servers;
 
 	/* If they don't have a config, return an empty list. */
-	if (! HasConfig()) {
-		return servers;
-	}
-
+	if (! HasConfig()) return servers;
 	servers = configData["servers"];
 
 	return servers;
 }
 
-wxJSONValue SeruroConfig::GetServer(const wxString &server)
+wxJSONValue SeruroConfig::GetServer(const wxString &server_uuid)
 {
 	wxJSONValue server_info;
 
-	if (! HasConfig() || ! configData["servers"].HasMember(server)) {
+	if (! HasConfig() || ! configData["servers"].HasMember(server_uuid)) {
 		return server_info;
 	}
 
-	server_info = configData["servers"][server];
+	server_info = configData["servers"][server_uuid];
 	/* Helper reference for those confused by wxJSONValue. */
-	server_info["name"] = server;
+	server_info["uuid"] = server_uuid;
 
 	return server_info;
 }
 
-wxString SeruroConfig::GetServerString(wxString server)
+wxString SeruroConfig::GetServerString(wxString server_uuid)
 {
 	wxString server_name;
 	wxString port;
 
 	/* Expext a "name" and "host", port can be the default value. */ 
-	wxJSONValue server_info = this->GetServer(server);
+	wxJSONValue server_info = this->GetServer(server_uuid);
 	if (SERURO_DISPLAY_SERVER_INFO) {
         port = (server_info.HasMember("port")) ? server_info["port"].AsString() : SERURO_DEFAULT_PORT;
-		server_name = server + wxT(" (") + server_info["host"].AsString() + wxT(":");
+		server_name = server_info["name"].AsString() + wxT(" (") + server_info["host"].AsString() + wxT(":");
 		server_name = server_name + port;
 		server_name = server_name + wxT(")");
 	} else {
-		server_name = server;
+		server_name = server_info["name"].AsString();
 	}
 
 	return server_name;
@@ -513,25 +513,60 @@ wxArrayString SeruroConfig::GetServerList()
 {
 	wxArrayString servers;
 
-	if (! HasConfig())
-		return servers;
-
+	if (! HasConfig()) return servers;
 	servers = configData["servers"].GetMemberNames();
 
 	return servers;
 }
 
-wxArrayString SeruroConfig::GetAddressList(const wxString &server)
+wxArrayString SeruroConfig::GetServerNames()
+{
+    wxArrayString server_names;
+    wxArrayString server_uuids;
+    
+    if (! HasConfig()) return server_names;
+    /* ["name"] is an attribute for each server. */
+    server_uuids = configData["servers"].GetMemberNames();
+    for (size_t i = 0; i < server_uuids.size(); i++) {
+        server_names.Add(configData["servers"][server_uuids[i]]["name"].AsString());
+    }
+    
+    return server_names;
+}
+
+wxString SeruroConfig::GetServerUUID(const wxString &server_name)
+{
+    wxArrayString server_uuids;
+    
+    if (! HasConfig()) return wxEmptyString;
+    server_uuids = configData["servers"].GetMemberNames();
+    for (size_t i = 0; i < server_uuids.size(); i++) {
+        /* Each server entry in the config is indexed by UUID, but contains a "name" attribute. */
+        if (server_name.compare(configData["servers"][server_uuids[i]]["name"].AsString()) == 0) {
+            return server_uuids[i];
+        }
+    }
+    /* No UUID found for given name, this is bad... */
+    return wxEmptyString;
+}
+
+wxString SeruroConfig::GetServerName(const wxString &server_uuid)
+{
+    if (! HasConfig()) return wxEmptyString;
+    return configData["servers"][server_uuid]["name"].AsString();
+}
+
+wxArrayString SeruroConfig::GetAddressList(const wxString &server_uuid)
 {
 	wxArrayString addresses;
 
-	if (! HasConfig() || ! configData["servers"].HasMember(server) ||
-		! configData["servers"][server].HasMember("addresses")) {
+	if (! HasConfig() || ! configData["servers"].HasMember(server_uuid) ||
+		! configData["servers"][server_uuid].HasMember("addresses")) {
 		return addresses;
 	}
 
-	for (int i = 0; i < configData["servers"][server]["addresses"].Size(); i++) {
-		addresses.Add(configData["servers"][server]["addresses"][i].AsString());
+	for (int i = 0; i < configData["servers"][server_uuid]["addresses"].Size(); i++) {
+		addresses.Add(configData["servers"][server_uuid]["addresses"][i].AsString());
 	}
 
 	/* If the server name does not exist in the configured list, return an empty array. */
@@ -556,190 +591,190 @@ wxArrayString SeruroConfig::GetMemberArray(const wxString &member)
 
 /* Certificate tracking methods.
  */
-bool SeruroConfig::AddFingerprint(wxString location, wxString server_name, 
+bool SeruroConfig::AddFingerprint(wxString location, wxString server_uuid,
 	wxString fingerprint, wxString address)
 {
 	wxJSONValue address_list; 
 
-	if (! HasConfig() || ! configData["servers"].HasMember(server_name)) return false;
+	if (! HasConfig() || ! configData["servers"].HasMember(server_uuid)) return false;
 
 	/* If there is no address, then the fingerprint is placed in the location. */
 	if (address.compare(wxEmptyString) == 0) {
-		configData["servers"][server_name][location] = fingerprint;
+		configData["servers"][server_uuid][location] = fingerprint;
 		goto finished;
 	}
 
 	/* If there is an address, the location is a value. */
-	if (! configData["servers"][server_name].HasMember(location)) {
-		configData["servers"][server_name][location] = wxJSONValue(wxJSONTYPE_OBJECT);
+	if (! configData["servers"][server_uuid].HasMember(location)) {
+		configData["servers"][server_uuid][location] = wxJSONValue(wxJSONTYPE_OBJECT);
 	}
 
 	/* All address-type fingerprints are many-to-one so they must also be a value. */
-	if (! configData["servers"][server_name][location].HasMember(address)) {
-		configData["servers"][server_name][location][address] = wxJSONValue(wxJSONTYPE_OBJECT);
+	if (! configData["servers"][server_uuid][location].HasMember(address)) {
+		configData["servers"][server_uuid][location][address] = wxJSONValue(wxJSONTYPE_OBJECT);
 	}
 
-	address_list = configData["servers"][server_name][location][address];
+	address_list = configData["servers"][server_uuid][location][address];
 	for (int i = 0; i < address_list.Size(); i++) {
 		/* Prevent duplicates. */
 		if (address_list[i].AsString().compare(fingerprint) == 0) return false;
 	}
 
-	configData["servers"][server_name][location][address].Append(fingerprint);
+	configData["servers"][server_uuid][location][address].Append(fingerprint);
 
 finished:
 	return WriteConfig();
 }
 
-bool SeruroConfig::RemoveFingerprints(wxString location, wxString server_name, wxString address)
+bool SeruroConfig::RemoveFingerprints(wxString location, wxString server_uuid, wxString address)
 {
-	if (! HasConfig() || ! configData["servers"].HasMember(server_name)) return false;
+	if (! HasConfig() || ! configData["servers"].HasMember(server_uuid)) return false;
 
 	if (address.compare(wxEmptyString) == 0) {
-		configData["servers"][server_name].Remove(location);
+		configData["servers"][server_uuid].Remove(location);
 		goto finished;
 	}
 
-	if (! configData["servers"][server_name].HasMember(location)) return false;
-	if (! configData["servers"][server_name][location].HasMember(address)) return false;
+	if (! configData["servers"][server_uuid].HasMember(location)) return false;
+	if (! configData["servers"][server_uuid][location].HasMember(address)) return false;
 
-	configData["servers"][server_name][location].Remove(address);
+	configData["servers"][server_uuid][location].Remove(address);
 
 finished:
 	return WriteConfig();
 }
 
-bool SeruroConfig::SetCAFingerprint(wxString server_name, wxString fingerprint)
+bool SeruroConfig::SetCAFingerprint(wxString server_uuid, wxString fingerprint)
 {
 	wxString location = _("ca");
-	return AddFingerprint(location, server_name, fingerprint);
+	return AddFingerprint(location, server_uuid, fingerprint);
 }
 
-bool SeruroConfig::RemoveCACertificate(wxString server_name, bool write_config)
+bool SeruroConfig::RemoveCACertificate(wxString server_uuid, bool write_config)
 {
 	wxString location = _("ca");
-	return RemoveFingerprints(location, server_name);
+	return RemoveFingerprints(location, server_uuid);
 }
 
-bool SeruroConfig::AddIdentity(wxString server_name, wxString address, wxString fingerprint)
+bool SeruroConfig::AddIdentity(wxString server_uuid, wxString address, wxString fingerprint)
 {
 	wxString location = _("identities");
-	return AddFingerprint(location, server_name, fingerprint, address);
+	return AddFingerprint(location, server_uuid, fingerprint, address);
 }
 
-bool SeruroConfig::RemoveIdentity(wxString server_name, wxString address, bool write_config)
+bool SeruroConfig::RemoveIdentity(wxString server_uuid, wxString address, bool write_config)
 {
 	wxString location = _("identities");
-	return RemoveFingerprints(location, server_name, address);
+	return RemoveFingerprints(location, server_uuid, address);
 }
 
-bool SeruroConfig::AddCertificate(wxString server_name, wxString address, wxString fingerprint)
+bool SeruroConfig::AddCertificate(wxString server_uuid, wxString address, wxString fingerprint)
 {
 	wxString location = _("certificates");
-	return AddFingerprint(location, server_name, fingerprint, address);
+	return AddFingerprint(location, server_uuid, fingerprint, address);
 }
 
-bool SeruroConfig::RemoveCertificates(wxString server_name, wxString address, bool write_config)
+bool SeruroConfig::RemoveCertificates(wxString server_uuid, wxString address, bool write_config)
 {
 	wxString location = _("certificates");
-	return RemoveFingerprints(location, server_name, address);
+	return RemoveFingerprints(location, server_uuid, address);
 }
 
-bool SeruroConfig::HaveCertificates(wxString server_name, wxString address)
+bool SeruroConfig::HaveCertificates(wxString server_uuid, wxString address)
 {
 	if (HasConfig() && configData.HasMember("servers") &&
-		configData["servers"].HasMember(server_name) &&
-		configData["servers"][server_name].HasMember("certificates") &&
-		configData["servers"][server_name]["certificates"].HasMember(address)) {
-		return (configData["servers"][server_name]["certificates"][address].Size() > 0);
+		configData["servers"].HasMember(server_uuid) &&
+		configData["servers"][server_uuid].HasMember("certificates") &&
+		configData["servers"][server_uuid]["certificates"].HasMember(address)) {
+		return (configData["servers"][server_uuid]["certificates"][address].Size() > 0);
 	}
 	return false;
 }
 
-bool SeruroConfig::HaveIdentity(wxString server_name, wxString address)
+bool SeruroConfig::HaveIdentity(wxString server_uuid, wxString address)
 {
 	if (HasConfig() && configData.HasMember("servers") &&
-		configData["servers"].HasMember(server_name) &&
-		configData["servers"][server_name].HasMember("identities") &&
-		configData["servers"][server_name]["identities"].HasMember(address)) {
-		return (configData["servers"][server_name]["identities"][address].Size() > 0);
+		configData["servers"].HasMember(server_uuid) &&
+		configData["servers"][server_uuid].HasMember("identities") &&
+		configData["servers"][server_uuid]["identities"].HasMember(address)) {
+		return (configData["servers"][server_uuid]["identities"][address].Size() > 0);
 	}
 	return false;
 }
 
-bool SeruroConfig::HaveCA(wxString server_name)
+bool SeruroConfig::HaveCA(wxString server_uuid)
 {
 	if (HasConfig() && configData.HasMember("servers") &&
-		configData["servers"].HasMember(server_name) &&
-		configData["servers"][server_name].HasMember("ca")) {
+		configData["servers"].HasMember(server_uuid) &&
+		configData["servers"][server_uuid].HasMember("ca")) {
 		return true;
 	}
 	return false;
 }
 
-wxArrayString SeruroConfig::GetIdentityList(wxString server_name)
+wxArrayString SeruroConfig::GetIdentityList(wxString server_uuid)
 {
     wxArrayString identities;
     
-    if (! HasConfig() || ! configData["servers"].HasMember(server_name) ||
-        ! configData["servers"][server_name].HasMember("identities")) {
+    if (! HasConfig() || ! configData["servers"].HasMember(server_uuid) ||
+        ! configData["servers"][server_uuid].HasMember("identities")) {
         return identities;
     }
     
-    return configData["servers"][server_name]["identities"].GetMemberNames();
+    return configData["servers"][server_uuid]["identities"].GetMemberNames();
 }
 
-wxArrayString SeruroConfig::GetCertificatesList(wxString server_name)
+wxArrayString SeruroConfig::GetCertificatesList(wxString server_uuid)
 {
     wxArrayString certificates;
     
-    if (! HasConfig() || ! configData["servers"].HasMember(server_name) ||
-        ! configData["servers"][server_name].HasMember("certificates")) {
+    if (! HasConfig() || ! configData["servers"].HasMember(server_uuid) ||
+        ! configData["servers"][server_uuid].HasMember("certificates")) {
         return certificates;
     }
     
-    return configData["servers"][server_name]["certificates"].GetMemberNames();
+    return configData["servers"][server_uuid]["certificates"].GetMemberNames();
 }
 
-wxArrayString SeruroConfig::GetCertificates(wxString server_name, wxString address)
+wxArrayString SeruroConfig::GetCertificates(wxString server_uuid, wxString address)
 {
 	wxArrayString certificates;
-	if (! this->HaveCertificates(server_name, address)) {
+	if (! this->HaveCertificates(server_uuid, address)) {
 		wxLogMessage(_("SeruroConfig> (GetCertificates) cannot find certificates (%s) (%s)."),
-			server_name, address);
+			server_uuid, address);
 		return certificates;
 	}
 
-	for (int i = configData["servers"][server_name]["certificates"][address].Size()-1; i >= 0; i--) {
-		certificates.Add(configData["servers"][server_name]["certificates"][address][i].AsString());
+	for (int i = configData["servers"][server_uuid]["certificates"][address].Size()-1; i >= 0; i--) {
+		certificates.Add(configData["servers"][server_uuid]["certificates"][address][i].AsString());
 	}
-	//certificates = configData["servers"][server_name]["certificates"][address].AddComment
+	//certificates = configData["servers"][server_uuid]["certificates"][address].AddComment
 	return certificates;
 }
 
-wxArrayString SeruroConfig::GetIdentity(wxString server_name, wxString address)
+wxArrayString SeruroConfig::GetIdentity(wxString server_uuid, wxString address)
 {
 	wxArrayString identity;
-	if (! this->HaveIdentity(server_name, address)) {
+	if (! this->HaveIdentity(server_uuid, address)) {
 		wxLogMessage(_("SeruroConfig> (GetIdentity) cannot find certificates (%s) (%s)."),
-			server_name, address);
+			server_uuid, address);
 		return identity;
 	}
 
-	for (int i = configData["servers"][server_name]["identities"][address].Size()-1; i >= 0; i--) {
-		identity.Add(configData["servers"][server_name]["identities"][address][i].AsString());
+	for (int i = configData["servers"][server_uuid]["identities"][address].Size()-1; i >= 0; i--) {
+		identity.Add(configData["servers"][server_uuid]["identities"][address][i].AsString());
 	}
 	return identity;
 }
 
-wxString SeruroConfig::GetCA(wxString server_name)
+wxString SeruroConfig::GetCA(wxString server_uuid)
 {
 	wxString ca;
-	if (! this->HaveCA(server_name)) {
+	if (! this->HaveCA(server_uuid)) {
 		return ca;
 	}
 
-	ca = configData["servers"][server_name]["ca"].AsString();
+	ca = configData["servers"][server_uuid]["ca"].AsString();
 	return ca;
 }
 

@@ -22,7 +22,7 @@ wxChoice* GetServerChoice(wxWindow *parent, const wxString &server_name)
 
 	if (server_name.compare(wxEmptyString) == 0) {
 		/* Add all servers. */
-		servers_list = wxGetApp().config->GetServerList();
+		servers_list = wxGetApp().config->GetServerNames();
 	} else {
 		/* Add just this server. */
 		servers_list.Add(server_name);
@@ -63,7 +63,7 @@ void AddServerForm::AddForm(wxSizer *sizer,
 	//grid_sizer->Add(this->server_name, DIALOGS_BOXSIZER_OPTIONS);
 	
 	/* Host (hostname). */
-	grid_sizer->Add(new Text(parent, "&Hostname:"));
+	grid_sizer->Add(new Text(parent, "&Hostname: "));
     
     /* Server host validator. */
 	wxTextValidator host_validator(wxFILTER_EMPTY | wxFILTER_INCLUDE_CHAR_LIST);
@@ -76,7 +76,7 @@ void AddServerForm::AddForm(wxSizer *sizer,
 	grid_sizer->Add(this->server_host, DIALOGS_BOXSIZER_OPTIONS);
 	
 	/* Optional server port (validator included). */
-	grid_sizer->Add(new Text(parent, "&Port:"));
+	grid_sizer->Add(new Text(parent, "&Port: "));
 	this->server_port = new wxTextCtrl(parent, wxID_ANY, port,
         wxDefaultPosition, wxDefaultSize, 0,
         wxTextValidator(wxFILTER_EMPTY | wxFILTER_DIGITS));
