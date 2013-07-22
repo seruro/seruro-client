@@ -30,10 +30,11 @@ InitialPage::InitialPage(SeruroSetup *parent) : SetupPage(parent)
     wxSizer *vert_sizer = new wxBoxSizer(wxVERTICAL);
     
     this->enable_prev = false;
+    this->enable_next = true;
     
     Text *msg = new Text(this, wxT("Welcome to Seruro! Let's take a moment and configure your client.\n")
 		wxT("\n")
-        wxT("If this is your first time installing the Seruro Client, please pay attention as some settings may")
+        wxT("If this is your first time installing the Seruro Client, please pay attention as some settings may ")
         wxT("affect your privacy settings. This initial setup wizard will guide you through:\n")
         wxT("\n")
             wxT("\t 1. Connecting to your Seruro Server.\n")
@@ -41,7 +42,7 @@ InitialPage::InitialPage(SeruroSetup *parent) : SetupPage(parent)
             wxT("\t 3. Automatic setup of your email applications.\n")
             wxT("\t 4. Retreival and installation of contact identities.\n")
         wxT("\n")
-        wxT("This setup may be canceled and restarted at a later time. After completing the setup you may")
+        wxT("This setup may be canceled and restarted at a later time. After completing the setup you may ")
         wxT("add additional servers and accounts as well as change any setting options."));
     vert_sizer->Add(msg, DIALOGS_BOXSIZER_OPTIONS);
     

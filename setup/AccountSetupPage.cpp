@@ -192,7 +192,7 @@ AccountPage::AccountPage(SeruroSetup *parent)
     vert_sizer->Add(msg, DIALOGS_SIZER_OPTIONS);
     
 	/* Server information (when this page is generated), allow a lookup. */
-	if (! wizard->HasServerInfo()) {
+	if (! wizard->IsNewServer()) {
 		this->server_menu = GetServerChoice(this);
 
 		wxSizer *const servers_box = new wxStaticBoxSizer(wxVERTICAL, this, "&Available Servers");
@@ -247,7 +247,7 @@ void AccountPage::DoFocus()
 	wxLogMessage(_("AccountSetupPage> (DoFocus) focusing the account page."));
 
 	/* If there is no server page, then the initially-generated list is OK. */
-	if (! wizard->HasServerInfo()) return;
+	if (! wizard->IsNewServer()) return;
 
 	/* Otherwise the server name may have changed. */
 	/* This (should) cause the CA lookup (but it is not needed, only the UI update). */
@@ -272,7 +272,7 @@ bool AccountPage::GoNext(bool from_callback) {
 	/* About to perform some callback-action. (Must disable the form and next). */
 	this->DisablePage();
 
-	if (this->wizard->HasServerInfo()) {
+	if (this->wizard->IsNewServer()) {
 		/* The server information was entered on a previous page. */
 		//server_info = ((ServerPage *) this->wizard->GetServerPage())->GetValues();
 		server_info = AddServerForm::GetValues();

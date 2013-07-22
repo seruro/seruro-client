@@ -72,8 +72,10 @@ public:
 
 	//SetupPage* GetServerPage() { return server_page; }
 	SetupPage* GetAccountPage() { return account_page; }
-	bool HasServerInfo() { 
-		return (! setup_type == SERURO_SETUP_ACCOUNT);
+	bool IsNewServer() {
+        /* Is there a server_uuid provided? */
+		return (this->setup_type == SERURO_SETUP_INITIAL || this->setup_type == SERURO_SETUP_SERVER);
+        //(! setup_type == SERURO_SETUP_ACCOUNT);
 	}
     wxJSONValue GetServerInfo();
     wxString GetAccount();
