@@ -42,9 +42,9 @@ bool SeruroClient::OnInit()
 	wxImage::AddHandler(new wxPNGHandler);
 
 	/* Create a frame, but do not start sub frames, which may depend on config. */
-	mainFrame = new SeruroFrameMain(wxT(SERURO_APP_NAME), 
+	main_frame = new SeruroFrameMain(wxT(SERURO_APP_NAME),
 		SERURO_APP_DEFAULT_WIDTH, SERURO_APP_DEFAULT_HEIGHT);
-    this->SetTopWindow(mainFrame);
+    this->SetTopWindow(main_frame);
 
 	/* Start logger */
 	InitLogger();
@@ -56,17 +56,17 @@ bool SeruroClient::OnInit()
     Bind(SERURO_REQUEST_RESPONSE, &SeruroClient::OnInvalidAuth, this, SERURO_REQUEST_CALLBACK_AUTH);
 
 	/* Now safe to start sub-frames (panels). */
-	mainFrame->AddPanels();
+	main_frame->AddPanels();
 
 	/* There is an optional setup wizard. */
 	if (! this->config->HasConfig() || SERURO_DEBUG_SETUP) {
         /* The panels and "book view" should be hidden while the wizard is running. */
-        mainFrame->Show(false);
+        main_frame->Hide();
         
-        SeruroSetup setup(mainFrame);
+        SeruroSetup setup(main_frame);
 		setup.RunWizard(setup.GetInitialPage());
 	} else {
-        mainFrame->Show(true);
+        main_frame->Show(true);
     }
 
     return true;
@@ -79,12 +79,12 @@ void SeruroClient::AddEvent(wxEvent &event)
 
 wxWindow* SeruroClient::GetFrame()
 {
-	return (wxWindow *) this->mainFrame;
+	return (wxWindow *) this->main_frame;
 }
 
 void SeruroClient::InitLogger()
 {
-	wxLogWindow *logger = new wxLogWindow(this->mainFrame, wxT("Logger"));
+	wxLogWindow *logger = new wxLogWindow(this->main_frame, wxT("Logger"));
 
     logger->GetFrame()->SetWindowStyle(wxDEFAULT_FRAME_STYLE);
     logger->GetFrame()->SetSize( wxRect(800,350,500,500) );

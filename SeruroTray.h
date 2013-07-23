@@ -18,6 +18,8 @@ public:
 
 	void SetMainFrame(SeruroFrameMain *frame);
     void RaiseFrame();
+    void DoIconize();
+    
 	virtual wxMenu *CreatePopupMenu();
 #if SERURO_ENABLE_CRYPT_PANELS
 	void onEncrypt(wxCommandEvent &event);
@@ -32,7 +34,7 @@ public:
 	void OnAbout(wxCommandEvent& event);
 
 protected:
-	SeruroFrameMain *mainFrame;
+	SeruroFrameMain *main_frame;
 
 private:
 	DECLARE_EVENT_TABLE()

@@ -6,6 +6,7 @@
 #include "SeruroPanelSettings.h"
 #include "SeruroPanelSearch.h"
 #include "../setup/SeruroSetup.h"
+#include "../SeruroClient.h"
 #include "UIDefs.h"
 
 #if SERURO_ENABLE_CRYPT_PANELS
@@ -52,6 +53,8 @@ BEGIN_EVENT_TABLE(SeruroFrameMain, wxFrame)
 	//EVT_NOTEBOOK_PAGE_CHANGING(SERURO_NOTEBOOK_ID, SeruroFrameMain::OnChange)
 END_EVENT_TABLE()
 
+DECLARE_APP(SeruroClient);
+
 SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) : SeruroFrame(title)
 {
 	/* Set the default size of the entire application. */
@@ -86,13 +89,7 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
 	tray->SetIcon(icon, _(SERURO_APP_NAME));
 
 	/* Add singular panel */
-	//wxPanel *panel = new wxPanel(this, wxID_ANY);
 	book = new wxNotebook(this, SERURO_NOTEBOOK_ID);
-	/* Footer sizer */
-	//wxBoxSizer *panelSizer = new wxBoxSizer(wxVERTICAL);
-	//panelSizer->Add(book, 1, wxEXPAND);
-	//panel->SetSizer(panelSizer);
-	//panel->Layout();
 
 	this->mainSizer->Add(book, 1, wxEXPAND, 5);
 }
@@ -145,20 +142,10 @@ void SeruroFrameMain::OnChange(wxBookCtrlEvent &event)
 
 void SeruroFrameMain::OnClose(wxCloseEvent &event)
 {
+    /* The close is not a "QUIT". */
 	if (event.CanVeto()) {
-        //this->Iconize(true); /* On OSX this will cause the application to be minimized. */
-		this->Show(false);
-		event.Veto();
-        
-        /* Hardcore */
-#if defined(__WXMAC__) || defined(__WXOSX__)
-        ProcessSerialNumber psn;
-        GetCurrentProcess(&psn);
-        TransformProcessType(&psn, kProcessTransformToUIElementApplication);
-        SetFrontProcess(&psn);
-#endif
-        
-		return;
+        tray->DoIconize();
+        event.Veto();
 	}
 	
 	if (tray) {
@@ -188,10 +175,16 @@ void SeruroFrameMain::OnSetupRun(wxCommandEvent &event)
 
 void SeruroFrameMain::OnSetupCancel(wxWizardEvent& event)
 {
-
+    if (wxGetApp().config->GetServerNames().size() == 0) {
+        wxLogMessage(_("SeruroFrameMain> (OnSetupCancel) the initial setup was cancled."));
+        this->Close(true);
+    }
 }
 
 void SeruroFrameMain::OnSetupFinished(wxWizardEvent& event)
 {
-
+    if (wxGetApp().config->GetServerNames().size() == 0) {
+        wxLogMessage(_("SeruroFrameMain> (OnSetupFinished) there were no servers added?"));
+        this->Close(true);
+    }
 }

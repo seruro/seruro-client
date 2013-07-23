@@ -45,23 +45,6 @@ void AddServerForm::AddForm(wxSizer *sizer,
         GRID_SIZER_WIDTH, GRID_SIZER_HEIGHT);
 	grid_sizer->AddGrowableCol(1, 1);
     
-	/* Name. */
-	//grid_sizer->Add(new Text(parent, "&Name:"));
-    
-    /* Server name validator. */
-	//wxTextValidator name_validator(wxFILTER_EMPTY | wxFILTER_INCLUDE_CHAR_LIST);
-	//name_validator.SetCharExcludes("\\\"");
-	//name_validator.SetCharIncludes(SERURO_INPUT_WHITELIST);
-    
-    /* Name controller. */
-	//this->server_name = new wxTextCtrl(parent, wxID_ANY, name,
-    //    wxDefaultPosition, wxDefaultSize, 0, name_validator);
-	//this->server_name->SetToolTip(
-    //    "Enter a custom name for this server, use letters, numbers, spaces, underscores or dashes.");
-	//this->server_name->SetMaxLength(SERURO_INPUT_MAX_LENGTH);
-    
-	//grid_sizer->Add(this->server_name, DIALOGS_BOXSIZER_OPTIONS);
-	
 	/* Host (hostname). */
 	grid_sizer->Add(new Text(parent, "&Hostname: "));
     
@@ -71,28 +54,28 @@ void AddServerForm::AddForm(wxSizer *sizer,
 	host_validator.SetCharIncludes(SERURO_INPUT_HOSTNAME_WHITELIST);
     
     /* Host controller. */
-	this->server_host = new wxTextCtrl(parent, wxID_ANY, host,
-        wxDefaultPosition, wxDefaultSize, 0, host_validator);
+	this->server_host = new wxTextCtrl(parent, wxID_ANY, host, wxDefaultPosition, wxDefaultSize, 0, host_validator);
 	grid_sizer->Add(this->server_host, DIALOGS_BOXSIZER_OPTIONS);
 	
 	/* Optional server port (validator included). */
 	grid_sizer->Add(new Text(parent, "&Port: "));
 	this->server_port = new wxTextCtrl(parent, wxID_ANY, port,
-        wxDefaultPosition, wxDefaultSize, 0,
-        wxTextValidator(wxFILTER_EMPTY | wxFILTER_DIGITS));
+        wxDefaultPosition, wxDefaultSize, 0, wxTextValidator(wxFILTER_EMPTY | wxFILTER_DIGITS));
 	this->server_port->SetMaxLength(5);
 	this->server_port->Enable(false);
     
-	wxSizer *const port_sizer = new wxBoxSizer(wxVERTICAL);
+	wxSizer *const port_sizer = new wxBoxSizer(wxHORIZONTAL);
 	port_sizer->Add(this->server_port);
-	grid_sizer->Add(port_sizer, DIALOGS_BOXSIZER_OPTIONS);
     
 	/* Show some text and a checkbox to enable editing of the port. */
-	grid_sizer->AddSpacer(0);
-	this->checkbox = new wxCheckBox(parent, SERURO_ADD_SERVER_PORT_ID,
-        wxT("Use non-standard server port."));
+	//grid_sizer->AddSpacer(0);
+	this->checkbox = new wxCheckBox(parent, SERURO_ADD_SERVER_PORT_ID, wxT("Use non-standard server port."));
 	this->checkbox->Enable(true);
-	grid_sizer->Add(this->checkbox, DIALOGS_BOXSIZER_OPTIONS);
+	//grid_sizer->Add(this->checkbox, DIALOGS_BOXSIZER_OPTIONS);
+    port_sizer->AddSpacer(20);
+    port_sizer->Add(this->checkbox, DIALOGS_BOXSIZER_OPTIONS);
+    
+    grid_sizer->Add(port_sizer, DIALOGS_BOXSIZER_OPTIONS);
     
     /* Add sizers together. */
 	sizer->Add(grid_sizer, DIALOGS_BOXSIZER_SIZER_OPTIONS);

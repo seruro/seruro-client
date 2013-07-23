@@ -55,7 +55,7 @@ public:
 	SeruroConfig *config;
 
 private:
-	SeruroFrameMain *mainFrame;
+	SeruroFrameMain *main_frame;
 };
 
 /* Hack for accessing app instance singleton */
