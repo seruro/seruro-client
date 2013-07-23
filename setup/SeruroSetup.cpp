@@ -78,7 +78,8 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
         this->account_page  = new AccountPage(this);
 
 		initial_page->SetNext(account_page);
-		account_page->SetPrev(account_page);
+		account_page->SetPrev(initial_page);
+        account_page->enable_prev = true;
 	}
 
 	/* Only show if in the initial setup or a server/account setup. */
@@ -165,7 +166,11 @@ void SeruroSetup::ForceNext()
 void SeruroSetup::OnChanging(wxWizardEvent &event)
 {
 	/* Don't worry if the page is going backward (for now). */
-	if (! event.GetDirection() ) return;
+	if (! event.GetDirection() ) {
+        event.Skip();
+        return;
+    }
+    
 	wxLogMessage(_("SeruroSetup> (OnChanging) the page is trying to move forward."));
 
 	/* The PAGE_CHANGING event will have taken care of the generic (back/forward) 
@@ -183,7 +188,7 @@ void SeruroSetup::OnChanging(wxWizardEvent &event)
 /* Catch the wizard when a new page is displayed (to update UI elements). */
 void SeruroSetup::OnChanged(wxWizardEvent &event)
 {
-	wxLogMessage(_("SeruroSetup> (OnChanged) the page has changed."));
+	wxLogDebug(_("SeruroSetup> (OnChanged) the page has changed (direction= %s)."), (event.Direction()) ? "forward":"backward");
 	SetupPage *shown_page = (SetupPage*) event.GetPage();
 
 	/* Decorate the buttons */

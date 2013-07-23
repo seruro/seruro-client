@@ -186,6 +186,7 @@ AccountPage::AccountPage(SeruroSetup *parent)
 	this->next_button = _("&Login");
 	this->require_auth = true;
     this->enable_next = true;
+    this->enable_prev = false;
 
     wxString msg_text = wxT("Please enter the information for your account:");
     Text *msg = new Text(this, msg_text);
@@ -244,7 +245,7 @@ void AccountPage::OnSelectServer(wxCommandEvent &event)
 void AccountPage::DoFocus()
 {
 	//wxArrayString servers = wxGetApp().config->GetServerList();
-	wxLogMessage(_("AccountSetupPage> (DoFocus) focusing the account page."));
+	wxLogDebug(_("AccountSetupPage> (DoFocus) focusing the account page."));
 
 	/* If there is no server page, then the initially-generated list is OK. */
 	if (! wizard->IsNewServer()) return;
@@ -259,6 +260,7 @@ bool AccountPage::GoNext(bool from_callback) {
 	/* Perform a ping to validate the user's credentials. */
 	wxJSONValue server_info, address_info, params;
 
+    wxLogDebug(_("AccountSetupPage> (GoNext) trying to proceed the setup."));
 	/* If a 'previous' login is still valid, allow the user to proceed. */
 	if (this->login_success && this->has_ca) {
 		if (from_callback) {
