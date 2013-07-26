@@ -11,9 +11,11 @@
 #include <wx/notebook.h>
 #include <wx/thread.h>
 #include <wx/event.h>
+#include <wx/log.h>
 
 /* Inlcude the Config header so all classes may use wxGetApp().config. */
 #include "SeruroConfig.h"
+#include "SeruroLogger.h"
 
 //class SeruroConfig;
 class SeruroFrameMain;
@@ -40,6 +42,9 @@ public:
 	}
 
 	void InitLogger();
+    void SetLogger(wxLog *logger);
+    wxString ReplaceLogger();
+    
 	wxWindow *GetFrame();
     
     void OnInvalidAuth(SeruroRequestEvent &event);
@@ -56,6 +61,7 @@ public:
 
 private:
 	SeruroFrameMain *main_frame;
+    SeruroLogger *default_logger;
 };
 
 /* Hack for accessing app instance singleton */

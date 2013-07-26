@@ -28,6 +28,11 @@ enum setup_type_t
 	SERURO_SETUP_INITIAL
 };
 
+enum setup_ids_t
+{
+    SERURO_SETUP_ID
+};
+
 class SeruroSetup;
 
 class SetupPage : public wxWizardPageSimple
@@ -148,6 +153,7 @@ public:
 
 	/* Manage server/CA lookups. */
 	void OnSelectServer(wxCommandEvent &event);
+    void OnCustomPort(wxCommandEvent &event);
     wxString GetServerUUID() { return this->server_uuid; }
     
 	/* Check if the name from the server page changed (and reselect). */

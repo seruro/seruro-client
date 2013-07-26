@@ -30,7 +30,7 @@ void SendFailureEvent(wxEvtHandler *handler, int event_id)
     SeruroRequestEvent event(event_id);
     event.SetResponse(response);
     //handler->AddPendingEvent(event);
-    wxGetApp().AddEvent(event);
+    handler->AddPendingEvent(event);
 }
 
 void PerformRequestAuth(SeruroRequestEvent &event)
@@ -89,12 +89,13 @@ SeruroRequest::SeruroRequest(wxJSONValue api_params, wxEvtHandler *parent, int p
 
 SeruroRequest::~SeruroRequest()
 {
-    wxLogMessage(_("SeruroRequest> deleting thrread for event id (%d)."), evtId);
+    wxLogMessage(_("SeruroRequest> (0/1) deleting thread for event id (%d)."), evtId);
 	/* Start client (all) threads accessor, to delete this, with a critial section. */
 	wxCriticalSectionLocker locker(wxGetApp().seruro_critSection);
     
 	wxArrayThread& threads = wxGetApp().seruro_threads;
 	threads.Remove(this);
+    wxLogMessage(_("SeruroRequest> (1/1) deleted."), evtId);
     
 	/* Todo: (check for an empty threads array) might want to signal to main thread if
 	 * this was the last item, meaning it is OK to shutdown if it were waiting. */
@@ -154,15 +155,20 @@ wxThread::ExitCode SeruroRequest::Entry()
     if (! params["auth"]["have_token"].AsBool()) {
         if (! params["auth"].HasMember("address") || ! params["auth"].HasMember("password")) {
             wxLogMessage(_("SeruroRequest> (Entry) no auth and missing an address/password."));
-            /* Request auth from UI. */
-            this->RequestAuth();
+            
+            if (params["auth"]["no_prompt"].AsBool()) {
+                this->ReplyWithFailure();
+            } else {
+                /* Request auth from UI. */
+                this->RequestAuth();
+            }
             return (ExitCode)0;
         }
         
         /* If we failed at receiving a token, but have credentails, we can attempt an auth. */
         if (! this->DoAuth()) {
             wxLogMessage(_("SeruroRequest> (Entry) auth failed."));
-            if (params["auth"]["require_password"].AsBool()) {
+            if (params["auth"]["require_password"].AsBool() || params["auth"]["no_prompt"].AsBool()) {
                 /* There was an explicit password, do not request another. */
                 this->ReplyWithFailure();
             } else {
@@ -206,6 +212,7 @@ bool SeruroRequest::DoAuth()
 {
     wxJSONValue response;
     wxJSONValue auth_params, data_string;
+    //wxString encoded_data_string;
     bool wrote_token;
     
     wxLogMessage(_("SeruroRequest> (DoAuth) requesting token."));
@@ -218,31 +225,39 @@ bool SeruroRequest::DoAuth()
     /* There must be an account/password. */
     data_string[SERURO_API_AUTH_FIELD_EMAIL] = this->params["auth"]["address"];
     data_string[SERURO_API_AUTH_FIELD_PASSWORD] = this->params["auth"]["password"];
-    auth_params["data_string"] = encodeData(data_string);
+    //encodeData(data_string, encoded_data_string);
+    
+    /* Add encoded data string and clear potential passwords from memory. */
+    auth_params["data_string"] = encodeData(data_string); // = encoded_data_string;
+    //encoded_data_string.Clear();
+    //data_string.Clear();
+    //this->params["auth"].Clear();
     
     /* Perform auth request. */
     response = performRequest(auth_params);
+    //auth_params.Clear();
     
 	/* If "result" (boolean) is true, update token store for "email", set "token". */
 	if (! response["success"].AsBool() || ! response.HasMember("token")) {
-		wxLogMessage(wxT("SeruroRequest> (Do Auth) failed (%s)."), response["error"].AsString());
+		wxLogMessage(wxT("SeruroRequest> (DoAuth) failed (%s)."), response["error"].AsString());
         return false;
 	}
     
-	wxLogMessage(_("SeruroRequest> (Do Auth) received token (%s)."), response["token"].AsString());
+	wxLogMessage(_("SeruroRequest> (DoAuth) received token (%s)."), response["token"].AsString());
     
 	/* Warning: depends on response["email"], response["uuid"] */
     wrote_token = false;
     if (response.HasMember("email") && response.HasMember("uuid")) {
         wrote_token = wxGetApp().config->WriteToken(response["uuid"].AsString(),
             response["email"].AsString(), response["token"].AsString());
+        /* Setting the active token will fail if the account is being added. */
         wxGetApp().config->SetActiveToken(response["uuid"].AsString(), response["email"].AsString());
     } else {
         wxLogMessage(_("SeruroRequest (DoAuth) cannot find 'email' or 'uuid' in response?"));
     }
     
 	if (! wrote_token) {
-		wxLogMessage(_("SeruroRequest> (Do Auth) failed to write token."));
+		wxLogMessage(_("SeruroRequest> (DoAuth) failed to write token."));
         return false;
 	}
     
@@ -262,6 +277,7 @@ wxJSONValue SeruroRequest::DoRequest()
     if (request_params.HasMember("query")) {
         query_string = encodeData(request_params["query"]);
         request_params["object"] = request_params["object"].AsString() + _("&") + query_string;
+        //query_string.Clear();
     }
     
 	return performRequest(request_params);

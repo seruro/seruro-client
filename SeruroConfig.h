@@ -13,7 +13,7 @@ class SeruroConfig
 public:
 	SeruroConfig();
 	~SeruroConfig() {
-		delete configFile;
+		delete config_file;
 		//delete configData;
 	}
 
@@ -25,10 +25,7 @@ public:
      */
 	void LoadConfig();
 	bool WriteConfig();
-    bool HasConfig() {
-		/* Make a decision to run the SeruroSetup wizard. */
-		return (configFile->Exists() && configValid);
-	}
+    bool HasConfig();
 
 	/***********************************************************/
 	/************** TOKEN MANIPULATOR/ACCESSORS ****************/
@@ -122,9 +119,11 @@ protected:
 		wxString address = wxEmptyString);
 
 private:
-    bool configValid;
-    wxTextFile *configFile;
-	wxJSONValue configData;
+    bool InitConfig();
+    
+    bool config_valid;
+    wxTextFile *config_file;
+	wxJSONValue config;
 };
 
 #endif

@@ -32,6 +32,9 @@ private:
 	SettingsView *accounts_window;
 	SettingsView *applications_window;
 	SettingsView *extensions_window;
+    
+    /* May or may not exist. */
+    SettingsView *log_window;
 
 	DECLARE_EVENT_TABLE()
 };

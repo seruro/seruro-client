@@ -89,6 +89,9 @@ SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue param
 
 	if (params["request"].HasMember("data")) {
 		params["request"]["data_string"] = encodeData(params["request"]["data"]);
+        
+        /* Clean up potential password. */
+        //params["request"]["data"].Clear();
 	}
 
 	/* Copy callback meta-data into the request, which will end up in the response event. */
@@ -98,6 +101,7 @@ SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue param
 
 	/* Create the request thread after all data is filled in. */
 	SeruroRequest *thread = new SeruroRequest(params["request"], evtHandler, evtId);
+    //params.Clear();
 
 	if (thread->Create() != wxTHREAD_NO_ERROR) {
 		wxLogError(wxT("SeruroServerAPI::CreateRequest> Could not create thread."));
@@ -130,6 +134,8 @@ wxJSONValue SeruroServerAPI::GetAuth(wxJSONValue params)
     if (params.HasMember("password")) {
         /* There was a password provided. */
         auth["password"] = params["password"];
+        //params["password"].Clear();
+        
         /* An auth attempt may require an explicit password (if another UI is handling login), else a UI prompt may appear. */
         auth["require_password"] = params.HasMember("require_password");
     }

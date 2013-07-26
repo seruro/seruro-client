@@ -6,6 +6,8 @@
 #include "../crypto/SeruroCrypto.h"
 #include "../api/SeruroStateEvents.h"
 
+#include <wx/event.h>
+
 BEGIN_EVENT_TABLE(AccountPage, SetupPage)
 	EVT_SERURO_REQUEST(SERURO_API_CALLBACK_PING, AccountPage::OnPingResult)
 	EVT_SERURO_REQUEST(SERURO_API_CALLBACK_CA, AccountPage::OnCAResult)
@@ -208,6 +210,8 @@ AccountPage::AccountPage(SeruroSetup *parent)
 		wxSizer *const server_form = new wxStaticBoxSizer(wxVERTICAL, this, "&Server Information");
     
 		AddServerForm::AddForm(server_form);
+        Bind(wxEVT_COMMAND_CHECKBOX_CLICKED, &AccountPage::OnCustomPort, this, SERURO_ADD_SERVER_PORT_ID);
+        
 		vert_sizer->Add(server_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 	}
 
@@ -228,6 +232,11 @@ AccountPage::AccountPage(SeruroSetup *parent)
 	 */
 
     this->SetSizer(vert_sizer);
+}
+
+void AccountPage::OnCustomPort(wxCommandEvent &event)
+{
+    AddServerForm::OnCustomPort();
 }
 
 void AccountPage::OnSelectServer(wxCommandEvent &event)

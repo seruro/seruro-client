@@ -1,5 +1,6 @@
 
 #include "SeruroPanelSettings.h"
+#include "../logging/SeruroLogger.h"
 
 #include "UIDefs.h"
 #include "settings/SettingsWindows.h"
@@ -11,6 +12,7 @@
 #include "../resources/images/accounts_icon_42_flat.png.h"
 #include "../resources/images/applications_icon_42_flat.png.h"
 #include "../resources/images/addons_icon_42_flat.png.h"
+#include "../resources/images/log_icon_42_flat.png.h"
 
 #define SETTINGS_MENU_WIDTH 200
 
@@ -26,10 +28,14 @@ void SeruroPanelSettings::OnSelected(wxListEvent &event)
 	accounts_window->Hide();
 	applications_window->Hide();
 	extensions_window->Hide();
+    if (SERURO_USE_SETTINGSLOG) {
+        log_window->Hide();
+    }
 	if (event.GetItem() == 0) general_window->Show();
 	if (event.GetItem() == 1) accounts_window->Show();
 	if (event.GetItem() == 2) applications_window->Show();
 	if (event.GetItem() == 3) extensions_window->Show();
+    if (event.GetItem() == 4 && SERURO_USE_SETTINGSLOG) log_window->Show();
 	this->Thaw();
 	/* Ask the window/sizer to position/size the now-shown window correctly. */
 	this->Layout();
@@ -60,6 +66,12 @@ SeruroPanelSettings::SeruroPanelSettings(wxBookCtrlBase *book) : SeruroPanel(boo
     sizer->Add(extensions_window, 1, wxEXPAND | wxRIGHT | wxTOP | wxBOTTOM, 10);
     extensions_window->Hide();
     
+    if (SERURO_USE_SETTINGSLOG) {
+        log_window = new LogWindow(this);
+        sizer->Add(log_window, 1, wxEXPAND | wxRIGHT | wxTOP | wxBOTTOM, 10);
+        log_window->Hide();
+    }
+    
     /* Select the first item, General. */
     //menu->SetItemState(0, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
 
@@ -75,6 +87,9 @@ void SeruroPanelSettings::AddMenu(wxSizer *sizer)
 	image_list->Add(wxGetBitmapFromMemory(accounts_icon_42_flat));
 	image_list->Add(wxGetBitmapFromMemory(applications_icon_42_flat));
 	image_list->Add(wxGetBitmapFromMemory(addons_icon_42_flat));
+    if (SERURO_USE_SETTINGSLOG) {
+        image_list->Add(wxGetBitmapFromMemory(log_icon_42_flat));
+    }
 
     menu = new wxListCtrl(this, SETTINGS_MENU_ID, 
 		/* We want a static width, and allow the sizer to determine the height. */
@@ -93,6 +108,9 @@ void SeruroPanelSettings::AddMenu(wxSizer *sizer)
     menu->InsertItem(1, _("Accounts"), 1);
 	menu->InsertItem(2, _("Applications"), 2);
 	menu->InsertItem(3, _("Extensions"), 3);
+    if (SERURO_USE_SETTINGSLOG) {
+        menu->InsertItem(4, _("Log"), 4);
+    }
     
 	sizer->Add(menu, 0, wxEXPAND | wxALL, 10);
 }

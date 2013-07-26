@@ -5,9 +5,11 @@
 #include "../../api/SeruroRequest.h"
 #include "../../wxJSON/wx/jsonval.h"
 #include "../../api/SeruroStateEvents.h"
+#include "../../logging/SeruroLogger.h"
 
 #include <wx/button.h>
 #include <wx/listctrl.h>
+
 
 enum settings_ids_t {
     SETTINGS_MENU_ID,
@@ -159,4 +161,17 @@ public:
     ExtensionsWindow(SeruroPanelSettings *window);
 };
 
-#endif 
+class LogWindow : public SettingsView, public SeruroLogger
+{
+public:
+    LogWindow(SeruroPanelSettings *window);
+    
+protected:
+    void ProxyLog(wxLogLevel level, const wxString &msg);
+    
+private:
+    wxTextCtrl *log_box;
+    wxButton *send_button;
+};
+
+#endif

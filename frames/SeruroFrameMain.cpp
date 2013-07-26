@@ -177,7 +177,7 @@ void SeruroFrameMain::OnSetupCancel(wxWizardEvent& event)
 {
     if (wxGetApp().config->GetServerNames().size() == 0) {
         wxLogMessage(_("SeruroFrameMain> (OnSetupCancel) the initial setup was cancled."));
-        this->Close(true);
+        //this->Close(true);
     }
 }
 
@@ -185,6 +185,6 @@ void SeruroFrameMain::OnSetupFinished(wxWizardEvent& event)
 {
     if (wxGetApp().config->GetServerNames().size() == 0) {
         wxLogMessage(_("SeruroFrameMain> (OnSetupFinished) there were no servers added?"));
-        this->Close(true);
+        //this->Close(true);
     }
 }

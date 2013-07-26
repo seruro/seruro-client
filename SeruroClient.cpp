@@ -10,7 +10,8 @@
 #endif
 
 #include "SeruroClient.h"
-#include "SeruroConfig.h"
+
+/* Note: SeruroConfig/SeruroLogger are placed in the header. */
 
 #include "crypto/SeruroCrypto.h"
 #include "setup/SeruroSetup.h"
@@ -19,7 +20,6 @@
 #include "frames/UIDefs.h"
 #include "frames/SeruroFrameMain.h"
 
-#include <wx/log.h>
 #include <wx/image.h>
 
 #define SERURO_DEBUG_SETUP 0
@@ -82,18 +82,48 @@ wxWindow* SeruroClient::GetFrame()
 	return (wxWindow *) this->main_frame;
 }
 
+wxString SeruroClient::ReplaceLogger()
+{
+    /* Remove the existing one while returning its buffer. */
+    wxString log_buffer = this->default_logger->GetBuffer();
+    delete this->default_logger;
+    
+    return log_buffer;
+}
+
+void SeruroClient::SetLogger(wxLog* logger)
+{
+    /* Wrapper to allow other classes to change the logger. */
+    wxLog::SetActiveTarget(logger);
+}
+
 void SeruroClient::InitLogger()
 {
-	wxLogWindow *logger = new wxLogWindow(this->main_frame, wxT("Logger"));
+    if (SERURO_USE_LOGGER) {
+        this->default_logger = new SeruroLogger();
+        this->default_logger->InitLogger();
+            
+        this->SetLogger(this->default_logger);
 
-    logger->GetFrame()->SetWindowStyle(wxDEFAULT_FRAME_STYLE);
-    logger->GetFrame()->SetSize( wxRect(800,350,500,500) );
-    wxLog::SetActiveTarget(logger);
+        /* Tell the logger to buffer input. */
+        if (SERURO_USE_SETTINGSLOG) {
+            this->default_logger->ToggleBuffer();
+        }
+    } else {
+        wxLogWindow *logger = new wxLogWindow(this->main_frame, wxT("Logger"));
+
+        logger->GetFrame()->SetWindowStyle(wxDEFAULT_FRAME_STYLE);
+        logger->GetFrame()->SetSize( wxRect(700,100,700,700) );
+        
+        this->SetLogger(logger);
+    }
+        
 #if defined(__WXDEBUG__)
     wxLog::SetLogLevel(wxLOG_Debug);
-    wxLogDebug(_("Seruro Client (debug-build) started."));
+    wxLog::SetVerbose(true);
+    LOG(_("Seruro (debug-build) started."));
 #else
-    wxLogStatus(wxT("Seruro Client started."));
+    LOG(wxT("Seruro started."));
 #endif
 }
 

@@ -49,7 +49,7 @@ void SeruroPanelSearch::OnServerStateChange(SeruroStateEvent &event)
 void SeruroPanelSearch::DoFocus()
 {
 	wxArrayString server_names;
-	wxLogMessage(_("SeruroPanelSearch> (DoFocus) focusing the search."));
+	wxLogDebug(_("SeruroPanelSearch> (DoFocus) focusing the search."));
     
     server_names = wxGetApp().config->GetServerNames();
 	/* If the config has changed, regenerate the list of servers. */

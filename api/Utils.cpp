@@ -48,10 +48,10 @@ wxJSONValue parseResponse(wxString raw_response)
     /* Parse the response (raw content) string into JSON. */
     num_errors = response_reader.Parse(raw_response, &response);
     if (num_errors > 0) {
-        wxLogStatus(wxT("SeruroRequest (parse)> could not parse response data as JSON."));
+        wxLogStatus(wxT("Utils> (parseResponse) could not parse response data as JSON."));
     }
 	if (! response.HasMember("success")) {
-		wxLogMessage(wxT("SeruroRequest (parse)> response does not contain a 'success' key."));
+		wxLogMessage(wxT("Utils> (parseResponse) response does not contain a 'success' key."));
 		/* Fill in JSON data with TLS/connection error. */
 		response["success"] = false;
         if (! response.HasMember("error")) {
@@ -61,7 +61,7 @@ wxJSONValue parseResponse(wxString raw_response)
     
     /* Error may be a string, dict, or list? */
     if (! response["success"].AsBool()) {
-		wxLogMessage(wxT("SeruroRequest (parse)> failed: (%s)."), response["error"].AsString());
+		wxLogMessage(wxT("Utils> (parseResponse) request failed: (%s)."), response["error"].AsString());
 	}
     
     /* Todo: consider checking for error string that indicated invalid token. */
@@ -78,8 +78,8 @@ wxJSONValue performRequest(wxJSONValue params)
 	SeruroCrypto crypto;
     
 	/* Show debug statement, list the request. */
-	wxLogMessage(wxT("SeruroRequest (request)> Server (%s), Verb (%s), Object (%s)."),
-                 params["server"]["host"].AsString(), params["verb"].AsString(), params["object"].AsString());
+	wxLogMessage(wxT("Utils> (performRequest) Server (%s), Verb (%s), Object (%s)."),
+        params["server"]["host"].AsString(), params["verb"].AsString(), params["object"].AsString());
     
 	/* Perform the request, receive a raw content (string) response. */
 	raw_response = crypto.TLSRequest(params);
@@ -92,7 +92,7 @@ wxJSONValue performRequest(wxJSONValue params)
 
 wxString encodeData(wxJSONValue data)
 {
-	wxString data_string;
+    wxString data_string;
 	wxArrayString data_names;
 	
 	wxString data_value;
@@ -112,8 +112,9 @@ wxString encodeData(wxJSONValue data)
 	}
 	delete encoded_value;
     
-	wxLogMessage(wxT("SeruroRequest (encode)> Encoded: (%s)."), data_string);
-    
-	return data_string;
+    /* Place contents into results and clear temporary data, which may contain a password. */
+    //result.Append(data_string);
+    //data_string.Clear();
+    return data_string;
 }
 

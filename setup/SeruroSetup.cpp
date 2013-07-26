@@ -165,13 +165,15 @@ void SeruroSetup::ForceNext()
 
 void SeruroSetup::OnChanging(wxWizardEvent &event)
 {
+    wxLogMessage(_("SeruroSetup> (OnChanging) the page is trying to move."));
+    
 	/* Don't worry if the page is going backward (for now). */
 	if (! event.GetDirection() ) {
         event.Skip();
         return;
     }
     
-	wxLogMessage(_("SeruroSetup> (OnChanging) the page is trying to move forward."));
+	//wxLogMessage(_("SeruroSetup> (OnChanging) the page is trying to move forward."));
 
 	/* The PAGE_CHANGING event will have taken care of the generic (back/forward) 
 	 * events which include checking the page for validation errors.
@@ -188,7 +190,7 @@ void SeruroSetup::OnChanging(wxWizardEvent &event)
 /* Catch the wizard when a new page is displayed (to update UI elements). */
 void SeruroSetup::OnChanged(wxWizardEvent &event)
 {
-	wxLogDebug(_("SeruroSetup> (OnChanged) the page has changed (direction= %s)."), (event.Direction()) ? "forward":"backward");
+	wxLogMessage(_("SeruroSetup> (OnChanged) the page has changed."));
 	SetupPage *shown_page = (SetupPage*) event.GetPage();
 
 	/* Decorate the buttons */
