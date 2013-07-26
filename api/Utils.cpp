@@ -4,6 +4,7 @@
 
 #include "../wxJSON/wx/jsonreader.h"
 
+#include <wx/string.h>
 #include <wx/log.h>
 //#include "../wxJSON/wx/jsonwriter.h"
 
@@ -78,8 +79,9 @@ wxJSONValue performRequest(wxJSONValue params)
 	SeruroCrypto crypto;
     
 	/* Show debug statement, list the request. */
-	wxLogMessage(wxT("Utils> (performRequest) Server (%s), Verb (%s), Object (%s)."),
-        params["server"]["host"].AsString(), params["verb"].AsString(), params["object"].AsString());
+	wxLogMessage(wxT("Utils> (performRequest) https://%s:%d%s (%s)."),
+        params["server"]["host"].AsString(), params["server"]["port"].AsInt(),
+        params["object"].AsString(), params["verb"].AsString());
     
 	/* Perform the request, receive a raw content (string) response. */
 	raw_response = crypto.TLSRequest(params);
@@ -92,29 +94,26 @@ wxJSONValue performRequest(wxJSONValue params)
 
 wxString encodeData(wxJSONValue data)
 {
-    wxString data_string;
-	wxArrayString data_names;
-	
-	wxString data_value;
+    wxString      data_string;
+    wxString      data_value;
+	wxArrayString data_keys;
 	char *encoded_value;
-    
-	encoded_value = (char *) malloc(256 * sizeof(char)); /* Todo: increate size of buffer. */
 	
 	/* Construct a URL query string from JSON. */
-	data_names = data.GetMemberNames();
-	for (size_t i = 0; i < data_names.size(); i++) {
-		if (i > 0) data_string = data_string + wxString(wxT("&"));
+	data_keys = data.GetMemberNames();
+	for (size_t i = 0; i < data_keys.size(); i++) {
+		if (i > 0) {
+            data_string = wxString::Format(wxT("%s&"), data_string);
+        }
 		/* Value must be URLEncoded. */
-		data_value = data[data_names[i]].AsString();
-		URLEncode(encoded_value, data_value.mbc_str(), 256);
+		data_value = data[data_keys[i]].AsString();
+        encoded_value = (char *) malloc(data_value.length() * sizeof(char));
+		URLEncode(encoded_value, data_value.mb_str(wxConvUTF8), data_value.size());
+        delete encoded_value;
         
-		data_string = data_string + data_names[i] + wxString(wxT("=")) + wxString(encoded_value);
+		data_string = wxString::Format(wxT("%s%s=%s"), data_string, data_keys[i], wxString(encoded_value));
 	}
-	delete encoded_value;
-    
-    /* Place contents into results and clear temporary data, which may contain a password. */
-    //result.Append(data_string);
-    //data_string.Clear();
+
     return data_string;
 }
 

@@ -38,6 +38,7 @@ protected:
     void DoLogTextAtLevel(wxLogLevel level, const wxString &msg);
     void DoLogRecord(wxLogLevel level, const wxString &msg, const wxLogRecordInfo &info);
     virtual void ProxyLog(wxLogLevel level, const wxString &msg) {}
+    //virtual wxString GetLog() { return wxEmptyString; }
     
 private:
     /* Write log to text file and proxy to other inheritors. */

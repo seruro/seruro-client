@@ -166,12 +166,16 @@ class LogWindow : public SettingsView, public SeruroLogger
 public:
     LogWindow(SeruroPanelSettings *window);
     
+    void OnSendReport(wxCommandEvent &event);
+    
 protected:
     void ProxyLog(wxLogLevel level, const wxString &msg);
     
 private:
     wxTextCtrl *log_box;
     wxButton *send_button;
+    
+    DECLARE_EVENT_TABLE();
 };
 
 #endif

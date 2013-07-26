@@ -4,7 +4,13 @@
 #include "../SeruroPanelSettings.h"
 #include "../UIDefs.h"
 
+#include "../dialogs/DebugReportDialog.h"
+
 DECLARE_APP(SeruroClient);
+
+BEGIN_EVENT_TABLE(LogWindow, SettingsView)
+    EVT_BUTTON(wxID_ANY,  LogWindow::OnSendReport)
+END_EVENT_TABLE()
 
 LogWindow::LogWindow(SeruroPanelSettings *window) : SettingsView(window), SeruroLogger()
 {
@@ -36,6 +42,17 @@ LogWindow::LogWindow(SeruroPanelSettings *window) : SettingsView(window), Seruro
 #endif
     
     this->SetSizer(sizer);
+}
+
+void LogWindow::OnSendReport(wxCommandEvent &event)
+{
+    DebugReportDialog *dialog = new DebugReportDialog();
+    dialog->SetLog(this->log_box->GetValue());
+    
+    if (dialog->ShowModal() == wxID_OK) {
+		dialog->SendReport();
+	}
+	delete dialog;
 }
 
 void LogWindow::ProxyLog(wxLogLevel level, const wxString &msg)

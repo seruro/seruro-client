@@ -140,6 +140,7 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	params["server"] = server_info;
 	if (new_server) {
 		params["meta"]["go_forward"] = true;
+        params["no_prompt"] = true;
 		api->CreateRequest(SERURO_API_CA, params, SERURO_API_CALLBACK_CA)->Run();
 		goto finished;
 	} else {

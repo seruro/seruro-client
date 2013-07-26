@@ -10,7 +10,8 @@
 enum seruro_request_callbacks_t
 {
     /* The token auth was invalid, prompt for credentials. */
-    SERURO_REQUEST_CALLBACK_AUTH
+    SERURO_REQUEST_CALLBACK_AUTH,
+    SERURO_REQUEST_CALLBACK_NONE
 };
     
 /* When an API command finished it will add a SERURO_REQUEST_RESPONSE event.

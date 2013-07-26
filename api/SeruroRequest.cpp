@@ -84,6 +84,7 @@ SeruroRequest::SeruroRequest(wxJSONValue api_params, wxEvtHandler *parent, int p
 {
     wxLogMessage(_("SeruroRequest> creating thread for event id (%d)."), evtId);
 	/* Catch-all for port configurations. */
+    //if (params["server"])
 	params["server"]["port"] = wxGetApp().config->GetPortFromServer(params["server"]);
 }
 
@@ -151,6 +152,12 @@ wxThread::ExitCode SeruroRequest::Entry()
 	wxLogMessage(wxT("SeruroRequest> (Entry) have token (%s), token (%s)."),
 		params["auth"]["have_token"].AsString(), params["auth"]["token"].AsString());
     
+    if (params.HasMember("not_api")) {
+        /* Allow a caller to skip standard API checks. */
+        response = performRequest(params);
+        return (ExitCode)0;
+    }
+    
     /* If there is no have_token boolean set, we must create one. */
     if (! params["auth"]["have_token"].AsBool()) {
         if (! params["auth"].HasMember("address") || ! params["auth"].HasMember("password")) {
@@ -168,7 +175,7 @@ wxThread::ExitCode SeruroRequest::Entry()
         /* If we failed at receiving a token, but have credentails, we can attempt an auth. */
         if (! this->DoAuth()) {
             wxLogMessage(_("SeruroRequest> (Entry) auth failed."));
-            if (params["auth"]["require_password"].AsBool() || params["auth"]["no_prompt"].AsBool()) {
+            if (params["auth"]["require_password"].AsBool() || params["no_prompt"].AsBool()) {
                 /* There was an explicit password, do not request another. */
                 this->ReplyWithFailure();
             } else {

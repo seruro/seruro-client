@@ -339,10 +339,8 @@ wxString SeruroCryptoMAC::TLSRequest(wxJSONValue params)
     CFHTTPMessageRef http_response;
     
     /* Set TLS version (hopfully TLS1.2 (fallback to TLS1), fail if not that (???). */
-    wxString url_string = wxString(wxT("https://") +
-        params["server"]["host"].AsString() +
-        wxT(":") + params["server"]["port"].AsString() +
-		params["object"].AsString());
+    wxString url_string = wxString::Format(_("https://%s:%d%s"), params["server"]["host"].AsString(),
+        params["server"]["port"].AsInt(), params["object"].AsString());
     CFStringRef url_cfstring = CFStringCreateWithCString(kCFAllocatorDefault, 
 		AsChar(url_string), kCFStringEncodingMacRoman);
     CFURLRef url = CFURLCreateWithString(kCFAllocatorDefault, url_cfstring, NULL);
@@ -431,6 +429,12 @@ wxString SeruroCryptoMAC::TLSRequest(wxJSONValue params)
     
     /* Now copy only the body data. */
     http_response_body = CFHTTPMessageCopyBody(http_response);
+    if (http_response_body == NULL || CFDataGetLength(http_response_body) == 0) {
+        /* There was no http body? */
+        ERROR_LOG(_("SeruroCrypto> (TLSRequest) could not parse HTTP Response body."));
+        goto bailout;
+    }
+    
     read_buffer = (UInt8 *) malloc(CFDataGetLength(http_response_body) * sizeof(UInt8));
     CFDataGetBytes(http_response_body, CFRangeMake(0, CFDataGetLength(http_response_body)), read_buffer);
     

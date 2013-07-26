@@ -9,14 +9,13 @@
 #endif
 
 /* Remove when finished developing. */
-#ifndef __WXDEBUG__
-#define __WXDEBUG__ 1
-#endif
-#ifndef NDEBUG
-#define NDEBUG 1
-#endif
-
-#define SERURO_APP_NAME     "Seruro Client"
+//#ifndef __WXDEBUG__
+//#define __WXDEBUG__ 1
+//#endif
+//#ifndef NDEBUG
+//#define NDEBUG 1
+//#endif
+#include "AppDefs.h"
 
 /* When a server name is displayed, display the host and port as well. */
 #define SERURO_DISPLAY_SERVER_INFO 1
@@ -32,7 +31,7 @@
 /* File name to store and fetch user authentication tokens from. */
 #define SERURO_TOKENS_FILE	"tokens"
 /* User agent to use for Server API requests. */
-#define SERURO_DEFAULT_USER_AGENT "SeruroClient/1.0"
+#define SERURO_DEFAULT_USER_AGENT "SeruroClient/"SERURO_VERSION
 
 /* The maximum amount of 'application panels' which are 'tabs'. 
  * This is used in the SeruroTray to identity the panel IDs. 

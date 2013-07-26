@@ -26,6 +26,7 @@ public:
 	void LoadConfig();
 	bool WriteConfig();
     bool HasConfig();
+    wxJSONValue GetConfig() { return this->config; }
 
 	/***********************************************************/
 	/************** TOKEN MANIPULATOR/ACCESSORS ****************/

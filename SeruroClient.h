@@ -44,6 +44,7 @@ public:
 	void InitLogger();
     void SetLogger(wxLog *logger);
     wxString ReplaceLogger();
+    wxString GetLog();
     
 	wxWindow *GetFrame();
     

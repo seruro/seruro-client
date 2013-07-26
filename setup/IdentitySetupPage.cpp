@@ -29,6 +29,7 @@ void IdentityPage::DownloadIdentity()
     
 	params["server"] = server_info;
     params["address"] = account;
+    params["no_prompt"] = true;
     
 	api->CreateRequest(SERURO_API_P12S, params, SERURO_API_CALLBACK_P12S)->Run();
 	delete api;
