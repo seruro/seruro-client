@@ -58,15 +58,13 @@ void DebugReportDialog::SendReport()
     content_buffer.AppendData(content.mb_str(wxConvUTF8), content.length());
     content_data["report"] = wxBase64Encode(content_buffer);
     
-    LOG(_("DebugReportDialog> %s"), wxBase64Encode(content_buffer));
-    
     params["server"]["host"] = _(DEBUG_REPORT_SERVER);
     params["server"]["port"] = _(DEBUG_REPORT_PORT);
     params["verb"] = _("POST");
     params["object"] = _(DEBUG_REPORT_URL);
     params["flags"] = SERURO_SECURITY_OPTIONS_DATA;
     params["not_api"] = true;
-    params["data_string"] = encodeData(content_data);
+    params["data_string"] = content_data["report"];
     
     /* Allow the request to run off into the distance... */
     SeruroRequest *request = new SeruroRequest(params, this->GetEventHandler(), SERURO_REQUEST_CALLBACK_NONE);
