@@ -1,34 +1,55 @@
 
 #include "SeruroLogger.h"
+#include "../SeruroClient.h"
 
 #include <wx/stdpaths.h>
 #include <wx/filename.h>
 #include <wx/datetime.h>
-    
+
+DECLARE_APP(SeruroClient);
+
 bool SeruroLogger::InitLogger()
 {
     buffer_logs = false;
+	log_opened = false;
+	log_initializing = false;
+
+	return true;
+}
+
+bool SeruroLogger::CreateLog()
+{
+	/* Do not allow a reentry. */
+	if (log_initializing) {
+		return false;
+	}
+
+	log_initializing = true;
     
     wxStandardPaths paths = wxStandardPaths::Get();
     wxFileName log_path(paths.GetUserDataDir(), _(SERURO_LOG_FILE_NAME));
     
     /* Add the config file name to the path. */
-    log_opened = false;
+    
     if (! wxFileName::DirExists(paths.GetUserDataDir())) {
         /* Ignore the return. */
         if (! wxFileName::Mkdir(paths.GetUserDataDir())) {
+			log_initializing = false;
             return false;
         }
     }
     
+	/* The following code block is not reentrent, but may potentially try if the create fails. */
     log_file = new wxTextFile(log_path.GetFullPath());
     if (! log_file->Exists()) {
-        if (! log_file->Create()) {
-            return false;
-        }
+		if (! log_file->Create()) {
+			log_initializing = false;
+			return false;
+		}
     }
     
     log_opened = true;
+	log_initializing = false;
     return true;
 }
 
@@ -41,7 +62,7 @@ void SeruroLogger::WriteLog(wxLogLevel level, const wxString &msg)
     
     /* Do not try to write to log if it is not valid. */
     if (! log_opened || ! log_file->Exists()) {
-        if (! this->InitLogger()) {
+        if (! this->CreateLog()) {
             return;
         }
     }

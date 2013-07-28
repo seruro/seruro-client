@@ -358,7 +358,8 @@ wxString SeruroCryptoMSW::TLSRequest(wxJSONValue params)
 			if (! WinHttpReadData(hRequest, (LPVOID) pszOutBuffer, dwSize, &dwDownloaded)) {
 				//error
 			} else {
-				responseString = responseString + wxString::FromAscii(pszOutBuffer, dwDownloaded);
+				/* Ruby errors are UFT-8. */
+				responseString = responseString + wxString::FromUTF8(pszOutBuffer, dwDownloaded);
 			}
 			delete [] pszOutBuffer;
 		}

@@ -16,6 +16,7 @@
 #include "crypto/SeruroCrypto.h"
 #include "setup/SeruroSetup.h"
 #include "api/SeruroRequest.h"
+#include "frames/dialogs/ErrorDialog.h"
 
 #include "frames/UIDefs.h"
 #include "frames/SeruroFrameMain.h"
@@ -125,6 +126,101 @@ void SeruroClient::InitLogger()
 #else
     LOG(wxT("Seruro started."));
 #endif
+}
+
+/*****************************************************************************************/
+/************** ERROR/EXCEPTIONS HANDLERS ************************************************/
+/*****************************************************************************************/
+
+void SeruroClient::OnAssertFailure(const wxChar *file, int line, 
+	const wxChar *func, const wxChar *cond, const wxChar *msg)
+{
+	wxJSONValue report;
+	wxString message;
+
+	report["error_type"] = _("assertion_failure");
+	report["file"] = file;
+	report["line"] = line;
+	report["func"] = func;
+	report["cond"] = cond;
+
+	message = wxString::Format(_("Assertion Failure\nFile: %s\nline: %s\nfunction: %s\ncondition:%s"), 
+		report["file"].AsString(), report["line"].AsString(),
+		report["func"].AsString(), report["cond"].AsString());
+
+	if (wxIsMainThread()) {
+		this->ReportAndExit(report, message, false);
+	}
+}
+
+bool SeruroClient::OnExceptionInMainLoop()
+{
+	wxJSONValue report;
+	
+	report["error_type"] = _("mainloop_exception");
+	try {
+		throw;
+	} catch ( ... ) {
+		this->ReportAndExit(report);
+	}
+
+	return true;
+}
+
+void SeruroClient::OnUnhandledException()
+{
+	wxJSONValue report;
+
+	report["error_type"] = _("unhandled_exception");
+	try {
+		throw;
+	} catch ( ... ) {
+		this->ReportAndExit(report);
+	}
+}
+
+void SeruroClient::OnFatalException()
+{
+	wxJSONValue report;
+
+#if wxUSE_ON_FATAL_EXCEPTION
+	report["error_type"] = _("fatal_exception");
+	this->ReportAndExit(report);
+#endif
+}
+
+void SeruroClient::ErrorAndExit(wxString msg)
+{
+	ErrorDialog *error;
+
+	error = new ErrorDialog(this->main_frame, msg, false);
+	if (error->ShowModal() == wxID_NO) {}
+	delete error;
+
+	this->main_frame->Close(true);
+}
+
+void SeruroClient::ReportAndExit(wxJSONValue report, wxString msg, bool close_app)
+{
+	ErrorDialog *error;
+	wxString prompt_msg;
+
+	if (msg.compare(wxEmptyString) == 0) {
+		prompt_msg = _("Seruro encountered an error, would you like to send a report?");
+	} else {
+		prompt_msg = msg;
+	}
+
+	error = new ErrorDialog(this->main_frame, prompt_msg);
+	if (error->ShowModal() == wxID_YES) {
+		/* The user would like to send an error report. */
+	}
+	delete error;
+
+	if (close_app) {
+		this->main_frame->Close(true);
+		//delete this->main_frame;
+	}
 }
 
 /*****************************************************************************************/

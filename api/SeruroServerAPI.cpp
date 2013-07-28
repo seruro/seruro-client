@@ -107,10 +107,6 @@ SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue param
 		wxLogError(wxT("SeruroServerAPI::CreateRequest> Could not create thread."));
 	}
 
-	/* Add to data structure accessed by thread */
-	wxCriticalSectionLocker enter(wxGetApp().seruro_critSection);
-	wxGetApp().seruro_threads.Add(thread);
-
 	return thread;
 }
 

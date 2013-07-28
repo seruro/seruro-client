@@ -15,7 +15,7 @@
 
 /* Inlcude the Config header so all classes may use wxGetApp().config. */
 #include "SeruroConfig.h"
-#include "SeruroLogger.h"
+#include "logging/SeruroLogger.h"
 
 //class SeruroConfig;
 class SeruroFrameMain;
@@ -51,16 +51,35 @@ public:
     void OnInvalidAuth(SeruroRequestEvent &event);
 
 	/* Todo: Consider accessor methods */
-	wxCriticalSection seruro_critSection;
+	wxCriticalSection seruro_critsection_config;
+	wxCriticalSection seruro_critsection_thread;
+	wxCriticalSection seruro_critsection_token;
+	wxCriticalSection seruro_critsection_log;
+
 	wxArrayThread seruro_threads;
 	//wxSemaphore seruro_semFinished;
 
 	void AddEvent(wxEvent &event);
 
+	/* Error/exception/assertion handling. */
+	void OnAssertFailure(const wxChar *file, int line, 
+		const wxChar *func, const wxChar *cond,
+		const wxChar *msg);
+	bool OnExceptionInMainLoop();
+	void OnUnhandledException();
+	void OnFatalException();
+
+	/* For other components to use (for handled exceptions. */
+	void ErrorAndExit(wxString msg);
+
 public:
 	SeruroConfig *config;
 
 private:
+	/* Shows a message and prompts to send an error report. */
+	void ReportAndExit(wxJSONValue report, 
+		wxString msg = wxEmptyString, bool close_app = true);
+
 	SeruroFrameMain *main_frame;
     SeruroLogger *default_logger;
 };

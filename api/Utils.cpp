@@ -1,5 +1,6 @@
 
 #include "../crypto/SeruroCrypto.h"
+#include "../logging/SeruroLogger.h"
 //#include "../frames/dialogs/AuthDialog.h"
 
 #include "../wxJSON/wx/jsonreader.h"
@@ -98,6 +99,7 @@ wxString encodeData(wxJSONValue data)
     wxString      data_value;
 	wxArrayString data_keys;
 	char *encoded_value;
+	char *decoded_value;
 	
 	/* Construct a URL query string from JSON. */
 	data_keys = data.GetMemberNames();
@@ -107,13 +109,17 @@ wxString encodeData(wxJSONValue data)
         }
 		/* Value must be URLEncoded. */
 		data_value = data[data_keys[i]].AsString();
-        encoded_value = (char *) malloc(data_value.length() * sizeof(char));
-		URLEncode(encoded_value, data_value.mb_str(wxConvUTF8), data_value.size());
-        delete encoded_value;
+        encoded_value = (char *) malloc(data_value.Length()+1 * sizeof(char) * 2);
+		//decoded_value = data_value.mb_str(wxConvUTF8);
+
+		URLEncode(encoded_value, data_value.ToAscii(), data_value.Length()+1);
         
-		data_string = wxString::Format(wxT("%s%s=%s"), data_string, data_keys[i], wxString(encoded_value));
+		data_string = wxString::Format(wxT("%s%s=%s"), data_string, data_keys[i], 
+			wxString::FromAscii(encoded_value));
+		delete encoded_value;
 	}
 
+	LOG(_(data_string));
     return data_string;
 }
 

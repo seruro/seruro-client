@@ -86,13 +86,17 @@ SeruroRequest::SeruroRequest(wxJSONValue api_params, wxEvtHandler *parent, int p
 	/* Catch-all for port configurations. */
     //if (params["server"])
 	params["server"]["port"] = wxGetApp().config->GetPortFromServer(params["server"]);
+
+	/* Add to data structure accessed by thread */
+	wxCriticalSectionLocker enter(wxGetApp().seruro_critsection_thread);
+	wxGetApp().seruro_threads.Add(this);
 }
 
 SeruroRequest::~SeruroRequest()
 {
     wxLogMessage(_("SeruroRequest> (0/1) deleting thread for event id (%d)."), evtId);
 	/* Start client (all) threads accessor, to delete this, with a critial section. */
-	wxCriticalSectionLocker locker(wxGetApp().seruro_critSection);
+	wxCriticalSectionLocker locker(wxGetApp().seruro_critsection_thread);
     
 	wxArrayThread& threads = wxGetApp().seruro_threads;
 	threads.Remove(this);
