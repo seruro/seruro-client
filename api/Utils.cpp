@@ -107,19 +107,19 @@ wxString encodeData(wxJSONValue data)
 		if (i > 0) {
             data_string = wxString::Format(wxT("%s&"), data_string);
         }
-		/* Value must be URLEncoded. */
+		/* Value must be URLEncoded (malloc * 3 as each char might be encode to %xx). */
 		data_value = data[data_keys[i]].AsString();
-        encoded_value = (char *) malloc(data_value.Length()+1 * sizeof(char) * 2);
+        encoded_value = (char *) malloc((data_value.Length()+1) * sizeof(char) * 3);
 		//decoded_value = data_value.mb_str(wxConvUTF8);
 
-		URLEncode(encoded_value, data_value.ToAscii(), data_value.Length()+1);
+		URLEncode(encoded_value, data_value.ToAscii(), (data_value.Length()+1) * 3);
         
 		data_string = wxString::Format(wxT("%s%s=%s"), data_string, data_keys[i], 
 			wxString::FromAscii(encoded_value));
 		delete encoded_value;
 	}
 
-	LOG(_(data_string));
+	LOG(_("data_string: %s"), data_string);
     return data_string;
 }
 
