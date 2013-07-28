@@ -237,7 +237,7 @@ wxString SeruroConfig::GetToken(const wxString &server_uuid, const wxString &add
 {
 	wxString token = wxEmptyString;
 
-    wxCriticalSectionLocker locker(wxGetApp().seruro_critSection);
+    wxCriticalSectionLocker locker(wxGetApp().seruro_critsection_token);
     
     LOG(_("SeruroConfig> (GetToken) requested token (%s) (%s)."), server_uuid, address);
 	/* Get current token data, check if the requested token exists and return, else an empty string. */
@@ -253,7 +253,7 @@ bool SeruroConfig::RemoveTokens(const wxString &server_uuid)
 {
 	bool results;
 
-    wxCriticalSectionLocker locker(wxGetApp().seruro_critSection);
+    wxCriticalSectionLocker locker(wxGetApp().seruro_critsection_token);
     
     wxJSONValue token_data = GetTokenData();
 	if (! token_data.HasMember(server_uuid)) {
@@ -270,7 +270,7 @@ bool SeruroConfig::RemoveToken(const wxString &server_uuid, const wxString &addr
 {
 	bool results;
 
-    wxCriticalSectionLocker locker(wxGetApp().seruro_critSection);
+    wxCriticalSectionLocker locker(wxGetApp().seruro_critsection_token);
     
     wxJSONValue token_data = GetTokenData();
 	if (! token_data.HasMember(server_uuid) || ! token_data[server_uuid].HasMember(address)) {
@@ -290,7 +290,7 @@ bool SeruroConfig::WriteToken(const wxString &server_uuid, const wxString &addre
 {
 	bool results;
 
-    wxCriticalSectionLocker locker(wxGetApp().seruro_critSection);
+    wxCriticalSectionLocker locker(wxGetApp().seruro_critsection_token);
     
     /* Get current token data, then add this server,address entry. */
 	wxJSONValue token_data = GetTokenData();
@@ -468,8 +468,8 @@ long SeruroConfig::GetPortFromServer(wxJSONValue server_info)
 	}
 
 	port_string.ToLong(&port, 10);
-	DEBUG_LOG(_("SeruroConfig> (GetPortFromServer) port for uuid (%s) (%s)."),
-		server_info["name"].AsString(), port_string, port);
+	DEBUG_LOG(_("SeruroConfig> (GetPortFromServer) port for uuid (%s) (%d)."),
+		server_info["uuid"].AsString(), port);
 
 	return port;
 }

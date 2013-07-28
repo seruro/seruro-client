@@ -43,11 +43,15 @@ protected:
 private:
     /* Write log to text file and proxy to other inheritors. */
     void WriteLog(wxLogLevel level, const wxString &msg);
+	bool CreateLog();
     
     /* The container for the logs. */
     wxTextFile *log_file;
     bool log_opened;
-    
+	/* Determine if the log is attempting initialization. */
+    bool log_initializing;
+
+
     bool buffer_logs;
     wxString log_buffer;
 };

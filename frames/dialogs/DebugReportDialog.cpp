@@ -1,6 +1,9 @@
 
+#if defined(__WXDEBUG__) || defined(DEBUG)
+
 #include "DebugReportDialog.h"
 #include "../UIDefs.h"
+#include "../../AppDefs.h"
 
 #include "../../SeruroClient.h"
 #include "../../SeruroConfig.h"
@@ -70,9 +73,8 @@ void DebugReportDialog::SendReport()
     SeruroRequest *request = new SeruroRequest(params, this->GetEventHandler(), SERURO_REQUEST_CALLBACK_NONE);
     request->Create();
     
-    wxCriticalSectionLocker enter(wxGetApp().seruro_critSection);
-	wxGetApp().seruro_threads.Add(request);
-    
     request->Run();
     DEBUG_LOG(_("DebugReportDialog> (SendReport) sent debug report."));
 }
+
+#endif
