@@ -12,17 +12,16 @@ BEGIN_EVENT_TABLE(LogWindow, SettingsView)
     EVT_BUTTON(wxID_ANY,  LogWindow::OnSendReport)
 END_EVENT_TABLE()
 
-LogWindow::LogWindow(SeruroPanelSettings *window) : SettingsView(window), SeruroLogger()
+LogWindow::LogWindow(SeruroPanelSettings *window) : SettingsView(window), SeruroLoggerTarget()
 {
     wxSizer *const sizer = new wxBoxSizer(wxVERTICAL);
     
     /* Inform the application that the log Window will be the log target. */
-    this->InitLogger();
-    wxGetApp().SetLogger(this);
+    wxGetApp().SetLoggerTarget(this);
     
     log_box = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize,
         wxTE_MULTILINE | wxTE_READONLY | wxTE_DONTWRAP | wxHSCROLL);
-    log_box->AppendText(wxGetApp().ReplaceLogger());
+    log_box->AppendText(wxGetApp().GetBufferedLog());
     
     sizer->Add(log_box, wxSizerFlags().Expand().Proportion(1).Border(wxALL, 5));
     

@@ -13,6 +13,7 @@ bool SeruroLogger::InitLogger()
     buffer_logs = false;
 	log_opened = false;
 	log_initializing = false;
+    has_target = false;
 
 	return true;
 }
@@ -81,7 +82,9 @@ void SeruroLogger::WriteLog(wxLogLevel level, const wxString &msg)
     text_line = wxString::Format("[%s %s] %s", date_time_string, text_line, msg);
     
     /* Send the message to the virtual proxy. */
-    ProxyLog(level, text_line);
+    if (this->log_target != 0 && this->has_target) {
+        this->log_target->ProxyLog(level, text_line);
+    }
     if (this->buffer_logs) {
         this->log_buffer.Append(wxString::Format(_("%s\n"), text_line));
     }

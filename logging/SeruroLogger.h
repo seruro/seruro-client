@@ -18,6 +18,17 @@
 #define DEBUG_LOG wxLogStatus
 #define LOG       wxLogMessage
 
+class SeruroLoggerTarget
+/* Any class may inherit from SeruroLoggerTarget, making it available as a 
+ * target to the client. 
+ */
+{
+public:
+    SeruroLoggerTarget() {}
+    
+    virtual void ProxyLog(wxLogLevel level, const wxString &msg) {}
+};
+
 class SeruroLogger : public wxLog
 {
 public:
@@ -34,10 +45,21 @@ public:
         return buffer;
     }
     
+    void SetProxyTarget(SeruroLoggerTarget *new_target) {
+        this->log_target = new_target;
+        if (new_target != 0) {
+            this->has_target = true;
+        }
+    }
+    void RemoveProxyTarget() {
+        this->has_target = false;
+        this->log_target = 0;
+    }
+    
 protected:
     void DoLogTextAtLevel(wxLogLevel level, const wxString &msg);
     void DoLogRecord(wxLogLevel level, const wxString &msg, const wxLogRecordInfo &info);
-    virtual void ProxyLog(wxLogLevel level, const wxString &msg) {}
+    //virtual void ProxyLog(wxLogLevel level, const wxString &msg) {}
     //virtual wxString GetLog() { return wxEmptyString; }
     
 private:
@@ -54,6 +76,9 @@ private:
 
     bool buffer_logs;
     wxString log_buffer;
+    
+    SeruroLoggerTarget *log_target;
+    bool has_target;
 };
 
 #endif

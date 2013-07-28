@@ -41,10 +41,12 @@ public:
 		return 0;
 	}
 
+    /* Logging functions. */
 	void InitLogger();
-    void SetLogger(wxLog *logger);
-    wxString ReplaceLogger();
-    wxString GetLog();
+    //void SetLogger(wxLog *logger);
+    //wxString ReplaceLogger();
+    void SetLoggerTarget(SeruroLoggerTarget *log_target);
+    wxString GetBufferedLog();
     
 	wxWindow *GetFrame();
     
@@ -57,7 +59,6 @@ public:
 	wxCriticalSection seruro_critsection_log;
 
 	wxArrayThread seruro_threads;
-	//wxSemaphore seruro_semFinished;
 
 	void AddEvent(wxEvent &event);
 
@@ -83,10 +84,6 @@ private:
 	SeruroFrameMain *main_frame;
     SeruroLogger *default_logger;
 };
-
-/* Hack for accessing app instance singleton */
-//const SeruroClient *wxTheSeruro = (SeruroClient *) wxTheApp;
-/* See documentation for wxGetApp() and the DECLARE_APP macro */
 
 /* All MSW to enable Virtual Leak Detection. */
 #if defined(__VLD__) && defined(__WXMSW__)

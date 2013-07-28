@@ -161,7 +161,7 @@ public:
     ExtensionsWindow(SeruroPanelSettings *window);
 };
 
-class LogWindow : public SettingsView, public SeruroLogger
+class LogWindow : public SettingsView, public SeruroLoggerTarget
 {
 public:
     LogWindow(SeruroPanelSettings *window);

@@ -99,7 +99,7 @@ wxString encodeData(wxJSONValue data)
     wxString      data_value;
 	wxArrayString data_keys;
 	char *encoded_value;
-	char *decoded_value;
+	//char *decoded_value;
 	
 	/* Construct a URL query string from JSON. */
 	data_keys = data.GetMemberNames();
@@ -119,7 +119,7 @@ wxString encodeData(wxJSONValue data)
 		delete encoded_value;
 	}
 
-	LOG(_("data_string: %s"), data_string);
+	LOG(wxT("data_string: %s"), data_string);
     return data_string;
 }
 

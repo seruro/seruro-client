@@ -73,29 +73,38 @@ bool SeruroClient::OnInit()
     return true;
 }
 
-void SeruroClient::AddEvent(wxEvent &event)
-{
-	this->AddPendingEvent(event);
-}
-
 wxWindow* SeruroClient::GetFrame()
 {
 	return (wxWindow *) this->main_frame;
 }
 
-wxString SeruroClient::ReplaceLogger()
+/*****************************************************************************************/
+/************** LOGGING HANDLERS *********************************************************/
+/*****************************************************************************************/
+
+wxString SeruroClient::GetBufferedLog()
 {
     /* Remove the existing one while returning its buffer. */
     wxString log_buffer = this->default_logger->GetBuffer();
-    delete this->default_logger;
+    //delete this->default_logger;
     
     return log_buffer;
 }
 
-void SeruroClient::SetLogger(wxLog* logger)
+void SeruroClient::SetLoggerTarget(SeruroLoggerTarget *log_target)
 {
     /* Wrapper to allow other classes to change the logger. */
-    wxLog::SetActiveTarget(logger);
+    if (! SERURO_USE_LOGGER) {
+        return;
+    }
+    
+    /* Allow the logger to duplicate results to an additional target. */
+    if (log_target == 0) {
+        this->default_logger->RemoveProxyTarget();
+    } else {
+        this->default_logger->ToggleBuffer(false);
+        this->default_logger->SetProxyTarget(log_target);
+    }
 }
 
 void SeruroClient::InitLogger()
@@ -103,28 +112,24 @@ void SeruroClient::InitLogger()
     if (SERURO_USE_LOGGER) {
         this->default_logger = new SeruroLogger();
         this->default_logger->InitLogger();
-            
-        this->SetLogger(this->default_logger);
+        wxLog::SetActiveTarget(this->default_logger);
 
         /* Tell the logger to buffer input. */
-        if (SERURO_USE_SETTINGSLOG) {
-            this->default_logger->ToggleBuffer();
-        }
+        this->default_logger->ToggleBuffer();
     } else {
         wxLogWindow *logger = new wxLogWindow(this->main_frame, wxT("Logger"));
 
         logger->GetFrame()->SetWindowStyle(wxDEFAULT_FRAME_STYLE);
         logger->GetFrame()->SetSize( wxRect(700,100,700,700) );
-        
-        this->SetLogger(logger);
+        wxLog::SetActiveTarget(logger);
     }
         
 #if defined(__WXDEBUG__)
     wxLog::SetLogLevel(wxLOG_Debug);
-    wxLog::SetVerbose(true);
+    //wxLog::SetVerbose(true);
     LOG(_("Seruro (debug-build) started."));
 #else
-    LOG(wxT("Seruro started."));
+    LOG(_("Seruro started."));
 #endif
 }
 
@@ -226,6 +231,11 @@ void SeruroClient::ReportAndExit(wxJSONValue report, wxString msg, bool close_ap
 /*****************************************************************************************/
 /************** GLOBAL REQUEST HANDLERS **************************************************/
 /*****************************************************************************************/
+
+void SeruroClient::AddEvent(wxEvent &event)
+{
+	this->AddPendingEvent(event);
+}
 
 void SeruroClient::OnInvalidAuth(SeruroRequestEvent &event)
 {
