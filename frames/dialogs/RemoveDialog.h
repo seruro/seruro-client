@@ -16,7 +16,7 @@ public:
 	/* If address is provided, only provide a selection to remove
 	 * that specific address (not the CA, or any certs).
 	 */
-	RemoveDialog(const wxString &server_name,
+	RemoveDialog(const wxString &server_uuid,
 		const wxString &address = wxEmptyString);
     //~RemoveDialog();
     
@@ -29,7 +29,7 @@ protected:
     
 	bool remove_server;
 
-	wxString server_name;
+	wxString server_uuid;
 	wxString address;
 
 	/* Checkboxes specific to a server removal. */

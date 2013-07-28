@@ -15,18 +15,13 @@ END_EVENT_TABLE()
 LogWindow::LogWindow(SeruroPanelSettings *window) : SettingsView(window), SeruroLogger()
 {
     wxSizer *const sizer = new wxBoxSizer(wxVERTICAL);
-    //wxSizer *const sizer = new wxSizer();
-    //wxSizer *const horizontal_sizer = new wxBoxSizer(wxHORIZONTAL);
-    
-    //Text *warning = new Text(this, _("Extensions are disabled."));
-    //sizer->Add(warning, DIALOGS_SIZER_OPTIONS);
     
     /* Inform the application that the log Window will be the log target. */
     this->InitLogger();
     wxGetApp().SetLogger(this);
     
     log_box = new wxTextCtrl(this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize,
-                             wxTE_MULTILINE | wxTE_READONLY | wxTE_DONTWRAP);
+        wxTE_MULTILINE | wxTE_READONLY | wxTE_DONTWRAP | wxHSCROLL);
     log_box->AppendText(wxGetApp().ReplaceLogger());
     
     sizer->Add(log_box, wxSizerFlags().Expand().Proportion(1).Border(wxALL, 5));

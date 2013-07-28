@@ -11,11 +11,16 @@
 
 DECLARE_APP(SeruroClient);
 
-RemoveDialog::RemoveDialog(const wxString &server_name, const wxString &address) : 
+RemoveDialog::RemoveDialog(const wxString &server_uuid, const wxString &address) :
 	wxDialog(wxGetApp().GetFrame(), wxID_ANY, wxString(wxT("Remove"))),
-	server_name(server_name), address(address)
+	server_uuid(server_uuid), address(address)
 {
+    wxArrayString addresses;
+    wxString server_name;
+    wxSizer *address_box;
+    
 	/* To avoid many-string compares, initially set if we are removing a server. */
+    server_name = wxGetApp().config->GetServerName(server_uuid);
 	remove_server = (address.compare(wxEmptyString) == 0);
     
 	wxSizer *const vert_sizer = new wxBoxSizer(wxVERTICAL);
@@ -36,28 +41,28 @@ RemoveDialog::RemoveDialog(const wxString &server_name, const wxString &address)
 		server_box->Add(remove_certs, DIALOGS_BOXSIZER_OPTIONS);
 		vert_sizer->Add(server_box, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 	}
-
-	wxSizer *const address_box = new wxStaticBoxSizer(wxVERTICAL, this, "&Associated Identity(s)");
-
-	/* Either allow all identities to be removed, or only the explicitly defined. */
-	wxArrayString addresses;
+    
+    /* Either allow all identities to be removed, or only the explicitly defined. */
 	if (remove_server) {
-		addresses = wxGetApp().config->GetIdentityList(server_name);
+		addresses = wxGetApp().config->GetIdentityList(server_uuid);
 	} else {
 		addresses.Add(address);
 	}
 
-	//remove_identities = (wxCheckBox* []) malloc(sizeof(wxCheckBox*) * addresses.size());
-	//remove_identities = new wxCheckBox*[addresses.size()];
-	this->remove_identities = (wxCheckBox**) malloc(sizeof(wxCheckBox*) * addresses.size());
     identity_count = addresses.size();
-	for (size_t i = 0; i < identity_count; i++) {
-		this->remove_identities[i] = new wxCheckBox(this, wxID_ANY,
-			wxString::Format(_T("Remove identity: '%s'."), addresses[i]));
-		address_box->Add(this->remove_identities[i], DIALOGS_BOXSIZER_OPTIONS);
-	}
-	vert_sizer->Add(address_box, DIALOGS_BOXSIZER_SIZER_OPTIONS);
+    if (identity_count > 0) {
+        /* Do not show the sizer header if the address list is empty. */
+        address_box = new wxStaticBoxSizer(wxVERTICAL, this, "&Associated Identity(s)");
 
+        this->remove_identities = (wxCheckBox**) malloc(sizeof(wxCheckBox*) * identity_count);
+        for (size_t i = 0; i < identity_count; i++) {
+            this->remove_identities[i] = new wxCheckBox(this, wxID_ANY,
+                wxString::Format(_T("Remove identity: '%s'."), addresses[i]));
+            address_box->Add(this->remove_identities[i], DIALOGS_BOXSIZER_OPTIONS);
+        }
+        vert_sizer->Add(address_box, DIALOGS_BOXSIZER_SIZER_OPTIONS);
+    }
+        
 	vert_sizer->Add(CreateStdDialogButtonSizer(wxOK | wxCANCEL), DIALOGS_BUTTONS_OPTIONS);
 	this->SetSizerAndFit(vert_sizer);
 }
@@ -68,7 +73,7 @@ void RemoveDialog::DoRemove()
     wxCheckBox *identity;
     SeruroServerAPI *api;
     
-    accounts = wxGetApp().config->GetIdentityList(this->server_name);
+    accounts = wxGetApp().config->GetIdentityList(this->server_uuid);
     if (accounts.size() != this->identity_count) {
         /* If the number of identities has changed, then at least we KNOW something is wrong. */
         wxLogMessage(_("RemoveDialog> (DoRemove) the number of identities has changed."));
@@ -81,9 +86,9 @@ void RemoveDialog::DoRemove()
         identity = this->remove_identities[i];
         
         if (identity != 0 && identity->IsChecked()) {
-            wxLogMessage(_("RemoveDialog> (DoRemove) removing identity for (%s) (%s)."), server_name, accounts[i]);
+            wxLogMessage(_("RemoveDialog> (DoRemove) removing identity for (%s) (%s)."), server_uuid, accounts[i]);
             /* Should this keep the decryption certificates? */
-            api->UninstallIdentity(this->server_name, accounts[i]);
+            api->UninstallIdentity(this->server_uuid, accounts[i]);
         }
 	}
     delete api;
@@ -101,36 +106,37 @@ void RemoveDialog::RemoveServer()
     wxArrayString certificates;
     SeruroServerAPI *api;
     
-    wxGetApp().config->RemoveServer(this->server_name);
-    
-    SeruroStateEvent event(STATE_TYPE_SERVER, STATE_ACTION_REMOVE);
-    event.SetServerUUID(this->server_name);
-    this->ProcessWindowEvent(event);
-    
     api = new SeruroServerAPI(this);
     if (this->remove_ca->IsChecked()) {
         /* Only remove the CA cert if the user requested (this may imply removing the contact certificates?). */
-        wxLogMessage(_("RemoveDialog> (DoRemove) removing CA cert (%s)."), server_name);
-        api->UninstallCA(this->server_name);
+        wxLogMessage(_("RemoveDialog> (DoRemove) removing CA cert (%s)."), server_uuid);
+        api->UninstallCA(this->server_uuid);
     }
     
     if (this->remove_certs->IsChecked()) {
         /* Remove contact certificates if the user requested. */
-        certificates = wxGetApp().config->GetCertificatesList(this->server_name);
+        certificates = wxGetApp().config->GetCertificatesList(this->server_uuid);
         for (size_t i = 0; i < certificates.size(); i++) {
-            wxLogMessage(_("RemoveDialog> (DoRemove) removing cers for (%s) (%s)."), server_name, certificates[i]);
-            api->UninstallCertificates(this->server_name, certificates[i]);
+            wxLogMessage(_("RemoveDialog> (DoRemove) removing cers for (%s) (%s)."), server_uuid, certificates[i]);
+            api->UninstallCertificates(this->server_uuid, certificates[i]);
         }
     }
     delete api;
+    
+    /* Remove from the config is the last action performed (however, the event occurs aftwared). */
+    wxGetApp().config->RemoveServer(this->server_uuid);
+    
+    SeruroStateEvent event(STATE_TYPE_SERVER, STATE_ACTION_REMOVE);
+    event.SetServerUUID(this->server_uuid);
+    this->ProcessWindowEvent(event);
 }
 
 void RemoveDialog::RemoveAddress()
 {
-    wxGetApp().config->RemoveAddress(this->server_name, this->address);
+    wxGetApp().config->RemoveAddress(this->server_uuid, this->address);
     
     SeruroStateEvent event(STATE_TYPE_ACCOUNT, STATE_ACTION_REMOVE);
-    event.SetServerUUID(this->server_name);
+    event.SetServerUUID(this->server_uuid);
     event.SetAccount(this->address);
     this->ProcessWindowEvent(event);
 }

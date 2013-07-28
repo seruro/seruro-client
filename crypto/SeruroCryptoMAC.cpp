@@ -106,6 +106,7 @@ bool FindSubjectKeyIDInKeychain(wxString subject_key, search_types_t type, wxStr
 bool DeleteSubjectKeyIDInKeychain(wxString subject_key, search_types_t type, wxString keychain_name)
 {
     OSStatus result;
+    CFMutableArrayRef result_items;
     CFTypeRef result_data;
     CFMutableDictionaryRef query;
     
@@ -114,10 +115,22 @@ bool DeleteSubjectKeyIDInKeychain(wxString subject_key, search_types_t type, wxS
         return false;
     }
     
+    /* Although there is only one item returned by GetReference..., a match list must be an array. */
+    result_items = CFArrayCreateMutable (NULL, 0, &kCFTypeArrayCallBacks);
+    CFArrayAppendValue(result_items, result_data);
+    
     /* The search dictionary is simply a match list of the single result_data. */
     query = CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
-    CFDictionaryAddValue(query, kSecMatchItemList, result_data);
+    
+    /* Sec API says the class must be specified. */
+    if (type == CRYPTO_SEARCH_IDENTITY) {
+        CFDictionaryAddValue(query, kSecClass, kSecClassIdentity);
+    } else if (type == CRYPTO_SEARCH_CERT) {
+        CFDictionaryAddValue(query, kSecClass, kSecClassCertificate);
+    }
+    CFDictionaryAddValue(query, kSecMatchItemList, result_items);
     CFRelease(result_data);
+    CFRelease(result_items);
     
     result = SecItemDelete(query);
     CFRelease(query);
