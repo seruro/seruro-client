@@ -40,7 +40,7 @@ void AccountPage::OnCAResult(SeruroRequestEvent &event)
 		wxJSONValue account_info = AddAccountForm::GetValues();
 
 		wxGetApp().config->RemoveServer(response["server_uuid"].AsString());
-		SetAccountStatus(_("Unable to install server."));
+		SetAccountStatus(_("Unable to install certificate authority."));
 
         /* Process remove server event. */
         SeruroStateEvent state_event(STATE_TYPE_SERVER, STATE_ACTION_REMOVE);

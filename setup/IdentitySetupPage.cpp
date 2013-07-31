@@ -41,7 +41,11 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
 
 	/* Make sure the request worked, and enable the page. */
 	if (! response["success"].AsBool()) {
-		this->SetIdentityStatus(_("Unable to download."));
+        if (reponse.HasMember("error")) {
+            this->SetIdentityStatus(response["error"].AsString());
+        } else {
+            this->SetIdentityStatus(_("Unable to download."));
+        }
 		this->EnablePage();
 		/* The page will work, but the key entry will not. */
 		this->DisableForm();

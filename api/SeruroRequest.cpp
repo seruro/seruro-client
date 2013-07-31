@@ -12,18 +12,20 @@ wxDEFINE_EVENT(SERURO_REQUEST_RESPONSE, SeruroRequestEvent);
 
 DECLARE_APP(SeruroClient);
 
+void SendFailureEvent(wxEvtHandler *handler, int event_id, const wxString &error_msg = wxEmptyString);
+
 SeruroRequestEvent::SeruroRequestEvent(int id)
     : wxCommandEvent(SERURO_REQUEST_RESPONSE, id)
 {
     response_data = wxJSONValue(wxJSONTYPE_OBJECT);
 }
 
-void SendFailureEvent(wxEvtHandler *handler, int event_id)
+void SendFailureEvent(wxEvtHandler *handler, int event_id, const wxString &error_msg)
 {
     wxJSONValue response;
     
     /* Simple failure response. */
-    response["error"] = _(SERURO_API_ERROR_INVALID_AUTH);
+    response["error"] = error_msg;
     response["success"] = false;
     
     /* Create and send response. */
@@ -59,12 +61,12 @@ void PerformRequestAuth(SeruroRequestEvent &event)
 		wxLogMessage(wxT("SeruroRequest> (PerformRequestAuth) OK"));
 		new_auth = dialog->GetValues();
 	}
-	/* Todo: password_control potentially contains a user's password, ensure proper cleanup. */
+	/* password_control potentially contains a user's password, ensure proper cleanup. */
 	delete dialog;
     
     /* The user cancled the auth prompt, reply with failure to the original handler. */
     if (! new_auth.HasMember(SERURO_API_AUTH_FIELD_EMAIL)) {
-        SendFailureEvent(event.GetEventHandler(), event.GetEventID());
+        SendFailureEvent(event.GetEventHandler(), event.GetEventID(), wxString(wxEmptyString));
         return;
     }
     
@@ -84,7 +86,6 @@ SeruroRequest::SeruroRequest(wxJSONValue api_params, wxEvtHandler *parent, int p
 {
     wxLogMessage(_("SeruroRequest> creating thread for event id (%d)."), evtId);
 	/* Catch-all for port configurations. */
-    //if (params["server"])
 	params["server"]["port"] = wxGetApp().config->GetPortFromServer(params["server"]);
 
 	/* Add to data structure accessed by thread */
@@ -128,14 +129,13 @@ void SeruroRequest::Reply(wxJSONValue response)
     event.SetResponse(response);
     
     /* Event handler requires a critical section. */
-    //wxCriticalSectionLocker locker(wxGetApp().seruro_critSection);
 	this->evtHandler->AddPendingEvent(event);
 }
 
-void SeruroRequest::ReplyWithFailure()
+void SeruroRequest::ReplyWithFailure(const wxString &error_msg)
 {
     /* The failure event is generic. */
-    SendFailureEvent(this->evtHandler, this->evtId);
+    SendFailureEvent(this->evtHandler, this->evtId, error_msg);
 }
 
 /* Async-Requesting:
@@ -152,7 +152,6 @@ wxThread::ExitCode SeruroRequest::Entry()
 	wxLogMessage("SeruroRequest> (Entry) Thread started...");
     
     /* Check for a token, if missing then check/request credentials. */
-	//requested_token = false;
 	wxLogMessage(wxT("SeruroRequest> (Entry) have token (%s), token (%s)."),
 		params["auth"]["have_token"].AsString(), params["auth"]["token"].AsString());
     
@@ -163,12 +162,13 @@ wxThread::ExitCode SeruroRequest::Entry()
     }
     
     /* If there is no have_token boolean set, we must create one. */
+    error_string = wxEmptyString;
     if (! params["auth"]["have_token"].AsBool()) {
         if (! params["auth"].HasMember("address") || ! params["auth"].HasMember("password")) {
             wxLogMessage(_("SeruroRequest> (Entry) no auth and missing an address/password."));
             
             if (params["auth"]["no_prompt"].AsBool()) {
-                this->ReplyWithFailure();
+                this->ReplyWithFailure(_("Cannot perform authentication."));
             } else {
                 /* Request auth from UI. */
                 this->RequestAuth();
@@ -177,11 +177,12 @@ wxThread::ExitCode SeruroRequest::Entry()
         }
         
         /* If we failed at receiving a token, but have credentails, we can attempt an auth. */
-        if (! this->DoAuth()) {
+        if (! this->DoAuth(error_string)) {
+            //LOG(wxT("2. %s"), error_string);
             wxLogMessage(_("SeruroRequest> (Entry) auth failed."));
             if (params["auth"]["require_password"].AsBool() || params["no_prompt"].AsBool()) {
                 /* There was an explicit password, do not request another. */
-                this->ReplyWithFailure();
+                this->ReplyWithFailure(error_string);
             } else {
                 /* Request auth from UI. */
                 this->RequestAuth();
@@ -216,10 +217,9 @@ void SeruroRequest::RequestAuth()
     
     /* Use the client event handler, because it's accessable and makes sense. */
     wxGetApp().AddEvent(event);
-    //this->evtHandler->AddPendingEvent(event);
 }
 
-bool SeruroRequest::DoAuth()
+bool SeruroRequest::DoAuth(wxString &error_string)
 {
     wxJSONValue response;
     wxJSONValue auth_params, data_string;
@@ -239,14 +239,15 @@ bool SeruroRequest::DoAuth()
     //encodeData(data_string, encoded_data_string);
     
     /* Add encoded data string and clear potential passwords from memory. */
-    auth_params["data_string"] = encodeData(data_string); // = encoded_data_string;
-    //encoded_data_string.Clear();
-    //data_string.Clear();
-    //this->params["auth"].Clear();
+    auth_params["data_string"] = encodeData(data_string);
     
     /* Perform auth request. */
     response = performRequest(auth_params);
-    //auth_params.Clear();
+    
+    if (response.HasMember("error")) {
+        /* Optionally place the error into the output parameter. */
+        error_string.Append(response["error"].AsString());
+    }
     
 	/* If "result" (boolean) is true, update token store for "email", set "token". */
 	if (! response["success"].AsBool() || ! response.HasMember("token")) {
@@ -282,13 +283,15 @@ wxJSONValue SeruroRequest::DoRequest()
 	wxJSONValue request_params = this->params;
     wxString query_string;
     
-	request_params["object"] = params["object"].AsString() +
-        _("?") + _(SERURO_API_AUTH_TOKEN_PARAMETER) + _("=") + params["auth"]["token"].AsString();
+    request_params["object"] = wxString::Format(_("%s?%s=%s"), params["object"].AsString(),
+        _(SERURO_API_AUTH_TOKEN_PARAMETER), params["auth"]["token"].AsString());
+	//request_params["object"] = params["object"].AsString() +
+    //    _("?") + _(SERURO_API_AUTH_TOKEN_PARAMETER) + _("=") + params["auth"]["token"].AsString();
     
     if (request_params.HasMember("query")) {
         query_string = encodeData(request_params["query"]);
-        request_params["object"] = request_params["object"].AsString() + _("&") + query_string;
-        //query_string.Clear();
+        request_parmas["object"] = wxString::Format(_("%s&%s"), request_params["object"].AsString(), query_string);
+        //request_params["object"] = request_params["object"].AsString() + _("&") + query_string;
     }
     
 	return performRequest(request_params);

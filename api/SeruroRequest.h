@@ -86,12 +86,12 @@ public:
 	/* Create the response event type and add it to the provided event handler. */
 	void Reply(wxJSONValue response);
     /* The request has determined a parameter/auth failure, create a response. */
-    void ReplyWithFailure();
+    void ReplyWithFailure(const wxString &error_msg = wxEmptyString);
 
 protected:
     /* Creates a TLS Request (as an attempt) to create an authentication token. */
 	//wxString GetAuthToken();
-    bool DoAuth();
+    bool DoAuth(wxString &error_string); /* Optionally place an error. */
     /* Stop thread, and request a UI prompt to change auth credentials. */
     void RequestAuth();
     

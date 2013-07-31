@@ -25,7 +25,6 @@
 
 #define IDENTITY_KEYCHAIN       "login"
 #define CERTIFICATE_KEYCHAIN    "login"
-//#define CA_KEYCHAIN             "System Roots"
 #define CA_KEYCHAIN             "login"
 
 enum search_types_t
@@ -150,8 +149,6 @@ wxString GetSubjectKeyIDFromCertificate(SecCertificateRef &cert)
     CFMutableArrayRef keys;
     
     bool status;
-    // (for searching) kSecAttrSubjectKeyID, of type kSecClassCertificate, returns, CFDataRef
-    // (for retreiving) kSecOIDSubjectKeyIdentifier, 
     
     /* Set the list of attributes. */
     keys = CFArrayCreateMutable (NULL, 0, &kCFTypeArrayCallBacks);
@@ -412,7 +409,8 @@ wxString SeruroCryptoMAC::TLSRequest(wxJSONValue params)
     do {
         read_buffer = (UInt8 *) malloc(256 * sizeof(UInt8));
         bzero(read_buffer, 256);
-        bytes_read = CFReadStreamRead(read_stream, read_buffer, 246);
+        /* Todo: If there is a proxy with a dead backend this is hang. */
+        bytes_read = CFReadStreamRead(read_stream, read_buffer, 256);
         
         /* A problem occured. */
         if (bytes_read < 0) break;
@@ -658,13 +656,5 @@ bool SeruroCryptoMAC::HaveIdentity(wxString server_name, wxString address)
                  server_name, address, (cert_1) ? "true" : "false", (cert_2) ? "true" : "false");
 	return (cert_1 && cert_2);
 }
-
-/*
-wxString SeruroCryptoMAC::GetFingerprint(wxMemoryBuffer &cert)
-{
-    return GetFingerprintFromBuffer(cert);
-}
-*/
-
 
 #endif
