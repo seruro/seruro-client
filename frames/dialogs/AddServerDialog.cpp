@@ -36,8 +36,7 @@ wxChoice* GetServerChoice(wxWindow *parent, const wxString &server_name)
 	return server_menu;
 }
 
-void AddServerForm::AddForm(wxSizer *sizer,
-    //const wxString &name, 
+void AddServerForm::AddForm(wxSizer *sizer, 
 	const wxString &host, const wxString &port)
 {
     /* Server details form. */
@@ -50,7 +49,6 @@ void AddServerForm::AddForm(wxSizer *sizer,
     
     /* Server host validator. */
 	wxTextValidator host_validator(wxFILTER_EMPTY | wxFILTER_INCLUDE_CHAR_LIST);
-	//name_validator.SetCharExcludes("_() ");
 	host_validator.SetCharIncludes(SERURO_INPUT_HOSTNAME_WHITELIST);
     
     /* Host controller. */
@@ -58,25 +56,25 @@ void AddServerForm::AddForm(wxSizer *sizer,
 	grid_sizer->Add(this->server_host, DIALOGS_BOXSIZER_OPTIONS);
 	
 	/* Optional server port (validator included). */
-	grid_sizer->Add(new Text(parent, "&Port: "));
-	this->server_port = new wxTextCtrl(parent, wxID_ANY, port,
-        wxDefaultPosition, wxDefaultSize, 0, wxTextValidator(wxFILTER_EMPTY | wxFILTER_DIGITS));
-	this->server_port->SetMaxLength(5);
-	this->server_port->Enable(false);
+    if (SERURO_ALLOW_CUSTOM_PORT) {
+        /* Even though the custom port is optional, the client may not allow the option... */
+        grid_sizer->Add(new Text(parent, "&Port: "));
+        this->server_port = new wxTextCtrl(parent, wxID_ANY, port,
+            wxDefaultPosition, wxDefaultSize, 0, wxTextValidator(wxFILTER_EMPTY | wxFILTER_DIGITS));
+        this->server_port->SetMaxLength(5);
+        this->server_port->Enable(false);
     
-	wxSizer *const port_sizer = new wxBoxSizer(wxHORIZONTAL);
-	port_sizer->Add(this->server_port);
-    
-	/* Show some text and a checkbox to enable editing of the port. */
-	//grid_sizer->AddSpacer(0);
-	this->checkbox = new wxCheckBox(parent, SERURO_ADD_SERVER_PORT_ID, wxT("Use non-standard server port."));
-	this->checkbox->Enable(true);
-	//grid_sizer->Add(this->checkbox, DIALOGS_BOXSIZER_OPTIONS);
-    port_sizer->AddSpacer(20);
-    port_sizer->Add(this->checkbox, DIALOGS_BOXSIZER_OPTIONS);
-    
-    grid_sizer->Add(port_sizer, DIALOGS_BOXSIZER_OPTIONS);
-    
+        /* Show some text and a checkbox to enable editing of the port. */
+        this->checkbox = new wxCheckBox(parent, SERURO_ADD_SERVER_PORT_ID, wxT("Use non-standard port."));
+        this->checkbox->Enable(true);
+        port_sizer->AddSpacer(20);
+        
+        wxSizer *const port_sizer = new wxBoxSizer(wxHORIZONTAL);
+        port_sizer->Add(this->server_port);
+        port_sizer->Add(this->checkbox, DIALOGS_BOXSIZER_OPTIONS);
+        grid_sizer->Add(port_sizer, DIALOGS_BOXSIZER_OPTIONS);
+    }
+        
     /* Add sizers together. */
 	sizer->Add(grid_sizer, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 }
@@ -87,6 +85,9 @@ void AddServerForm::AddForm(wxSizer *sizer,
  */
 void AddServerForm::OnCustomPort()
 {
+    /* The client may have disabled custom ports (at compile time). */
+    if (! SERURO_ALLOW_CUSTOM_PORT) return;
+    
     wxLogMessage(wxT("checkbox clicked."));
 	this->server_port->Enable(this->checkbox->IsChecked());
 	if (! this->checkbox->IsChecked()) {
@@ -129,9 +130,13 @@ wxJSONValue AddServerForm::GetValues()
 {
 	wxJSONValue values;
 
-	//values["name"] = this->server_name->GetValue();
 	values["host"] = this->server_host->GetValue();
-	values["port"] = this->server_port->GetValue();
+    
+    if (SERURO_ALLOW_CUSTOM_PORT) {
+        values["port"] = this->server_port->GetValue();
+    } else {
+        values["port"] = _(SERURO_DEFAULT_PORT);
+    }
 
 	return values;
 }

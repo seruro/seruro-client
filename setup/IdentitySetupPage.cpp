@@ -73,7 +73,8 @@ void IdentityPage::DoFocus()
 	}
 
 	/* Check to see if this page should automatically download. */
-	if (this->force_download) {
+	if (this->force_download && SERURO_ALLOW_AUTO_DOWNLOAD) {
+        /* The client may not allow forced downloads. */
 		this->DisablePage();
 		this->DownloadIdentity();
 		/* Only perform this action once. */
@@ -101,15 +102,15 @@ IdentityPage::IdentityPage(SeruroSetup *parent, bool force_download)
     vert_sizer->Add(msg, DIALOGS_SIZER_OPTIONS);
     
     /* Download form if the P12 is not retreived automatically. */
-    wxSizer *const identity_form = new wxStaticBoxSizer(wxHORIZONTAL, this, "&Download Identity");
-    identity_form->Add(new Text(this, _("I trust, and send email from, this machine: ")), DIALOGS_SIZER_OPTIONS);
+    wxSizer *const identity_form = new wxStaticBoxSizer(wxHORIZONTAL, this, "&Download Identity and Encryption Containers");
+    identity_form->Add(new Text(this, _("I trust this machine: ")), DIALOGS_SIZER_OPTIONS);
     identity_form->AddStretchSpacer();
     download_button = new wxButton(this, BUTTON_DOWNLOAD_IDENTITY, _("Download"));
     identity_form->Add(download_button, DIALOGS_SIZER_OPTIONS);
     vert_sizer->Add(identity_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 
 	/* Decrypt form. */
-	wxSizer *const decrypt_form = new wxStaticBoxSizer(wxVERTICAL, this, "&Decrypt Identity");
+	wxSizer *const decrypt_form = new wxStaticBoxSizer(wxVERTICAL, this, "&Unlock Identity and Encryption Containers");
 	wxSizer *const status_sizer = new wxBoxSizer(wxHORIZONTAL);
 	
 	status_sizer->Add(new Text(this, _("Download status: ")), DIALOGS_SIZER_OPTIONS);

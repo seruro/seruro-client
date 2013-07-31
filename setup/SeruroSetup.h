@@ -164,9 +164,6 @@ public:
 	void EnablePage();
 
 	/* Help update the UI to reflect callback status. */
-	//void SetServerStatus(wxString status) {
-	//	this->server_status->SetLabelText(status);
-	//}
 	void SetAccountStatus(wxString status) {
 		this->account_status->SetLabelText(status);
 	}
@@ -186,6 +183,16 @@ private:
 	DECLARE_EVENT_TABLE()
 };
 
+class RequestPage  : public SetupPage
+{
+    /* The request page allows a user to generate and upload a digital identity CSR.
+     * If the server has disabled the this feature then setup will bypass the request page.
+     */
+public:
+    RequestPage (SeruroSetup *parent);
+    
+};
+
 class IdentityPage : public SetupPage, public DecryptForm
 {
 public:
@@ -193,10 +200,10 @@ public:
 		bool force_download = false);
 
 	/* Check the 'install' identity box. */
-	//void OnToggleInstall(wxCommandEvent &event);
-    void OnP12sResponse(SeruroRequestEvent &event);
+	void OnP12sResponse(SeruroRequestEvent &event);
     void OnDownloadIdentity(wxCommandEvent &event);
-	/* Can be called from event or from a forced download. */
+	
+    /* Can be called from event or from a forced download. */
 	void DownloadIdentity();
 
 	/* Show the status, including the method of key retrevial. */
@@ -216,8 +223,7 @@ public:
 private:
     wxButton *download_button;
 	wxJSONValue download_response;
-	//wxCheckBox *install_identity;
-    
+	
     bool identity_downloaded;
 	bool force_download;
 	bool identity_installed;
