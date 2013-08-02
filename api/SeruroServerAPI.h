@@ -67,8 +67,7 @@ public:
 	}
 
 	/* API callbacks */
-	bool InstallP12(wxJSONValue response, 
-		wxString key = wxEmptyString, bool force_install = false);
+	bool InstallP12(wxJSONValue response, wxJSONValue unlock_codes, bool force_install = false);
 	bool InstallCA(wxJSONValue response);
 	bool InstallCertificate(wxJSONValue response);
     

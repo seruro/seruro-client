@@ -217,15 +217,19 @@ AccountPage::AccountPage(SeruroSetup *parent)
 	}
 
     wxSizer *const account_form = new wxStaticBoxSizer(wxVERTICAL, this, "&Account Information");
-	wxSizer *const status_sizer = new wxBoxSizer(wxHORIZONTAL);
-	status_sizer->Add(new Text(this, _("Login status: ")), DIALOGS_SIZER_OPTIONS);
-	this->account_status = new Text(this, _("Please login."));
-	status_sizer->Add(this->account_status, DIALOGS_SIZER_OPTIONS);
-	account_form->Add(status_sizer, DIALOGS_BOXSIZER_OPTIONS);
 
 	/* Add the form, which is itself, a grid sizer. */
     AddAccountForm::AddForm(account_form);
 
+    /* Add a status message (display a response if the 'add' was not successful). */
+    wxSizer *const status_sizer = new wxBoxSizer(wxHORIZONTAL);
+	status_sizer->Add(new Text(this, _("Login status: ")), DIALOGS_SIZER_OPTIONS);
+    status_sizer->SetItemMinSize((size_t) 0, SERURO_SETTINGS_FLEX_LABEL_WIDTH, -1);
+    
+	this->account_status = new Text(this, _("Not logged in."));
+	status_sizer->Add(this->account_status, wxSizerFlags().Expand().Border(wxTOP | wxBOTTOM, 5));
+	account_form->Add(status_sizer, DIALOGS_BOXSIZER_OPTIONS);
+    
 	vert_sizer->Add(account_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 
 	/* Show textual status messages for the account (login success) and server

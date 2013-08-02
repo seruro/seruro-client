@@ -21,6 +21,7 @@ void AddAccountForm::AddForm(wxSizer *sizer, const wxString &address,
     
 	/* Address. */
 	grid_sizer->Add(new Text(parent, "&Email Address: "));
+    grid_sizer->SetItemMinSize((size_t) 0, SERURO_SETTINGS_FLEX_LABEL_WIDTH, -1);
     
     /* Address validator. */
 	wxTextValidator address_validator(wxFILTER_EMPTY | wxFILTER_INCLUDE_CHAR_LIST);
@@ -37,6 +38,7 @@ void AddAccountForm::AddForm(wxSizer *sizer, const wxString &address,
 	
 	/* Password. */
 	grid_sizer->Add(new Text(parent, "&Password: "));
+    grid_sizer->SetItemMinSize((size_t) 2, SERURO_SETTINGS_FLEX_LABEL_WIDTH, -1);
     
     /* Host controller. */
 	this->password = new wxTextCtrl(parent, wxID_ANY, wxEmptyString,

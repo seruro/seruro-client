@@ -262,45 +262,47 @@ bool SeruroServerAPI::InstallCertificate(wxJSONValue response)
 	return result;
 }
 
-bool SeruroServerAPI::InstallP12(wxJSONValue response, wxString key, bool force_install)
+bool SeruroServerAPI::InstallP12(wxJSONValue response, wxJSONValue unlock_codes, bool force_install)
 {
 	if (! CheckResponse(response, "p12")) return false;
 
-	/* Get password from user for p12 containers. */
-	wxString p12_key;
+	wxString       p12_key;
+    wxArrayString  p12_blobs, fingerprints;
+    
+    wxString       server_uuid, address;
+    wxString       p12_encoded;
+    wxMemoryBuffer p12_decoded;
 
-	if (key.compare(wxEmptyString) == 0 && force_install == false) {
-        /* If a key is not provided, then prompt the UI for one, unless the install is forced. */
-		DecryptDialog *decrypt_dialog = new DecryptDialog(response["method"].AsString());
-		if (decrypt_dialog->ShowModal() == wxID_OK) {
-			p12_key = decrypt_dialog->GetValue();
-		} else {
-			return false;
-		}
-		/* Remove the modal from memory. */
-		decrypt_dialog->Destroy();
-	} else {
-		p12_key = key;
-	}
+    /* Action details. */
+    SeruroCrypto crypto = SeruroCrypto();
+    bool result = true;
+    
+    /* Request details. */
+	server_uuid = response["server_uuid"].AsString();
+	address = response["address"].AsString();
+    p12_blobs = response["p12"].GetMemberNames();
+    
+    /* Get password from user for p12 containers. */
+    for (size_t i = 0; i < p12_blobs.size(); i++) {
+        if (! unlock_codes.HasMember(p12_blobs[i]) && force_install == false) {
+            /* If an unlock_code is not provided, then prompt the UI for one, unless the install is forced. */
+            DEBUG_LOG(_("SeruroServerAPI> (InstallP12) no unlock code provided for p12 (%s)."), p12_blobs[i]);
+            //DecryptDialog *decrypt_dialog = new DecryptDialog(response["method"].AsString());
+            //if (decrypt_dialog->ShowModal() == wxID_OK) {
+            //    p12_key = decrypt_dialog->GetValue();
+            //} else {
+            //    return false;
+            //}
+            /* Remove the modal from memory. */
+            //decrypt_dialog->Destroy();
+        } else {
+            p12_key = unlock_codes[p12_blobs[i]].AsString();
+        }
 
-	/* Request details. */
-	wxString server_uuid = response["server_uuid"].AsString();
-	wxString address = response["address"].AsString();
-
-	/* Install all P12 b64 blobs. */
-	wxArrayString p12_blobs = response["p12"].GetMemberNames();
-	wxString p12_encoded;
-	wxMemoryBuffer p12_decoded;
-
-	/* Extract fingerprints from the install. */
-	wxArrayString fingerprints;
-
-	bool result = true;
-	SeruroCrypto crypto = SeruroCrypto();
-	for (size_t i = 0; i < p12_blobs.size(); i++) {
+        /* Set the encoded (base64) version of the p12 data. */
 		p12_encoded = response["p12"][p12_blobs[i]].AsString();
-
 		if (! DecodeBase64(p12_encoded, &p12_decoded)) continue;
+        
 		/* Note: identity tracking happens within the crypto helper. */
 		result = (result & crypto.InstallP12(p12_decoded, p12_key, fingerprints));
         if (! result) {
@@ -312,7 +314,7 @@ bool SeruroServerAPI::InstallP12(wxJSONValue response, wxString key, bool force_
 
 	/* Cleanup. */
 	//delete cryptoHelper;
-	p12_key.Empty();
+	p12_key.Clear();
 
 	if (! result) return false;
 

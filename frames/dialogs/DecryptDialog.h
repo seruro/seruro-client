@@ -2,6 +2,8 @@
 #ifndef H_SeruroDecryptDialog
 #define H_SeruroDecryptDialog
 
+#include "../../wxJSON/wx/jsonval.h"
+
 #include <wx/textctrl.h>
 #include <wx/dialog.h>
 
@@ -17,7 +19,8 @@ public:
     DecryptForm(wxWindow *parent_obj) : parent(parent_obj) {}
 
     void AddForms(wxSizer *sizer);
-    wxString GetValue();
+    wxJSONValue GetValues();
+    /* deprecated. */ wxString GetValue();
     
 	/* Disallow/Allow form actions. */
 	void DisableForm();
@@ -29,7 +32,10 @@ public:
 protected:
     wxWindow *parent;
     
-	wxTextCtrl *password_control;
+	//wxTextCtrl *password_control;
+    
+    wxTextCtrl *encryption_control;
+    wxTextCtrl *identity_control;
 };
 
 class DecryptDialog : public wxDialog, public DecryptForm

@@ -32,6 +32,9 @@
 #define SERURO_SETTINGS_TREE_MIN_WIDTH 125
 #endif
 
+/* When a flex-sizer is used the "label" is the first column (for each row). */
+#define SERURO_SETTINGS_FLEX_LABEL_WIDTH SERURO_SETTINGS_TREE_MIN_WIDTH
+
 /* OSX has larger indents. */
 #if defined(__WXMAC__)
 #define SERURO_SETTINGS_TREE_INDENT 8

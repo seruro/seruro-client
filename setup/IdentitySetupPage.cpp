@@ -41,7 +41,7 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
 
 	/* Make sure the request worked, and enable the page. */
 	if (! response["success"].AsBool()) {
-        if (reponse.HasMember("error")) {
+        if (response.HasMember("error")) {
             this->SetIdentityStatus(response["error"].AsString());
         } else {
             this->SetIdentityStatus(_("Unable to download."));
@@ -111,17 +111,20 @@ IdentityPage::IdentityPage(SeruroSetup *parent, bool force_download)
 
 	/* Decrypt form. */
 	wxSizer *const decrypt_form = new wxStaticBoxSizer(wxVERTICAL, this, "&Unlock Identity and Encryption Containers");
-	wxSizer *const status_sizer = new wxBoxSizer(wxHORIZONTAL);
-	
-	status_sizer->Add(new Text(this, _("Download status: ")), DIALOGS_SIZER_OPTIONS);
-	identity_status = new Text(this, _("Not downloaded."));
-	status_sizer->Add(this->identity_status, DIALOGS_SIZER_OPTIONS);
-	decrypt_form->Add(status_sizer, DIALOGS_BOXSIZER_OPTIONS);
 
 	/* Add decryption input. */
 	this->AddForms(decrypt_form);
     this->DisableForm();
 
+    /* Add status message. */
+    wxSizer *const status_sizer = new wxBoxSizer(wxHORIZONTAL);
+	status_sizer->Add(new Text(this, _("Download status: ")), DIALOGS_SIZER_OPTIONS);
+    status_sizer->SetItemMinSize((size_t) 0, SERURO_SETTINGS_FLEX_LABEL_WIDTH, -1);
+    
+	identity_status = new Text(this, _("Not downloaded."));
+	status_sizer->Add(this->identity_status, DIALOGS_SIZER_OPTIONS);
+	decrypt_form->Add(status_sizer, DIALOGS_BOXSIZER_OPTIONS);
+    
 	vert_sizer->Add(decrypt_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 
     this->SetSizer(vert_sizer);
@@ -147,7 +150,9 @@ void IdentityPage::DisablePage()
 }
 
 bool IdentityPage::GoNext(bool from_callback)
-{    
+{
+    wxJSONValue unlock_codes;
+    
 	/* Either a subsequent click or a callback success. */
 	if (this->identity_installed) {
 		if (from_callback) {
@@ -162,12 +167,12 @@ bool IdentityPage::GoNext(bool from_callback)
 	if (! identity_downloaded) return false;
 
 	/* About to do some security-related work, which may block for a while. */
-    wxString key = this->GetValue();
+    unlock_codes = this->GetValues();
 	this->DisablePage();
 
 	SeruroServerAPI *api = new SeruroServerAPI(this);
 	/* Try to install with the saved response, and the input key, force the install incase there is an empty input. */
-	bool try_install = api->InstallP12(this->download_response, key, true);
+	bool try_install = api->InstallP12(this->download_response, unlock_codes, true);
     
     /* Clean up. */
     key.Clear();

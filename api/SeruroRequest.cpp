@@ -290,7 +290,7 @@ wxJSONValue SeruroRequest::DoRequest()
     
     if (request_params.HasMember("query")) {
         query_string = encodeData(request_params["query"]);
-        request_parmas["object"] = wxString::Format(_("%s&%s"), request_params["object"].AsString(), query_string);
+        request_params["object"] = wxString::Format(_("%s&%s"), request_params["object"].AsString(), query_string);
         //request_params["object"] = request_params["object"].AsString() + _("&") + query_string;
     }
     
