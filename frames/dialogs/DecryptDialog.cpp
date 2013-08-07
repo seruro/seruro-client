@@ -13,21 +13,21 @@ void DecryptForm::AddForms(wxSizer *sizer)
 	grid_sizer->AddGrowableCol(1, 1);
 
     
-    identity_control = new wxTextCtrl(parent, wxID_ANY,
+    authentication_control = new wxTextCtrl(parent, wxID_ANY,
         wxEmptyString, wxDefaultPosition, wxDefaultSize,
         /* Should be password by default? */
         wxTE_PASSWORD);
-    encryption_control = new wxTextCtrl(parent, wxID_ANY,
+    encipherment_control = new wxTextCtrl(parent, wxID_ANY,
         wxEmptyString, wxDefaultPosition, wxDefaultSize,
         wxTE_PASSWORD);
     
- 	grid_sizer->Add(new Text(parent, "&Identity Unlock Code:"));
+ 	grid_sizer->Add(new Text(parent, "&Identity Unlock:"));
     grid_sizer->SetItemMinSize((size_t) 0, SERURO_SETTINGS_FLEX_LABEL_WIDTH, -1);
-	grid_sizer->Add(identity_control, DIALOGS_BOXSIZER_OPTIONS);
+	grid_sizer->Add(authentication_control, DIALOGS_BOXSIZER_OPTIONS);
     
-    grid_sizer->Add(new Text(parent, "&Encryption Unlock Code:"));
+    grid_sizer->Add(new Text(parent, "&Encryption Unlock:"));
     grid_sizer->SetItemMinSize((size_t) 2, SERURO_SETTINGS_FLEX_LABEL_WIDTH, -1);
-    grid_sizer->Add(encryption_control, DIALOGS_BOXSIZER_OPTIONS);
+    grid_sizer->Add(encipherment_control, DIALOGS_BOXSIZER_OPTIONS);
 
 	sizer->Add(grid_sizer, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 }
@@ -72,9 +72,19 @@ void DecryptForm::DisableForm()
 //#if defined(__WXOSX__) || defined(__WXMAC__)
 //    identity_control->SetWindowStyle(identity_control->GetWindowStyle() | wxTE_READONLY);
 //#else
-    this->identity_control->Disable();
-    this->encryption_control->Disable();
+    this->authentication_control->Disable();
+    this->encipherment_control->Disable();
 //#endif
+}
+
+void DecryptForm::DisableAuthentication() {
+    //authentication_control->Enable(false);
+    this->authentication_control->Disable();
+}
+
+void DecryptForm::DisableEncipherment() {
+    //encipherment_control->Enable(false);
+    this->encipherment_control->Disable();
 }
 
 void DecryptForm::EnableForm()
@@ -82,29 +92,29 @@ void DecryptForm::EnableForm()
 //#if defined(__WXOSX__) || defined(__WXMAC__)
 //	identity_control->SetWindowStyle(wxTE_PASSWORD);
 //#else
-    identity_control->Enable(true);
-    encryption_control->Enable(true);
+    authentication_control->Enable(true);
+    encipherment_control->Enable(true);
 //#endif
 }
 
 void DecryptForm::FocusForm()
 {
-	this->identity_control->SetFocus();
-    this->encryption_control->SetFocus();
+	this->authentication_control->SetFocus();
+    //this->encryption_control->SetFocus();
 }
 
 wxJSONValue DecryptForm::GetValues()
 {
     wxJSONValue values;
     
-    values["authentication"] = this->identity_control->GetValue();
-    values["encipherment"] = this->identity_control->GetValue();
+    values["authentication"] = this->authentication_control->GetValue();
+    values["encipherment"] = this->encipherment_control->GetValue();
     
     return values;
 }
 
 wxString DecryptForm::GetValue()
 {
-	return identity_control->GetValue();
+	return authentication_control->GetValue();
 }
 

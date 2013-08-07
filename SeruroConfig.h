@@ -25,7 +25,7 @@ public:
      */
 	void LoadConfig();
 	bool WriteConfig();
-    bool HasConfig();
+    bool HasConfig(wxArrayString layers = wxArrayString());
     wxJSONValue GetConfig() { return this->config; }
 
 	/***********************************************************/
@@ -87,10 +87,12 @@ public:
 	//wxString GetCAFingerprint();
 	bool RemoveCACertificate(wxString server_uuid,
 		bool write_config = false);
+    
 	bool AddIdentity(wxString server_uuid, wxString addresss,
-		wxString fingerprint);
+		wxString cert_type, wxString fingerprint);
 	bool RemoveIdentity(wxString server_uuid, wxString address,
-		bool write_config = false);
+		wxString cert_type, bool write_config = false);
+    
 	/* Each address under each server should be a list. */
 	bool AddCertificate(wxString server_uuid, wxString address,
 		wxString fingerprint);
@@ -98,8 +100,10 @@ public:
 		bool write_config = false);
 
 	/* May search the OS certificate store for the fingerprint. */
-	bool HaveCertificates(wxString server_uuid, wxString address);
-	bool HaveIdentity(wxString server_uuid, wxString address);
+	bool HaveCertificates(wxString server_uuid, wxString address,
+        wxString fingerprint = wxEmptyString);
+	bool HaveIdentity(wxString server_uuid, wxString address,
+        wxString fingerprint = wxEmptyString);
 	bool HaveCA(wxString server_uuid);
 
 	/* Fingerprint/thumbprint/hash retreival. */
@@ -108,6 +112,7 @@ public:
     
 	wxArrayString GetCertificates(wxString server_uuid, wxString address);
 	wxArrayString GetIdentity(wxString server_uuid, wxString address);
+    wxString GetIdentity(wxString server_uuid, wxString address, wxString cert_type);
 	wxString GetCA(wxString server_uuid);
 
 protected:
@@ -115,9 +120,11 @@ protected:
 	wxArrayString GetMemberArray(const wxString &member);
 
 	bool AddFingerprint(wxString location, wxString server_uuid,
-		wxString fingerprint, wxString address = wxEmptyString);
+		wxString fingerprint, wxString address = wxEmptyString,
+        wxString cert_type = wxEmptyString);
 	bool RemoveFingerprints(wxString location, wxString server_uuid,
-		wxString address = wxEmptyString);
+		wxString address = wxEmptyString,
+        wxString cert_type = wxEmptyString);
 
 private:
     bool InitConfig();

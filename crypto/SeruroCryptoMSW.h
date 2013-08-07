@@ -44,8 +44,10 @@ public:
 
 	/* Methods to query certificates by their name (meaning SHA1) */
 	bool HaveCA(wxString server_name);
-	bool HaveCertificates(wxString server_name, wxString address);
-	bool HaveIdentity(wxString server_name, wxString address);
+	bool HaveCertificates(wxString server_name, wxString address,
+        wxString fingerprint = wxEmptyString);
+	bool HaveIdentity(wxString server_name, wxString address,
+        wxString fingerprint = wxEmptyString);
 
 	//wxString GetFingerprint(wxMemoryBuffer &cert);
 };

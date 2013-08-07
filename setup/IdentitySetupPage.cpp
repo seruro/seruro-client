@@ -24,7 +24,12 @@ void IdentityPage::DownloadIdentity()
     
 	/* Disable interaction while thread is running. */
 	this->DisablePage();
+    this->SetIdentityStatus(_("Downloading..."));
 
+    /* Reset the ability to install P12s (until the response SKIDs are checked). */
+    install_encipherment = false;
+    install_authentication = false;
+    
     SeruroServerAPI *api = new SeruroServerAPI(this);
     
 	params["server"] = server_info;
@@ -38,6 +43,7 @@ void IdentityPage::DownloadIdentity()
 void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
 {
 	wxJSONValue response = event.GetResponse();
+    wxString server_uuid, address;
 
 	/* Make sure the request worked, and enable the page. */
 	if (! response["success"].AsBool()) {
@@ -51,13 +57,35 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
 		this->DisableForm();
 		return;
 	}
+    
+    server_uuid = response["uuid"].AsString();
+    address = response["address"].AsString();
+    
+    /* Compare the P12 response SKIDs to installed SKIDs (if any). These may (again) disable the form. */
+    SeruroCrypto crypto;
+    if (crypto.HaveIdentity(server_uuid, address, response["p12"]["encipherment"][0].AsString())) {
+        this->SetEnciphermentHint(_("Encryption already installed."));
+    } else {
+        /* The install command should attempt to decrypt and install the encipherment P12. */
+        this->SetEnciphermentHint(wxEmptyString);
+        install_encipherment = true;
+    }
+    
+    if (crypto.HaveIdentity(server_uuid, address, response["p12"]["authentication"][0].AsString())) {
+        this->SetAuthenticationHint(_("Digital Identity already installed."));
+    } else {
+        /* Likewise for the authentication P12. */
+        this->SetAuthenticationHint(wxEmptyString);
+        install_authentication = true;
+    }
 
-	/* Save the P12 information. */
+    /* Save the P12 information. */
 	this->download_response = response;
 	this->identity_downloaded = true;
 	this->SetIdentityStatus(_("Downloaded."));
-
-	this->EnablePage();
+    
+    this->EnablePage();
+    //this->download_button->SetLabelText(_("Re-Download"));
 }
 
 void IdentityPage::OnDownloadIdentity(wxCommandEvent &event)
@@ -87,7 +115,7 @@ IdentityPage::IdentityPage(SeruroSetup *parent, bool force_download)
 	identity_downloaded(false), identity_installed(false), 
 	/* The wizard can instruct the identity page to force a download. */
 	force_download(force_download)
-{
+{    
     wxSizer *const vert_sizer = new wxBoxSizer(wxVERTICAL);
     
 	/* The identity page does not allow the user to go backward. */
@@ -132,12 +160,19 @@ IdentityPage::IdentityPage(SeruroSetup *parent, bool force_download)
 
 void IdentityPage::EnablePage()
 {
-    if (! this->identity_downloaded) {
-        download_button->Enable();
-    } else {
+    if (this->identity_downloaded) {
 		this->wizard->EnableNext(true);
 	}
+    
+    download_button->Enable();
 	this->EnableForm();
+    if (! install_authentication) {
+        this->DisableAuthentication();
+    }
+    if (! install_encipherment) {
+        this->DisableEncipherment();
+    }
+    
 	this->FocusForm();
 }
 
@@ -152,6 +187,7 @@ void IdentityPage::DisablePage()
 bool IdentityPage::GoNext(bool from_callback)
 {
     wxJSONValue unlock_codes;
+    wxString server_uuid, address;
     
 	/* Either a subsequent click or a callback success. */
 	if (this->identity_installed) {
@@ -171,27 +207,30 @@ bool IdentityPage::GoNext(bool from_callback)
 	this->DisablePage();
 
 	SeruroServerAPI *api = new SeruroServerAPI(this);
-	/* Try to install with the saved response, and the input key, force the install incase there is an empty input. */
-	bool try_install = api->InstallP12(this->download_response, unlock_codes, true);
     
-    /* Clean up. */
-    key.Clear();
+    server_uuid = this->download_response["server_uuid"].AsString();
+    address = this->download_response["address"].AsString();
+    
+	/* Try to install with the saved response, and the input key, force the install incase there is an empty input. */
+    bool try_install = true;
+    if (install_authentication) {
+        try_install &= api->InstallP12(server_uuid, address, _("authentication"),
+            this->download_response["p12"]["authentication"][1].AsString(),
+            unlock_codes["authentication"].AsString(), true);
+    }
+    
+    if (install_encipherment) {
+        try_install &= api->InstallP12(server_uuid, address, _("encipherment"),
+            this->download_response["p12"]["encipherment"][1].AsString(),
+            unlock_codes["encipherment"].AsString(), true);
+    }
+    
     delete api;
     
 	if (! try_install) {
+        /* Enable page is responsible for checking each p12/skid from download_response. */
 		this->EnablePage();
-		this->SetIdentityStatus(_("Unable to install (incorrect key?)."));
-		return false;
-	}
-    
-
-	/* Make sure the certificates are available. */
-	SeruroCrypto crypto_helper;
-	try_install = crypto_helper.HaveIdentity(download_response["server_uuid"].AsString(),
-		download_response["address"].AsString());
-	if (! try_install) {
-		this->SetIdentityStatus(_("Unable to install identity."));
-		this->EnablePage();
+		this->SetIdentityStatus(_("Unable to install (incorrect unlock code?)."));
 		return false;
 	}
     
@@ -204,5 +243,6 @@ bool IdentityPage::GoNext(bool from_callback)
 	/* Proceed to the next page. */
 	this->SetIdentityStatus(_("Success."));
 	identity_installed = true;
+    
 	return true;
 }

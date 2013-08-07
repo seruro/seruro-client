@@ -25,6 +25,15 @@ public:
 	/* Disallow/Allow form actions. */
 	void DisableForm();
 	void EnableForm();
+    void DisableAuthentication();
+    void DisableEncipherment();
+    
+    void SetAuthenticationHint(wxString hint) {
+        authentication_control->SetHint(hint);
+    }
+    void SetEnciphermentHint(wxString hint) {
+        encipherment_control->SetHint(hint);
+    }
     
 	/* Start the focus at the first form element. */
 	void FocusForm();
@@ -34,8 +43,8 @@ protected:
     
 	//wxTextCtrl *password_control;
     
-    wxTextCtrl *encryption_control;
-    wxTextCtrl *identity_control;
+    wxTextCtrl *encipherment_control;
+    wxTextCtrl *authentication_control;
 };
 
 class DecryptDialog : public wxDialog, public DecryptForm

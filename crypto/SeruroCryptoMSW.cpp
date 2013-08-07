@@ -449,24 +449,36 @@ bool SeruroCryptoMSW::InstallP12(const wxMemoryBuffer &p12, const wxString &p_pa
 	return true;
 }
 
-bool SeruroCryptoMSW::HaveIdentity(wxString server_name, wxString address)
+bool SeruroCryptoMSW::HaveIdentity(wxString server_name, wxString address, wxString fingerprint)
 {
+    wxArrayString identity;
+    bool cert_exists;
+    
 	/* First get the fingerprint string from the config. */
-	if (! wxGetApp().config->HaveIdentity(server_name, address)) return false;
-	wxArrayString identity = wxGetApp().config->GetIdentity(server_name, address);
-
-	if (identity.size() != 2) {
-		wxLogMessage(_("SeruroCrypto> (HaveIdentity) the identity (%s) (%s) does not have 2 certificates?"),
-			server_name, address);
-		return false;
-	}
+    if (fingerprint.compare(wxEmptyString) == 0) {
+        if (! wxGetApp().config->HaveIdentity(server_name, address)) return false;
+        identity = wxGetApp().config->GetIdentity(server_name, address);
+    } else {
+        identity.Add(fingerprint);
+    }
+    
+	//if (identity.size() != 2) {
+	//	wxLogMessage(_("SeruroCrypto> (HaveIdentity) the identity (%s) (%s) does not have 2 certificates?"),
+	//		server_name, address);
+	//	return false;
+	//}
 
 	/* Looking at the trusted Root store. */
-	bool cert_1 = HaveCertificateByFingerprint(identity[0], CERTSTORE_PERSONAL);
-	bool cert_2 = HaveCertificateByFingerprint(identity[1], CERTSTORE_PERSONAL);
-	wxLogMessage(_("SeruroCrypto> (HaveIdentity) identity (%s) (%s) in store: (1: %s, 2: %s)."), 
-		server_name, address, (cert_1) ? "true" : "false", (cert_2) ? "true" : "false");
-	return (cert_1 && cert_2);
+    for (size_t i = 0; i < identity.size(); i++) {
+        cert_exists = (cert_exists && HaveCertificateByFingerprint(identity[i], CERTSTORE_PERSONAL));
+    }
+    
+	//bool cert_1 = HaveCertificateByFingerprint(identity[0], CERTSTORE_PERSONAL);
+	//bool cert_2 = HaveCertificateByFingerprint(identity[1], CERTSTORE_PERSONAL);
+	//wxLogMessage(_("SeruroCrypto> (HaveIdentity) identity (%s) (%s) in store: (1: %s, 2: %s)."),
+	//	server_name, address, (cert_1) ? "true" : "false", (cert_2) ? "true" : "false");
+	//return (cert_1 && cert_2);
+    return cert_exists;
 }
 
 bool SeruroCryptoMSW::HaveCA(wxString server_name)
@@ -482,7 +494,7 @@ bool SeruroCryptoMSW::HaveCA(wxString server_name)
 	return in_store;
 }
 
-bool SeruroCryptoMSW::HaveCertificates(wxString server_name, wxString address)
+bool SeruroCryptoMSW::HaveCertificates(wxString server_name, wxString address, wxString fingerprint)
 { 
 	/* First get the fingerprint string from the config. */
 	if (! wxGetApp().config->HaveCertificates(server_name, address)) return false;

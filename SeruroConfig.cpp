@@ -155,11 +155,20 @@ bool SeruroConfig::InitConfig()
     return true;
 }
 
-bool SeruroConfig::HasConfig()
+bool SeruroConfig::HasConfig(wxArrayString layers)
 {
     /* Make a decision to run the SeruroSetup wizard. */
     if (! config_file || ! config_file->Exists() || ! config_valid) return false;
     if (! config.HasMember("servers") || config["servers"].GetMemberNames().size() == 0) return false;
+    
+    if (layers.size() == 0) return true;
+    
+    /* Optionally check each layer for it's existance. */
+    wxJSONValue *layer = &config;
+    for (size_t i = 0; i < layers.size(); i++) {
+        if (! layer->HasMember(layers[i])) return false;
+        layer = &(layer->operator[](layers[i]));
+    }
     
     return true;
 }
@@ -655,7 +664,7 @@ wxArrayString SeruroConfig::GetMemberArray(const wxString &member)
 /* Certificate tracking methods.
  */
 bool SeruroConfig::AddFingerprint(wxString location, wxString server_uuid,
-	wxString fingerprint, wxString address)
+	wxString fingerprint, wxString address, wxString cert_type)
 {
 	wxJSONValue address_list; 
 
@@ -676,20 +685,26 @@ bool SeruroConfig::AddFingerprint(wxString location, wxString server_uuid,
 	if (! config["servers"][server_uuid][location].HasMember(address)) {
 		config["servers"][server_uuid][location][address] = wxJSONValue(wxJSONTYPE_OBJECT);
 	}
+    
+    /* If there is a cert_type, then create a key->value relationship. */
+    if (! cert_type.compare(wxEmptyString) == 0) {
+        config["servers"][server_uuid][location][address][cert_type] = fingerprint;
+    } else {
+        address_list = config["servers"][server_uuid][location][address];
+        for (int i = 0; i < address_list.Size(); i++) {
+            /* Prevent duplicates. */
+            if (address_list[i].AsString().compare(fingerprint) == 0) return false;
+        }
 
-	address_list = config["servers"][server_uuid][location][address];
-	for (int i = 0; i < address_list.Size(); i++) {
-		/* Prevent duplicates. */
-		if (address_list[i].AsString().compare(fingerprint) == 0) return false;
-	}
-
-	config["servers"][server_uuid][location][address].Append(fingerprint);
-
+        config["servers"][server_uuid][location][address].Append(fingerprint);
+    }
+        
 finished:
 	return WriteConfig();
 }
 
-bool SeruroConfig::RemoveFingerprints(wxString location, wxString server_uuid, wxString address)
+bool SeruroConfig::RemoveFingerprints(wxString location, wxString server_uuid,
+    wxString address, wxString cert_type)
 {
 	if (! HasConfig() || ! config["servers"].HasMember(server_uuid)) return false;
 
@@ -700,9 +715,14 @@ bool SeruroConfig::RemoveFingerprints(wxString location, wxString server_uuid, w
 
 	if (! config["servers"][server_uuid].HasMember(location)) return false;
 	if (! config["servers"][server_uuid][location].HasMember(address)) return false;
-
-	config["servers"][server_uuid][location].Remove(address);
-
+    
+    /* For identities the certificate has a type. */
+    if (! cert_type.compare(wxEmptyString) == 0) {
+        config["servers"][server_uuid][location][address].Remove(cert_type);
+    } else {
+        config["servers"][server_uuid][location].Remove(address);
+    }
+        
 finished:
 	return WriteConfig();
 }
@@ -719,16 +739,16 @@ bool SeruroConfig::RemoveCACertificate(wxString server_uuid, bool write_config)
 	return RemoveFingerprints(location, server_uuid);
 }
 
-bool SeruroConfig::AddIdentity(wxString server_uuid, wxString address, wxString fingerprint)
+bool SeruroConfig::AddIdentity(wxString server_uuid, wxString address, wxString cert_type, wxString fingerprint)
 {
 	wxString location = _("identities");
-	return AddFingerprint(location, server_uuid, fingerprint, address);
+	return AddFingerprint(location, server_uuid, fingerprint, address, cert_type);
 }
 
-bool SeruroConfig::RemoveIdentity(wxString server_uuid, wxString address, bool write_config)
+bool SeruroConfig::RemoveIdentity(wxString server_uuid, wxString address, wxString cert_type, bool write_config)
 {
 	wxString location = _("identities");
-	return RemoveFingerprints(location, server_uuid, address);
+	return RemoveFingerprints(location, server_uuid, address, cert_type);
 }
 
 bool SeruroConfig::AddCertificate(wxString server_uuid, wxString address, wxString fingerprint)
@@ -743,7 +763,7 @@ bool SeruroConfig::RemoveCertificates(wxString server_uuid, wxString address, bo
 	return RemoveFingerprints(location, server_uuid, address);
 }
 
-bool SeruroConfig::HaveCertificates(wxString server_uuid, wxString address)
+bool SeruroConfig::HaveCertificates(wxString server_uuid, wxString address, wxString fingerprint)
 {
 	if (HasConfig() && config.HasMember("servers") &&
 		config["servers"].HasMember(server_uuid) &&
@@ -751,17 +771,35 @@ bool SeruroConfig::HaveCertificates(wxString server_uuid, wxString address)
 		config["servers"][server_uuid]["certificates"].HasMember(address)) {
 		return (config["servers"][server_uuid]["certificates"][address].Size() > 0);
 	}
+    /* Todo: add check for specific fingerprint. */
 	return false;
 }
 
-bool SeruroConfig::HaveIdentity(wxString server_uuid, wxString address)
+bool SeruroConfig::HaveIdentity(wxString server_uuid, wxString address, wxString fingerprint)
 {
-	if (HasConfig() && config.HasMember("servers") &&
-		config["servers"].HasMember(server_uuid) &&
-		config["servers"][server_uuid].HasMember("identities") &&
-		config["servers"][server_uuid]["identities"].HasMember(address)) {
-		return (config["servers"][server_uuid]["identities"][address].Size() > 0);
-	}
+    wxJSONValue identity;
+    wxArrayString layers;
+    
+    layers.Add("servers");
+    layers.Add(server_uuid);
+    layers.Add("identities");
+    layers.Add(address);
+    
+    if (! HasConfig(layers)) {
+        return false;
+    }
+    
+    identity = config["servers"][server_uuid]["identities"][address];
+    
+    /* No fingerprint explicitly searched, are there are least 1 identities installed? */
+    if (fingerprint.compare(wxEmptyString) == 0 &&
+        identity.HasMember("authentication") && identity.HasMember("encipherment")) {
+        return true;
+    }
+        
+    if (fingerprint.compare(identity["authentication"].AsString()) == 0) return true;
+    if (fingerprint.compare(identity["encipherment"].AsString()) == 0) return true;
+    
 	return false;
 }
 
@@ -824,10 +862,20 @@ wxArrayString SeruroConfig::GetIdentity(wxString server_uuid, wxString address)
 		return identity;
 	}
 
-	for (int i = config["servers"][server_uuid]["identities"][address].Size()-1; i >= 0; i--) {
-		identity.Add(config["servers"][server_uuid]["identities"][address][i].AsString());
-	}
+	//for (int i = config["servers"][server_uuid]["identities"][address].Size()-1; i >= 0; i--) {
+	//	identity.Add(config["servers"][server_uuid]["identities"][address][i].AsString());
+	//}
+    identity.Add(config["servers"][server_uuid]["identities"][address]["authentication"].AsString());
+    identity.Add(config["servers"][server_uuid]["identities"][address]["encipherment"].AsString());
+
 	return identity;
+}
+
+wxString SeruroConfig::GetIdentity(wxString server_uuid, wxString address, wxString cert_type)
+{
+    /* Todo: revisit. */
+    
+    return config["servers"][server_uuid]["identities"][address][cert_type].AsString();
 }
 
 wxString SeruroConfig::GetCA(wxString server_uuid)

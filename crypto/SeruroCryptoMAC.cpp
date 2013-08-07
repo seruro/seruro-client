@@ -60,6 +60,7 @@ bool GetReferenceFromSubjectKeyID(wxString subject_key, search_types_t type, wxS
     } else if (type == CRYPTO_SEARCH_CERT) {
         CFDictionaryAddValue(query, kSecClass, kSecClassCertificate);
     }
+    CFDictionaryAddValue(query, kSecMatchLimit, kSecMatchLimitOne);
     CFDictionaryAddValue(query, kSecAttrSubjectKeyID, subject_key_data);
     //CFDictionaryAddValue(query, kSecMatchTrustedOnly, kCFBooleanTrue);
     CFRelease(subject_key_data);
@@ -74,7 +75,7 @@ bool GetReferenceFromSubjectKeyID(wxString subject_key, search_types_t type, wxS
     CFRelease(query);
     
     if (! result == errSecSuccess) {
-        wxLogMessage(_("SeruroCrypto> (FindSubjectKeyIDInKeychain) failed (err= %d)."), result);
+        wxLogMessage(_("SeruroCrypto> (GetReferenceFromSubjectKeyID) failed (err= %d)."), result);
         return false;
     }
     return true;
@@ -612,9 +613,9 @@ bool SeruroCryptoMAC::HaveCA(wxString server_name)
     return status;
 }
 
-bool SeruroCryptoMAC::HaveCertificates(wxString server_name, wxString address)
+bool SeruroCryptoMAC::HaveCertificates(wxString server_name, wxString address, wxString fingerprint)
 {
-    /* Overview: since OSX cannot search a certificate using it's fingerprint.
+    /* Overview: since OSX cannot search a certificate using it's fingerprint (SHA1).
      *   First find the CA certificate by matching SHA1 over all certificates in the given
      *   keychain. Then search all certificates matching the issues of that CA (and SHA1).
      */
@@ -637,24 +638,40 @@ bool SeruroCryptoMAC::HaveCertificates(wxString server_name, wxString address)
 	return (cert_1 && cert_2);
 }
 
-bool SeruroCryptoMAC::HaveIdentity(wxString server_name, wxString address)
+bool SeruroCryptoMAC::HaveIdentity(wxString server_name, wxString address, wxString fingerprint)
 {
-	/* First get the fingerprint string from the config. */
-	if (! wxGetApp().config->HaveIdentity(server_name, address)) return false;
-	wxArrayString identity = wxGetApp().config->GetIdentity(server_name, address);
+    wxArrayString identity;
+    //bool cert_exists = true;
     
-	if (identity.size() != 2) {
-		wxLogMessage(_("SeruroCrypto> (HaveIdentity) the identity (%s) (%s) does not have 2 certificates?"),
-                     server_name, address);
-		return false;
-	}
+	/* First get the fingerprint string from the config. */
+    if (fingerprint.compare(wxEmptyString) == 0) {
+        //if (! wxGetApp().config->HaveIdentity(server_name, address)) return false;
+        identity = wxGetApp().config->GetIdentity(server_name, address);
+    } else {
+        identity.Add(fingerprint);
+    }
+    
+	//if (identity.size() != 2) {
+	//	wxLogMessage(_("SeruroCrypto> (HaveIdentity) the identity (%s) (%s) does not have 2 certificates?"),
+    //                 server_name, address);
+	//	return false;
+	//}
     
 	/* Looking at the trusted Root store. */
-	bool cert_1 = FindSubjectKeyIDInKeychain(identity[0], CRYPTO_SEARCH_IDENTITY, _(IDENTITY_KEYCHAIN));
-	bool cert_2 = FindSubjectKeyIDInKeychain(identity[1], CRYPTO_SEARCH_IDENTITY, _(IDENTITY_KEYCHAIN));
-	wxLogMessage(_("SeruroCrypto> (HaveIdentity) identity (%s) (%s) in store: (1: %s, 2: %s)."),
-                 server_name, address, (cert_1) ? "true" : "false", (cert_2) ? "true" : "false");
-	return (cert_1 && cert_2);
+    for (size_t i = 0; i < identity.size(); i++) {
+        DEBUG_LOG(_("SeruroCrypto> (HaveIdentity) checking for fingerprint (%s)."), identity[i]);
+        if (! FindSubjectKeyIDInKeychain(identity[i], CRYPTO_SEARCH_CERT, _(IDENTITY_KEYCHAIN))) {
+            /* Todo: not use CRYPTO_SEARCH_IDENTITY */
+            return false;
+        }
+    }
+    
+	//bool cert_1 = FindSubjectKeyIDInKeychain(identity[0], CRYPTO_SEARCH_IDENTITY, _(IDENTITY_KEYCHAIN));
+	//bool cert_2 = FindSubjectKeyIDInKeychain(identity[1], CRYPTO_SEARCH_IDENTITY, _(IDENTITY_KEYCHAIN));
+	//wxLogMessage(_("SeruroCrypto> (HaveIdentity) identity (%s) (%s) in store: (1: %s, 2: %s)."),
+    //             server_name, address, (cert_1) ? "true" : "false", (cert_2) ? "true" : "false");
+	//return (cert_1 && cert_2);
+    return true;
 }
 
 #endif

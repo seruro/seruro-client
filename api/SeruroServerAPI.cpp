@@ -262,74 +262,29 @@ bool SeruroServerAPI::InstallCertificate(wxJSONValue response)
 	return result;
 }
 
-bool SeruroServerAPI::InstallP12(wxJSONValue response, wxJSONValue unlock_codes, bool force_install)
+bool SeruroServerAPI::InstallP12(wxString server_uuid, wxString address, wxString cert_type,
+    wxString encoded_p12, wxString unlock_code, bool force_install)
 {
-	if (! CheckResponse(response, "p12")) return false;
-
-	wxString       p12_key;
-    wxArrayString  p12_blobs, fingerprints;
+    wxArrayString  fingerprints;
+    wxMemoryBuffer decoded_p12;
+    wxString existing_fingerprint;
     
-    wxString       server_uuid, address;
-    wxString       p12_encoded;
-    wxMemoryBuffer p12_decoded;
-
-    /* Action details. */
-    SeruroCrypto crypto = SeruroCrypto();
-    bool result = true;
+    if (! DecodeBase64(encoded_p12, &decoded_p12)) return false;
     
-    /* Request details. */
-	server_uuid = response["server_uuid"].AsString();
-	address = response["address"].AsString();
-    p12_blobs = response["p12"].GetMemberNames();
+    /* Add the identity (p12) to the certificate store. */
+    SeruroCrypto crypto;
+    if (! crypto.InstallP12(decoded_p12, unlock_code, fingerprints)) {
+        wxLogMessage(_("SeruroServerAPI> (InstallP12) could not install (%s) p12."), cert_type);
+        return false;
+    } else {
+        wxLogMessage(_("SeruroServerAPI> (InstallP12) installed (%s) p12."), cert_type);
+    }
     
-    /* Get password from user for p12 containers. */
-    for (size_t i = 0; i < p12_blobs.size(); i++) {
-        if (! unlock_codes.HasMember(p12_blobs[i]) && force_install == false) {
-            /* If an unlock_code is not provided, then prompt the UI for one, unless the install is forced. */
-            DEBUG_LOG(_("SeruroServerAPI> (InstallP12) no unlock code provided for p12 (%s)."), p12_blobs[i]);
-            //DecryptDialog *decrypt_dialog = new DecryptDialog(response["method"].AsString());
-            //if (decrypt_dialog->ShowModal() == wxID_OK) {
-            //    p12_key = decrypt_dialog->GetValue();
-            //} else {
-            //    return false;
-            //}
-            /* Remove the modal from memory. */
-            //decrypt_dialog->Destroy();
-        } else {
-            p12_key = unlock_codes[p12_blobs[i]].AsString();
-        }
-
-        /* Set the encoded (base64) version of the p12 data. */
-		p12_encoded = response["p12"][p12_blobs[i]].AsString();
-		if (! DecodeBase64(p12_encoded, &p12_decoded)) continue;
-        
-		/* Note: identity tracking happens within the crypto helper. */
-		result = (result & crypto.InstallP12(p12_decoded, p12_key, fingerprints));
-        if (! result) {
-            wxLogMessage(_("SeruroServerAPI> (InstallP12) could not install (%s) p12."), p12_blobs[i]);
-        } else {
-            wxLogMessage(_("SeruroServerAPI> (InstallP12) installed (%s) p12."), p12_blobs[i]);
-        }
-	}
-
-	/* Cleanup. */
-	//delete cryptoHelper;
-	p12_key.Clear();
-
-	if (! result) return false;
-
-	/* Remove previous fingerprints. */
-	wxArrayString old_fingerprints = wxGetApp().config->GetIdentity(server_uuid, address);
-	for (size_t i = 0; i < old_fingerprints.size(); i++) {
-		wxGetApp().config->RemoveIdentity(server_uuid, address, false);
-	}
-
-	/* Add the fingerprints. */
-	for (size_t i = 0; i < fingerprints.size(); i++) {
-		wxGetApp().config->AddIdentity(server_uuid, address, fingerprints[i]);
-	}
-
-	return true;
+    existing_fingerprint = wxGetApp().config->GetIdentity(server_uuid, address, cert_type);
+    wxGetApp().config->RemoveIdentity(server_uuid, address, cert_type, false);
+    wxGetApp().config->AddIdentity(server_uuid, address, cert_type, fingerprints[0]);
+    
+    return true;
 }
 
 bool SeruroServerAPI::UninstallIdentity(wxString server_uuid, wxString address)
@@ -344,7 +299,11 @@ bool SeruroServerAPI::UninstallIdentity(wxString server_uuid, wxString address)
         wxLogMessage(_("SeruroServerAPI> (UninstallIdentity) could not remove (%s) (%s)."), server_uuid, address);
         return false;
     }
-    return wxGetApp().config->RemoveIdentity(server_uuid, address, true);
+    
+    wxGetApp().config->RemoveIdentity(server_uuid, address, _("authentication"), true);
+    wxGetApp().config->RemoveIdentity(server_uuid, address, _("encipherment"), true);
+    
+    return true;
 }
 
 bool SeruroServerAPI::UninstallCertificates(wxString server_uuid, wxString address)

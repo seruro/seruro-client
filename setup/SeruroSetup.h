@@ -224,6 +224,12 @@ private:
     wxButton *download_button;
 	wxJSONValue download_response;
 	
+    /* The client's certificate store is queried at the response of a P12.
+     * This determine's if 'install' should install none, both, either of the P12s.
+     */
+    bool install_encipherment;
+    bool install_authentication;
+    
     bool identity_downloaded;
 	bool force_download;
 	bool identity_installed;
