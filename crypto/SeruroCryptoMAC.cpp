@@ -647,6 +647,7 @@ bool SeruroCryptoMAC::HaveIdentity(wxString server_name, wxString address, wxStr
     if (fingerprint.compare(wxEmptyString) == 0) {
         //if (! wxGetApp().config->HaveIdentity(server_name, address)) return false;
         identity = wxGetApp().config->GetIdentity(server_name, address);
+        if (identity.size() == 0) return false;
     } else {
         identity.Add(fingerprint);
     }
@@ -656,6 +657,7 @@ bool SeruroCryptoMAC::HaveIdentity(wxString server_name, wxString address, wxStr
     //                 server_name, address);
 	//	return false;
 	//}
+    
     
 	/* Looking at the trusted Root store. */
     for (size_t i = 0; i < identity.size(); i++) {

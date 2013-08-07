@@ -292,7 +292,11 @@ bool AccountPage::GoNext(bool from_callback) {
 		/* The server information was entered on a previous page. */
 		//server_info = ((ServerPage *) this->wizard->GetServerPage())->GetValues();
 		server_info = AddServerForm::GetValues();
-	}
+	} else {
+        server_info = wxGetApp().config->GetServer(
+            wxGetApp().config->GetServerUUID(server_menu->GetString(server_menu->GetSelection()))
+        );
+    }
 
 	/* Get values from AddAddressForm. */
 	address_info = AddAccountForm::GetValues();
