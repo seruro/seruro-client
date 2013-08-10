@@ -16,6 +16,8 @@ BEGIN_EVENT_TABLE(IdentityPage, SetupPage)
     EVT_SERURO_REQUEST(SERURO_API_CALLBACK_P12S, IdentityPage::OnP12sResponse)
 END_EVENT_TABLE()
 
+DECLARE_APP(SeruroClient);
+
 void IdentityPage::DownloadIdentity()
 {
     wxJSONValue params; /* no params */
@@ -65,6 +67,9 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
     SeruroCrypto crypto;
     if (crypto.HaveIdentity(server_uuid, address, response["p12"]["encipherment"][0].AsString())) {
         this->SetEnciphermentHint(_("Encryption already installed."));
+        /* Make sure the identity skid is set in config. */
+        wxGetApp().config->AddIdentity(server_uuid, address, _("encipherment"),
+            response["p12"]["encipherment"][0].AsString());
     } else {
         /* The install command should attempt to decrypt and install the encipherment P12. */
         this->SetEnciphermentHint(wxEmptyString);
@@ -73,6 +78,9 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
     
     if (crypto.HaveIdentity(server_uuid, address, response["p12"]["authentication"][0].AsString())) {
         this->SetAuthenticationHint(_("Digital Identity already installed."));
+        /* Make sure the encryption skid is set in config. */
+        wxGetApp().config->AddIdentity(server_uuid, address, _("authentication"),
+            response["p12"]["authentication"][0].AsString());
     } else {
         /* Likewise for the authentication P12. */
         this->SetAuthenticationHint(wxEmptyString);

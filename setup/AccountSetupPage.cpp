@@ -124,7 +124,7 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	if (! wxGetApp().config->AddAddress(this->server_uuid, address)) {
 		SetAccountStatus(_("Account already exists."));
 		goto enable_form;
-	} else {        
+	} else {
         /* Create new server event. */
         SeruroStateEvent event(STATE_TYPE_ACCOUNT, STATE_ACTION_ADD);
 		event.SetServerUUID(this->server_uuid);
@@ -145,7 +145,9 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 		goto finished;
 	} else {
 		/* If the server existed before, then a successful add of the account can proceed the
-		 * setup. Otherwise the result handler of InstallCA will proceed the setup. */
+		 * setup. Otherwise the result handler of InstallCA will proceed the setup. 
+         */
+        this->has_ca = true;
 	
 		/* There are no more callback-actions. */
 		this->EnablePage();
@@ -235,7 +237,6 @@ AccountPage::AccountPage(SeruroSetup *parent)
 	/* Show textual status messages for the account (login success) and server
 	 * (connectivity/CA installation success).
 	 */
-
     this->SetSizer(vert_sizer);
 }
 

@@ -69,10 +69,19 @@ RemoveDialog::RemoveDialog(const wxString &server_uuid, const wxString &address)
 
 void RemoveDialog::DoRemove() 
 {
+	if (this->remove_server) {
+        this->RemoveServer();
+	} else {
+        this->RemoveAddress();
+	}
+}
+
+void RemoveDialog::RemoveServer()
+{
     wxArrayString accounts, certificates;
     wxCheckBox *identity;
     SeruroServerAPI *api;
-    
+
     accounts = wxGetApp().config->GetIdentityList(this->server_uuid);
     if (accounts.size() != this->identity_count) {
         /* If the number of identities has changed, then at least we KNOW something is wrong. */
@@ -91,22 +100,7 @@ void RemoveDialog::DoRemove()
             api->UninstallIdentity(this->server_uuid, accounts[i]);
         }
 	}
-    delete api;
-
-	/* Finally remove the data from the config (and the app). */
-	if (this->remove_server) {
-        this->RemoveServer();
-	} else {
-        this->RemoveAddress();
-	}
-}
-
-void RemoveDialog::RemoveServer()
-{
-    wxArrayString certificates;
-    SeruroServerAPI *api;
     
-    api = new SeruroServerAPI(this);
     if (this->remove_ca->IsChecked()) {
         /* Only remove the CA cert if the user requested (this may imply removing the contact certificates?). */
         wxLogMessage(_("RemoveDialog> (DoRemove) removing CA cert (%s)."), server_uuid);
@@ -133,6 +127,20 @@ void RemoveDialog::RemoveServer()
 
 void RemoveDialog::RemoveAddress()
 {
+    wxCheckBox *identity;
+    SeruroServerAPI *api;
+    
+    api = new SeruroServerAPI(this);
+    
+    identity = this->remove_identities[0];
+    if (identity != 0 && identity->IsChecked()) {
+        wxLogMessage(_("RemoveDialog> (DoRemove) removing identity for (%s) (%s)."), server_uuid, this->address);
+        /* Should this keep the decryption certificates? */
+        api->UninstallIdentity(this->server_uuid, this->address);
+    }
+    
+    delete api;
+    
     wxGetApp().config->RemoveAddress(this->server_uuid, this->address);
     
     SeruroStateEvent event(STATE_TYPE_ACCOUNT, STATE_ACTION_REMOVE);
