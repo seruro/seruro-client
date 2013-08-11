@@ -144,6 +144,15 @@ bool InstallIdentityToStore(const PCCERT_CONTEXT &identity, wxString store_name)
 	return true;
 }
 
+wxString GetIdentityHashHex(wxString fingerprint)
+{
+	/* Find the certificate by SKID, then calculate hash (buffer) then return as hex representation. */
+
+	wxString hash_hex;
+
+	return hash_hex;
+}
+
 bool HaveCertificateByFingerprint(wxString fingerprint, wxString store_name)
 {
 	HCERTSTORE cert_store;

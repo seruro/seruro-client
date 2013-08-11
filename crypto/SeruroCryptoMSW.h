@@ -9,6 +9,8 @@
 
 #include "../wxJSON/wx/jsonval.h"
 
+wxString GetIdentityHashHex(wxString fingerprint);
+
 class SeruroCryptoMSW
 {
 public:
