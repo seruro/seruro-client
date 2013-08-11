@@ -173,7 +173,7 @@ bool HaveCertificateByFingerprint(wxString fingerprint, wxString store_name)
 	/* Search the store for the hash. */
 	PCCERT_CONTEXT cert;
 	cert = CertFindCertificateInStore(cert_store, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 
-		0, CERT_FIND_HASH, (void *) &hash, NULL);
+		0, CERT_FIND_KEY_IDENTIFIER, (void *) &hash, NULL);
 
 	return (cert != NULL);
 }
@@ -452,7 +452,7 @@ bool SeruroCryptoMSW::InstallP12(const wxMemoryBuffer &p12, const wxString &p_pa
 bool SeruroCryptoMSW::HaveIdentity(wxString server_name, wxString address, wxString fingerprint)
 {
     wxArrayString identity;
-    bool cert_exists;
+    bool cert_exists = true;
     
 	/* First get the fingerprint string from the config. */
     if (fingerprint.compare(wxEmptyString) == 0) {
