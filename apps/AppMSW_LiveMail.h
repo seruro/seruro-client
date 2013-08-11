@@ -1,17 +1,17 @@
 #pragma once
 
-#if defined(__WXOSX__) || defined(__WXMAC__)
+#if defined(__WXMSW__)
 
-#ifndef H_AppOSX_Mail
-#define H_AppOSX_Mail
+#ifndef H_AppMSW_LiveMail
+#define H_AppMSW_LiveMail
 
 #include "SeruroApps.h"
 
-class AppOSX_Mail : public AppHelper
+class AppMSW_LiveMail : public AppHelper
 {
 public:
     /* Most likely, will do nothing. */
-    AppOSX_Mail() : AppHelper() {}
+    AppMSW_LiveMail() : AppHelper() {}
     
     bool IsInstalled();
     wxString GetVersion();

@@ -18,7 +18,11 @@ class AppHelper
 {
 public:
     /* Most likely, will do nothing. */
-    AppHelper() { is_installed = false; is_detected = false; }
+    AppHelper() { 
+		is_installed = false; 
+		is_detected = false;
+		this->info = wxJSONValue(wxJSONTYPE_OBJECT);
+	}
     
     virtual bool IsInstalled() { return false; }
     virtual wxString GetVersion() { return _("0"); }
@@ -33,6 +37,8 @@ public:
     /* A secondary boolean indicating a success/failure while detecting the application status. */
     bool is_detected;
     bool is_installed;
+
+	wxJSONValue info;
 };
 
 class SeruroApps

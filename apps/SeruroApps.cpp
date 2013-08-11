@@ -55,9 +55,15 @@ void SeruroApps::InitOSX()
 #if defined(__WXMSW__)
 /* MS windows includes. */
 
+#include "AppMSW_LiveMail.h"
+#include "AppMSW_Outlook.h"
+
 void SeruroApps::InitMSW()
 {
-    
+    AppHelper *helper;
+
+	helper = (AppHelper *) new AppMSW_LiveMail();
+	AddAppHelper(_("Windows Live Mail"), helper);
 }
 
 #endif
