@@ -8,7 +8,7 @@ DECLARE_APP(SeruroClient);
 
 void DecryptForm::AddForms(wxSizer *sizer)
 {
-	wxFlexGridSizer *const grid_sizer = new wxFlexGridSizer(1, 2, 
+	wxFlexGridSizer *const grid_sizer = new wxFlexGridSizer(2, 2, 
 		GRID_SIZER_WIDTH, GRID_SIZER_HEIGHT);
 	grid_sizer->AddGrowableCol(1, 1);
 

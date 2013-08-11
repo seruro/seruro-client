@@ -28,6 +28,8 @@
 #define SERURO_ALLOW_CUSTOM_PORT 0
 /* Allow the client to automatically download P12 containers if this is the first account. */
 #define SERURO_ALLOW_AUTO_DOWNLOAD 0
+/* Close the app if the wizard is canceled. */
+#define SERURO_ALLOW_NO_ACCOUNTS 1
 
 #define SERURO_DEFAULT_PORT "443"
 /* File name to store and fetch user configuration data from. */

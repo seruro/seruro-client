@@ -341,7 +341,7 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
 	/* This will hold the column of lists. */
 	wxSizer *const lists_sizer = new wxBoxSizer(wxVERTICAL);
 
-	wxImageList *list_images = new wxImageList(12, 12, true);
+	list_images = new wxImageList(12, 12, true);
     list_images->Add(wxGetBitmapFromMemory(blank));
 	list_images->Add(wxGetBitmapFromMemory(certificate_icon_12_flat));
 	list_images->Add(wxGetBitmapFromMemory(identity_icon_12_flat));

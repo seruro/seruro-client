@@ -18,6 +18,8 @@ class ErrorDialog : public wxMessageDialog
 public:
 	ErrorDialog(wxWindow *parent, const wxString &message, 
 		bool allow_report = true);
+
+	void SendReport();
 };
 
 #endif

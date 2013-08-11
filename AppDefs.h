@@ -6,6 +6,7 @@
 #endif
 
 #define DEBUG 1
+#undef __VLD__
 
 #if defined(__WXDEBUG__) || defined(DEBUG)
 #define DEBUG_REPORT_SERVER "alpha.seruro.com"

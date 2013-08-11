@@ -138,7 +138,7 @@ void SeruroPanelSearch::OnAllServersCheck(wxCommandEvent &event)
 SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, wxT("Search"))
 {
 	/* Create an API object for searching. */
-	this->api = new SeruroServerAPI(this->GetEventHandler());
+	this->api = new SeruroServerAPI(this);
 
 	/* The components sizer hold all UI elements. */
 	components_sizer = new wxBoxSizer(wxVERTICAL);

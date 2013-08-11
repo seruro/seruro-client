@@ -41,7 +41,10 @@ bool SeruroLogger::CreateLog()
     }
     
 	/* The following code block is not reentrent, but may potentially try if the create fails. */
+	VLDDisable();
     log_file = new wxTextFile(log_path.GetFullPath());
+	VLDEnable();
+
     if (! log_file->Exists()) {
 		if (! log_file->Create()) {
 			log_initializing = false;

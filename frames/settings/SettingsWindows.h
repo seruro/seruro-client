@@ -9,7 +9,7 @@
 
 #include <wx/button.h>
 #include <wx/listctrl.h>
-
+#include <wx/imaglist.h>
 
 enum settings_ids_t {
     SETTINGS_MENU_ID,
@@ -105,6 +105,7 @@ private:
 	/* List components (fire events and deselect). */
 	wxListCtrl *servers_list;
 	wxListCtrl *accounts_list;
+	wxImageList *list_images;
 
 	DECLARE_EVENT_TABLE()
 };
@@ -148,6 +149,7 @@ private:
     wxButton *unassign_button;
     wxListCtrl *apps_list;
     wxListCtrl *accounts_list;
+	wxImageList *list_images;
     
     /* Helpers. */
     SeruroApps *apps_helper;

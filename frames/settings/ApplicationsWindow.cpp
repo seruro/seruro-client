@@ -8,7 +8,6 @@
 #include "../../api/SeruroStateEvents.h"
 
 #include <wx/log.h>
-#include <wx/imaglist.h>
 
 /* Include image data. */
 #include "../../resources/images/blank.png.h"
@@ -179,7 +178,7 @@ ApplicationsWindow::ApplicationsWindow(SeruroPanelSettings *window) : SettingsVi
     
     apps_helper = new SeruroApps();
  
-    wxImageList *list_images = new wxImageList(12, 12, true);
+    list_images = new wxImageList(12, 12, true);
     list_images->Add(wxGetBitmapFromMemory(blank));
 	list_images->Add(wxGetBitmapFromMemory(certificate_icon_12_flat));
 	list_images->Add(wxGetBitmapFromMemory(identity_icon_12_flat));

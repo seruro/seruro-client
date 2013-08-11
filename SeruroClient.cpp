@@ -219,6 +219,7 @@ void SeruroClient::ReportAndExit(wxJSONValue report, wxString msg, bool close_ap
 	error = new ErrorDialog(this->main_frame, prompt_msg);
 	if (error->ShowModal() == wxID_YES) {
 		/* The user would like to send an error report. */
+		error->SendReport();
 	}
 	delete error;
 
