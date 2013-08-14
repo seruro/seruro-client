@@ -477,7 +477,7 @@ long SeruroConfig::GetPortFromServer(wxJSONValue server_info)
 	}
 
 	port_string.ToLong(&port, 10);
-	DEBUG_LOG(_("SeruroConfig> (GetPortFromServer) port for uuid (%s) (%d)."),
+	DEBUG_LOG(_("SeruroConfig> (GetPortFromServer) port for uuid (%s) (%lu)."),
 		server_info["uuid"].AsString(), port);
 
 	return port;
