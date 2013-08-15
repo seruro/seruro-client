@@ -36,6 +36,9 @@ enum setup_ids_t
 
 class SeruroSetup;
 
+/* Helper fuction for pasting into various text controls. */
+void PasteIntoControl(wxTextCtrl *control);
+
 class SetupPage : public wxWizardPageSimple
 {
 public:
@@ -204,6 +207,7 @@ public:
 	/* Check the 'install' identity box. */
 	void OnP12sResponse(SeruroRequestEvent &event);
     void OnDownloadIdentity(wxCommandEvent &event);
+	void OnPasteUnlock(wxClipboardTextEvent& event);
 	
     /* Can be called from event or from a forced download. */
 	void DownloadIdentity();

@@ -14,14 +14,21 @@ BEGIN_EVENT_TABLE(AccountPage, SetupPage)
 
 	EVT_CHOICE(wxID_ANY, AccountPage::OnSelectServer)
 
-    EVT_TEXT_PASTE(SERURO_ACCOUNT_PASSWORD_ID, AccountPage::OnPastePassword)
+    EVT_TEXT_PASTE(wxID_ANY, AccountPage::OnPastePassword)
 END_EVENT_TABLE()
 
 DECLARE_APP(SeruroClient);
 
 void AccountPage::OnPastePassword(wxClipboardTextEvent& event)
 {
-    int i = 0;
+	if (! this->password->HasFocus()) {
+		/* This is a good opprotunity to sanitize the data. */
+		event.Skip();
+		return;
+	}
+
+	/* The password field must have it's data dumped manually. */
+	PasteIntoControl(this->password);
 }
 
 /* CA installer (triggered from adding a new server) */

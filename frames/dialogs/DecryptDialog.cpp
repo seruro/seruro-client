@@ -21,11 +21,11 @@ void DecryptForm::AddForms(wxSizer *sizer)
         wxEmptyString, wxDefaultPosition, wxDefaultSize,
         wxTE_PASSWORD);
     
- 	grid_sizer->Add(new Text(parent, SERURO_AUTHENTICATION " Unlock:"));
+ 	grid_sizer->Add(new Text(parent, SERURO_AUTHENTICATION L" Unlock:"));
     grid_sizer->SetItemMinSize((size_t) 0, SERURO_SETTINGS_FLEX_LABEL_WIDTH, -1);
 	grid_sizer->Add(authentication_control, DIALOGS_BOXSIZER_OPTIONS);
     
-    grid_sizer->Add(new Text(parent, SERURO_ENCIPHERMENT " Unlock:"));
+    grid_sizer->Add(new Text(parent, SERURO_ENCIPHERMENT L" Unlock:"));
     grid_sizer->SetItemMinSize((size_t) 2, SERURO_SETTINGS_FLEX_LABEL_WIDTH, -1);
     grid_sizer->Add(encipherment_control, DIALOGS_BOXSIZER_OPTIONS);
 
@@ -34,7 +34,7 @@ void DecryptForm::AddForms(wxSizer *sizer)
 
 DecryptDialog::DecryptDialog(const wxString &method) :
     wxDialog(wxGetApp().GetFrame(), wxID_ANY,
-        wxString(wxT("Unlock " SERURO_AUTHENTICATION " and " SERURO_ENCIPHERMENT)),
+        wxString(wxT("Unlock " SERURO_AUTHENTICATION L" and " SERURO_ENCIPHERMENT)),
         wxDefaultPosition, wxDefaultSize, wxDEFAULT_DIALOG_STYLE),
 	DecryptForm(this)
 {

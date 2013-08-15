@@ -67,8 +67,8 @@
 #define SERURO_API_ERROR_SUCCESS		"Success."
 #define SERURO_API_ERROR_INVALID_AUTH	"Invalid authentication token."
 #define SERURO_API_ERROR_CONNECTION		"Connection failed."
-#define SERURO_AUTHENTICATION           "Digital Identity"
-#define SERURO_ENCIPHERMENT             "Encryption"
+#define SERURO_AUTHENTICATION           L"Digital Identity"
+#define SERURO_ENCIPHERMENT             L"Encryption"
 
 /* Server API routes, or in HTTP diction "objects". */
 #define SERURO_API_OBJECT_LOGIN	 "/api/sessions/create"

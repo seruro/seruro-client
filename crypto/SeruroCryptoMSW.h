@@ -44,6 +44,9 @@ public:
 	bool RemoveCA(wxString fingerprint);
 	bool RemoveCertificates(wxArrayString fingerprints);
 
+	/* Used for App configurations. */
+	bool HaveIdentityByHash(wxString hash);
+
 	/* Methods to query certificates by their name (meaning SHA1) */
 	bool HaveCA(wxString server_name);
 	bool HaveCertificates(wxString server_name, wxString address,

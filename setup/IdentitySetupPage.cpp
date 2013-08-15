@@ -6,6 +6,8 @@
 #include "SeruroSetup.h"
 //#include "../frames/UIDefs.h"
 
+#include <wx/event.h>
+
 enum {
     BUTTON_DOWNLOAD_IDENTITY
 };
@@ -14,9 +16,22 @@ BEGIN_EVENT_TABLE(IdentityPage, SetupPage)
 	//EVT_CHECKBOX(SERURO_INSTALL_IDENTITY_ID, IdentityPage::OnToggleInstall)
     EVT_BUTTON(BUTTON_DOWNLOAD_IDENTITY, IdentityPage::OnDownloadIdentity)
     EVT_SERURO_REQUEST(SERURO_API_CALLBACK_P12S, IdentityPage::OnP12sResponse)
+
+	EVT_TEXT_PASTE(wxID_ANY, IdentityPage::OnPasteUnlock)
 END_EVENT_TABLE()
 
 DECLARE_APP(SeruroClient);
+
+void IdentityPage::OnPasteUnlock(wxClipboardTextEvent& event)
+{
+	if (this->authentication_control->HasFocus()) {
+		PasteIntoControl(this->authentication_control);
+	} else if (this->encipherment_control->HasFocus()) {
+		PasteIntoControl(this->encipherment_control);
+	} else {
+		event.Skip();
+	}
+}
 
 void IdentityPage::DownloadIdentity()
 {

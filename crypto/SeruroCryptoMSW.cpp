@@ -24,7 +24,13 @@ DECLARE_APP(SeruroClient);
 #define CERTSTORE_CONTACTS	   "AddressBook"
 #define CERTSTORE_PERSONAL	   "My"
 
+enum search_type_t {
+	BY_HASH,
+	BY_SKID
+};
+
 wxString GetSubjectKeyIDFromCertificate(PCCERT_CONTEXT &cert);
+bool HaveCertificateByFingerprint(wxString fingerprint, wxString store_name, search_type_t = BY_SKID);
 
 /* Helper function to convert wxString to a L, the caller is responsible for memory. */
 BSTR AsLongString(const wxString &input)
@@ -153,7 +159,7 @@ wxString GetIdentityHashHex(wxString fingerprint)
 	return hash_hex;
 }
 
-bool HaveCertificateByFingerprint(wxString fingerprint, wxString store_name)
+bool HaveCertificateByFingerprint(wxString fingerprint, wxString store_name, search_type_t match_type)
 {
 	HCERTSTORE cert_store;
 	BSTR store = AsLongString(store_name);
@@ -181,8 +187,13 @@ bool HaveCertificateByFingerprint(wxString fingerprint, wxString store_name)
 
 	/* Search the store for the hash. */
 	PCCERT_CONTEXT cert;
-	cert = CertFindCertificateInStore(cert_store, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 
-		0, CERT_FIND_KEY_IDENTIFIER, (void *) &hash, NULL);
+	if (match_type == BY_SKID) {
+		cert = CertFindCertificateInStore(cert_store, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 
+			0, CERT_FIND_KEY_IDENTIFIER, (void *) &hash, NULL);
+	} else {
+		cert = CertFindCertificateInStore(cert_store, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 
+			0, CERT_FIND_HASH, (void *) &hash, NULL);
+	}
 
 	return (cert != NULL);
 }
@@ -456,6 +467,11 @@ bool SeruroCryptoMSW::InstallP12(const wxMemoryBuffer &p12, const wxString &p_pa
 	CertCloseStore(pfx_store, 0);
 
 	return true;
+}
+
+bool SeruroCryptoMSW::HaveIdentityByHash(wxString hash)
+{
+	return HaveCertificateByFingerprint(hash, CERTSTORE_PERSONAL, BY_HASH);
 }
 
 bool SeruroCryptoMSW::HaveIdentity(wxString server_name, wxString address, wxString fingerprint)

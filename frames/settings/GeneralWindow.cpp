@@ -3,6 +3,8 @@
 #include "../SeruroPanelSettings.h"
 #include "../UIDefs.h"
 
+#include <wx/textctrl.h>
+
 SettingsView::SettingsView(SeruroPanelSettings *window) : parent(window),
     wxWindow(window, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxBORDER_THEME) {
         SetBackgroundColour(_("white"));
