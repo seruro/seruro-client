@@ -331,6 +331,7 @@ bool AccountPage::GoNext(bool from_callback) {
 
     /* Create a 'ping' request, and within the callback, call 'GoForward' again. */
 	SeruroServerAPI *api = new SeruroServerAPI(this);
+	SetAccountStatus(_("Connecting..."));
 	api->Ping(params)->Run();
 	delete api;
 

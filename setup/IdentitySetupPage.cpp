@@ -60,7 +60,7 @@ void IdentityPage::DownloadIdentity()
 void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
 {
 	wxJSONValue response = event.GetResponse();
-    wxString server_uuid, address;
+    wxString server_uuid, address, method_hint;
 
 	/* Make sure the request worked, and enable the page. */
 	if (! response["success"].AsBool()) {
@@ -78,6 +78,14 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
     server_uuid = response["uuid"].AsString();
     address = response["address"].AsString();
     
+	/* There is a potential unorthodox TOCTOU problem: the current method may not be the "used" method. */
+	/* Todo: consider logging the method used within the certificate/user record. */
+	if (response["method"].AsString() == "email") {
+		method_hint = wxString::Format(_("The unlock code was sent to %s"), address);
+	} else if (response["method"].AsString() == "sms") {
+		method_hint = _("The unlock code was sent to your mobile number");
+	}
+
     /* Compare the P12 response SKIDs to installed SKIDs (if any). These may (again) disable the form. */
     SeruroCrypto crypto;
     if (crypto.HaveIdentity(server_uuid, address, response["p12"]["encipherment"][0].AsString())) {
@@ -85,9 +93,10 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
         /* Make sure the identity skid is set in config. */
         wxGetApp().config->AddIdentity(server_uuid, address, _("encipherment"),
             response["p12"]["encipherment"][0].AsString());
+		install_encipherment = false;
     } else {
         /* The install command should attempt to decrypt and install the encipherment P12. */
-        this->SetEnciphermentHint(wxEmptyString);
+        this->SetEnciphermentHint(method_hint);
         install_encipherment = true;
     }
     
@@ -96,9 +105,10 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
         /* Make sure the encryption skid is set in config. */
         wxGetApp().config->AddIdentity(server_uuid, address, _("authentication"),
             response["p12"]["authentication"][0].AsString());
+		install_authentication = false;
     } else {
         /* Likewise for the authentication P12. */
-        this->SetAuthenticationHint(wxEmptyString);
+        this->SetAuthenticationHint(method_hint);
         install_authentication = true;
     }
 

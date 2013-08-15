@@ -17,7 +17,7 @@ after you enter it: "
 Seruro Server you would like to add. You may use any 'name', using \
 letters, numbers, hyphens, underscores and spaces."
 
-#define TEXT_ADD_ADDRESS "Please enter your email address and passowrd \
+#define TEXT_ADD_ADDRESS "Please enter your email address and Seruro passowrd \
 used to log into your Seruro Server account. \
 WARNING: do NOT enter the password used to log into your email account!."
 
@@ -26,11 +26,11 @@ You may optionally remove the associated certificate authority (CA), \
 certificates downloaded from '%s', and your '%s' account identities."
 
 #define TEXT_REMOVE_ADDRESS "This will remove the account '%s' \
-from the Seruro Server '%s'. \
+on the server '%s' from this machine. \
 You may optionally remove the associated identity."
 
-#define TEXT_INSTALL_IDENTITY "You may also install the identity for \
-this address now. Only install the identity if you are on a trusted machine. \
-The identity will require a 'keyphrase' to install."
+#define TEXT_INSTALL_IDENTITY "You may install the identity for \
+this address now. Only install if you are on a trusted machine. \
+The identity will require a 'unlock code' to install."
 
 #endif

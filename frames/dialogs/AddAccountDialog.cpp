@@ -20,7 +20,7 @@ void AddAccountForm::AddForm(wxSizer *sizer, const wxString &address,
 	grid_sizer->AddGrowableCol(1, 1);
     
 	/* Address. */
-	grid_sizer->Add(new Text(parent, "&Seruro Username: "));
+	grid_sizer->Add(new Text(parent, "&Email Address: "));
     grid_sizer->SetItemMinSize((size_t) 0, SERURO_SETTINGS_FLEX_LABEL_WIDTH, -1);
     
     /* Address validator. */
