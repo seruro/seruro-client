@@ -89,7 +89,7 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
     /* Compare the P12 response SKIDs to installed SKIDs (if any). These may (again) disable the form. */
     SeruroCrypto crypto;
     if (crypto.HaveIdentity(server_uuid, address, response["p12"]["encipherment"][0].AsString())) {
-        this->SetEnciphermentHint(_("Encryption already installed."));
+        this->SetEnciphermentHint(_(SERURO_ENCIPHERMENT L" already installed."));
         /* Make sure the identity skid is set in config. */
         wxGetApp().config->AddIdentity(server_uuid, address, _("encipherment"),
             response["p12"]["encipherment"][0].AsString());
@@ -101,7 +101,7 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
     }
     
     if (crypto.HaveIdentity(server_uuid, address, response["p12"]["authentication"][0].AsString())) {
-        this->SetAuthenticationHint(_("Digital Identity already installed."));
+        this->SetAuthenticationHint(_(SERURO_AUTHENTICATION L" already installed."));
         /* Make sure the encryption skid is set in config. */
         wxGetApp().config->AddIdentity(server_uuid, address, _("authentication"),
             response["p12"]["authentication"][0].AsString());
@@ -245,25 +245,48 @@ bool IdentityPage::GoNext(bool from_callback)
     address = this->download_response["address"].AsString();
     
 	/* Try to install with the saved response, and the input key, force the install incase there is an empty input. */
-    bool try_install = true;
+    bool authentication_result = true, encipherment_result = true;
     if (install_authentication) {
-        try_install &= api->InstallP12(server_uuid, address, _("authentication"),
+        authentication_result = api->InstallP12(server_uuid, address, _("authentication"),
             this->download_response["p12"]["authentication"][1].AsString(),
             unlock_codes["authentication"].AsString(), true);
     }
     
     if (install_encipherment) {
-        try_install &= api->InstallP12(server_uuid, address, _("encipherment"),
+        encipherment_result = api->InstallP12(server_uuid, address, _("encipherment"),
             this->download_response["p12"]["encipherment"][1].AsString(),
             unlock_codes["encipherment"].AsString(), true);
     }
     
     delete api;
     
-	if (! try_install) {
+	wxString failure_text;
+	if (authentication_result) {
+		/* No longer need to install authentication p12. */
+		install_authentication = false;
+		/* A bit of a hack. */
+		this->authentication_control->Clear();
+		this->SetAuthenticationHint(_(SERURO_AUTHENTICATION L" installed."));
+	} else {
+		/* Advertize WHAT container (p12) failed. */
+		failure_text = _(SERURO_AUTHENTICATION);
+	}
+
+	if (encipherment_result) {
+		/* No longer need to install encipherment p12. */
+		install_encipherment = false;
+		/* A bit of a hack. */
+		this->encipherment_control->Clear();
+		this->SetEnciphermentHint(_(SERURO_ENCIPHERMENT L" installed."));
+	} else {
+		/* They may have failed both, or just encipherment? */
+		failure_text = (failure_text.IsEmpty()) ? _(SERURO_ENCIPHERMENT) : _(SERURO_AUTHENTICATION L" and " SERURO_ENCIPHERMENT);
+	}
+
+	if (! authentication_result || ! encipherment_result) {
         /* Enable page is responsible for checking each p12/skid from download_response. */
 		this->EnablePage();
-		this->SetIdentityStatus(_("Unable to install (incorrect unlock code?)."));
+		this->SetIdentityStatus(wxString::Format(_("Unable to install %s."), failure_text));
 		return false;
 	}
     
