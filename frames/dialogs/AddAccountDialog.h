@@ -12,6 +12,12 @@
 
 #include "../../wxJSON/wx/jsonval.h"
 
+enum account_form_ids_t
+{
+    SERURO_ACCOUNT_USERNAME_ID,
+    SERURO_ACCOUNT_PASSWORD_ID
+};
+
 class AddAccountForm
 {
 public:

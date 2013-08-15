@@ -37,7 +37,7 @@
 /* File name to store and fetch user authentication tokens from. */
 #define SERURO_TOKENS_FILE	"tokens"
 /* User agent to use for Server API requests. */
-#define SERURO_DEFAULT_USER_AGENT "SeruroClient/"SERURO_VERSION
+#define SERURO_DEFAULT_USER_AGENT "SeruroClient/" SERURO_VERSION
 
 /* The maximum amount of 'application panels' which are 'tabs'. 
  * This is used in the SeruroTray to identity the panel IDs. 

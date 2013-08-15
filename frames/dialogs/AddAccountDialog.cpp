@@ -28,7 +28,7 @@ void AddAccountForm::AddForm(wxSizer *sizer, const wxString &address,
 	address_validator.SetCharIncludes(SERURO_INPUT_ADDRESS_WHITELIST);
     
     /* Address controller. */
-	this->address = new wxTextCtrl(parent, wxID_ANY, address,
+	this->address = new wxTextCtrl(parent, SERURO_ACCOUNT_USERNAME_ID, address,
         wxDefaultPosition, wxDefaultSize, 0, address_validator);
     this->address->SetHint(_("you@someplace.email"));
 	this->address->SetToolTip(
@@ -42,10 +42,11 @@ void AddAccountForm::AddForm(wxSizer *sizer, const wxString &address,
     grid_sizer->SetItemMinSize((size_t) 2, SERURO_SETTINGS_FLEX_LABEL_WIDTH, -1);
     
     /* Host controller. */
-	this->password = new wxTextCtrl(parent, wxID_ANY, wxEmptyString,
+	this->password = new wxTextCtrl(parent, SERURO_ACCOUNT_PASSWORD_ID, wxEmptyString,
 		wxDefaultPosition, wxDefaultSize,
 		/* It's full of stars... */
 		wxTE_PASSWORD);
+    
 	grid_sizer->Add(this->password, DIALOGS_BOXSIZER_OPTIONS);
 	
     /* Add sizers together. */

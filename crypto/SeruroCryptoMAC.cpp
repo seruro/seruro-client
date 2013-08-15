@@ -7,7 +7,8 @@
 #include <wx/osx/core/cfstring.h>
 
 /* For making HTTP/TLS reqeusts. */
-#include <CFNetwork/CFNetwork.h>
+#include <CoreServices/CoreServices.h>
+//#include <CFNetwork/CFNetwork.h>
 #include <Security/Security.h>
 /* For certificate/keychain import. */
 #include <Security/SecCertificate.h>

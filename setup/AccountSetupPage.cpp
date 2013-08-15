@@ -13,9 +13,16 @@ BEGIN_EVENT_TABLE(AccountPage, SetupPage)
 	EVT_SERURO_REQUEST(SERURO_API_CALLBACK_CA, AccountPage::OnCAResult)
 
 	EVT_CHOICE(wxID_ANY, AccountPage::OnSelectServer)
+
+    EVT_TEXT_PASTE(SERURO_ACCOUNT_PASSWORD_ID, AccountPage::OnPastePassword)
 END_EVENT_TABLE()
 
 DECLARE_APP(SeruroClient);
+
+void AccountPage::OnPastePassword(wxClipboardTextEvent& event)
+{
+    int i = 0;
+}
 
 /* CA installer (triggered from adding a new server) */
 void AccountPage::OnCAResult(SeruroRequestEvent &event)

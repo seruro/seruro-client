@@ -146,6 +146,8 @@ void SeruroFrameMain::OnClose(wxCloseEvent &event)
 	if (event.CanVeto()) {
         tray->DoIconize();
         event.Veto();
+        
+        return;
 	}
 	
 	if (tray) {
