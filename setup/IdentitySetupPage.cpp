@@ -115,8 +115,15 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
     /* Save the P12 information. */
 	this->download_response = response;
 	this->identity_downloaded = true;
-	this->SetIdentityStatus(_("Downloaded."));
-    
+
+	if (! install_authentication && ! install_encipherment) {
+		this->SetIdentityStatus(_("Identity already installed."));
+		this->wizard->SetButtonText(wxEmptyString, _("Proceed"));
+		identity_installed = true;
+	} else {
+		this->SetIdentityStatus(_("Identity Downloaded."));
+	}
+
     this->EnablePage();
     //this->download_button->SetLabelText(_("Re-Download"));
 }
