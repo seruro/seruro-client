@@ -506,11 +506,17 @@ bool SeruroCryptoMSW::HaveIdentity(wxString server_name, wxString address, wxStr
     return cert_exists;
 }
 
-bool SeruroCryptoMSW::HaveCA(wxString server_name)
+bool SeruroCryptoMSW::HaveCA(wxString server_name, wxString fingerprint)
 { 
+	wxString ca_fingerprint;
+
 	/* First get the fingerprint string from the config. */
-	if (! wxGetApp().config->HaveCA(server_name)) return false;
-	wxString ca_fingerprint = wxGetApp().config->GetCA(server_name);
+	if (fingerprint.compare(wxEmptyString) == 0) {
+		if (! wxGetApp().config->HaveCA(server_name)) return false;
+		ca_fingerprint = wxGetApp().config->GetCA(server_name);
+	} else {
+		ca_fingerprint = fingerprint;
+	}
 
 	/* Looking at the personal (my) store. */
 	bool in_store = HaveCertificateByFingerprint(ca_fingerprint, CERTSTORE_TRUSTED_ROOT);

@@ -601,12 +601,17 @@ bool SeruroCryptoMAC::RemoveCertificates(wxArrayString fingerprints)
 
 
 /* Methods to query certificates by their name (meaning SHA1) */
-bool SeruroCryptoMAC::HaveCA(wxString server_name)
+bool SeruroCryptoMAC::HaveCA(wxString server_name, wxString fingerprint)
 {
     bool status;
+	wxString ca_fingerprint;
     
-    if (! wxGetApp().config->HaveCA(server_name)) return false;
-	wxString ca_fingerprint = wxGetApp().config->GetCA(server_name);
+	if (fingerprint.compare(wxEmptyString) == 0) {
+		if (! wxGetApp().config->HaveCA(server_name)) return false;
+		ca_fingerprint = wxGetApp().config->GetCA(server_name);
+	} else {
+		ca_fingerprint = fingerprint;
+	}
     
     status = FindSubjectKeyIDInKeychain(ca_fingerprint, CRYPTO_SEARCH_CERT, _(CA_KEYCHAIN));
     

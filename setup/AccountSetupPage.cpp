@@ -34,18 +34,22 @@ void AccountPage::OnPastePassword(wxClipboardTextEvent& event)
 /* CA installer (triggered from adding a new server) */
 void AccountPage::OnCAResult(SeruroRequestEvent &event)
 {
-	wxJSONValue response = event.GetResponse();
+	wxJSONValue response;
+	SeruroServerAPI *api;
+	SeruroCrypto crypto_helper;
 
 	/* There are no more callback actions. */
 	this->EnablePage();
 
-	SeruroServerAPI *api = new SeruroServerAPI(this);
+	response = event.GetResponse();
+	api = new SeruroServerAPI(this);
+
 	/* This is a boolean, which indicates a successful add, but the user may deny. */
+	/* The install ca API command will also check if the user already has the CA skid installed. */
 	api->InstallCA(response);
 	delete api;
 
 	/* Check that the (now-known) CA hash exists within the trusted Root store. */
-	SeruroCrypto crypto_helper;
 	this->has_ca = crypto_helper.HaveCA(response["server_uuid"].AsString());
 
 	/* If the user canceled the install, stop. */

@@ -202,16 +202,27 @@ bool SeruroServerAPI::InstallCA(wxJSONValue response)
 	wxMemoryBuffer ca_decoded;
     wxString server_uuid;
     wxString ca_fingerprint;
-    bool result;
+    bool result = true;
     
 	SeruroCrypto crypto;
     
+	/* Attempt to decode the CA certificate. */
     server_uuid = response["server_uuid"].AsString();
-	ca_encoded = response["ca"].AsString();
+	ca_encoded = response["ca"][1].AsString();
 	if (! DecodeBase64(ca_encoded, &ca_decoded)) return false;
 
-    ca_fingerprint = wxEmptyString;
-	result = crypto.InstallCA(ca_decoded, ca_fingerprint);
+	/* Set the fingerprint to the SKID returned by the API call. */
+	ca_fingerprint = response["ca"][0].AsString();
+
+	/* Check if the user already has the CA SKID installed. */
+	if (! crypto.HaveCA(server_uuid, ca_fingerprint)) {
+		/* Otherwise clear and set the fingerprint through the native API. */
+		ca_fingerprint.Clear();
+		result = crypto.InstallCA(ca_decoded, ca_fingerprint);
+	} else {
+		/* No action needed. */
+		result = true;
+	}
 
 	/* Set the CA fingerprint. */
     if (result) {

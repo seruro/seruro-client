@@ -48,7 +48,8 @@ public:
 	bool HaveIdentityByHash(wxString hash);
 
 	/* Methods to query certificates by their name (meaning SHA1) */
-	bool HaveCA(wxString server_name);
+	bool HaveCA(wxString server_name,
+		wxString fingerprint = wxEmptyString);
 	bool HaveCertificates(wxString server_name, wxString address,
         wxString fingerprint = wxEmptyString);
 	bool HaveIdentity(wxString server_name, wxString address,
