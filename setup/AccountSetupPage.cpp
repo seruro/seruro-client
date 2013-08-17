@@ -14,10 +14,27 @@ BEGIN_EVENT_TABLE(AccountPage, SetupPage)
 
 	EVT_CHOICE(wxID_ANY, AccountPage::OnSelectServer)
 
-    EVT_TEXT_PASTE(wxID_ANY, AccountPage::OnPastePassword)
+    //EVT_TEXT_PASTE(wxID_ANY, AccountPage::OnPastePassword)
+//#if defined(__WXOSX__) || defined(__WXMAC__)
+    //EVT_KEY_DOWN(AccountPage::OnKeyDown)
+//#endif
 END_EVENT_TABLE()
 
 DECLARE_APP(SeruroClient);
+
+void AccountPage::OnKeyDown(wxKeyEvent &event)
+{
+    /* Todo, does not work!!! */
+//#if defined(__WXOSX__) || defined(__WXMAC__)
+    /* Really only search for control/cmd. */
+    if (! event.GetModifiers() == wxMOD_CONTROL  || ! password->HasFocus()) {
+        event.Skip();
+        return;
+    }
+    
+    int i = 0;
+//#endif
+}
 
 void AccountPage::OnPastePassword(wxClipboardTextEvent& event)
 {

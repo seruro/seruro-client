@@ -159,6 +159,7 @@ public:
 	void OnSelectServer(wxCommandEvent &event);
     void OnCustomPort(wxCommandEvent &event);
     void OnPastePassword(wxClipboardTextEvent& event);
+    void OnKeyDown(wxKeyEvent &event);
     wxString GetServerUUID() { return this->server_uuid; }
     
 	/* Check if the name from the server page changed (and reselect). */

@@ -2,6 +2,7 @@
 #include "AddAccountDialog.h"
 /* Need GetServerChoice. */
 #include "AddServerDialog.h"
+#include "../components/PasswordCtrl.h"
 #include "../UIDefs.h"
 
 #include "../../SeruroClient.h"
@@ -42,10 +43,11 @@ void AddAccountForm::AddForm(wxSizer *sizer, const wxString &address,
     grid_sizer->SetItemMinSize((size_t) 2, SERURO_SETTINGS_FLEX_LABEL_WIDTH, -1);
     
     /* Host controller. */
-	this->password = new wxTextCtrl(parent, SERURO_ACCOUNT_PASSWORD_ID, wxEmptyString,
-		wxDefaultPosition, wxDefaultSize,
-		/* It's full of stars... */
-		wxTE_PASSWORD);
+	//this->password = new wxTextCtrl(parent, SERURO_ACCOUNT_PASSWORD_ID, wxEmptyString,
+	//	wxDefaultPosition, wxDefaultSize,
+	//	/* It's full of stars... */
+	//	wxTE_PASSWORD);
+    this->password = new PasswordCtrl(parent, SERURO_ACCOUNT_PASSWORD_ID);
     
 	grid_sizer->Add(this->password, DIALOGS_BOXSIZER_OPTIONS);
 	

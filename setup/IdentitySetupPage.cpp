@@ -17,7 +17,7 @@ BEGIN_EVENT_TABLE(IdentityPage, SetupPage)
     EVT_BUTTON(BUTTON_DOWNLOAD_IDENTITY, IdentityPage::OnDownloadIdentity)
     EVT_SERURO_REQUEST(SERURO_API_CALLBACK_P12S, IdentityPage::OnP12sResponse)
 
-	EVT_TEXT_PASTE(wxID_ANY, IdentityPage::OnPasteUnlock)
+	//EVT_TEXT_PASTE(wxID_ANY, IdentityPage::OnPasteUnlock)
 END_EVENT_TABLE()
 
 DECLARE_APP(SeruroClient);
