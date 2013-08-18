@@ -7,36 +7,26 @@
 
 BEGIN_EVENT_TABLE(PasswordCtrl, wxTextCtrl)
     EVT_TEXT_PASTE(wxID_ANY, PasswordCtrl::OnPaste)
-
-    EVT_KEY_DOWN(PasswordCtrl::OnKeyDown)
 END_EVENT_TABLE()
 
 DECLARE_APP(SeruroClient);
 
-PasswordCtrl::PasswordCtrl(wxWindow *parent, wxWindowID id)
-  : wxTextCtrl(parent, id, wxEmptyString, wxDefaultPosition, wxDefaultSize)
+UnlockCtrl::UnlockCtrl(wxWindow *parent, wxWindowID id)
+  : wxTextCtrl(parent, id, wxEmptyString, wxDefaultPosition)
 {
-    SetWindowStyle(wxTE_PASSWORD);
-    wxGetApp().Bind(wxEVT_KEY_DOWN, &PasswordCtrl::OnKeyDown, this);
+    wxTextAttr style;
+    
+    /* Give it a code-like look. */
+    style.SetFontFamily(wxFONTFAMILY_TELETYPE);
+    this->SetDefaultStyle(style);
 }
 
-void PasswordCtrl::OnKeyDown(wxKeyEvent &event)
-{
-    if (! this->HasFocus()) {
-        event.Skip();
-        return;
-    }
-    
-    if (! event.GetModifiers() == wxMOD_CONTROL) {
-        event.Skip();
-        return;
-    }
-    
-    event.Skip();
-}
+PasswordCtrl::PasswordCtrl(wxWindow *parent, wxWindowID id)
+  : wxTextCtrl(parent, id, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_PASSWORD) {}
 
 void PasswordCtrl::OnPaste(wxClipboardTextEvent& event)
 {
+#if defined(__WXMSW__)
     wxTextDataObject clipboard_data;
 	wxTheClipboard->Open();
 	
@@ -51,4 +41,5 @@ void PasswordCtrl::OnPaste(wxClipboardTextEvent& event)
 	this->Clear();
 	this->SetValue(clipboard_data.GetText());
 	this->SetInsertionPointEnd();
+#endif
 }

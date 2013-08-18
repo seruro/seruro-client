@@ -1,5 +1,6 @@
 
 #include "DecryptDialog.h"
+#include "../components/PasswordCtrl.h"
 #include "../UIDefs.h"
 
 #include "../../SeruroClient.h"
@@ -13,13 +14,8 @@ void DecryptForm::AddForms(wxSizer *sizer)
 	grid_sizer->AddGrowableCol(1, 1);
 
     
-    authentication_control = new wxTextCtrl(parent, wxID_ANY,
-        wxEmptyString, wxDefaultPosition, wxDefaultSize,
-        /* Should be password by default? */
-        wxTE_PASSWORD);
-    encipherment_control = new wxTextCtrl(parent, wxID_ANY,
-        wxEmptyString, wxDefaultPosition, wxDefaultSize,
-        wxTE_PASSWORD);
+    authentication_control = new UnlockCtrl(parent, wxID_ANY);
+    encipherment_control = new UnlockCtrl(parent, wxID_ANY);
     
  	grid_sizer->Add(new Text(parent, SERURO_AUTHENTICATION L" Unlock:"));
     grid_sizer->SetItemMinSize((size_t) 0, SERURO_SETTINGS_FLEX_LABEL_WIDTH, -1);

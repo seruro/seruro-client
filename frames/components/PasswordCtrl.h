@@ -9,7 +9,14 @@ public:
     
 private:
     void OnPaste(wxClipboardTextEvent& event);
-    void OnKeyDown(wxKeyEvent &event);
     
     DECLARE_EVENT_TABLE();
+};
+
+class UnlockCtrl : public wxTextCtrl
+{
+public:
+    UnlockCtrl(wxWindow *parent, wxWindowID id);
+    
+private:
 };

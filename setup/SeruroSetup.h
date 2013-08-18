@@ -158,8 +158,7 @@ public:
 	/* Manage server/CA lookups. */
 	void OnSelectServer(wxCommandEvent &event);
     void OnCustomPort(wxCommandEvent &event);
-    void OnPastePassword(wxClipboardTextEvent& event);
-    void OnKeyDown(wxKeyEvent &event);
+
     wxString GetServerUUID() { return this->server_uuid; }
     
 	/* Check if the name from the server page changed (and reselect). */
@@ -208,7 +207,6 @@ public:
 	/* Check the 'install' identity box. */
 	void OnP12sResponse(SeruroRequestEvent &event);
     void OnDownloadIdentity(wxCommandEvent &event);
-	void OnPasteUnlock(wxClipboardTextEvent& event);
 	
     /* Can be called from event or from a forced download. */
 	void DownloadIdentity();

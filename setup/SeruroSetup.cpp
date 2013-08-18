@@ -16,24 +16,6 @@ END_EVENT_TABLE()
 
 DECLARE_APP(SeruroClient);
 
-void PasteIntoControl(wxTextCtrl *control)
-{
-	wxTextDataObject clipboard_data;
-	wxTheClipboard->Open();
-	
-	if (wxTheClipboard->IsSupported(wxDF_TEXT)) {
-		/* Only text can go into the password field. */
-		wxTheClipboard->GetData(clipboard_data);
-	}
-
-	/* If there was non-text in the clipboard, clear the password field. */
-	wxTheClipboard->Close();
-	
-	control->Clear();
-	control->SetValue(clipboard_data.GetText());
-	control->SetInsertionPointEnd();
-}
-
 SetupPage::SetupPage(SeruroSetup *parent) : wxWizardPageSimple(parent), wizard(parent),
 	enable_prev(true), require_auth(false)
 {
