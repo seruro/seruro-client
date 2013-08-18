@@ -3,6 +3,7 @@
 
 #include "AppMSW_LiveMail.h"
 #include "../SeruroClient.h"
+#include "../SeruroConfig.h"
 #include "../crypto/SeruroCrypto.h"
 
 #include <wx/msw/registry.h>
@@ -10,7 +11,6 @@
 #include <wx/dir.h>
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
-#include <wx/xml/xml.h>
 #include <wx/base64.h>
 
 #define MAILDATA_PATH "/AppData/Local/Microsoft/Windows Live Mail/"
@@ -43,7 +43,7 @@
 #define XML_FIELD_ENCIPHERMENT "SMTP_Encryption_Certificate"
 // #define XML_FIELD_DISPLAY_NAME "SMTP_DisplayName"
 
-DECLARE_APP(SeruroClient);
+wxDECLARE_APP(SeruroClient);
 
 wxMemoryBuffer AsBinary(wxString hex_string)
 {
@@ -168,6 +168,26 @@ bool AppMSW_LiveMail::GetAccountFile(const wxString &sub_folder, wxString &accou
 	return false;
 }
 
+bool LoadAccountFile(wxString filename, wxXmlDocument &document)
+{
+	if (! document.Load(filename, "UTF-16", wxXMLDOC_KEEP_WHITESPACE_NODES)) {
+		DEBUG_LOG(_("AppMSW_LiveMail> (LoadAccountFile) Cannot read XML (%s)."), filename);
+		return false;
+	}
+
+	if (document.GetRoot()->GetName() != "MessageAccount") {
+		DEBUG_LOG(_("AppMSW_LiveMail> (LoadAccountFile) XML does not contain the correct root."));
+		return false;
+	}
+
+	return true;
+}
+
+bool SaveAccountFile(wxString filename, wxXmlDocument &document)
+{
+	//return document.Save(filename, wxXML_NO_INDENTATION);
+}
+
 wxString AppMSW_LiveMail::GetAccountInfo(const wxString &account_folder, const wxString &account_filename)
 {
 	wxJSONValue account_info;
@@ -180,13 +200,7 @@ wxString AppMSW_LiveMail::GetAccountInfo(const wxString &account_folder, const w
 	account_info["filename"] = account_file.GetFullPath();
 
 	wxXmlDocument xml_doc;
-	if (! xml_doc.Load(account_file.GetFullPath())) {
-		DEBUG_LOG(_("AppMSW_LiveMail> (GetAccountInfo) Cannot read XML (%s)."), account_file.GetFullPath());
-		return _("<None>");
-	}
-
-	if (xml_doc.GetRoot()->GetName() != "MessageAccount") {
-		DEBUG_LOG(_("AppMSW_LiveMail> (GetAccountInfo) XML does not contain the correct root."));
+	if (! LoadAccountFile(account_info["filename"].AsString(), xml_doc)) {
 		return _("<None>");
 	}
 
@@ -216,20 +230,138 @@ wxString AppMSW_LiveMail::GetAccountInfo(const wxString &account_folder, const w
 	return account_info["address"].AsString();
 }
 
-bool AppMSW_LiveMail::IsIdentityInstalled(wxString address)
+bool IsHashInstalledAndSet(wxString address, wxMemoryBuffer hash)
 {
-	wxString account_name;
+	SeruroCrypto crypto_helper;
+	wxString fingerprint;
+
+	/* Crypto expects all certificate as base64 encoded buffers. */
+	if (! crypto_helper.HaveIdentityByHash(wxBase64Encode(hash))) {
+		/* No certificate exists. */
+		return false;
+	}
+	
+	/* Search the certificate store for that HASH value, and retreive the SKID, then check config. */
+	fingerprint = crypto_helper.GetIdentitySKIDByHash(wxBase64Encode(hash));
+	/* This should always work, the certificate DOES exist. */
+
+	/* Get all identities, no server is specified, and try to match the fingerprint. */
+	wxArrayString server_list, address_list, cert_list;
+
+	server_list = wxGetApp().config->GetServerList();
+	for (size_t i = 0; i < server_list.size(); i++ ) {
+		address_list = wxGetApp().config->GetAddressList(server_list[i]);
+		for (size_t j = 0; j < address_list.size(); j++) {
+			if (address_list[j] != address) { continue; }
+
+			/* Check both certificates. */
+			cert_list = wxGetApp().config->GetIdentity(server_list[i], address_list[j]);
+			for (size_t k = 0; k < cert_list.size(); k++) {
+				if (fingerprint == cert_list[k]) {
+					/* Possibly fill in some server value. */
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
+void SetNodeValue(wxXmlDocument &document, wxString key, wxString value)
+{
+	wxXmlNode *child;
+	wxXmlNode *inner_text;
+	
+	child = document.GetRoot()->GetChildren();
+	while (child) {
+		/* Search for an existing element name matching key. */
+		if (child->GetName() == key) {
+			//child->SetContent(value);
+			//return;
+			document.GetRoot()->RemoveChild(child);
+		}
+		child = child->GetNext();
+	}
+
+	/* Create the element and the attribute, binary. */
+	wxXmlAttribute *type_attribute = new wxXmlAttribute(_("type"), _("BINARY"));
+
+	child      = new wxXmlNode(document.GetRoot(), wxXML_ELEMENT_NODE, key);
+	inner_text = new wxXmlNode(child, wxXML_TEXT_NODE, wxEmptyString, value);
+	child->SetAttributes(type_attribute);
+
+	/* The values we're assigned to the xmlNode structure? */
+	/* Do NOT delete! */
+}
+
+bool AppMSW_LiveMail::InstallIdentity(wxString server_uuid, wxString address)
+{
+	wxString auth_skid, enc_skid;
+	wxString auth_hash, enc_hash;
+	wxString account_file;
+	SeruroCrypto crypto;
+
+	account_file = this->GetAccountFile(address);
+	if (account_file.compare(wxEmptyString) == 0) {
+		DEBUG_LOG(_("AppMSW_LiveMail> (InstallIdentity) Cannot find (%s) within account info."), address);
+		return false;
+	}
+
+	/* Get both certificate SKIDs from config. */
+	auth_skid = wxGetApp().config->GetIdentity(server_uuid, address, ID_AUTHENTICATION);
+	enc_skid  = wxGetApp().config->GetIdentity(server_uuid, address, ID_ENCIPHERMENT);
+
+	/* For each, GetIdentityHashBySKID */
+	auth_hash = crypto.GetIdentityHashBySKID(auth_skid);
+	enc_hash  = crypto.GetIdentityHashBySKID(enc_skid);
+
+	if (auth_hash == wxEmptyString || enc_hash == wxEmptyString) {
+		return false;
+	}
+
+	/* Open XML and save XML_FIELD_AUTHENTICATION, XML_FIELD_ENCIPHERMENT */
+	wxXmlDocument xml_doc;
+	if (! LoadAccountFile(account_file, xml_doc)) {
+		return false;
+	}
+
+	SetNodeValue(xml_doc, XML_FIELD_AUTHENTICATION, AsHex(wxBase64Decode(auth_hash)));
+	SetNodeValue(xml_doc, XML_FIELD_ENCIPHERMENT, AsHex(wxBase64Decode(enc_hash)));
+
+	/* This step is not working. */
+	if (! SaveAccountFile(account_file, xml_doc)) {
+		return false;
+	}
+
+	return true;
+}
+
+wxString AppMSW_LiveMail::GetAccountFile(wxString address)
+{
+	/* Get the address (account) file for a given address (there may be duplicates, find the first. */
+	/* Todo: alert user if there are duplicates. */
 	wxArrayString account_names;
 	
 	/* Check each info["accounts"][i][address] for authentication and encipherment. */
 	account_names = this->info["accounts"].GetMemberNames();
 	for (size_t i = 0; i < account_names.size(); i++) {
 		if (this->info["accounts"][account_names[i]]["address"].AsString() == address) {
-			account_name = account_names[i];
-			break;
+			//account_name = account_names[i];
+			//break;
+			return this->info["accounts"][account_names[i]]["filename"].AsString();
 		}
 	}
 
+	return wxEmptyString;
+}
+
+
+bool AppMSW_LiveMail::IsIdentityInstalled(wxString address)
+{
+	wxString account_name;
+
+	account_name = this->GetAccountFile(address);
 	if (account_name.compare(wxEmptyString) == 0) {
 		DEBUG_LOG(_("AppMSW_LiveMail> (IsIdentityInstalled) Cannot find (%s) within account info."), address);
 		return false;
@@ -238,27 +370,29 @@ bool AppMSW_LiveMail::IsIdentityInstalled(wxString address)
 	/* Test if certificate values exist. */
 	if (! this->info["accounts"][account_name].HasMember("encipherment") || 
 		! this->info["accounts"][account_name].HasMember("authentication")) {
+			/* STATE: missing certificates. */
 			return false;
 	}
 
-	/* If those values are found then search then turn them into their binary representations. */
-	SeruroCrypto crypto_helper;
+	/* If those values are found, search the cert store, then turn them into their binary representations. */
 	wxMemoryBuffer search_hash;
 	
-	search_hash = AsBinary(this->info["accounts"][account_name]["encipherment"].AsString());
-	/* Crypto expects all certificate as base64 encoded buffers. */
-	if (! crypto_helper.HaveIdentityByHash(wxBase64Encode(search_hash))) {
-		return false;
-	}
-	search_hash = AsBinary(this->info["accounts"][account_name]["encipherment"].AsString());
-	if (! crypto_helper.HaveIdentityByHash(wxBase64Encode(search_hash))) {
+	search_hash = AsBinary(this->info["accounts"][account_name]["authentication"].AsString());
+	if (! IsHashInstalledAndSet(address, search_hash)) {
+		DEBUG_LOG(_("AppMSW_LiveMail> (IsIdentityInstalled) Authentication hash does not exists for (%s)."), address);
+		/* STATE: no seruro configured certificates. */
 		return false;
 	}
 
-	/* Search the certificate store for that HASH value, and retreive the SKID, then check config. */
-	/* Todo: get SKID and check the application config. */
+	search_hash = AsBinary(this->info["accounts"][account_name]["encipherment"].AsString());
+	if (! IsHashInstalledAndSet(address, search_hash)) {
+		DEBUG_LOG(_("AppMSW_LiveMail> (IsIdentityInstalled) Encipherment hash does not exist for (%s)."), address);
+		/* STATE: no seruro configured certificates. */
+		return false;
+	}
 
-	return false;
+	/* STATE: seruro configured certificate installed. */
+	return true;
 }
 
 bool AppMSW_LiveMail::GetInfo()

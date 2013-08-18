@@ -6,6 +6,7 @@
 
 #include "../Defs.h"
 #include "SeruroRequest.h"
+#include "../SeruroConfig.h"
 
 #include "../wxJSON/wx/jsonval.h"
 
@@ -68,7 +69,8 @@ public:
 
 	/* API callbacks */
 	//bool InstallP12(wxJSONValue response, wxJSONValue unlock_codes, bool force_install = false);
-    bool InstallP12(wxString server_uuid, wxString address, wxString cert_type,
+    bool InstallP12(wxString server_uuid, wxString address, 
+		identity_type_t cert_type,
         wxString encoded_p12, wxString unlock_code, bool force_install = false);
 	bool InstallCA(wxJSONValue response);
 	bool InstallCertificate(wxJSONValue response);

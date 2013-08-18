@@ -31,10 +31,16 @@ public:
         wxArrayString empty_list;
         return empty_list;
     }
-    virtual bool IsIdentityInstalled(wxString account_name) { return false; }
+    virtual bool IsIdentityInstalled(wxString address) { 
+		return false; 
+	}
+	virtual bool InstallIdentity(wxString server_uuid, wxString address) {
+		return false;
+	}
     
 public:
-    /* A secondary boolean indicating a success/failure while detecting the application status. */
+    /* A secondary boolean indicating a success/failure
+	 * while detecting the application status. */
     bool is_detected;
     bool is_installed;
 
@@ -56,18 +62,24 @@ public:
         return this->app_names;
     }
     
-    /* Searches for the application and returns status: (installed, not, n/a), and version. */
+    /* Searches for the application and returns status: 
+	 * (installed, not, n/a), and version. */
     wxJSONValue GetApp(wxString app_name);
     
     /* A list of all the configured accounts for the given application. */
     wxArrayString GetAccountList(wxString app_name);
-    /* Check if a 'Seruro' identity is configured/installed for the given app/account pair. */
+    /* Check if a 'Seruro' identity is configured/installed 
+	 * the given app/account pair. */
     bool IsIdentityInstalled(wxString app_name, wxString account);
+	bool InstallIdentity(wxString app_name, 
+		wxString server_uuid, wxString address);
+
 
 private:
     AppHelper* GetHelper(wxString app_name);
     
-    /* A cheap way to implement a map, since the API/doc is not available in offline OSX. */
+    /* A cheap way to implement a map, since the API/doc 
+	 * is not available in offline OSX. */
     wxArrayString app_names;
     AppHelper *app_helpers[32];
     size_t app_count;

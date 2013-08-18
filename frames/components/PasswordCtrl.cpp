@@ -1,5 +1,5 @@
 
-#include "SeruroClient.h"
+#include "../../SeruroClient.h"
 #include "PasswordCtrl.h"
 
 #include <wx/clipbrd.h>

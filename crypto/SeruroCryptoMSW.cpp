@@ -29,8 +29,9 @@ enum search_type_t {
 	BY_SKID
 };
 
-wxString GetSubjectKeyIDFromCertificate(PCCERT_CONTEXT &cert);
-bool HaveCertificateByFingerprint(wxString fingerprint, wxString store_name, search_type_t = BY_SKID);
+wxString GetFingerprintFromCertificate(PCCERT_CONTEXT &cert, search_type_t match_type);
+bool HaveCertificateByFingerprint(wxString fingerprint, wxString store_name, search_type_t match_type = BY_SKID);
+PCCERT_CONTEXT GetCertificateByFingerprint(wxString fingerprint, wxString store_name, search_type_t match_type);
 
 /* Helper function to convert wxString to a L, the caller is responsible for memory. */
 BSTR AsLongString(const wxString &input)
@@ -97,7 +98,7 @@ bool InstallCertificateToStore(const wxMemoryBuffer &cert, wxString store_name, 
 	}
 
 	/* Retreive the subject key ID as the certificate fingerprint. */
-	fingerprint.Append(GetSubjectKeyIDFromCertificate(cert_context));
+	fingerprint.Append(GetFingerprintFromCertificate(cert_context, BY_SKID));
 
 	wxLogMessage(wxT("SeruroCrypto::InstallCA> cert installed."));
 	CertCloseStore(cert_store, 0);
@@ -150,16 +151,43 @@ bool InstallIdentityToStore(const PCCERT_CONTEXT &identity, wxString store_name)
 	return true;
 }
 
-wxString GetIdentityHashHex(wxString fingerprint)
+bool HaveCertificateByFingerprint(wxString fingerprint, wxString store_name, search_type_t match_type)
 {
-	/* Find the certificate by SKID, then calculate hash (buffer) then return as hex representation. */
+	bool have_cert;
+	PCCERT_CONTEXT cert;
 
-	wxString hash_hex;
+	cert = GetCertificateByFingerprint(fingerprint, store_name, match_type);
+	have_cert = (cert != NULL);
 
-	return hash_hex;
+	return have_cert;
 }
 
-bool HaveCertificateByFingerprint(wxString fingerprint, wxString store_name, search_type_t match_type)
+wxString GetSKIDByHash(wxString hash, wxString store_name)
+{
+	PCCERT_CONTEXT cert;
+
+	cert = GetCertificateByFingerprint(hash, store_name, BY_HASH);
+	if (cert == NULL) {
+		return wxEmptyString;
+	}
+
+	/* Extract SKID (szOID_SUBJECT_KEY_IDENTIFIER). */
+	return GetFingerprintFromCertificate(cert, BY_SKID);
+}
+
+wxString GetHashBySKID(wxString skid, wxString store_name)
+{
+	PCCERT_CONTEXT cert;
+
+	cert = GetCertificateByFingerprint(skid, store_name, BY_SKID);
+	if (cert == NULL) {
+		return wxEmptyString;
+	}
+
+	return GetFingerprintFromCertificate(cert, BY_HASH);
+}
+
+PCCERT_CONTEXT GetCertificateByFingerprint(wxString fingerprint, wxString store_name, search_type_t match_type)
 {
 	HCERTSTORE cert_store;
 	BSTR store = AsLongString(store_name);
@@ -170,17 +198,17 @@ bool HaveCertificateByFingerprint(wxString fingerprint, wxString store_name, sea
 
 	if (cert_store == NULL) {
 		DWORD error = GetLastError();
-		wxLogMessage(_("SeruroCrypto> (HaveCertificateByFingerprint) could not open CURRENT_USER/(%s) (%u)."),
+		wxLogMessage(_("SeruroCrypto> (GetCertificateByFingerprint) could not open CURRENT_USER/(%s) (%u)."),
 			store_name, error);
-		return false;
+		return NULL;
 	}
 
 	/* Convert the base64 fingerprint to the 160-bit SHA1 hash. */
 	CRYPT_HASH_BLOB hash;
 	wxMemoryBuffer hash_value = wxBase64Decode(fingerprint);
 	if (hash_value.GetDataLen() != 20) {
-		wxLogMessage(_("SeruroCrypto> (HaveCertificateByFingerprint) hash value was not 20 bytes?"));
-		return false;
+		wxLogMessage(_("SeruroCrypto> (GetCertificateByFingerprint) hash value was not 20 bytes?"));
+		return NULL;
 	}
 	hash.pbData = (BYTE *) hash_value.GetData();
 	hash.cbData = hash_value.GetDataLen();
@@ -195,60 +223,64 @@ bool HaveCertificateByFingerprint(wxString fingerprint, wxString store_name, sea
 			0, CERT_FIND_HASH, (void *) &hash, NULL);
 	}
 
-	return (cert != NULL);
+	return cert;
 }
 
 /* Calculate SHA1 for thumbprinting. */
-wxString GetFingerprintFromBuffer(const wxMemoryBuffer &cert)
-{
-	HCRYPTPROV crypto_provider;
-	HCRYPTHASH hash;
-
-	BYTE *data = (BYTE *) cert.GetData();
-	DWORD len = cert.GetDataLen();
-
-	CryptAcquireContext(&crypto_provider, NULL, NULL, PROV_RSA_FULL, 0);
-	CryptCreateHash(crypto_provider, CALG_SHA1, 0, 0, &hash);
-	CryptHashData(hash, data, len, 0);
-
-	BYTE hash_value[20];
-	CryptGetHashParam(hash, HP_HASHVAL, (BYTE*) hash_value, &len, 0);
-
-	//char digits[] = "0123456789abcdef";
-	//for (DWORD i = 0; i < len; i++) {
-	//	wxLogMessage(_("%c%c"), digits[hash_value[i] >> 4], digits[hash_value[i] & 0xf]);
-	//}
-
-	/* Convert raw data to base64, then to string. */
-	wxMemoryBuffer hash_buffer;
-	hash_buffer.AppendData((void *) hash_value, 20);
-
-	return wxBase64Encode(hash_buffer);
-}
+//wxString GetCertificateHash(const wxMemoryBuffer &cert)
+//{
+//	HCRYPTPROV crypto_provider;
+//	HCRYPTHASH hash;
+//
+//	BYTE *data = (BYTE *) cert.GetData();
+//	DWORD len = cert.GetDataLen();
+//
+//	CryptAcquireContext(&crypto_provider, NULL, NULL, PROV_RSA_FULL, 0);
+//	CryptCreateHash(crypto_provider, CALG_SHA1, 0, 0, &hash);
+//	CryptHashData(hash, data, len, 0);
+//
+//	BYTE hash_value[20];
+//	CryptGetHashParam(hash, HP_HASHVAL, (BYTE*) hash_value, &len, 0);
+//
+//	/* Convert raw data to base64, then to string. */
+//	wxMemoryBuffer hash_buffer;
+//	hash_buffer.AppendData((void *) hash_value, 20);
+//
+//	return wxBase64Encode(hash_buffer);
+//}
 
 /* Get subject key id from certificate context. */
-wxString GetSubjectKeyIDFromCertificate(PCCERT_CONTEXT &cert)
+wxString GetFingerprintFromCertificate(PCCERT_CONTEXT &cert, search_type_t match_type)
 {
 	BOOL result;
 	BYTE *id_data;
 	DWORD id_size, error_num;
 
+	/* CERT_HASH_PROP_ID */
 	/* Get the "szOID_SUBJECT_KEY_IDENTIFIER" or hash of public key from certificate. */
-	result = CertGetCertificateContextProperty(cert, CERT_KEY_IDENTIFIER_PROP_ID, NULL, &id_size);
+	if (match_type == BY_SKID) {
+		result = CertGetCertificateContextProperty(cert, CERT_KEY_IDENTIFIER_PROP_ID, NULL, &id_size);
+	} else {
+		result = CertGetCertificateContextProperty(cert, CERT_HASH_PROP_ID, NULL, &id_size);
+	}
 
 	if (! result || id_size <= 0) {
 		// error 
 		error_num = GetLastError();
-		wxLogMessage(_("SeruroCrypto> (GetSubjectKeyIDFromCert) cannot get size of key data (%u)."), error_num);
+		wxLogMessage(_("SeruroCrypto> (GetFingerprintFromCert) cannot get size of key data (%u)."), error_num);
 		return wxEmptyString;
 	}
 
 	id_data = (BYTE *) malloc(sizeof(BYTE) * id_size);
-	result = CertGetCertificateContextProperty(cert, CERT_KEY_IDENTIFIER_PROP_ID, id_data, &id_size);
+	if (match_type == BY_SKID) {
+		result = CertGetCertificateContextProperty(cert, CERT_KEY_IDENTIFIER_PROP_ID, id_data, &id_size);
+	} else {
+		result = CertGetCertificateContextProperty(cert, CERT_HASH_PROP_ID, id_data, &id_size);
+	}
 
 	if (! result) { 
 		error_num = GetLastError();
-		wxLogMessage(_("SeruroCrypto> (GetSubjectKeyIDFromCert) cannot get key data (%u)."), error_num);
+		wxLogMessage(_("SeruroCrypto> (GetFingerprintFromCert) cannot get key data (%u)."), error_num);
 		return wxEmptyString;
 	}
 
@@ -460,7 +492,7 @@ bool SeruroCryptoMSW::InstallP12(const wxMemoryBuffer &p12, const wxString &p_pa
 	while (NULL != (cert = CertEnumCertificatesInStore(pfx_store, cert))) {
 		result = InstallIdentityToStore(cert, _(CERTSTORE_PERSONAL));
 		if (result) {
-			fingerprints.Add(GetSubjectKeyIDFromCertificate(cert));
+			fingerprints.Add(GetFingerprintFromCertificate(cert, BY_SKID));
 		}
 	}
 
@@ -472,6 +504,16 @@ bool SeruroCryptoMSW::InstallP12(const wxMemoryBuffer &p12, const wxString &p_pa
 bool SeruroCryptoMSW::HaveIdentityByHash(wxString hash)
 {
 	return HaveCertificateByFingerprint(hash, CERTSTORE_PERSONAL, BY_HASH);
+}
+
+wxString SeruroCryptoMSW::GetIdentitySKIDByHash(wxString hash)
+{
+	return GetSKIDByHash(hash, CERTSTORE_PERSONAL);
+}
+
+wxString SeruroCryptoMSW::GetIdentityHashBySKID(wxString skid)
+{
+	return GetHashBySKID(skid, CERTSTORE_PERSONAL);
 }
 
 bool SeruroCryptoMSW::HaveIdentity(wxString server_name, wxString address, wxString fingerprint)

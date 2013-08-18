@@ -8,6 +8,13 @@
 #include <wx/textfile.h>
 #include "wxJSON/wx/jsonval.h"
 
+enum identity_type_t
+{
+	ID_AUTHENTICATION,
+	ID_ENCIPHERMENT,
+	ID_NO_IDENTITY
+};
+
 class SeruroConfig
 {
 public:
@@ -61,9 +68,11 @@ public:
 
 	wxJSONValue   GetServers();
 	wxJSONValue   GetServer(const wxString &server_uuid);
-    wxString      GetServerUUID(const wxString &server_name); /* should be server_name, translation. */
-    wxString      GetServerName(const wxString &server_uuid); /* reverse translation. */
-	wxArrayString GetServerList(); /* deprecated */ 
+    wxString      GetServerUUID(const wxString &server_name); 
+/* should be server_name, translation. */
+    wxString      GetServerName(const wxString &server_uuid); 
+/* reverse translation. */
+	wxArrayString GetServerList(); /* deprecated? */ 
     wxArrayString GetServerNames();
     
     wxArrayString GetAddressList(const wxString &server_uuid);
@@ -89,9 +98,9 @@ public:
 		bool write_config = false);
     
 	bool AddIdentity(wxString server_uuid, wxString addresss,
-		wxString cert_type, wxString fingerprint);
+		identity_type_t, wxString fingerprint);
 	bool RemoveIdentity(wxString server_uuid, wxString address,
-		wxString cert_type, bool write_config = false);
+		identity_type_t, bool write_config = false);
     
 	/* Each address under each server should be a list. */
 	bool AddCertificate(wxString server_uuid, wxString address,
@@ -112,7 +121,8 @@ public:
     
 	wxArrayString GetCertificates(wxString server_uuid, wxString address);
 	wxArrayString GetIdentity(wxString server_uuid, wxString address);
-    wxString GetIdentity(wxString server_uuid, wxString address, wxString cert_type);
+    wxString GetIdentity(wxString server_uuid, wxString address, 
+		identity_type_t id_type);
 	wxString GetCA(wxString server_uuid);
 
 protected:
@@ -121,10 +131,10 @@ protected:
 
 	bool AddFingerprint(wxString location, wxString server_uuid,
 		wxString fingerprint, wxString address = wxEmptyString,
-        wxString cert_type = wxEmptyString);
+        identity_type_t cert_type = ID_NO_IDENTITY);
 	bool RemoveFingerprints(wxString location, wxString server_uuid,
 		wxString address = wxEmptyString,
-        wxString cert_type = wxEmptyString);
+        identity_type_t cert_type = ID_NO_IDENTITY);
 
 private:
     bool InitConfig();

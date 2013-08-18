@@ -79,7 +79,7 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
     if (crypto.HaveIdentity(server_uuid, address, response["p12"]["encipherment"][0].AsString())) {
         this->SetEnciphermentHint(_(SERURO_ENCIPHERMENT L" already installed."));
         /* Make sure the identity skid is set in config. */
-        wxGetApp().config->AddIdentity(server_uuid, address, _("encipherment"),
+        wxGetApp().config->AddIdentity(server_uuid, address, ID_ENCIPHERMENT,
             response["p12"]["encipherment"][0].AsString());
 		install_encipherment = false;
     } else {
@@ -91,7 +91,7 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
     if (crypto.HaveIdentity(server_uuid, address, response["p12"]["authentication"][0].AsString())) {
         this->SetAuthenticationHint(_(SERURO_AUTHENTICATION L" already installed."));
         /* Make sure the encryption skid is set in config. */
-        wxGetApp().config->AddIdentity(server_uuid, address, _("authentication"),
+        wxGetApp().config->AddIdentity(server_uuid, address, ID_AUTHENTICATION,
             response["p12"]["authentication"][0].AsString());
 		install_authentication = false;
     } else {
@@ -242,13 +242,15 @@ bool IdentityPage::GoNext(bool from_callback)
 	/* Try to install with the saved response, and the input key, force the install incase there is an empty input. */
     bool authentication_result = true, encipherment_result = true;
     if (install_authentication) {
-        authentication_result = api->InstallP12(server_uuid, address, _("authentication"),
+        authentication_result = api->InstallP12(server_uuid, address, 
+			ID_AUTHENTICATION,
             this->download_response["p12"]["authentication"][1].AsString(),
             unlock_codes["authentication"].AsString(), true);
     }
     
     if (install_encipherment) {
-        encipherment_result = api->InstallP12(server_uuid, address, _("encipherment"),
+        encipherment_result = api->InstallP12(server_uuid, address, 
+			ID_ENCIPHERMENT,
             this->download_response["p12"]["encipherment"][1].AsString(),
             unlock_codes["encipherment"].AsString(), true);
     }

@@ -46,6 +46,8 @@ public:
 
 	/* Used for App configurations. */
 	bool HaveIdentityByHash(wxString hash);
+	wxString GetIdentitySKIDByHash(wxString hash);
+	wxString GetIdentityHashBySKID(wxString skid);
 
 	/* Methods to query certificates by their name (meaning SHA1) */
 	bool HaveCA(wxString server_name,

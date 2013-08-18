@@ -7,6 +7,8 @@
 
 #include "SeruroApps.h"
 
+#include <wx/xml/xml.h>
+
 class AppMSW_LiveMail : public AppHelper
 {
 public:
@@ -20,6 +22,7 @@ public:
     
     wxArrayString GetAccountList();
     bool IsIdentityInstalled(wxString address);
+	bool InstallIdentity(wxString server_uuid, wxString address);
     
 private:
     bool GetInfo();
@@ -30,6 +33,7 @@ private:
 	 */
 	wxString GetAccountInfo(const wxString &account_folder,
 		const wxString &account_filename);
+	wxString GetAccountFile(wxString address);
 
 	/* Populate account_file if true. */
 	bool GetAccountFile(const wxString &sub_folder, 

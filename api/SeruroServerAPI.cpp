@@ -273,7 +273,7 @@ bool SeruroServerAPI::InstallCertificate(wxJSONValue response)
 	return result;
 }
 
-bool SeruroServerAPI::InstallP12(wxString server_uuid, wxString address, wxString cert_type,
+bool SeruroServerAPI::InstallP12(wxString server_uuid, wxString address, identity_type_t cert_type,
     wxString encoded_p12, wxString unlock_code, bool force_install)
 {
     wxArrayString  fingerprints;
@@ -311,8 +311,8 @@ bool SeruroServerAPI::UninstallIdentity(wxString server_uuid, wxString address)
         return false;
     }
     
-    wxGetApp().config->RemoveIdentity(server_uuid, address, _("authentication"), true);
-    wxGetApp().config->RemoveIdentity(server_uuid, address, _("encipherment"), true);
+    wxGetApp().config->RemoveIdentity(server_uuid, address, ID_AUTHENTICATION, true);
+    wxGetApp().config->RemoveIdentity(server_uuid, address, ID_ENCIPHERMENT, true);
     
     return true;
 }

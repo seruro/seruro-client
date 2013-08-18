@@ -153,6 +153,16 @@ bool SeruroApps::IsIdentityInstalled(wxString app_name, wxString account_name)
     return helper->IsIdentityInstalled(account_name);
 }
 
+bool SeruroApps::InstallIdentity(wxString app_name, wxString server_uuid, wxString address)
+{
+    AppHelper *helper;
+    
+    helper = this->GetHelper(app_name);
+    if (helper == 0) return false;
+    
+    return helper->InstallIdentity(server_uuid, address);
+}
+
 void SeruroApps::AddAppHelper(wxString app_name, AppHelper *app_helper)
 {
     this->app_names.Add(app_name);
