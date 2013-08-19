@@ -26,7 +26,7 @@ LogWindow::LogWindow(SeruroPanelSettings *window) : SettingsView(window), Seruro
     sizer->Add(log_box, wxSizerFlags().Expand().Proportion(1).Border(wxALL, 5));
     
     /* Check if this is a debug build, if so create a send log button. */
-#if defined(__WXDEBUG__) || defined(DEBUG)
+#if defined(__WXDEBUG__) || defined(RELEASE_DEBUG)
     wxSizer *const actions_sizer = new wxBoxSizer(wxHORIZONTAL);
     
     send_button = new wxButton(this, wxID_ANY, _("Create Debug Report"));
@@ -40,6 +40,7 @@ LogWindow::LogWindow(SeruroPanelSettings *window) : SettingsView(window), Seruro
 
 void LogWindow::OnSendReport(wxCommandEvent &event)
 {
+#if defined(__WXDEBUG__) || defined(RELEASE_DEBUG)
     DebugReportDialog *dialog = new DebugReportDialog();
     dialog->SetLog(this->log_box->GetValue());
     
@@ -47,6 +48,7 @@ void LogWindow::OnSendReport(wxCommandEvent &event)
 		dialog->SendReport();
 	}
 	delete dialog;
+#endif
 }
 
 void LogWindow::ProxyLog(wxLogLevel level, const wxString &msg)

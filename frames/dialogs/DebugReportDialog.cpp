@@ -1,5 +1,5 @@
 
-#if defined(__WXDEBUG__) || defined(DEBUG)
+#if defined(__WXDEBUG__) || defined(RELEASE_DEBUG)
 
 #include "DebugReportDialog.h"
 #include "../UIDefs.h"
