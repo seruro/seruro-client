@@ -12,6 +12,8 @@
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
 #include <wx/base64.h>
+#include <wx/mstream.h>
+#include <wx/stream.h>
 
 #define MAILDATA_PATH "/AppData/Local/Microsoft/Windows Live Mail/"
 
@@ -73,6 +75,7 @@ wxMemoryBuffer AsBinary(wxString hex_string)
 wxString AsHex(wxMemoryBuffer binary_string)
 {
 	wxString hex_encoded;
+	wxString hex_byte;
 	int byte = 0;
 
 	void *binary = (void *) binary_string.GetData();
@@ -80,7 +83,10 @@ wxString AsHex(wxMemoryBuffer binary_string)
 
 	for (size_t i = 0; i < length; i++) {
 		byte = ((unsigned char *) binary)[i];
-		hex_encoded.Append(wxString::Format(_("%x"), byte));
+		//hex_encoded.Append(wxString::Format(_("%x"), byte));
+		hex_byte = wxString::Format(_("%x"), byte);
+		/* Make sure bytes are 2 characters. */
+		hex_encoded.Append((hex_byte.Length() == 2) ? hex_byte : wxString::Format(_("0%s"), hex_byte));
 	}
 
 	return hex_encoded;
@@ -170,7 +176,8 @@ bool AppMSW_LiveMail::GetAccountFile(const wxString &sub_folder, wxString &accou
 
 bool LoadAccountFile(wxString filename, wxXmlDocument &document)
 {
-	if (! document.Load(filename, "UTF-16", wxXMLDOC_KEEP_WHITESPACE_NODES)) {
+	if (! document.Load(filename, "UTF-16")) { 
+		/* "UTF-16", wxXMLDOC_KEEP_WHITESPACE_NODES */
 		DEBUG_LOG(_("AppMSW_LiveMail> (LoadAccountFile) Cannot read XML (%s)."), filename);
 		return false;
 	}
@@ -185,7 +192,57 @@ bool LoadAccountFile(wxString filename, wxXmlDocument &document)
 
 bool SaveAccountFile(wxString filename, wxXmlDocument &document)
 {
-	//return document.Save(filename, wxXML_NO_INDENTATION);
+	wxMemoryOutputStream memory_stream;
+	size_t xml_size;
+
+	wxMemoryBuffer memory_buffer, output_buffer;
+	wxFile document_file;
+	
+	/* Write the XML document into a memory stream. */
+	if (! document.Save(memory_stream, 4)) {
+		/* Could not write to memory. */
+		return false;
+	}
+
+	unsigned char byte = 0;
+	void *internal_buffer = 0;
+
+	/* Header has a \xff \xfe ? */
+	output_buffer.AppendByte((unsigned char) 255);
+	output_buffer.AppendByte((unsigned char) 254);
+
+	/* Convert the stream into a buffer on which we can operate on. */
+	xml_size = memory_stream.GetLength();
+	memory_buffer.AppendData(memory_stream.GetOutputStreamBuffer()->GetBufferStart(), xml_size);
+	internal_buffer = memory_buffer.GetData();
+
+	/* Loop through replaceing 'LF' with 'CRLF'. */
+	for (size_t i = 0; i < xml_size; i++) {
+		byte = ((unsigned char *) internal_buffer)[i];
+		if (byte == '\n') {
+			output_buffer.AppendByte('\r');
+			output_buffer.AppendByte((unsigned char) 0);
+		}
+		output_buffer.AppendByte(byte);
+	}
+
+	document_file.Open(filename, wxFile::write);
+	if (! document_file.IsOpened()) {
+		/* Cannot open the file for writing. */
+		return false;
+	}
+
+	/* The length has changed with the additions included. */
+	xml_size = output_buffer.GetDataLen();
+	if (document_file.Write(output_buffer.GetData(), xml_size) != xml_size) {
+		/* Cannot write to the file. */
+		return false;
+	}
+
+	document_file.Close();
+
+	return true;
+	/* , wxXML_NO_INDENTATION */
 }
 
 wxString AppMSW_LiveMail::GetAccountInfo(const wxString &account_folder, const wxString &account_filename)
@@ -226,6 +283,7 @@ wxString AppMSW_LiveMail::GetAccountInfo(const wxString &account_folder, const w
 
 	/* Set or replace the account info for this folder (account). */
 	this->info["accounts"][account_filename] = account_info;
+	this->info["accounts"][account_filename]["account_name"] = account_filename;
 
 	return account_info["address"].AsString();
 }
@@ -271,6 +329,7 @@ bool IsHashInstalledAndSet(wxString address, wxMemoryBuffer hash)
 void SetNodeValue(wxXmlDocument &document, wxString key, wxString value)
 {
 	wxXmlNode *child;
+	wxXmlNode *prev_child;
 	wxXmlNode *inner_text;
 	
 	child = document.GetRoot()->GetChildren();
@@ -280,6 +339,8 @@ void SetNodeValue(wxXmlDocument &document, wxString key, wxString value)
 			//child->SetContent(value);
 			//return;
 			document.GetRoot()->RemoveChild(child);
+		} else {
+			prev_child = child;
 		}
 		child = child->GetNext();
 	}
@@ -287,9 +348,10 @@ void SetNodeValue(wxXmlDocument &document, wxString key, wxString value)
 	/* Create the element and the attribute, binary. */
 	wxXmlAttribute *type_attribute = new wxXmlAttribute(_("type"), _("BINARY"));
 
-	child      = new wxXmlNode(document.GetRoot(), wxXML_ELEMENT_NODE, key);
+	child      = new wxXmlNode(wxXML_ELEMENT_NODE, key);
 	inner_text = new wxXmlNode(child, wxXML_TEXT_NODE, wxEmptyString, value);
 	child->SetAttributes(type_attribute);
+	document.GetRoot()->InsertChildAfter(child, prev_child);
 
 	/* The values we're assigned to the xmlNode structure? */
 	/* Do NOT delete! */
@@ -322,15 +384,15 @@ bool AppMSW_LiveMail::InstallIdentity(wxString server_uuid, wxString address)
 
 	/* Open XML and save XML_FIELD_AUTHENTICATION, XML_FIELD_ENCIPHERMENT */
 	wxXmlDocument xml_doc;
-	if (! LoadAccountFile(account_file, xml_doc)) {
+	if (! LoadAccountFile(info["accounts"][account_file]["filename"].AsString(), xml_doc)) {
 		return false;
 	}
 
-	SetNodeValue(xml_doc, XML_FIELD_AUTHENTICATION, AsHex(wxBase64Decode(auth_hash)));
 	SetNodeValue(xml_doc, XML_FIELD_ENCIPHERMENT, AsHex(wxBase64Decode(enc_hash)));
+	SetNodeValue(xml_doc, XML_FIELD_AUTHENTICATION, AsHex(wxBase64Decode(auth_hash)));
 
 	/* This step is not working. */
-	if (! SaveAccountFile(account_file, xml_doc)) {
+	if (! SaveAccountFile(info["accounts"][account_file]["filename"].AsString(), xml_doc)) {
 		return false;
 	}
 
@@ -349,7 +411,7 @@ wxString AppMSW_LiveMail::GetAccountFile(wxString address)
 		if (this->info["accounts"][account_names[i]]["address"].AsString() == address) {
 			//account_name = account_names[i];
 			//break;
-			return this->info["accounts"][account_names[i]]["filename"].AsString();
+			return this->info["accounts"][account_names[i]]["account_name"].AsString();
 		}
 	}
 
