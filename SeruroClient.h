@@ -12,6 +12,7 @@
 #include <wx/thread.h>
 #include <wx/event.h>
 #include <wx/log.h>
+#include <wx/snglinst.h>
 
 /* Inlcude the Config header so all classes may use wxGetApp().config. */
 #include "SeruroConfig.h"
@@ -37,6 +38,7 @@ public:
     /* Run networking thread from OnInit() */
     virtual bool OnInit();
 	int OnExit() {
+        delete instance_limiter;
 		delete config;
 		return 0;
 	}
@@ -83,6 +85,9 @@ private:
 
 	SeruroFrameMain *main_frame;
     SeruroLogger *default_logger;
+    
+    /* Assure only one instance of the application is running. */
+    wxSingleInstanceChecker *instance_limiter;
 };
 
 /* All MSW to enable Virtual Leak Detection. */

@@ -39,6 +39,16 @@ bool SeruroClient::OnInit()
     if ( !wxApp::OnInit() )
         return false;
 
+    this->instance_limiter = new wxSingleInstanceChecker;
+    if (instance_limiter->IsAnotherRunning()) {
+        /* On MSW and Unix, make sure only one Seruro runs per-user. */
+        /* OnExit will not be called. */
+        delete instance_limiter;
+        instance_limiter = NULL;
+        
+        return false;
+    }
+    
 	/* Support for PNGs. */
 	wxImage::AddHandler(new wxPNGHandler);
 
