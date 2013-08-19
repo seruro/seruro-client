@@ -31,7 +31,7 @@ void AddAccountForm::AddForm(wxSizer *sizer, const wxString &address,
     /* Address controller. */
 	this->address = new wxTextCtrl(parent, SERURO_ACCOUNT_USERNAME_ID, address,
         wxDefaultPosition, wxDefaultSize, 0, address_validator);
-    this->address->SetHint(_("you@someplace.email"));
+    this->address->SetHint(_("your.email@example.com"));
 	this->address->SetToolTip(
         "Your Seruro account username is your email address.");
 	this->address->SetMaxLength(SERURO_INPUT_MAX_LENGTH);
