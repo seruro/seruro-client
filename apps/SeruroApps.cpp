@@ -132,15 +132,85 @@ AppHelper* SeruroApps::GetHelper(wxString app_name)
     return helper;
 }
 
+wxArrayString SeruroApps::GetAppList()
+{
+    wxArrayString empty_whitelist;
+    
+    return this->GetAppList(empty_whitelist);
+}
+
+wxArrayString SeruroApps::GetAppList(wxArrayString whitelist)
+{
+    wxArrayString filtered_names;
+    bool match_whitelist = false;
+    
+    /* If there is no whitelist, then everything matches. */
+    if (whitelist.size() == 0) {
+        return this->app_names;
+    }
+    
+    for (size_t i = 0; i < this->app_names.size(); i++) {
+        match_whitelist = false;
+        /* Check the name against every acceptable name in the whitelist. */
+        for (size_t j = 0; j < whitelist.size(); j++) {
+            if (this->app_names[i] == whitelist[j]) {
+                match_whitelist = true;
+                break;
+            }
+        }
+        /* Only add, if the name was found in the whitelist. */
+        if (match_whitelist) {
+            filtered_names.Add(this->app_names[i]);
+        }
+    }
+    
+    return filtered_names;
+}
+
 wxArrayString SeruroApps::GetAccountList(wxString app_name)
 {
+    wxArrayString empty_whitelist;
+    
+    return this->GetAccountList(app_name, empty_whitelist);
+}
+
+wxArrayString SeruroApps::GetAccountList(wxString app_name, wxArrayString whitelist)
+{
+    wxArrayString filtered_accounts;
+    bool match_whitelist = false;
+    
     wxArrayString accounts;
     AppHelper *helper;
     
+    /* Get helper for the given app_name. */
     helper = this->GetHelper(app_name);
+    if (helper == 0) {
+        return accounts;
+    }
     
-    if (helper == 0) return accounts;
-    return helper->GetAccountList();
+    /* If there is no whitelist, then everything matches. */
+    accounts = helper->GetAccountList();
+    if (whitelist.size() == 0) {
+        return accounts;
+    }
+    
+    for (size_t i = 0; i < accounts.size(); i++) {
+        match_whitelist = false;
+        /* Check the name against every acceptable name in the whitelist. */
+        for (size_t j = 0; j < whitelist.size(); j++) {
+            if (accounts[i] == whitelist[j]) {
+                match_whitelist = true;
+                break;
+            }
+        }
+        /* Only add, if the name was found in the whitelist. */
+        if (match_whitelist) {
+            filtered_accounts.Add(accounts[i]);
+        }
+    }
+    
+    /* The whitelist-applied account list. */
+    return filtered_accounts;
 }
 
 wxJSONValue SeruroApps::GetApp(wxString app_name)
@@ -166,6 +236,16 @@ wxJSONValue SeruroApps::GetApp(wxString app_name)
     }
     
     return app_info;
+}
+
+wxString SeruroApps::GetAccountName(wxString app_name, wxString address)
+{
+    AppHelper *helper;
+    
+    helper = this->GetHelper(app_name);
+    if (helper == 0) return address;
+    
+    return helper->GetAccountName(address);
 }
 
 account_status_t SeruroApps::IdentityStatus(wxString app_name, wxString account_name, wxString &server_uuid)

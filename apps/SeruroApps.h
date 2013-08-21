@@ -46,6 +46,11 @@ public:
         wxArrayString empty_list;
         return empty_list;
     }
+    /* Resolve the address to a canonical account "name". */
+    virtual wxString GetAccountName(wxString address) {
+        return address;
+    }
+    
     virtual account_status_t IdentityStatus(wxString address,
         wxString &server_uuid) {
         /* If the identity is APP_ASSIGNED, then fill in the server_uuid. */
@@ -79,9 +84,8 @@ public:
     }
     
     /* Returns a list of all initialized application helpers. */
-    wxArrayString GetAppList() {
-        return this->app_names;
-    }
+    wxArrayString GetAppList();
+    wxArrayString GetAppList(wxArrayString whitelist);
     
     /* Searches for the application and returns status: 
 	 * (installed, not, n/a), and version. */
@@ -89,6 +93,10 @@ public:
     
     /* A list of all the configured accounts for the given application. */
     wxArrayString GetAccountList(wxString app_name);
+    wxArrayString GetAccountList(wxString app_name, wxArrayString whitelist);
+    /* Get the canonical name for the account (from the address). */
+    wxString GetAccountName(wxString app_name, wxString address);
+    
     /* Check if a 'Seruro' identity is configured/installed 
 	 * the given app/account pair. */
     account_status_t IdentityStatus(wxString app_name,

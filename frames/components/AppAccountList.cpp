@@ -11,6 +11,9 @@
 #include "../../resources/images/certificate_icon_12_flat.png.h"
 #include "../../resources/images/identity_icon_12_flat.png.h"
 
+#define APPACCOUNT_LIST_NAME_COLUMN 1
+#define APPACCOUNT_LIST_APP_COLUMN  2
+
 DECLARE_APP(SeruroClient);
 
 AppAccountList::AppAccountList(wxWindow *parent, bool use_address)
@@ -116,7 +119,45 @@ void AppAccountList::GenerateAccountsList()
 
 void AppAccountList::OnSelect(wxListEvent &event)
 {
+    wxListItem item;
     
+    item.SetMask(wxLIST_MASK_TEXT);
+    item.SetId(event.GetIndex());
+    item.SetColumn(APPACCOUNT_LIST_NAME_COLUMN);
+    
+    if (! accounts_list->GetItem(item)) {
+        wxLogMessage(_("AppAccountList> (OnSelect) could not get address."));
+        return;
+    }
+    
+    /* This item will be shown as disabled. */
+    if (! wxGetApp().config->AddressExists(item.GetText())) {
+        accounts_list->SetItemState(event.GetIndex(), 0, wxLIST_STATE_SELECTED);
+        event.Veto();
+        return;
+    }
+    
+    /* Only one app or account can be selected at a time. */
+    //DeselectApps();
+    
+    this->account = item.GetText();
+    //this->account_selected = true;
+    
+    /* Also need the server name for this account. */
+    item.SetColumn(APPACCOUNT_LIST_APP_COLUMN);
+    accounts_list->GetItem(item);
+    this->app_name = item.GetText();
+    
+    /* Check if identity is unstalled. */
+    //assign_button->Enable(
+    //    apps_helper->CanAssign(app_name) &&
+    //    accounts_list->GetItemData(event.GetIndex()) != APP_ASSIGNED
+    //);
+    
+    //unassign_button->Enable(
+    //    apps_helper->CanUnassign(app_name) &&
+    //    accounts_list->	GetItemData(event.GetIndex()) == APP_ASSIGNED
+    //);
 }
 
 void AppAccountList::OnDeselect(wxListEvent &event)
