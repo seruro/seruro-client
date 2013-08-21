@@ -34,6 +34,13 @@
 
 IMPLEMENT_APP(SeruroClient)
 
+int SeruroClient::OnExit()
+{
+    delete instance_limiter;
+	delete config;
+	return 0;
+}
+
 bool SeruroClient::OnInit()
 {
     if ( !wxApp::OnInit() )
@@ -64,6 +71,7 @@ bool SeruroClient::OnInit()
 	main_frame->AddPanels();
 
 	/* There is an optional setup wizard. */
+	this->running_setup = 0;
 	if (! this->config->HasConfig() || SERURO_DEBUG_SETUP) {
         /* The panels and "book view" should be hidden while the wizard is running. */
         main_frame->Hide();
@@ -94,6 +102,25 @@ bool SeruroClient::IsAnotherRunning()
     }
     
     return false;
+}
+
+void SeruroClient::DestroySetup()
+{
+	if (this->running_setup != 0) {
+		((SeruroSetup *) running_setup)->EndModal(0);
+		running_setup->Close();
+		running_setup = 0;
+	}
+}
+
+void SeruroClient::SetSetup(wxTopLevelWindow *wizard)
+{
+	this->running_setup = wizard;
+}
+
+void SeruroClient::RemoveSetup()
+{
+	this->running_setup = 0;
 }
 
 wxWindow* SeruroClient::GetFrame()

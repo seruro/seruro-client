@@ -32,4 +32,19 @@ Email can only be secured from an assigned account. \
 Find the account name and email program below. Then use the 'Assign' button to associate the installed identity to the account. \
 Note: some email programs will automatically assign the identity."
 
+#define TEXT_SETUP_WELCOME "Welcome to Seruro! Let's take a moment and configure your client.\
+\n\
+\n\
+If this is your first time installing the Seruro Client, please pay attention as some decisions may \
+affect your privacy. This initial setup wizard will guide you through:\
+\n\
+\n\
+\t 1. Connecting to your Seruro Server.\n\
+\t 2. Configuring your account and downloading your secure identity.\n\
+\t 3. Automatic setup of your email applications.\n\
+\t 4. Retreival and installation of contact identities.\n\
+\n\
+This setup may be canceled and restarted at a later time. After completing the setup you may \
+add additional servers and accounts, as well as change any setting."
+
 #endif

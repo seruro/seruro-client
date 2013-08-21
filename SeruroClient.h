@@ -8,6 +8,7 @@
 #include <wx/wxprec.h>
 #include <wx/wx.h>
 
+#include <wx/toplevel.h>
 #include <wx/notebook.h>
 #include <wx/thread.h>
 #include <wx/event.h>
@@ -37,11 +38,7 @@ public:
     
     /* Run networking thread from OnInit() */
     virtual bool OnInit();
-	int OnExit() {
-        delete instance_limiter;
-		delete config;
-		return 0;
-	}
+	int OnExit();
     
     /* Abstraction for instance limiter. */
     bool IsAnotherRunning();
@@ -78,6 +75,11 @@ public:
 	/* For other components to use (for handled exceptions. */
 	void ErrorAndExit(wxString msg);
 
+	/* Various wizard controls. */
+	void DestroySetup();
+	void SetSetup(wxTopLevelWindow *wizard);
+	void RemoveSetup();
+
 public:
 	SeruroConfig *config;
 
@@ -88,6 +90,11 @@ private:
 
 	SeruroFrameMain *main_frame;
     SeruroLogger *default_logger;
+
+	/* Keep track of any running wizards, if the application
+	 * is closed while the wizard is running, it will need to be
+     * destroyed. */
+	wxTopLevelWindow *running_setup;
     
     /* Assure only one instance of the application is running. */
     wxSingleInstanceChecker *instance_limiter;

@@ -48,7 +48,8 @@ BEGIN_EVENT_TABLE(SeruroFrameMain, wxFrame)
 	/* Events for optional setup wizard */
 	//EVT_MENU    (seruroID_SETUP_ALERT,  SeruroFrameMain::OnSetupRun)
     EVT_WIZARD_CANCEL(wxID_ANY,   SeruroFrameMain::OnSetupCancel)
-    EVT_WIZARD_FINISHED(wxID_ANY, SeruroFrameMain::OnSetupFinished)	
+    EVT_WIZARD_FINISHED(wxID_ANY, SeruroFrameMain::OnSetupFinished)
+
 	EVT_NOTEBOOK_PAGE_CHANGED(SERURO_NOTEBOOK_ID, SeruroFrameMain::OnChange)
 	//EVT_NOTEBOOK_PAGE_CHANGING(SERURO_NOTEBOOK_ID, SeruroFrameMain::OnChange)
 END_EVENT_TABLE()
@@ -82,11 +83,11 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
     
 #if defined(__WXOSX__) || defined(__WXMAC__)
     icon.CopyFromBitmap(wxGetBitmapFromMemory(tray_osx_hard_black));
-    //icon_bundle.AddIcon(icon);
 #endif
 
-	this->SetIcons(icon_bundle);
 	tray->SetIcon(icon, _(SERURO_APP_NAME));
+	this->SetIcons(icon_bundle);
+
 
 	/* Add singular panel */
 	book = new wxNotebook(this, SERURO_NOTEBOOK_ID);
@@ -150,6 +151,10 @@ void SeruroFrameMain::OnClose(wxCloseEvent &event)
         return;
 	}
 	
+	/* If there is a running wizard, cancel it. */
+	wxGetApp().DestroySetup();
+
+	/* Delete the tray icon/controller. */
 	if (tray) {
 		tray->RemoveIcon();
 		tray->Destroy();
