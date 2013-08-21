@@ -7,8 +7,6 @@
 
 /* The side of a square checkbox. */
 #define CHECKBOX_SIZE 18
-#define DISABLED_BACKGROUND_COLOR "light grey"
-#define DISABLED_TEXT_COLOR "grey"
 
 #define DISABLED_CHECKED 4
 #define DISABLED_UNCHECKED 3

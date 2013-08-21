@@ -285,10 +285,10 @@ bool SeruroServerAPI::InstallP12(wxString server_uuid, wxString address, identit
     /* Add the identity (p12) to the certificate store. */
     SeruroCrypto crypto;
     if (! crypto.InstallP12(decoded_p12, unlock_code, fingerprints)) {
-        wxLogMessage(_("SeruroServerAPI> (InstallP12) could not install (%s) p12."), cert_type);
+        wxLogMessage(_("SeruroServerAPI> (InstallP12) could not install (%d) p12."), cert_type);
         return false;
     } else {
-        wxLogMessage(_("SeruroServerAPI> (InstallP12) installed (%s) p12."), cert_type);
+        wxLogMessage(_("SeruroServerAPI> (InstallP12) installed (%d) p12."), cert_type);
     }
     
     existing_fingerprint = wxGetApp().config->GetIdentity(server_uuid, address, cert_type);

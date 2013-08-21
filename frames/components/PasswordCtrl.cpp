@@ -14,10 +14,18 @@ DECLARE_APP(SeruroClient);
 UnlockCtrl::UnlockCtrl(wxWindow *parent, wxWindowID id)
   : wxTextCtrl(parent, id, wxEmptyString, wxDefaultPosition)
 {
+    this->RefreshStyle();
+}
+
+void UnlockCtrl::RefreshStyle()
+{
     wxTextAttr style;
     
     /* Give it a code-like look. */
+    style.SetFontFaceName(_("Courier New"));
     style.SetFontFamily(wxFONTFAMILY_TELETYPE);
+    
+    /* Doesn't seem to work in OSX. */
     this->SetDefaultStyle(style);
 }
 

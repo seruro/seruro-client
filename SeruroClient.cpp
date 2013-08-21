@@ -39,13 +39,7 @@ bool SeruroClient::OnInit()
     if ( !wxApp::OnInit() )
         return false;
 
-    this->instance_limiter = new wxSingleInstanceChecker;
-    if (instance_limiter->IsAnotherRunning()) {
-        /* On MSW and Unix, make sure only one Seruro runs per-user. */
-        /* OnExit will not be called. */
-        delete instance_limiter;
-        instance_limiter = NULL;
-        
+    if (this->IsAnotherRunning()) {
         return false;
     }
     
@@ -81,6 +75,25 @@ bool SeruroClient::OnInit()
     }
 
     return true;
+}
+
+bool SeruroClient::IsAnotherRunning()
+{
+    wxLogNull log_silencer;
+    this->instance_limiter = new wxSingleInstanceChecker;
+    instance_limiter->Create(wxString::Format(_("%s_%s"), GetAppName(), wxGetUserId()), GetAppDir());
+    log_silencer.~wxLogNull();
+    
+    if (instance_limiter->IsAnotherRunning()) {
+        /* On MSW and Unix, make sure only one Seruro runs per-user. */
+        /* OnExit will not be called. */
+        delete instance_limiter;
+        instance_limiter = NULL;
+        
+        return true;
+    }
+    
+    return false;
 }
 
 wxWindow* SeruroClient::GetFrame()

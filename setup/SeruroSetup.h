@@ -246,7 +246,7 @@ private:
 class ApplicationsPage : public SetupPage
 {
 public:
-	ApplicationsPage(SeruroSetup *parent) : SetupPage(parent) {}
+	ApplicationsPage(SeruroSetup *parent);
 };
 
 #endif

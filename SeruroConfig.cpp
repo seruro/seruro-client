@@ -22,13 +22,18 @@ wxJSONValue GetTokenData();
 
 DECLARE_APP(SeruroClient);
 
+wxString GetAppDir()
+{
+    wxStandardPaths paths = wxStandardPaths::Get();
+    return paths.GetUserDataDir();
+}
+
 bool GetTokenFile(wxTextFile** token_file)
 {
 	/* We will read and write the data JIT. */
 	bool results;
 
-    wxStandardPaths paths = wxStandardPaths::Get();
-    wxFileName token_path(paths.GetUserDataDir(), _(SERURO_TOKENS_FILE));
+    wxFileName token_path(GetAppDir(), _(SERURO_TOKENS_FILE));
     
 	VLDDisable();
     *token_file = new wxTextFile(token_path.GetFullPath());
@@ -127,14 +132,13 @@ SeruroConfig::SeruroConfig()
 
 bool SeruroConfig::InitConfig()
 {
-    wxStandardPaths paths = wxStandardPaths::Get();
-    wxFileName config_path(paths.GetUserDataDir(), _(SERURO_CONFIG_NAME));
+    wxFileName config_path(GetAppDir(), _(SERURO_CONFIG_NAME));
     
     /* Add the config file name to the path. */
-    if (! wxFileName::DirExists(paths.GetUserDataDir())) {
+    if (! wxFileName::DirExists(GetAppDir())) {
         LOG(_("SeruroConfig> user data directory does not exist, creating (%s)."),
-            paths.GetUserDataDir());
-        if (! wxFileName::Mkdir(paths.GetUserDataDir())) {
+            GetAppDir());
+        if (! wxFileName::Mkdir(GetAppDir())) {
             ERROR_LOG(_("SeruroConfig> cannot create data directory."));
             return false;
         }
@@ -529,6 +533,22 @@ bool SeruroConfig::AddressExists(wxString server_uuid, wxString address)
 		}
 	}
 	return false;
+}
+
+bool SeruroConfig::AddressExists(wxString address)
+{
+    wxArrayString server_list;
+    wxArrayString account_list;
+    
+    /* Is a server configured with the given address. */
+    server_list = wxGetApp().config->GetServerList();
+    for (size_t i = 0; i < server_list.size(); i++) {
+        account_list = wxGetApp().config->GetAddressList(server_list[i]);
+        for (size_t j = 0; j < account_list.size(); j++) {
+            if (account_list[j] == address) return true;
+        }
+    }
+    return false;
 }
 
 wxJSONValue SeruroConfig::GetServers()

@@ -1,7 +1,32 @@
 
 #include "SeruroApps.h"
+#include "../SeruroClient.h"
 
 //#define MAX_PATH_SIZE 1024
+
+DECLARE_APP(SeruroClient);
+
+wxString UUIDFromFingerprint(const wxString &fingerprint)
+{
+    wxArrayString server_list;
+    wxArrayString account_list;
+    wxArrayString identity_list;
+    
+    /* Find the first server which contains an account that has the given fingerprint. */
+    server_list = wxGetApp().config->GetServerList();
+    for (size_t i = 0; i < server_list.size(); i++) {
+        account_list = wxGetApp().config->GetAddressList(server_list[i]);
+        for (size_t j = 0; j < account_list.size(); j++) {
+            identity_list = wxGetApp().config->GetIdentity(server_list[i], account_list[j]);
+            for (size_t k = 0; k < identity_list.size(); k++) {
+                if (identity_list[k] == fingerprint) {
+                    return server_list[i];
+                }
+            }
+        }
+    }
+    return wxEmptyString;
+}
 
 #if defined(__WXOSX__) || defined(__WXMAC__)
 /* OSX includes. */
@@ -143,24 +168,44 @@ wxJSONValue SeruroApps::GetApp(wxString app_name)
     return app_info;
 }
 
-bool SeruroApps::IsIdentityInstalled(wxString app_name, wxString account_name)
+account_status_t SeruroApps::IdentityStatus(wxString app_name, wxString account_name, wxString &server_uuid)
 {
     AppHelper *helper;
     
     helper = this->GetHelper(app_name);
-    if (helper == 0) return false;
+    if (helper == 0) return APP_UNASSIGNED;
     
-    return helper->IsIdentityInstalled(account_name);
+    return helper->IdentityStatus(account_name, server_uuid);
 }
 
-bool SeruroApps::InstallIdentity(wxString app_name, wxString server_uuid, wxString address)
+bool SeruroApps::AssignIdentity(wxString app_name, wxString server_uuid, wxString address)
 {
     AppHelper *helper;
     
     helper = this->GetHelper(app_name);
     if (helper == 0) return false;
     
-    return helper->InstallIdentity(server_uuid, address);
+    return helper->AssignIdentity(server_uuid, address);
+}
+
+bool SeruroApps::CanAssign(wxString app_name)
+{
+    AppHelper *helper;
+    
+    helper = this->GetHelper(app_name);
+    if (helper == 0) return false;
+    
+    return helper->can_assign;
+}
+
+bool SeruroApps::CanUnassign(wxString app_name)
+{
+    AppHelper *helper;
+    
+    helper = this->GetHelper(app_name);
+    if (helper == 0) return false;
+    
+    return helper->can_unassign;
 }
 
 void SeruroApps::AddAppHelper(wxString app_name, AppHelper *app_helper)

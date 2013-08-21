@@ -6,6 +6,9 @@
 #include <wx/mstream.h>
 #include <wx/bitmap.h>
 
+#define DISABLED_BACKGROUND_COLOR "light grey"
+#define DISABLED_TEXT_COLOR "grey"
+
 /* Element IDs (where wxID_ANY is not appropriate. */
 #define SERURO_SETTINGS_TREE_ID		1009
 #define SERURO_ADD_SERVER_PORT_ID	1010

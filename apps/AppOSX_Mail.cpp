@@ -130,8 +130,6 @@ wxArrayString AppOSX_Mail::GetAccountList()
     const void *addresses_value;
     CFArrayRef addresses_list;
     /* We are interested in multiple dictionary string values. */
-    //const void *item_value;
-    //CFStringRef item_value;
     wxString account_type, account_name, address;
     
     for (int i = 0; i < num_accounts; i++) {
@@ -145,9 +143,6 @@ wxArrayString AppOSX_Mail::GetAccountList()
         if (! CFDictionaryContainsKey(account_dict, CFSTR("AccountType"))) {
             continue;
         }
-        //item_value = CFDictionaryGetValue(account_dict, CFSTR("AccountType"));
-        //account_type = _((const char*)item_value);
-        //account_type = AsString((CFStringRef)(CFDictionaryGetValue(account_dict, CFSTR("AccountType"))));
         account_type = AsString(CFDictionaryGetValue(account_dict, CFSTR("AccountType")));
         /* We are NOT interested in local accounts. */
         if (account_type.compare(_("LocalAccount")) == 0) {
@@ -158,9 +153,6 @@ wxArrayString AppOSX_Mail::GetAccountList()
             ! CFDictionaryContainsKey(account_dict, CFSTR("EmailAddresses"))) {
             continue;
         }
-        //item_value = CFDictionaryGetValue(account_dict, CFSTR("AccountName"));
-        //account_name = _((const char*)item_value);
-        //account_name = AsString((CFStringRef)(CFDictionaryGetValue(account_dict, CFSTR("AccountName"))));
         account_name = AsString(CFDictionaryGetValue(account_dict, CFSTR("AccountName")));
         
         addresses_value = CFDictionaryGetValue(account_dict, CFSTR("EmailAddresses"));
@@ -170,9 +162,6 @@ wxArrayString AppOSX_Mail::GetAccountList()
         }
         addresses_list = (CFArrayRef) addresses_value;
         for (int j = 0; j < CFArrayGetCount(addresses_list); j++) {
-            //item_value = CFArrayGetValueAtIndex(addresses_list, j);
-            //address = _((const char*)item_value);
-            //address = AsString((CFStringRef)(CFArrayGetValueAtIndex(addresses_list, j)));
             address = AsString(CFArrayGetValueAtIndex(addresses_list, j));
             
             wxLogMessage(_("AppOSX_Mail> (GetAccountList) found address (%s), account name (%s)."), address, account_name);
@@ -186,26 +175,41 @@ wxArrayString AppOSX_Mail::GetAccountList()
     return accounts;
 }
 
-bool AppOSX_Mail::IsIdentityInstalled(wxString account_name)
+account_status_t AppOSX_Mail::IdentityStatus(wxString account_name, wxString &server_uuid)
 {
     wxArrayString server_list, account_list;
     SeruroCrypto crypto;
     
-    if (! GetInfo()) return false;
+    server_uuid.Clear();
+    if (! GetInfo()) return APP_UNASSIGNED;
 
     /* OSX will use a matching identity automatically. */
     /* Check for any account with an installed identity, matching the account name. */
     server_list = wxGetApp().config->GetServerList();
+    
     for (size_t i = 0; i < server_list.size(); i++) {
         account_list = wxGetApp().config->GetAddressList(server_list[i]);
         
         for (size_t j = 0; j < account_list.size(); j++) {
             if (account_name.compare(account_list[j]) != 0) continue;
-            if (crypto.HaveIdentity(server_list[i], account_list[j])) return true;
+            if (crypto.HaveIdentity(server_list[i], account_list[j])) {
+                
+                /* Fill in the appropriate server. */
+                server_uuid.Append(server_list[i]);
+                return APP_ASSIGNED;
+            }
         }
     }
     
-    return false;
+    return APP_UNASSIGNED;
+}
+
+bool AppOSX_Mail::AssignIdentity(wxString server_uuid, wxString address)
+{
+    SeruroCrypto crypto;
+    
+    /* OSX Mail will auto-detect the certificates. */
+    return crypto.HaveIdentity(server_uuid, address);
 }
 
 bool AppOSX_Mail::GetInfo()

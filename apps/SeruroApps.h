@@ -14,6 +14,17 @@ wxString AsString(const void *value);
 //wxString AsStringIfExists(CFDictionaryRef dict, const void* key);
 #endif
 
+/* Each account has a current state or status. */
+enum account_status_t
+{
+    APP_ASSIGNED = 1,
+    /* Certificates are in use. */
+    APP_ALTERNATE_ASSIGNED = 2,
+    /* Certificates are in use, but not an identity managed by Seruro. */
+    APP_UNASSIGNED = 3
+    /* No Certificates are un use. */
+};
+
 class AppHelper
 {
 public:
@@ -22,6 +33,10 @@ public:
 		is_installed = false; 
 		is_detected = false;
 		this->info = wxJSONValue(wxJSONTYPE_OBJECT);
+        
+        /* Helpers for actions. */
+        can_assign = true;
+        can_unassign = true;
 	}
     
     virtual bool IsInstalled() { return false; }
@@ -31,12 +46,18 @@ public:
         wxArrayString empty_list;
         return empty_list;
     }
-    virtual bool IsIdentityInstalled(wxString address) { 
-		return false; 
-	}
-	virtual bool InstallIdentity(wxString server_uuid, wxString address) {
+    virtual account_status_t IdentityStatus(wxString address,
+        wxString &server_uuid) {
+        /* If the identity is APP_ASSIGNED, then fill in the server_uuid. */
+        return APP_UNASSIGNED;
+    }
+	virtual bool AssignIdentity(wxString server_uuid, wxString address) {
 		return false;
 	}
+
+    /* Action helpers. */
+    bool can_assign;
+    bool can_unassign;
     
 public:
     /* A secondary boolean indicating a success/failure
@@ -70,10 +91,14 @@ public:
     wxArrayString GetAccountList(wxString app_name);
     /* Check if a 'Seruro' identity is configured/installed 
 	 * the given app/account pair. */
-    bool IsIdentityInstalled(wxString app_name, wxString account);
-	bool InstallIdentity(wxString app_name, 
+    account_status_t IdentityStatus(wxString app_name,
+        wxString address, wxString &server_uuid);
+    
+	bool AssignIdentity(wxString app_name,
 		wxString server_uuid, wxString address);
 
+    bool CanAssign(wxString app_name);
+    bool CanUnassign(wxString app_name);
 
 private:
     AppHelper* GetHelper(wxString app_name);

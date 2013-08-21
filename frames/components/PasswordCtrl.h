@@ -17,6 +17,7 @@ class UnlockCtrl : public wxTextCtrl
 {
 public:
     UnlockCtrl(wxWindow *parent, wxWindowID id);
+    void RefreshStyle();
     
 private:
 };

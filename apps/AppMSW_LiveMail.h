@@ -21,8 +21,8 @@ public:
     wxString GetVersion();
     
     wxArrayString GetAccountList();
-    bool IsIdentityInstalled(wxString address);
-	bool InstallIdentity(wxString server_uuid, wxString address);
+    account_status_t IdentityStatus(wxString address, wxString &server_uuid);
+	bool AssignIdentity(wxString server_uuid, wxString address);
     
 private:
     bool GetInfo();

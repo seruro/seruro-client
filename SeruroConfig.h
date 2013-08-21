@@ -15,6 +15,9 @@ enum identity_type_t
 	ID_NO_IDENTITY
 };
 
+/* Standard path to storing Seruro-related files and data. */
+wxString GetAppDir();
+
 class SeruroConfig
 {
 public:
@@ -78,6 +81,7 @@ public:
     wxArrayString GetAddressList(const wxString &server_uuid);
     
 	bool ServerExists(wxJSONValue server_info);
+    bool AddressExists(wxString address);
 	bool AddressExists(wxString server_uuid, wxString address);
 	/* Helper to always convert the port to a long. */
 	long GetPort(wxString server_uuid);
@@ -114,6 +118,9 @@ public:
 	bool HaveIdentity(wxString server_uuid, wxString address,
         wxString fingerprint = wxEmptyString);
 	bool HaveCA(wxString server_uuid);
+    
+    /* Check if fingerprint is owned by a server/account. */
+    //bool FingerprintExists(wxString fingerprint);
 
 	/* Fingerprint/thumbprint/hash retreival. */
     wxArrayString GetIdentityList(wxString server_uuid);

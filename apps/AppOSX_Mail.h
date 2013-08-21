@@ -11,13 +11,17 @@ class AppOSX_Mail : public AppHelper
 {
 public:
     /* Most likely, will do nothing. */
-    AppOSX_Mail() : AppHelper() {}
+    AppOSX_Mail() : AppHelper() {
+        can_assign = false;
+        can_unassign = false;
+    }
     
     bool IsInstalled();
     wxString GetVersion();
     
     wxArrayString GetAccountList();
-    bool IsIdentityInstalled(wxString account_name);
+    account_status_t IdentityStatus(wxString account_name, wxString &server_uuid);
+    bool AssignIdentity(wxString server_uuid, wxString address);
     
 private:
     bool GetInfo();

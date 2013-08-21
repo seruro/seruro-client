@@ -3,6 +3,7 @@
 #define H_SeruroDecryptDialog
 
 #include "../../wxJSON/wx/jsonval.h"
+#include "../components/PasswordCtrl.h"
 
 #include <wx/textctrl.h>
 #include <wx/dialog.h>
@@ -43,8 +44,8 @@ protected:
     
 	//wxTextCtrl *password_control;
     
-    wxTextCtrl *encipherment_control;
-    wxTextCtrl *authentication_control;
+    UnlockCtrl *encipherment_control;
+    UnlockCtrl *authentication_control;
 };
 
 class DecryptDialog : public wxDialog, public DecryptForm

@@ -357,7 +357,7 @@ void SetNodeValue(wxXmlDocument &document, wxString key, wxString value)
 	/* Do NOT delete! */
 }
 
-bool AppMSW_LiveMail::InstallIdentity(wxString server_uuid, wxString address)
+bool AppMSW_LiveMail::AssignIdentity(wxString server_uuid, wxString address)
 {
 	wxString auth_skid, enc_skid;
 	wxString auth_hash, enc_hash;
@@ -419,21 +419,22 @@ wxString AppMSW_LiveMail::GetAccountFile(wxString address)
 }
 
 
-bool AppMSW_LiveMail::IsIdentityInstalled(wxString address)
+account_status_t AppMSW_LiveMail::IdentityStatus(wxString address, wxString &server_uuid)
 {
 	wxString account_name;
 
+    server_uuid.Clear();
 	account_name = this->GetAccountFile(address);
 	if (account_name.compare(wxEmptyString) == 0) {
 		DEBUG_LOG(_("AppMSW_LiveMail> (IsIdentityInstalled) Cannot find (%s) within account info."), address);
-		return false;
+		return APP_UNASSIGNED;
 	}
 
 	/* Test if certificate values exist. */
 	if (! this->info["accounts"][account_name].HasMember("encipherment") || 
 		! this->info["accounts"][account_name].HasMember("authentication")) {
 			/* STATE: missing certificates. */
-			return false;
+			return APP_UNASSIGNED;
 	}
 
 	/* If those values are found, search the cert store, then turn them into their binary representations. */
@@ -443,18 +444,21 @@ bool AppMSW_LiveMail::IsIdentityInstalled(wxString address)
 	if (! IsHashInstalledAndSet(address, search_hash)) {
 		DEBUG_LOG(_("AppMSW_LiveMail> (IsIdentityInstalled) Authentication hash does not exists for (%s)."), address);
 		/* STATE: no seruro configured certificates. */
-		return false;
+        server_uuid.Append(_("-1"));
+		return APP_ALTERNATE_ASSIGNED;
 	}
 
 	search_hash = AsBinary(this->info["accounts"][account_name]["encipherment"].AsString());
 	if (! IsHashInstalledAndSet(address, search_hash)) {
 		DEBUG_LOG(_("AppMSW_LiveMail> (IsIdentityInstalled) Encipherment hash does not exist for (%s)."), address);
 		/* STATE: no seruro configured certificates. */
-		return false;
+        server_uuid.Append(_("-1"));
+		return APP_ALTERNATE_ASSIGNED;
 	}
 
 	/* STATE: seruro configured certificate installed. */
-	return true;
+    server_uuid.Append(UUIDFromFingerprint(this->info["accounts"][account_name].AsString()));
+	return APP_ASSIGNED;
 }
 
 bool AppMSW_LiveMail::GetInfo()

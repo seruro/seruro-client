@@ -1,6 +1,7 @@
 
 #include "CheckedListCtrl.h"
 #include "../SeruroPanelSearch.h"
+#include "../UIDefs.h"
 
 #include <wx/log.h>
 #include <wx/renderer.h>

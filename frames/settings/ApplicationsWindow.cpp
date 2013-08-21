@@ -47,6 +47,11 @@ void ApplicationsWindow::OnAssign(wxCommandEvent &event)
 	wxArrayString accounts, server_accounts;
 	wxString server_uuid;
 
+    if (! apps_helper->CanAssign(app_name)) {
+        /* The application used by the selected account cannot be assigned. */
+        return;
+    }
+    
 	/* Check each servers' accounts, if a matching account is found, add the server to server_accounts. */
 	servers = wxGetApp().config->GetServerList();
 	for (size_t i = 0; i < servers.size(); i++) {
@@ -69,7 +74,7 @@ void ApplicationsWindow::OnAssign(wxCommandEvent &event)
 		server_uuid = server_accounts[0];
 	}
 
-	if (! this->apps_helper->InstallIdentity(this->app_name, server_uuid, this->account)) {
+	if (! this->apps_helper->AssignIdentity(this->app_name, server_uuid, this->account)) {
 		/* Display error message. */
 	}
 }
@@ -106,6 +111,13 @@ void ApplicationsWindow::OnAccountSelected(wxListEvent &event)
         return;
     }
     
+    /* This item will be shown as disabled. */
+    if (! wxGetApp().config->AddressExists(item.GetText())) {
+        accounts_list->SetItemState(event.GetIndex(), 0, wxLIST_STATE_SELECTED);
+        event.Veto();
+        return;
+    }
+    
     /* Only one app or account can be selected at a time. */
     DeselectApps();
     
@@ -118,8 +130,15 @@ void ApplicationsWindow::OnAccountSelected(wxListEvent &event)
     this->app_name = item.GetText();
     
     /* Check if identity is unstalled. */
-    this->assign_button->Enable(true);
-    this->unassign_button->Enable(true);
+    assign_button->Enable(
+        apps_helper->CanAssign(app_name) &&
+        accounts_list->GetItemData(event.GetIndex()) != APP_ASSIGNED
+    );
+    
+    unassign_button->Enable(
+        apps_helper->CanUnassign(app_name) &&
+        accounts_list->	GetItemData(event.GetIndex()) == APP_ASSIGNED
+    );
 }
 
 void ApplicationsWindow::DeselectApps()
@@ -176,10 +195,37 @@ void ApplicationsWindow::GenerateApplicationsList()
 	}
 }
 
-void ApplicationsWindow::GenerateAccountsList()
+void ApplicationsWindow::AddAccount(wxString app, wxString account)
 {
     long item_index;
-    bool identity_installed;
+    account_status_t identity_status;
+    wxString server_uuid;
+    
+    item_index = this->accounts_list->InsertItem(0, _(""), 0);
+    this->accounts_list->SetItem(item_index, 1, account);
+    identity_status = apps_helper->IdentityStatus(app, account, server_uuid);
+    
+    /* Todo: set image based on status. */
+    this->accounts_list->SetItem(item_index, 2, app);
+    this->accounts_list->SetItemData(item_index, (long) identity_status);
+    
+    /* Check if account exists, and if not, "disable the row". */
+    if (! wxGetApp().config->AddressExists(account)) {
+        accounts_list->SetItemTextColour(item_index, wxColour(DISABLED_TEXT_COLOR));
+    }
+    
+    //accounts_list->SetItem(item_index, 3, (identity_installed) ? _("Installed") : _("Not installed"));
+    if (identity_status == APP_ASSIGNED) {
+        accounts_list->SetItem(item_index, 3, wxGetApp().config->GetServerName(server_uuid));
+    } else if (identity_status == APP_UNASSIGNED) {
+        accounts_list->SetItem(item_index, 3, _("Unassigned"));
+    } else {
+        accounts_list->SetItem(item_index, 3, _("Not using Seruro"));
+    }
+}
+
+void ApplicationsWindow::GenerateAccountsList()
+{
     wxArrayString apps;
     wxArrayString accounts;
     
@@ -190,13 +236,7 @@ void ApplicationsWindow::GenerateAccountsList()
         accounts = apps_helper->GetAccountList(apps[i]);
         
         for (size_t j = 0; j < accounts.size(); j++) {
-            item_index = accounts_list->InsertItem(0, _(""), 0);
-            accounts_list->SetItem(item_index, 1, _(accounts[j]));
-            identity_installed = apps_helper->IsIdentityInstalled(apps[i], accounts[j]);
-            
-            /* Todo: set image based on status. */
-            accounts_list->SetItem(item_index, 2, _(apps[i]));
-            accounts_list->SetItem(item_index, 3, (identity_installed) ? _("Installed") : _("Not installed"));
+            this->AddAccount(apps[i], accounts[j]);
         }
     }
 }

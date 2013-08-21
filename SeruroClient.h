@@ -42,6 +42,9 @@ public:
 		delete config;
 		return 0;
 	}
+    
+    /* Abstraction for instance limiter. */
+    bool IsAnotherRunning();
 
     /* Logging functions. */
 	void InitLogger();

@@ -1,6 +1,5 @@
 
 #include "DecryptDialog.h"
-#include "../components/PasswordCtrl.h"
 #include "../UIDefs.h"
 
 #include "../../SeruroClient.h"
@@ -20,11 +19,13 @@ void DecryptForm::AddForms(wxSizer *sizer)
  	grid_sizer->Add(new Text(parent, SERURO_AUTHENTICATION L" Unlock:"));
     grid_sizer->SetItemMinSize((size_t) 0, SERURO_SETTINGS_FLEX_LABEL_WIDTH, -1);
 	grid_sizer->Add(authentication_control, DIALOGS_BOXSIZER_OPTIONS);
+    authentication_control->RefreshStyle();
     
     grid_sizer->Add(new Text(parent, SERURO_ENCIPHERMENT L" Unlock:"));
     grid_sizer->SetItemMinSize((size_t) 2, SERURO_SETTINGS_FLEX_LABEL_WIDTH, -1);
     grid_sizer->Add(encipherment_control, DIALOGS_BOXSIZER_OPTIONS);
-
+    encipherment_control->RefreshStyle();
+    
 	sizer->Add(grid_sizer, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 }
 

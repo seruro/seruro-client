@@ -117,6 +117,7 @@ public:
     ~ApplicationsWindow();
     
     void GenerateApplicationsList();
+    void AddAccount(wxString app, wxString account);
     void GenerateAccountsList();
     
     /* Button event handlers. */
