@@ -12,6 +12,9 @@ BEGIN_EVENT_TABLE(SeruroSetup, wxWizard)
     EVT_BUTTON(wxID_BACKWARD, SeruroSetup::GoPrev)
 	EVT_WIZARD_PAGE_CHANGED(SERURO_SETUP_ID, SeruroSetup::OnChanged)
 	EVT_WIZARD_BEFORE_PAGE_CHANGED(SERURO_SETUP_ID, SeruroSetup::OnChanging)
+
+    EVT_WIZARD_CANCEL(SERURO_SETUP_ID,   SeruroSetup::OnCanceled)
+    EVT_WIZARD_FINISHED(SERURO_SETUP_ID, SeruroSetup::OnFinished)
 END_EVENT_TABLE()
 
 DECLARE_APP(SeruroClient);
@@ -34,18 +37,7 @@ InitialPage::InitialPage(SeruroSetup *parent) : SetupPage(parent)
     this->enable_prev = false;
     this->enable_next = true;
     
-    Text *msg = new Text(this, wxT("Welcome to Seruro! Let's take a moment and configure your client.\n")
-		wxT("\n")
-        wxT("If this is your first time installing the Seruro Client, please pay attention as some settings may ")
-        wxT("affect your privacy settings. This initial setup wizard will guide you through:\n")
-        wxT("\n")
-            wxT("\t 1. Connecting to your Seruro Server.\n")
-            wxT("\t 2. Configuring your account and downloading your identity.\n")
-            wxT("\t 3. Automatic setup of your email applications.\n")
-            wxT("\t 4. Retreival and installation of contact identities.\n")
-        wxT("\n")
-        wxT("This setup may be canceled and restarted at a later time. After completing the setup you may ")
-        wxT("add additional servers and accounts as well as change any setting options."));
+    Text *msg = new Text(this, wxT(TEXT_SETUP_WELCOME));
     vert_sizer->Add(msg, DIALOGS_BOXSIZER_OPTIONS);
     
     this->SetSizer(vert_sizer);
@@ -57,18 +49,22 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
   : setup_type(type), server_uuid(server_uuid), account(account)
 	//server_setup(type), address_setup(type)
 {
+	wxGetApp().SetSetup(this);
+
 	/* Set title based on type of setup. */
 	wxString setup_title = wxString(_(SERURO_APP_NAME)) + _(" Setup");
 	if (type == SERURO_SETUP_SERVER) setup_title = _("Add Server Setup");
 	if (type == SERURO_SETUP_ACCOUNT) setup_title = _("Add Account Setup");
 	if (type == SERURO_SETUP_IDENTITY) setup_title = _("Install Identity");
 
+	/* Create ICON. */
     wxIcon setup_icon;
     setup_icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_block_128_flat));
+
     this->Create(parent, SERURO_SETUP_ID, setup_title,
-        /* Todo: replace icon */
         setup_icon, wxDefaultPosition,
         wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
+	this->SetIcon(setup_icon);
 
 	/* Set the default values of the navigation buttons. */
 	this->next_button_orig = this->m_btnNext->GetLabelText();
@@ -108,6 +104,22 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
 	applications_page->SetPrev(identity_page);
 
     this->GetPageAreaSizer()->Add(this->initial_page);
+}
+
+void SeruroSetup::OnFinished(wxWizardEvent &event)
+{
+	wxGetApp().RemoveSetup();
+}
+
+void SeruroSetup::OnCanceled(wxWizardEvent &event)
+{
+	wxGetApp().RemoveSetup();
+}
+
+bool SeruroSetup::IsNewServer()
+{
+	/* Is there a server_uuid provided? */
+	return (this->setup_type == SERURO_SETUP_INITIAL || this->setup_type == SERURO_SETUP_SERVER);
 }
 
 wxJSONValue SeruroSetup::GetServerInfo()

@@ -81,10 +81,7 @@ public:
 
 	//SetupPage* GetServerPage() { return server_page; }
 	SetupPage* GetAccountPage() { return account_page; }
-	bool IsNewServer() {
-        /* Is there a server_uuid provided? */
-		return (this->setup_type == SERURO_SETUP_INITIAL || this->setup_type == SERURO_SETUP_SERVER);
-    }
+	bool IsNewServer();
     wxJSONValue GetServerInfo();
     wxString GetAccount();
     
@@ -117,6 +114,9 @@ public:
 	}
 
 private:
+	void OnFinished(wxWizardEvent &event);
+	void OnCanceled(wxWizardEvent &event);
+
 	/* If pages edit the button text, save the original values to reset. */
 	wxString next_button_orig;
 	wxString prev_button_orig;

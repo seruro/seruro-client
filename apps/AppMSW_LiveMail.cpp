@@ -457,7 +457,7 @@ account_status_t AppMSW_LiveMail::IdentityStatus(wxString address, wxString &ser
 	}
 
 	/* STATE: seruro configured certificate installed. */
-    server_uuid.Append(UUIDFromFingerprint(this->info["accounts"][account_name].AsString()));
+    server_uuid.Append(UUIDFromFingerprint(this->info["accounts"][account_name]["authentication"].AsString()));
 	return APP_ASSIGNED;
 }
 

@@ -25,6 +25,8 @@ enum account_status_t
     /* No Certificates are un use. */
 };
 
+wxString UUIDFromFingerprint(const wxString &fingerprint);
+
 class AppHelper
 {
 public:
