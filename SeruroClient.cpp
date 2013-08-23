@@ -25,6 +25,8 @@
 
 #include <wx/image.h>
 
+#include <wx/notifmsg.h>
+
 #define SERURO_DEBUG_SETUP 0
 
 #if !defined(__VLD__)
@@ -86,9 +88,9 @@ bool SeruroClient::OnInit()
         main_frame->Show(true);
     }
 
-    AlertDialog *alert = new AlertDialog();
-    this->SetTopWindow(alert);
-    alert->ShowModal();
+    //AlertDialog *alert = new AlertDialog();
+    //this->SetTopWindow(alert);
+    //alert->ShowModal();
 
     return true;
 }

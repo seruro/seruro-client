@@ -12,6 +12,8 @@ enum {
     BUTTON_DOWNLOAD_IDENTITY
 };
 
+#define SETUP_REQUIRE_DOWNLOAD 0
+
 BEGIN_EVENT_TABLE(IdentityPage, SetupPage)
 	//EVT_CHECKBOX(SERURO_INSTALL_IDENTITY_ID, IdentityPage::OnToggleInstall)
     EVT_BUTTON(BUTTON_DOWNLOAD_IDENTITY, IdentityPage::OnDownloadIdentity)
@@ -19,7 +21,6 @@ BEGIN_EVENT_TABLE(IdentityPage, SetupPage)
 END_EVENT_TABLE()
 
 DECLARE_APP(SeruroClient);
-
 
 void IdentityPage::DownloadIdentity()
 {
@@ -29,7 +30,7 @@ void IdentityPage::DownloadIdentity()
     
 	/* Disable interaction while thread is running. */
 	this->DisablePage();
-    this->SetIdentityStatus(_("Downloading..."));
+    this->SetIdentityStatus(_("Downloading certificates..."));
 
     /* Reset the ability to install P12s (until the response SKIDs are checked). */
     install_encipherment = false;
@@ -57,6 +58,12 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
         } else {
             this->SetIdentityStatus(_("Unable to download."));
         }
+        
+        if (! SETUP_REQUIRE_DOWNLOAD) {
+            /* A download form is needed for retires. */
+            this->AddDownloadForm();
+        }
+        
 		this->EnablePage();
 		/* The page will work, but the key entry will not. */
 		this->DisableForm();
@@ -105,11 +112,11 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
 	this->identity_downloaded = true;
 
 	if (! install_authentication && ! install_encipherment) {
-		this->SetIdentityStatus(_("Identity already installed."));
+		this->SetIdentityStatus(_("Certificates already installed."));
 		this->wizard->SetButtonText(wxEmptyString, _("Proceed"));
 		identity_installed = true;
 	} else {
-		this->SetIdentityStatus(_("Identity Downloaded."));
+		this->SetIdentityStatus(_("Certificates downloaded, please install."));
 	}
 
     this->EnablePage();
@@ -127,15 +134,46 @@ void IdentityPage::DoFocus()
 	if (! this->identity_downloaded) {
 		this->DisableForm();
 	}
+    
+    //if (! SETUP_REQUIRE_DOWNLOAD) {
+    //    this->DisablePage();
+    //    this->DownloadIdentity();
+    //}
 
 	/* Check to see if this page should automatically download. */
-	if (this->force_download && SERURO_ALLOW_AUTO_DOWNLOAD) {
+	if (this->force_download) {
         /* The client may not allow forced downloads. */
 		this->DisablePage();
 		this->DownloadIdentity();
 		/* Only perform this action once. */
 		this->force_download = false;
 	}
+}
+
+/* Todo: remove download form. */
+
+
+
+void IdentityPage::AddDownloadForm()
+{
+    if (SETUP_REQUIRE_DOWNLOAD || this->download_button != 0) {
+        /* The download form already exists. */
+        return;
+    }
+    
+    wxSizer *const page_sizer = this->GetSizer();
+    
+    /* Generate a form, duplicate of the initializer. */
+    wxSizer *const identity_form = new wxStaticBoxSizer(wxHORIZONTAL, this, "&Download Encryption and Digital Identity");
+    identity_form->Add(new Text(this, _(TEXT_DOWNLOAD_INSTALL_WARNING)), DIALOGS_SIZER_OPTIONS);
+    identity_form->AddStretchSpacer();
+    
+    download_button = new wxButton(this, BUTTON_DOWNLOAD_IDENTITY, _("Retry Download"));
+    identity_form->Add(download_button, DIALOGS_SIZER_OPTIONS);
+    
+    page_sizer->Insert(1, identity_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);
+    
+    this->Layout();
 }
 
 IdentityPage::IdentityPage(SeruroSetup *parent, bool force_download)
@@ -153,20 +191,26 @@ IdentityPage::IdentityPage(SeruroSetup *parent, bool force_download)
 	this->next_button = _("&Install");
 
     /* Textual notice about the use of an identity. */
-    wxString msg_text = _(TEXT_INSTALL_IDENTITY);
+    wxString msg_text = _((SETUP_REQUIRE_DOWNLOAD) ? TEXT_DOWNLOAD_INSTALL_IDENTITY : TEXT_INSTALL_IDENTITY);
     Text *msg = new Text(this, msg_text);
     vert_sizer->Add(msg, DIALOGS_SIZER_OPTIONS);
     
     /* Download form if the P12 is not retreived automatically. */
-    wxSizer *const identity_form = new wxStaticBoxSizer(wxHORIZONTAL, this, "&Download Identity and Encryption Containers");
-    identity_form->Add(new Text(this, _("I trust this machine: ")), DIALOGS_SIZER_OPTIONS);
-    identity_form->AddStretchSpacer();
-    download_button = new wxButton(this, BUTTON_DOWNLOAD_IDENTITY, _("Download"));
-    identity_form->Add(download_button, DIALOGS_SIZER_OPTIONS);
-    vert_sizer->Add(identity_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);
+    if (SETUP_REQUIRE_DOWNLOAD) {
+        wxSizer *const identity_form = new wxStaticBoxSizer(wxHORIZONTAL, this, "&Download Identity and Encryption Containers");
+        identity_form->Add(new Text(this, _("I trust this machine: ")), DIALOGS_SIZER_OPTIONS);
+        identity_form->AddStretchSpacer();
+        download_button = new wxButton(this, BUTTON_DOWNLOAD_IDENTITY, _("Download"));
+        identity_form->Add(download_button, DIALOGS_SIZER_OPTIONS);
+        vert_sizer->Add(identity_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);
+    } else {
+        /* Tell the focus to download one time. */
+        this->download_button = 0;
+        this->force_download = true;
+    }
 
 	/* Decrypt form. */
-	wxSizer *const decrypt_form = new wxStaticBoxSizer(wxVERTICAL, this, "&Unlock Identity and Encryption Containers");
+	wxSizer *const decrypt_form = new wxStaticBoxSizer(wxVERTICAL, this, "&Unlock Digital Identity and Encryption Codes");
 
 	/* Add decryption input. */
 	this->AddForms(decrypt_form);
@@ -174,15 +218,15 @@ IdentityPage::IdentityPage(SeruroSetup *parent, bool force_download)
 
     /* Add status message. */
     wxSizer *const status_sizer = new wxBoxSizer(wxHORIZONTAL);
-	status_sizer->Add(new Text(this, _("Download status: ")), DIALOGS_SIZER_OPTIONS);
+	status_sizer->Add(new Text(this, _("Install status: ")), DIALOGS_SIZER_OPTIONS);
     status_sizer->SetItemMinSize((size_t) 0, SERURO_SETTINGS_FLEX_LABEL_WIDTH, -1);
     
-	identity_status = new Text(this, _("Not downloaded."));
+	identity_status = new Text(this, _("Not downloaded or unlocked."));
 	status_sizer->Add(this->identity_status, DIALOGS_SIZER_OPTIONS);
 	decrypt_form->Add(status_sizer, DIALOGS_BOXSIZER_OPTIONS);
     
 	vert_sizer->Add(decrypt_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);
-
+    
     this->SetSizer(vert_sizer);
 }
 
@@ -192,7 +236,10 @@ void IdentityPage::EnablePage()
 		this->wizard->EnableNext(true);
 	}
     
-    download_button->Enable();
+    if (download_button != 0) {
+        download_button->Enable();
+    }
+    
 	this->EnableForm();
     if (! install_authentication) {
         this->DisableAuthentication();
@@ -206,9 +253,11 @@ void IdentityPage::EnablePage()
 
 void IdentityPage::DisablePage()
 {
-	if (! this->identity_downloaded) {
-		download_button->Enable(false);
-	}
+    if (download_button != 0) {
+        if (! this->identity_downloaded) {
+            download_button->Enable(false);
+        }
+    }
 	this->DisableForm();
 }
 
@@ -283,7 +332,7 @@ bool IdentityPage::GoNext(bool from_callback)
 	if (! authentication_result || ! encipherment_result) {
         /* Enable page is responsible for checking each p12/skid from download_response. */
 		this->EnablePage();
-		this->SetIdentityStatus(wxString::Format(_("Unable to install %s."), failure_text));
+		this->SetIdentityStatus(wxString::Format(_("Unable to unlock %s certificate."), failure_text));
 		return false;
 	}
     

@@ -5,6 +5,9 @@
 #include <wx/frame.h>
 #include <wx/dialog.h>
 
+#include <wx/custombgwin.h>
+
+
 class AlertDialog : public wxDialog
 {
 public:

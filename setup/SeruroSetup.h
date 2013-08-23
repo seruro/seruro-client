@@ -224,6 +224,9 @@ public:
     /* The user tries to install the identity 
 	 * (after entering their key). */
     bool GoNext(bool from_callback = false);
+    
+    /* Add download form. Used if unlock codes are not available. */
+    void AddDownloadForm();
 
 private:
     wxButton *download_button;

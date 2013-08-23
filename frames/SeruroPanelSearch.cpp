@@ -177,7 +177,7 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	wxBoxSizer *search_sizer = new wxBoxSizer(wxHORIZONTAL);
 	
 	/* Create search list. */
-	Text *servers_text = new Text(this, wxT("Select server: "));
+	Text *servers_text = new Text(this, wxT("Select Seruro server: "));
 	
 	this->servers_control = GetServerChoice(this);
 	/* When checked/unchecked the servers_control is disabled/enabled. */

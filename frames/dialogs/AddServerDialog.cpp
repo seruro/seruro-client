@@ -54,7 +54,7 @@ void AddServerForm::AddForm(wxSizer *sizer,
     
     /* Host controller. */
 	this->server_host = new wxTextCtrl(parent, wxID_ANY, host, wxDefaultPosition, wxDefaultSize, 0, host_validator);
-    this->server_host->SetHint(_("someserver.seruro.com"));
+    this->server_host->SetHint(_("alpha.seruro.com"));
 	grid_sizer->Add(this->server_host, DIALOGS_BOXSIZER_OPTIONS);
 	
 	/* Optional server port (validator included). */
