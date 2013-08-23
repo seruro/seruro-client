@@ -21,6 +21,8 @@
 #include "frames/UIDefs.h"
 #include "frames/SeruroFrameMain.h"
 
+#include "frames/dialogs/AlertDialog.h"
+
 #include <wx/image.h>
 
 #define SERURO_DEBUG_SETUP 0
@@ -56,8 +58,8 @@ bool SeruroClient::OnInit()
 	/* Create a frame, but do not start sub frames, which may depend on config. */
 	main_frame = new SeruroFrameMain(wxT(SERURO_APP_NAME),
 		SERURO_APP_DEFAULT_WIDTH, SERURO_APP_DEFAULT_HEIGHT);
-    this->SetTopWindow(main_frame);
-
+    //this->SetTopWindow(main_frame);
+    
 	/* Start logger */
 	InitLogger();
 
@@ -69,6 +71,8 @@ bool SeruroClient::OnInit()
 
 	/* Now safe to start sub-frames (panels). */
 	main_frame->AddPanels();
+    /* Hopefully this fixes an artifact within the book layout on MSW. */
+    main_frame->SendSizeEvent();
 
 	/* There is an optional setup wizard. */
 	this->running_setup = 0;
@@ -81,6 +85,10 @@ bool SeruroClient::OnInit()
 	} else {
         main_frame->Show(true);
     }
+
+    AlertDialog *alert = new AlertDialog();
+    this->SetTopWindow(alert);
+    alert->ShowModal();
 
     return true;
 }

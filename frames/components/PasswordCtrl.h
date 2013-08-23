@@ -1,4 +1,7 @@
 
+#ifndef H_PasswordCtrl
+#define H_PasswordCtrl
+
 #include <wx/textctrl.h>
 #include <wx/event.h>
 
@@ -21,3 +24,5 @@ public:
     
 private:
 };
+
+#endif

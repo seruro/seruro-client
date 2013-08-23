@@ -91,7 +91,6 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
 
 	/* Add singular panel */
 	book = new wxNotebook(this, SERURO_NOTEBOOK_ID);
-
 	this->mainSizer->Add(book, 1, wxEXPAND, 5);
 }
 
@@ -117,6 +116,9 @@ void SeruroFrameMain::AddPanels()
 	test_panel = new SeruroPanelTest(book);
 	seruro_panels_ids[seruro_panels_size++] = 0; /* Test is not controllable. */
 #endif
+    
+    this->Layout();
+    this->Center();
 }
 
 /* The tray menu generates events based on IDs, these IDs correspond to pages. 

@@ -1,4 +1,7 @@
 
+#ifndef H_AppAccountList
+#define H_AppAccountList
+
 #include <wx/window.h>
 #include <wx/listctrl.h>
 #include <wx/imaglist.h>
@@ -80,3 +83,5 @@ protected:
     
     //DECLARE_EVENT_TABLE()
 };
+
+#endif
