@@ -16,7 +16,9 @@ enum app_account_ids_t {
 class AppAccountList
 {
 public:
-    AppAccountList(wxWindow *parent, bool use_address = true);
+    AppAccountList() {}
+    void Create(wxWindow *parent, bool use_address = true);
+    
     ~AppAccountList() {
         if (created_appshelper) {
             delete this->apps_helper;
@@ -24,7 +26,7 @@ public:
     }
     
     /* Access the internal list, only to add to a sizer. */
-    void AddList(wxSizer *sizer);
+    void AddAccountList(wxSizer *sizer);
     
     /* Pass in a helper pointer, or allow the AppAccountList to create one.*/
     void CreateHelper() {
@@ -50,11 +52,7 @@ public:
     //bool Unassign(wxString app, wxString account);
     //void Refresh();
     
-	void OnSelect(wxListEvent &event);
-    void OnColumnDrag(wxListEvent &event);
-    void OnDeselect(wxListEvent &event);
-    
-	void DoDeselect();
+    bool SelectAccount(long index);
 	void DeselectAccounts();
     
     /* The client changes something about an account. */
@@ -82,6 +80,11 @@ protected:
     wxWindow *parent;
     
     //DECLARE_EVENT_TABLE()
+    
+private:
+    //void OnSelect(wxListEvent &event);
+    void OnAccountColumnDrag(wxListEvent &event);
+    //void OnDeselect(wxListEvent &event);
 };
 
 #endif

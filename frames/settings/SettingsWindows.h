@@ -7,6 +7,9 @@
 #include "../../api/SeruroStateEvents.h"
 #include "../../logging/SeruroLogger.h"
 
+/* Half of ApplicationsView is a separate controller. */
+#include "../components/AppAccountList.h"
+
 #include <wx/button.h>
 #include <wx/listctrl.h>
 #include <wx/imaglist.h>
@@ -110,15 +113,15 @@ private:
 	DECLARE_EVENT_TABLE()
 };
 
-class ApplicationsWindow : public SettingsView
+class ApplicationsWindow : public SettingsView, public AppAccountList
 {
 public:
     ApplicationsWindow(SeruroPanelSettings *window);
     ~ApplicationsWindow();
     
     void GenerateApplicationsList();
-    void AddAccount(wxString app, wxString account);
-    void GenerateAccountsList();
+    //void AddAccount(wxString app, wxString account);
+    //void GenerateAccountsList();
     
     /* Button event handlers. */
     void OnAssign(wxCommandEvent &event);
@@ -131,7 +134,7 @@ public:
     void OnDeselect(wxListEvent &event) { DoDeselect(); }
 	void DoDeselect();
 	void DeselectApps();
-	void DeselectAccounts();
+	//void DeselectAccounts();
     
     /* The client changes something about an account. */
     void OnAccountStateChange(SeruroStateEvent &event);
@@ -142,18 +145,18 @@ private:
     bool account_selected;
     
     /* Information about the selection item. */
-    wxString app_name;
-    wxString account;
+    //wxString app_name;
+    //wxString account;
     
     /* Components. */
     wxButton *assign_button;
     wxButton *unassign_button;
     wxListCtrl *apps_list;
-    wxListCtrl *accounts_list;
-	wxImageList *list_images;
+    //wxListCtrl *accounts_list;
+	wxImageList *apps_list_images;
     
     /* Helpers. */
-    SeruroApps *apps_helper;
+    //SeruroApps *apps_helper;
     
     DECLARE_EVENT_TABLE()
 };

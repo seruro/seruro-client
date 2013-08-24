@@ -16,9 +16,11 @@
 
 DECLARE_APP(SeruroClient);
 
-AppAccountList::AppAccountList(wxWindow *parent, bool use_address)
-  : parent(parent), use_address(use_address)
+void AppAccountList::Create(wxWindow *parent, bool use_address)
 {
+    this->parent = parent;
+    this->use_address = use_address;
+    
     //wxSizer *const sizer = new wxBoxSizer(wxVERTICAL);
     this->created_appshelper = false;
     this->apps_helper = 0;
@@ -49,9 +51,9 @@ AppAccountList::AppAccountList(wxWindow *parent, bool use_address)
     accounts_list->InsertColumn(3, _("Status"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
 
 	/* Set up event handler bindings. */
-	wxGetApp().Bind(wxEVT_LIST_ITEM_SELECTED, &AppAccountList::OnSelect, this, APPACCOUNT_LIST_ID);
-    wxGetApp().Bind(wxEVT_LIST_COL_BEGIN_DRAG, &AppAccountList::OnColumnDrag, this, APPACCOUNT_LIST_ID);
-    wxGetApp().Bind(wxEVT_LIST_ITEM_DESELECTED, &AppAccountList::OnDeselect, this, APPACCOUNT_LIST_ID);
+	//wxGetApp().Bind(wxEVT_LIST_ITEM_SELECTED, &AppAccountList::OnSelect, this, APPACCOUNT_LIST_ID);
+    wxGetApp().Bind(wxEVT_LIST_COL_BEGIN_DRAG, &AppAccountList::OnAccountColumnDrag, this, APPACCOUNT_LIST_ID);
+    //wxGetApp().Bind(wxEVT_LIST_ITEM_DESELECTED, &AppAccountList::OnDeselect, this, APPACCOUNT_LIST_ID);
 }
 
 void AppAccountList::AddAccount(wxString app, wxString account)
@@ -117,55 +119,36 @@ void AppAccountList::GenerateAccountsList()
     }
 }
 
-void AppAccountList::OnSelect(wxListEvent &event)
+bool AppAccountList::SelectAccount(long index)
 {
     wxListItem item;
     
     item.SetMask(wxLIST_MASK_TEXT);
-    item.SetId(event.GetIndex());
+    item.SetId(index);
     item.SetColumn(APPACCOUNT_LIST_NAME_COLUMN);
     
     if (! accounts_list->GetItem(item)) {
         wxLogMessage(_("AppAccountList> (OnSelect) could not get address."));
-        return;
+        return false;
     }
     
     /* This item will be shown as disabled. */
     if (! wxGetApp().config->AddressExists(item.GetText())) {
-        accounts_list->SetItemState(event.GetIndex(), 0, wxLIST_STATE_SELECTED);
-        event.Veto();
-        return;
+        accounts_list->SetItemState(index, 0, wxLIST_STATE_SELECTED);
+        return false;
     }
     
-    /* Only one app or account can be selected at a time. */
-    //DeselectApps();
-    
     this->account = item.GetText();
-    //this->account_selected = true;
     
     /* Also need the server name for this account. */
     item.SetColumn(APPACCOUNT_LIST_APP_COLUMN);
     accounts_list->GetItem(item);
     this->app_name = item.GetText();
     
-    /* Check if identity is unstalled. */
-    //assign_button->Enable(
-    //    apps_helper->CanAssign(app_name) &&
-    //    accounts_list->GetItemData(event.GetIndex()) != APP_ASSIGNED
-    //);
-    
-    //unassign_button->Enable(
-    //    apps_helper->CanUnassign(app_name) &&
-    //    accounts_list->	GetItemData(event.GetIndex()) == APP_ASSIGNED
-    //);
+    return true;
 }
 
-void AppAccountList::OnDeselect(wxListEvent &event)
-{
-    this->DoDeselect();
-}
-
-void AppAccountList::OnColumnDrag(wxListEvent &event)
+void AppAccountList::OnAccountColumnDrag(wxListEvent &event)
 {
     /* This could be better defined, assumes image=0. */
     if (event.GetColumn() == 0) {
@@ -185,18 +168,7 @@ void AppAccountList::DeselectAccounts()
     }
 }
 
-void AppAccountList::DoDeselect()
-{
-    this->app_name = wxEmptyString;
-    this->account = wxEmptyString;
-    
-    //this->assign_button->Disable();
-    //this->unassign_button->Disable();
-}
-
-
-
-void AppAccountList::AddList(wxSizer *sizer)
+void AppAccountList::AddAccountList(wxSizer *sizer)
 {
     if (this->accounts_list != 0) {
         sizer->Add(accounts_list, DIALOGS_SIZER_OPTIONS.Proportion(1).Top().Bottom());

@@ -14,12 +14,13 @@
 #include "../../resources/images/certificate_icon_12_flat.png.h"
 #include "../../resources/images/identity_icon_12_flat.png.h"
 
-#define APP_ACCOUNTS_LIST_NAME_COLUMN 1
-#define APP_ACCOUNTS_LIST_APP_COLUMN 2
+//#define APP_ACCOUNTS_LIST_NAME_COLUMN 1
+//#define APP_ACCOUNTS_LIST_APP_COLUMN 2
 
 BEGIN_EVENT_TABLE(ApplicationsWindow, SettingsView)
     EVT_LIST_ITEM_SELECTED(SETTINGS_APPS_LIST_ID, ApplicationsWindow::OnAppSelected)
-    EVT_LIST_ITEM_SELECTED(SETTINGS_APP_ACCOUNTS_LIST_ID, ApplicationsWindow::OnAccountSelected)
+    EVT_LIST_ITEM_SELECTED(APPACCOUNT_LIST_ID, ApplicationsWindow::OnAccountSelected)
+
     EVT_LIST_COL_BEGIN_DRAG(wxID_ANY, ApplicationsWindow::OnColumnDrag)
     EVT_LIST_ITEM_DESELECTED(wxID_ANY, ApplicationsWindow::OnDeselect)
 
@@ -92,7 +93,7 @@ void ApplicationsWindow::OnRefresh(wxCommandEvent &event)
 void ApplicationsWindow::OnAppSelected(wxListEvent &event)
 {
     /* Must deselect all accounts. */
-    DeselectAccounts();
+    this->DeselectAccounts();
     
     this->assign_button->Enable(false);
     this->unassign_button->Enable(false);
@@ -100,44 +101,26 @@ void ApplicationsWindow::OnAppSelected(wxListEvent &event)
 
 void ApplicationsWindow::OnAccountSelected(wxListEvent &event)
 {
-    wxListItem item;
+    long index = event.GetIndex();
     
-    item.SetMask(wxLIST_MASK_TEXT);
-    item.SetId(event.GetIndex());
-    item.SetColumn(APP_ACCOUNTS_LIST_NAME_COLUMN);
-    
-    if (! accounts_list->GetItem(item)) {
-        wxLogMessage(_("ApplicationsWindow> (OnAccountSelected) could not get address."));
-        return;
-    }
-    
-    /* This item will be shown as disabled. */
-    if (! wxGetApp().config->AddressExists(item.GetText())) {
-        accounts_list->SetItemState(event.GetIndex(), 0, wxLIST_STATE_SELECTED);
+    if (! this->SelectAccount(index)) {
         event.Veto();
         return;
     }
     
-    /* Only one app or account can be selected at a time. */
-    DeselectApps();
-    
-    this->account = item.GetText();
-    //this->account_selected = true;
-    
-    /* Also need the server name for this account. */
-    item.SetColumn(APP_ACCOUNTS_LIST_APP_COLUMN);
-    accounts_list->GetItem(item);
-    this->app_name = item.GetText();
+    /* Quick-looked of which type is selected. */
+    this->DeselectApps();
+    this->account_selected = true;
     
     /* Check if identity is unstalled. */
     assign_button->Enable(
-        apps_helper->CanAssign(app_name) &&
-        accounts_list->GetItemData(event.GetIndex()) != APP_ASSIGNED
+        apps_helper->CanAssign(this->app_name) &&
+        accounts_list->GetItemData(index) != APP_ASSIGNED
     );
     
     unassign_button->Enable(
-        apps_helper->CanUnassign(app_name) &&
-        accounts_list->	GetItemData(event.GetIndex()) == APP_ASSIGNED
+        apps_helper->CanUnassign(this->app_name) &&
+        accounts_list->	GetItemData(index) == APP_ASSIGNED
     );
 }
 
@@ -150,18 +133,6 @@ void ApplicationsWindow::DeselectApps()
     for (int i = 0; i < apps_count; i++) {
         item.SetId(i);
         apps_list->SetItemState(item, 0, wxLIST_STATE_SELECTED);
-    }
-}
-
-void ApplicationsWindow::DeselectAccounts()
-{
-    /* Todo: hopefully this does not account a deselect event. */
-    wxListItem item;
-    int accounts_count = accounts_list->GetItemCount();
-    
-    for (int i = 0; i < accounts_count; i++) {
-        item.SetId(i);
-        accounts_list->SetItemState(item, 0, wxLIST_STATE_SELECTED);
     }
 }
 
@@ -195,72 +166,31 @@ void ApplicationsWindow::GenerateApplicationsList()
 	}
 }
 
-void ApplicationsWindow::AddAccount(wxString app, wxString account)
-{
-    long item_index;
-    account_status_t identity_status;
-    wxString server_uuid;
-    
-    item_index = this->accounts_list->InsertItem(0, _(""), 0);
-    this->accounts_list->SetItem(item_index, 1, account);
-    identity_status = apps_helper->IdentityStatus(app, account, server_uuid);
-    
-    /* Todo: set image based on status. */
-    this->accounts_list->SetItem(item_index, 2, app);
-    this->accounts_list->SetItemData(item_index, (long) identity_status);
-    
-    /* Check if account exists, and if not, "disable the row". */
-    if (! wxGetApp().config->AddressExists(account)) {
-        accounts_list->SetItemTextColour(item_index, wxColour(DISABLED_TEXT_COLOR));
-    }
-    
-    //accounts_list->SetItem(item_index, 3, (identity_installed) ? _("Installed") : _("Not installed"));
-    if (identity_status == APP_ASSIGNED) {
-        accounts_list->SetItem(item_index, 3, wxGetApp().config->GetServerName(server_uuid));
-    } else if (identity_status == APP_UNASSIGNED) {
-        accounts_list->SetItem(item_index, 3, _("Unassigned"));
-    } else {
-        accounts_list->SetItem(item_index, 3, _("Not using Seruro"));
-    }
-}
-
-void ApplicationsWindow::GenerateAccountsList()
-{
-    wxArrayString apps;
-    wxArrayString accounts;
-    
-    apps = apps_helper->GetAppList();
-    
-    accounts_list->DeleteAllItems();
-    for (size_t i = 0; i < apps.size(); i++) {
-        accounts = apps_helper->GetAccountList(apps[i]);
-        
-        for (size_t j = 0; j < accounts.size(); j++) {
-            this->AddAccount(apps[i], accounts[j]);
-        }
-    }
-}
-
 ApplicationsWindow::ApplicationsWindow(SeruroPanelSettings *window) : SettingsView(window)
 {
     wxSizer *const sizer = new wxBoxSizer(wxVERTICAL);
     
-    apps_helper = new SeruroApps();
+    //AppAccountList::AppAccountList(this, false);
+    AppAccountList::Create(this, false);
+    AppAccountList::CreateHelper();
+    
+    //apps_helper = new SeruroApps();
  
-    list_images = new wxImageList(12, 12, true);
-    list_images->Add(wxGetBitmapFromMemory(blank));
-	list_images->Add(wxGetBitmapFromMemory(certificate_icon_12_flat));
-	list_images->Add(wxGetBitmapFromMemory(identity_icon_12_flat));
+    apps_list_images = new wxImageList(12, 12, true);
+    apps_list_images->Add(wxGetBitmapFromMemory(blank));
+	apps_list_images->Add(wxGetBitmapFromMemory(certificate_icon_12_flat));
+	apps_list_images->Add(wxGetBitmapFromMemory(identity_icon_12_flat));
     
 	apps_list = new wxListCtrl(this, SETTINGS_APPS_LIST_ID, wxDefaultPosition, wxDefaultSize,
         wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_THEME);
-    apps_list->SetImageList(list_images, wxIMAGE_LIST_SMALL);
+    apps_list->SetImageList(apps_list_images, wxIMAGE_LIST_SMALL);
  
     /* Add Image column. */
 	wxListItem image_column;
 	image_column.SetId(0);
 	image_column.SetImage(1);
 	apps_list->InsertColumn(0, image_column);
+    apps_list->SetColumnWidth(0, 24);
     
     /* Add columns for applications list. */
 	apps_list->InsertColumn(1, _("Application"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
@@ -268,26 +198,14 @@ ApplicationsWindow::ApplicationsWindow(SeruroPanelSettings *window) : SettingsVi
 	apps_list->InsertColumn(3, _("Status"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
     
     this->GenerateApplicationsList();
-    apps_list->SetColumnWidth(0, 24);
+    sizer->Add(apps_list, DIALOGS_SIZER_OPTIONS);
     
-    accounts_list = new wxListCtrl(this, SETTINGS_APP_ACCOUNTS_LIST_ID, wxDefaultPosition, wxDefaultSize,
-        wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_THEME);
-    accounts_list->SetImageList(list_images, wxIMAGE_LIST_SMALL);
+    /* Use the AppAccounts controller. */
+    AppAccountList::GenerateAccountsList();
+    AppAccountList::AddAccountList(sizer);
     
-    /* Add Image column. */
-    image_column.SetImage(2);
-	accounts_list->InsertColumn(0, image_column);
-    
-    /* Add columns for accounts list. */
-    accounts_list->InsertColumn(1, _("Account Address"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
-    accounts_list->InsertColumn(2, _("Application"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
-    accounts_list->InsertColumn(3, _("Status"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
-    
-    this->GenerateAccountsList();
-    accounts_list->SetColumnWidth(0, 24);
-    
-	sizer->Add(apps_list, DIALOGS_SIZER_OPTIONS);
-    sizer->Add(accounts_list, DIALOGS_SIZER_OPTIONS.Proportion(1).Top().Bottom());
+	//sizer->Add(apps_list, DIALOGS_SIZER_OPTIONS);
+    //sizer->Add(accounts_list, DIALOGS_SIZER_OPTIONS.Proportion(1).Top().Bottom());
     
     /* A sizer for ACTION buttons. */
 	wxSizer *const actions_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -311,7 +229,7 @@ ApplicationsWindow::ApplicationsWindow(SeruroPanelSettings *window) : SettingsVi
 
 ApplicationsWindow::~ApplicationsWindow()
 {
-    delete apps_helper;
+    //delete apps_helper;
 }
 
 void ApplicationsWindow::AlignLists()
