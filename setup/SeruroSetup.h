@@ -19,6 +19,7 @@
 #include "../frames/dialogs/AddServerDialog.h"
 #include "../frames/dialogs/AddAccountDialog.h"
 #include "../frames/dialogs/DecryptDialog.h"
+#include "../frames/components/AppAccountList.h"
 
 enum setup_type_t
 {
@@ -246,10 +247,40 @@ private:
 	DECLARE_EVENT_TABLE()
 };
 
-class ApplicationsPage : public SetupPage
+class ApplicationsPage : public SetupPage, public AppAccountList
 {
 public:
 	ApplicationsPage(SeruroSetup *parent);
+    
+private:
+    /* Event action handlers. */
+    void OnAssign(wxCommandEvent &event);
+    void OnUnassign(wxCommandEvent &event);
+    void OnRefresh(wxCommandEvent &event);
+    void OnAccountSelected(wxListEvent &event);
+    void OnAccountDeselected(wxListEvent &event);
+    
+    void DoFocus();
+    void EnablePage();
+    void DisablePage();
+    
+    /* Seruro-based events. */
+    void OnApplicationStateChange(SeruroStateEvent &event);
+    
+    /* Helpers. */
+    void AlignList();
+    
+    /* Components. */
+    wxButton *assign_button;
+    wxButton *unassign_button;
+    wxButton *refresh_button;
+    
+    /* Has at least one account be assigned? */
+    bool account_assigned;
+    //wxString app_name;
+    //wxString account_name;
+    
+	DECLARE_EVENT_TABLE()
 };
 
 #endif

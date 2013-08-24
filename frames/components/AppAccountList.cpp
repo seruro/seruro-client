@@ -16,6 +16,53 @@
 
 DECLARE_APP(SeruroClient);
 
+bool AppAccountList::Assign()
+{
+    /* Find server for account/address, if duplicates are found display a selection dialog. */
+	wxArrayString servers;
+	wxArrayString accounts, server_accounts;
+	wxString server_uuid;
+    
+    if (! this->apps_helper->CanAssign(this->app_name)) {
+        /* The application used by the selected account cannot be assigned. */
+        return false;
+    }
+    
+	/* Check each servers' accounts, if a matching account is found, add the server to server_accounts. */
+	servers = wxGetApp().config->GetServerList();
+	for (size_t i = 0; i < servers.size(); i++) {
+		accounts = wxGetApp().config->GetAddressList(servers[i]);
+		for (size_t j = 0; j < accounts.size(); j++) {
+			if (accounts[j] == this->account) {
+				server_accounts.Add(servers[i]);
+			}
+		}
+	}
+    
+	if (server_accounts.size() == 0) {
+		/* No server found, the account is not installed? */
+		return false;
+	} else if (server_accounts.size() > 1) {
+		/* More than one server found, create a selection dialog to replace server. */
+		/* Set server_uuid. */
+		return false;
+	} else {
+		server_uuid = server_accounts[0];
+	}
+    
+	if (! this->apps_helper->AssignIdentity(this->app_name, server_uuid, this->account)) {
+		/* Todo: Display error message. */
+        return false;
+	}
+    
+    return true;
+}
+
+bool AppAccountList::Unassign()
+{
+    return false;
+}
+
 void AppAccountList::Create(wxWindow *parent, bool use_address)
 {
     this->parent = parent;

@@ -3,7 +3,104 @@
 #include "SeruroSetup.h"
 #include "../SeruroClient.h"
 
+#include "SeruroFrame.h"
+
+enum application_setup_ids_t {
+    BUTTON_ASSIGN,
+    BUTTON_UNASSIGN,
+    BUTTON_REFRESH
+};
+
 DECLARE_APP(SeruroClient);
+
+BEGIN_EVENT_TABLE(ApplicationsPage, SetupPage)
+    EVT_LIST_ITEM_SELECTED(APPACCOUNT_LIST_ID, ApplicationsPage::OnAccountSelected)
+    EVT_LIST_ITEM_DESELECTED(APPACCOUNT_LIST_ID, ApplicationsPage::OnAccountDeselected)
+
+    EVT_BUTTON(BUTTON_ASSIGN,   ApplicationsPage::OnAssign)
+    EVT_BUTTON(BUTTON_UNASSIGN, ApplicationsPage::OnUnassign)
+    EVT_BUTTON(BUTTON_REFRESH,  ApplicationsPage::OnRefresh)
+END_EVENT_TABLE()
+
+void ApplicationsPage::OnApplicationStateChange(SeruroStateEvent &event)
+{
+    
+}
+
+void ApplicationsPage::OnAccountSelected(wxListEvent &event)
+{
+    long index = event.GetIndex();
+    
+    if (! AppAccountList::SelectAccount(index)) {
+        event.Veto();
+        return;
+    }
+    
+    /* Check if identity is unstalled. */
+    assign_button->Enable(
+        apps_helper->CanAssign(this->app_name) &&
+        accounts_list->GetItemData(index) != APP_ASSIGNED
+    );
+    
+    unassign_button->Enable(
+        apps_helper->CanUnassign(this->app_name) &&
+        accounts_list->	GetItemData(index) == APP_ASSIGNED
+    );
+}
+
+void ApplicationsPage::OnAccountDeselected(wxListEvent &event)
+{
+    
+}
+
+void ApplicationsPage::OnAssign(wxCommandEvent &event)
+{
+    AppAccountList::Assign();
+}
+
+void ApplicationsPage::OnUnassign(wxCommandEvent &event)
+{
+    AppAccountList::Unassign();
+}
+
+void ApplicationsPage::OnRefresh(wxCommandEvent &event)
+{
+    /* focus already re-generates the account list for us. */
+    this->DoFocus();
+}
+
+void ApplicationsPage::DoFocus()
+{
+    wxArrayString whitelist;
+    
+    /* Set account from setup wizard. */
+    this->account = wizard->GetAccount();
+    whitelist.Add(this->account);
+    
+    AppAccountList::SetAccountWhitelist(whitelist);
+    AppAccountList::GenerateAccountsList();
+    
+    /* Make sure the list fits correctly. */
+    this->Layout();
+    this->AlignList();
+    this->Layout();
+}
+
+void ApplicationsPage::AlignList()
+{
+    wxListCtrl * lists[] = {AppAccountList::accounts_list};
+    MaximizeAndAlignLists(lists, 1, 1);
+}
+
+void ApplicationsPage::EnablePage()
+{
+    
+}
+
+void ApplicationsPage::DisablePage()
+{
+    
+}
 
 ApplicationsPage::ApplicationsPage(SeruroSetup *parent) : SetupPage(parent)
 {
@@ -15,13 +112,32 @@ ApplicationsPage::ApplicationsPage(SeruroSetup *parent) : SetupPage(parent)
     this->enable_next = true;
     this->enable_prev = false;
     
+    /* Use false to display the name of the accounts, since this is bound to an addres. */
+    AppAccountList::Create(this, false);
+    AppAccountList::CreateHelper();
+    
     /* Generic explaination. */
     Text *msg = new Text(this, TEXT_ASSIGN_IDENTITY);
     vert_sizer->Add(msg, DIALOGS_SIZER_OPTIONS);
     
     /* Show each account for this address in a list. */
+    AppAccountList::AddAccountList(vert_sizer);
     
     /* Show an assign/unassign button. */
+    wxSizer *const actions_sizer = new wxBoxSizer(wxHORIZONTAL);
+	assign_button = new wxButton(this, BUTTON_ASSIGN, _("Configure"));
+	assign_button->Disable();
+	unassign_button = new wxButton(this, BUTTON_UNASSIGN, _("Unassign"));
+	unassign_button->Disable();
+    refresh_button = new wxButton(this, BUTTON_REFRESH, _("Refresh"));
+    
+    /* Align these buttons to the right. */
+    actions_sizer->AddStretchSpacer();
+    actions_sizer->Add(assign_button, DIALOGS_SIZER_OPTIONS);
+    actions_sizer->Add(unassign_button, DIALOGS_SIZER_OPTIONS);
+    actions_sizer->Add(refresh_button, DIALOGS_SIZER_OPTIONS);
+    vert_sizer->Add(actions_sizer, DIALOGS_SIZER_OPTIONS.FixedMinSize().Bottom());
     
     this->SetSizer(vert_sizer);
 }
+

@@ -48,8 +48,8 @@ public:
     void AddAccount(wxString app, wxString account);
     void GenerateAccountsList();
     
-    //bool Assign(wxString app, wxString account);
-    //bool Unassign(wxString app, wxString account);
+    bool Assign();
+    bool Unassign();
     //void Refresh();
     
     bool SelectAccount(long index);
