@@ -4,7 +4,6 @@
 #include "../UIDefs.h"
 
 #include "../../SeruroClient.h"
-#include "../../apps/SeruroApps.h"
 #include "../../api/SeruroStateEvents.h"
 
 #include <wx/log.h>
@@ -82,12 +81,12 @@ void ApplicationsWindow::OnAccountSelected(wxListEvent &event)
     
     /* Check if identity is unstalled. */
     assign_button->Enable(
-        apps_helper->CanAssign(this->app_name) &&
+        theSeruroApps::Get().CanAssign(this->app_name) &&
         accounts_list->GetItemData(index) != APP_ASSIGNED
     );
     
     unassign_button->Enable(
-        apps_helper->CanUnassign(this->app_name) &&
+        theSeruroApps::Get().CanUnassign(this->app_name) &&
         accounts_list->	GetItemData(index) == APP_ASSIGNED
     );
 }
@@ -120,7 +119,7 @@ void ApplicationsWindow::GenerateApplicationsList()
 	wxArrayString apps;
     wxJSONValue app_info;
     
-    apps = apps_helper->GetAppList();
+    apps = theSeruroApps::Get().GetAppList();
     
     apps_list->DeleteAllItems();
 	for (size_t i = 0; i < apps.size(); i++) {
@@ -128,7 +127,7 @@ void ApplicationsWindow::GenerateApplicationsList()
 		apps_list->SetItem(item_index, 1, _(apps[i]));
         
         /* Todo: set image based on status. */
-        app_info = apps_helper->GetApp(apps[i]);
+        app_info = theSeruroApps::Get().GetApp(apps[i]);
         apps_list->SetItem(item_index, 2, app_info["version"].AsString());
         apps_list->SetItem(item_index, 3, app_info["status"].AsString());
 	}
@@ -140,9 +139,7 @@ ApplicationsWindow::ApplicationsWindow(SeruroPanelSettings *window) : SettingsVi
     
     //AppAccountList::AppAccountList(this, false);
     AppAccountList::Create(this, true);
-    AppAccountList::CreateHelper();
-    
-    //apps_helper = new SeruroApps();
+    //AppAccountList::CreateHelper();
  
     apps_list_images = new wxImageList(12, 12, true);
     apps_list_images->Add(wxGetBitmapFromMemory(blank));

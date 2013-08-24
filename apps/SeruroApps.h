@@ -174,7 +174,7 @@ private:
     //static SeruroConfig instance;
     theSeruroApps() : SeruroApps() { }
     theSeruroApps(const theSeruroApps&);
-    theSeruroApps& operator=(const theSeruroApps&);
+    void operator=(const theSeruroApps&);
     ~theSeruroApps();
 };
 

@@ -23,7 +23,7 @@ bool AppAccountList::Assign()
 	wxArrayString accounts, server_accounts;
 	wxString server_uuid;
     
-    if (! this->apps_helper->CanAssign(this->app_name)) {
+    if (! theSeruroApps::Get().CanAssign(this->app_name)) {
         /* The application used by the selected account cannot be assigned. */
         return false;
     }
@@ -50,7 +50,7 @@ bool AppAccountList::Assign()
 		server_uuid = server_accounts[0];
 	}
     
-	if (! this->apps_helper->AssignIdentity(this->app_name, server_uuid, this->account)) {
+	if (! theSeruroApps::Get().AssignIdentity(this->app_name, server_uuid, this->account)) {
 		/* Todo: Display error message. */
         return false;
 	}
@@ -67,10 +67,6 @@ void AppAccountList::Create(wxWindow *parent, bool use_address)
 {
     this->parent = parent;
     this->use_address = use_address;
-    
-    //wxSizer *const sizer = new wxBoxSizer(wxVERTICAL);
-    this->created_appshelper = false;
-    this->apps_helper = 0;
     
     /* Create image list */
     list_images = new wxImageList(12, 12, true);
@@ -110,20 +106,15 @@ void AppAccountList::AddAccount(wxString app, wxString account)
     
     wxString display_name, server_uuid;
     
-    if (this->apps_helper == 0) {
-        /* The caller must set or create the apps helper before generating accounts. */
-        return;
-    }
-    
     /* Note: do not apply whitelist, it should have already been applied. */
     item_index = this->accounts_list->InsertItem(0, _(""), 0);
     
     /* Get the account status, and fill-in the uuid. */
-    identity_status = apps_helper->IdentityStatus(app, account, server_uuid);
+    identity_status = theSeruroApps::Get().IdentityStatus(app, account, server_uuid);
     this->accounts_list->SetItemData(item_index, (long) identity_status);
     
     /* Todo: set image based on status. */
-    display_name = (this->use_address) ? account : this->apps_helper->GetAccountName(app, account);
+    display_name = (this->use_address) ? account : theSeruroApps::Get().GetAccountName(app, account);
     this->accounts_list->SetItem(item_index, 1, display_name);
     this->accounts_list->SetItem(item_index, 2, app);
     
@@ -147,18 +138,13 @@ void AppAccountList::GenerateAccountsList()
     wxArrayString apps;
     wxArrayString accounts;
     
-    if (this->apps_helper == 0) {
-        /* The caller must set or create the apps helper before generating accounts. */
-        return;
-    }
-    
     /* List of apps, then applied to whitelist, if any. */
-    apps = apps_helper->GetAppList(this->app_whitelist);
+    apps = theSeruroApps::Get().GetAppList(this->app_whitelist);
     
     /* List of all accounts under those apps, applied to whitelist. */
     accounts_list->DeleteAllItems();
     for (size_t i = 0; i < apps.size(); i++) {
-        accounts = apps_helper->GetAccountList(apps[i], this->account_whitelist);
+        accounts = theSeruroApps::Get().GetAccountList(apps[i], this->account_whitelist);
         
         for (size_t j = 0; j < accounts.size(); j++) {
             this->AddAccount(apps[i], accounts[j]);

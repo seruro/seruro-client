@@ -20,22 +20,22 @@ public:
     void Create(wxWindow *parent, bool use_address = true);
     
     ~AppAccountList() {
-        if (created_appshelper) {
-            delete this->apps_helper;
-        }
+        //if (created_appshelper) {
+        //    delete this->apps_helper;
+        //}
     }
     
     /* Access the internal list, only to add to a sizer. */
     void AddAccountList(wxSizer *sizer);
     
     /* Pass in a helper pointer, or allow the AppAccountList to create one.*/
-    void CreateHelper() {
-        this->apps_helper = new SeruroApps();
-        this->created_appshelper = true;
-    }
-    void SetHelper(SeruroApps *existing_helper) {
-        this->apps_helper = existing_helper;
-    }
+    //void CreateHelper() {
+    //    this->apps_helper = new SeruroApps();
+    //    this->created_appshelper = true;
+    //}
+    //void SetHelper(SeruroApps *existing_helper) {
+    //    this->apps_helper = existing_helper;
+    //}
     
     /* All the caller to restrict the apps/accounts displayed. */
     void SetAppWhitelist(wxArrayString whitelist) {
@@ -74,9 +74,9 @@ protected:
 	wxImageList *list_images;
     
     /* Helpers. */
-    SeruroApps *apps_helper;
+    //SeruroApps *apps_helper;
     /* Determine if apps_helper should be deleted. */
-    bool created_appshelper;
+    //bool created_appshelper;
     wxWindow *parent;
     
     //DECLARE_EVENT_TABLE()

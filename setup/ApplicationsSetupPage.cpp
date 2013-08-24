@@ -38,12 +38,12 @@ void ApplicationsPage::OnAccountSelected(wxListEvent &event)
     
     /* Check if identity is unstalled. */
     assign_button->Enable(
-        apps_helper->CanAssign(this->app_name) &&
+        theSeruroApps::Get().CanAssign(this->app_name) &&
         accounts_list->GetItemData(index) != APP_ASSIGNED
     );
     
     unassign_button->Enable(
-        apps_helper->CanUnassign(this->app_name) &&
+        theSeruroApps::Get().CanUnassign(this->app_name) &&
         accounts_list->	GetItemData(index) == APP_ASSIGNED
     );
 }
@@ -123,7 +123,7 @@ ApplicationsPage::ApplicationsPage(SeruroSetup *parent) : SetupPage(parent)
     
     /* Use false to display the name of the accounts, since this is bound to an addres. */
     AppAccountList::Create(this, false);
-    AppAccountList::CreateHelper();
+    //AppAccountList::CreateHelper();
     
     /* Generic explaination. */
     Text *msg = new Text(this, TEXT_ASSIGN_IDENTITY);
