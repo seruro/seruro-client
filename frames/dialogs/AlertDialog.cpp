@@ -18,7 +18,8 @@
 
 #define TEST_STRING "This is a test alert"
 
-AlertDialog::AlertDialog() : wxDialog(NULL, wxID_ANY, _("Testing"), wxDefaultPosition, wxDefaultSize, wxSTAY_ON_TOP | wxFRAME_SHAPED)
+AlertDialog::AlertDialog() : wxDialog(NULL, wxID_ANY, _("Testing"), wxDefaultPosition, wxDefaultSize, 
+	wxSTAY_ON_TOP | wxFRAME_SHAPED | wxTRANSPARENT_WINDOW)
 {
     this->SetSize(300, 75);
     

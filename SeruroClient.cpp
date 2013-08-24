@@ -86,9 +86,9 @@ bool SeruroClient::OnInit()
         main_frame->Show(true);
     }
 
-    AlertDialog *alert = new AlertDialog();
-    this->SetTopWindow(alert);
-    alert->ShowModal();
+    //AlertDialog *alert = new AlertDialog();
+    //this->SetTopWindow(alert);
+    //alert->ShowModal();
 
     return true;
 }
