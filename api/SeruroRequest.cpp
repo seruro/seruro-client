@@ -41,7 +41,7 @@ void PerformRequestAuth(SeruroRequestEvent &event)
     
     AuthDialog *dialog;
     wxString address;
-    int selected_address;
+    int selected_address = -1;
     
     /* Original request params are held in the event response. */
     og_params = event.GetResponse();

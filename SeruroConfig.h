@@ -151,4 +151,21 @@ private:
 	wxJSONValue config;
 };
 
+/* SeruroConfig singleton wrapper. */
+class theSeruroConfig : public SeruroConfig
+{
+public:
+    static SeruroConfig & Get() {
+        static SeruroConfig instance;
+        return instance;
+    }
+    
+private:
+    //static SeruroConfig instance;
+    theSeruroConfig() : SeruroConfig() { }
+    theSeruroConfig(const theSeruroConfig&);
+    theSeruroConfig& operator=(const theSeruroConfig&);
+    ~theSeruroConfig();
+};
+
 #endif

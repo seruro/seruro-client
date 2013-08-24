@@ -283,11 +283,36 @@ account_status_t SeruroApps::IdentityStatus(wxString app_name, wxString account_
 bool SeruroApps::AssignIdentity(wxString app_name, wxString server_uuid, wxString address)
 {
     AppHelper *helper;
+    bool assign_status;
     
     helper = this->GetHelper(app_name);
     if (helper == 0) return false;
     
-    return helper->AssignIdentity(server_uuid, address);
+    /* Ask the application to assign. */
+    assign_status = helper->AssignIdentity(server_uuid, address);
+    if (! assign_status) {
+        return false;
+    }
+    
+    /* Check if the application needs a restart. */
+    if (helper->needs_restart && helper->IsRunning()) {
+        return this->RequireRestart(helper, app_name);
+    }
+    
+    return true;
+}
+
+bool SeruroApps::RequireRestart(AppHelper *app, wxString app_name)
+{
+    /* Create and show a RestartApp dialog. */
+    
+    /* If the dialog returns false then the app remains in a restart_pending state. */
+    
+    /* An event loop (thread) should continue to check for this, and return a state event if the restart occurs. */
+    app->restart_pending = true;
+    
+    /* This has impact on the caller, and they should run IdentityStatus to check the failure reason. */
+    return false;
 }
 
 bool SeruroApps::CanAssign(wxString app_name)

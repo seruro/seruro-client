@@ -65,6 +65,12 @@ bool WriteTokenData(wxJSONValue token_data)
 		return false;
 	}
     
+    /* Possibly assure writes only occur within main thread. */
+    if (! wxIsMainThread()) {
+        /* Stop execution? */
+        int i = 0;
+    }
+    
 	/* Write the data into a string for saving. */
 	wxJSONWriter token_writer(wxJSONWRITER_STYLED);
 	wxString token_string;
@@ -181,6 +187,11 @@ bool SeruroConfig::WriteConfig()
 {
 	bool results;
 
+    if (! wxIsMainThread()) {
+        /* Stop execution? */
+        int i = 0;
+    }
+    
     if (HasConfig() && ! this->config_file->Exists()) {
         ERROR_LOG(_("SeruroConfig> Configuration file was removed."));
         this->InitConfig();

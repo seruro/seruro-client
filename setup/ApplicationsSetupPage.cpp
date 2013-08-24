@@ -50,12 +50,21 @@ void ApplicationsPage::OnAccountSelected(wxListEvent &event)
 
 void ApplicationsPage::OnAccountDeselected(wxListEvent &event)
 {
-    
+    /* No need to reset the account name, it is static. */
+    this->app_name = wxEmptyString;
 }
 
 void ApplicationsPage::OnAssign(wxCommandEvent &event)
 {
-    AppAccountList::Assign();
+    if (! AppAccountList::Assign()) {
+        /* If a restart was required, pause the app and wait for a choice? */
+        return;
+    }
+    
+    /* Todo: Should the assign controller create a failure alert? */
+    
+    /* Change the next text to indicate the assignment was successful. */
+    this->wizard->SetButtonText(wxEmptyString, _("&Next"));
 }
 
 void ApplicationsPage::OnUnassign(wxCommandEvent &event)

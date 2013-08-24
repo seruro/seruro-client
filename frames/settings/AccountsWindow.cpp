@@ -100,7 +100,8 @@ void AccountsWindow::OnServerSelected(wxListEvent &event)
     DeselectAccounts();
     
     /* Server name is now available. */
-    this->server_uuid = wxGetApp().config->GetServerUUID(item.GetText());
+    //this->server_uuid = wxGetApp().config->GetServerUUID(item.GetText());
+    this->server_uuid = theSeruroConfig::Get().GetServerUUID(item.GetText());
     this->account_selected = false;
     
     if (! wxGetApp().config->HaveCA(server_uuid)) {

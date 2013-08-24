@@ -54,6 +54,7 @@ public:
         /* Helpers for actions. */
         can_assign = true;
         can_unassign = true;
+        needs_restart = false;
 	}
     
     virtual bool IsInstalled() { return false; }
@@ -76,10 +77,24 @@ public:
 	virtual bool AssignIdentity(wxString server_uuid, wxString address) {
 		return false;
 	}
+    
+    /* Forcefully restart the application. */
+    virtual bool RestartApp() {
+        return false;
+    }
+    /* Check if the application is running. */
+    virtual bool IsRunning() {
+        return false;
+    }
 
     /* Action helpers. */
     bool can_assign;
     bool can_unassign;
+    
+    /* Does the application require a restart when assigned. */
+    bool needs_restart;
+    /* Is the application expecting a current restart. */
+    bool restart_pending;
     
 public:
     /* A secondary boolean indicating a success/failure
@@ -128,6 +143,9 @@ public:
 private:
     AppHelper* GetHelper(wxString app_name);
     
+    /* Show a prompt asking if to restart a restart_pending app. */
+    bool RequireRestart(AppHelper *app, wxString app_name);
+    
     /* A cheap way to implement a map, since the API/doc 
 	 * is not available in offline OSX. */
     wxArrayString app_names;
@@ -142,5 +160,23 @@ private:
     /* Add a string/application pointer. */
     void AddAppHelper(wxString app_name, AppHelper* app_helper);
 };
+
+/* The applications singleton wrapper, global state management for thread polling. */
+class theSeruroApps : public SeruroApps
+{
+public:
+    static SeruroApps & Get() {
+        static SeruroApps instance;
+        return instance;
+    }
+    
+private:
+    //static SeruroConfig instance;
+    theSeruroApps() : SeruroApps() { }
+    theSeruroApps(const theSeruroApps&);
+    theSeruroApps& operator=(const theSeruroApps&);
+    ~theSeruroApps();
+};
+
 
 #endif
