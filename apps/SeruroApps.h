@@ -14,6 +14,21 @@ wxString AsString(const void *value);
 //wxString AsStringIfExists(CFDictionaryRef dict, const void* key);
 #endif
 
+#if defined(__WXMSW__)
+#include <wx/msw/registry.h>
+
+/* Base key on both 32 and 64bit. */
+#define HKLM_BIT_ROOT "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Installer"
+/* Key within install key to query version and name. */
+#define HKLM_KEY_PROPERTIES L"InstallProperties"
+
+/* Registry accessor (abstraction to get 32-bit and 64-bit). */
+wxRegKey *GetInstallKey(wxString key_install,
+	wxRegKey::StdKey hive = wxRegKey::HKLM, wxString base = HKLM_BIT_ROOT);
+
+
+#endif
+
 /* Each account has a current state or status. */
 enum account_status_t
 {

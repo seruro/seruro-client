@@ -23,9 +23,8 @@
 
 #define TEST_STRING "This is a test alert"
 
-DECLARE_APP(SeruroClient);
-
-AlertDialog::AlertDialog()
+AlertDialog::AlertDialog() : wxDialog(NULL, wxID_ANY, _("Testing"), wxDefaultPosition, wxDefaultSize, 
+	wxSTAY_ON_TOP | wxFRAME_SHAPED | wxTRANSPARENT_WINDOW)
 {
     Create(NULL, wxID_ANY, _("Testing"), wxDefaultPosition, wxDefaultSize, wxSTAY_ON_TOP | wxFRAME_SHAPED);
     

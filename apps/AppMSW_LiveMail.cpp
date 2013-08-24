@@ -6,8 +6,6 @@
 #include "../SeruroConfig.h"
 #include "../crypto/SeruroCrypto.h"
 
-#include <wx/msw/registry.h>
-
 #include <wx/dir.h>
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
@@ -35,9 +33,8 @@
  * HKEY_LOCAL_MACHINE\SOFTWARE\Classes\Installer\Products\D0E0789820698F14E938416F4839644A
  */
 
-#define HKLM_BIT_ROOT "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Installer"
 #define HKLM_INSTALL_KEY "\\UserData\\S-1-5-18\\Products\\D0E0789820698F14E938416F4839644A"
-#define HKLM_KEY_PROPERTIES "InstallProperties"
+
 
 #define XML_FIELD_NAME "Account_Name" /* type="SZ" */
 #define XML_FIELD_ADDRESS "SMTP_Email_Address" /* type="SZ" */
@@ -467,29 +464,19 @@ bool AppMSW_LiveMail::GetInfo()
 		return true;
 	}
 
-    wxRegKey *check_key = new wxRegKey(wxRegKey::HKLM, HKLM_BIT_ROOT);
-    
-	/* If this is a 64-bit system then the registry will need to be reopened. */
-	wxString installer_sub;
-	long key_index = 0;
-	if (check_key->Exists() && check_key->GetFirstKey(installer_sub, key_index)) {
-		if (installer_sub.compare("ResolveIOD") == 0) {
-			delete check_key;
-			check_key = new wxRegKey(wxRegKey::HKLM, HKLM_BIT_ROOT, wxRegKey::WOW64ViewMode_64);
-		}
-	}
+	wxRegKey *install_key = GetInstallKey(HKLM_INSTALL_KEY);
 
-	wxRegKey install_key(*check_key, HKLM_INSTALL_KEY);
-	delete check_key;
-
-    if (! install_key.Exists() || ! install_key.HasSubKey(_(HKLM_KEY_PROPERTIES))) {
+    if (! install_key->Exists() || ! install_key->HasSubKey(_(HKLM_KEY_PROPERTIES))) {
+		delete install_key;
         is_detected = false;
         is_installed = false;
         return false;
     }
 
     wxString version;
-	wxRegKey properties_key(install_key, HKLM_KEY_PROPERTIES);
+	wxRegKey properties_key(*install_key, HKLM_KEY_PROPERTIES);
+	delete install_key;
+
     if (! properties_key.QueryValue(_("DisplayVersion"), version, false)) {
         is_detected = false;
         return false;

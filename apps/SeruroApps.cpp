@@ -2,8 +2,6 @@
 #include "SeruroApps.h"
 #include "../SeruroClient.h"
 
-//#define MAX_PATH_SIZE 1024
-
 DECLARE_APP(SeruroClient);
 
 wxString UUIDFromFingerprint(const wxString &fingerprint)
@@ -83,12 +81,36 @@ void SeruroApps::InitOSX()
 #include "AppMSW_LiveMail.h"
 #include "AppMSW_Outlook.h"
 
+
+
+wxRegKey *GetInstallKey(wxString key_install, wxRegKey::StdKey hive, wxString base)
+{
+	wxRegKey *check_key = new wxRegKey(hive, base);
+    
+	/* If this is a 64-bit system then the registry will need to be reopened. */
+	wxString installer_sub;
+	long key_index = 0;
+
+	if (check_key->Exists() && check_key->GetFirstKey(installer_sub, key_index)) {
+		if (installer_sub.compare("ResolveIOD") == 0) {
+			delete check_key;
+			check_key = new wxRegKey(hive, base, wxRegKey::WOW64ViewMode_64);
+		}
+	}
+
+	wxRegKey *install_key = new wxRegKey(*check_key, key_install);
+	delete check_key;
+	return install_key;
+}
+
 void SeruroApps::InitMSW()
 {
     AppHelper *helper;
 
-	helper = (AppHelper *) new AppMSW_LiveMail();
-	AddAppHelper(_("Windows Live Mail"), helper);
+	//helper = (AppHelper *) new AppMSW_LiveMail();
+	//AddAppHelper(_("Windows Live Mail"), helper);
+	helper = (AppHelper *) new AppMSW_Outlook();
+	AddAppHelper(_("Microsoft Outlook"), helper);
 }
 
 #endif
