@@ -14,7 +14,6 @@
 /* Note: SeruroConfig/SeruroLogger are placed in the header. */
 
 #include "crypto/SeruroCrypto.h"
-#include "setup/SeruroSetup.h"
 #include "api/SeruroRequest.h"
 #include "frames/dialogs/ErrorDialog.h"
 
@@ -26,8 +25,6 @@
 #include <wx/image.h>
 
 #include <wx/notifmsg.h>
-
-#define SERURO_DEBUG_SETUP 0
 
 #if !defined(__VLD__)
     /* (Hack) If the Virtual Leak Detector is not enabled (a MSW DLL only) then create dummy
@@ -60,12 +57,12 @@ bool SeruroClient::OnInit()
 	/* Create a frame, but do not start sub frames, which may depend on config. */
 	main_frame = new SeruroFrameMain(wxT(SERURO_APP_NAME),
 		SERURO_APP_DEFAULT_WIDTH, SERURO_APP_DEFAULT_HEIGHT);
-    //this->SetTopWindow(main_frame);
+    this->SetTopWindow(main_frame);
     
 	/* Start logger */
 	InitLogger();
 
-	/* User config instance */
+	/* User config instance (deprecated, controllers should use the singleton) */
     this->config = new SeruroConfig();
     
     /* Listen for invalid request events (which require UI actions and a request-restart). */
@@ -73,20 +70,8 @@ bool SeruroClient::OnInit()
 
 	/* Now safe to start sub-frames (panels). */
 	main_frame->AddPanels();
-    /* Hopefully this fixes an artifact within the book layout on MSW. */
-    main_frame->SendSizeEvent();
-
-	/* There is an optional setup wizard. */
-	this->running_setup = 0;
-	if (! this->config->HasConfig() || SERURO_DEBUG_SETUP) {
-        /* The panels and "book view" should be hidden while the wizard is running. */
-        main_frame->Hide();
-        
-        SeruroSetup setup(main_frame);
-		setup.RunWizard(setup.GetInitialPage());
-	} else {
-        main_frame->Show(true);
-    }
+    /* Check to see if the application is running for the first time. */
+    main_frame->StartSetup();
 
     //AlertDialog *alert = new AlertDialog();
     //this->SetTopWindow(alert);
@@ -112,15 +97,6 @@ bool SeruroClient::IsAnotherRunning()
     }
     
     return false;
-}
-
-void SeruroClient::DestroySetup()
-{
-	if (this->running_setup != 0) {
-		((SeruroSetup *) running_setup)->EndModal(0);
-		running_setup->Close();
-		running_setup = 0;
-	}
 }
 
 void SeruroClient::SetSetup(wxTopLevelWindow *wizard)

@@ -52,6 +52,7 @@ public:
     
 	wxWindow *GetFrame();
     
+    /* Seruro State callback events. */
     void OnInvalidAuth(SeruroRequestEvent &event);
 
 	/* Todo: Consider accessor methods */

@@ -25,7 +25,9 @@ public:
 	void OnQuit(wxCommandEvent &event);
 	void OnClose(wxCloseEvent &event);
 
-	/* Optional setup events */
+	/* Setup events */
+    void StartSetup();
+    void StopSetup();
 	void OnSetupRun(wxCommandEvent &event);
     void OnSetupCancel(wxWizardEvent& event);
     void OnSetupFinished(wxWizardEvent& event);
@@ -50,6 +52,9 @@ protected:
 #endif
 
 private:
+    /* An instance of a running setup. */
+    wxTopLevelWindow *setup;
+    
 	DECLARE_EVENT_TABLE()
 };
 

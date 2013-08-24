@@ -220,8 +220,7 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	this->Layout();
 }
 
-void SeruroPanelSearch::AddResult(const wxString &address,
-	const wxString &first_name, const wxString &last_name)
+void SeruroPanelSearch::AddResult(const wxString &address, const wxString &first_name, const wxString &last_name)
 {
 	long item_index;
 	
@@ -344,6 +343,10 @@ void SeruroPanelSearch::OnSearchResult(SeruroRequestEvent &event)
 			response["results"][i]["last_name"].AsString());
 	}
 
+    /* If there are results then align the list columns. */
+    if (this->list_control->GetItemCount() > 0) {
+        this->AlignList();
+    }
 }
 
 /* UI helpers during search requests, and results processing. */

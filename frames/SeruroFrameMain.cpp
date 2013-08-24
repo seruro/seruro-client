@@ -45,6 +45,7 @@ BEGIN_EVENT_TABLE(SeruroFrameMain, wxFrame)
     //EVT_MENU	(wxID_ABOUT,	SeruroFrame::OnAbout)
 	EVT_ICONIZE	(				SeruroFrameMain::OnIconize)
 	EVT_CLOSE	(				SeruroFrameMain::OnClose)
+
 	/* Events for optional setup wizard */
 	//EVT_MENU    (seruroID_SETUP_ALERT,  SeruroFrameMain::OnSetupRun)
     EVT_WIZARD_CANCEL(wxID_ANY,   SeruroFrameMain::OnSetupCancel)
@@ -117,6 +118,7 @@ void SeruroFrameMain::AddPanels()
 	seruro_panels_ids[seruro_panels_size++] = 0; /* Test is not controllable. */
 #endif
     
+    this->Show();
     this->Layout();
     this->Center();
 }
@@ -154,7 +156,7 @@ void SeruroFrameMain::OnClose(wxCloseEvent &event)
 	}
 	
 	/* If there is a running wizard, cancel it. */
-	wxGetApp().DestroySetup();
+	this->StopSetup();
 
 	/* Delete the tray icon/controller. */
 	if (tray) {
@@ -177,6 +179,39 @@ void SeruroFrameMain::OnQuit(wxCommandEvent& WXUNUSED(event))
     this->Close(true);
 }
 
+void SeruroFrameMain::StartSetup()
+{
+    SeruroSetup *initial_setup;
+    
+    /* There is a "first-launch" setup wizard. */
+    this->setup = 0;
+	if (theSeruroConfig::Get().HasConfig()) {
+        /* No setup needed. */
+        return;
+    }
+    
+    /* The panels and "book view" should be hidden while the wizard is running. */
+    this->Hide();
+        
+    initial_setup = new SeruroSetup(this);
+    initial_setup->RunWizard(initial_setup->GetInitialPage());
+    
+    /* Save pointer to setup. */
+    this->setup = initial_setup;
+}
+
+void SeruroFrameMain::StopSetup()
+{
+    /* Ask the setup to stop, the application is closing. */
+    if (this->setup == 0) {
+        return;
+    }
+    
+    ((SeruroSetup *) this->setup)->EndModal(0);
+    this->setup->Close();
+    this->setup = 0;
+}
+
 void SeruroFrameMain::OnSetupRun(wxCommandEvent &event)
 {
 
@@ -188,10 +223,11 @@ void SeruroFrameMain::OnSetupCancel(wxWizardEvent& event)
         wxLogMessage(_("SeruroFrameMain> (OnSetupCancel) the initial setup was cancled."));
 		if (! SERURO_ALLOW_NO_ACCOUNTS) {
 			this->Close(true);
+            return;
 		}
-    } else {
-        this->Show();
     }
+    
+    this->Show();
 }
 
 void SeruroFrameMain::OnSetupFinished(wxWizardEvent& event)
@@ -200,8 +236,9 @@ void SeruroFrameMain::OnSetupFinished(wxWizardEvent& event)
         wxLogMessage(_("SeruroFrameMain> (OnSetupFinished) there were no servers added?"));
 		if (! SERURO_ALLOW_NO_ACCOUNTS) {
 			this->Close(true);
+            return;
 		}
-    } else {
-        this->Show();
     }
+    
+    this->Show();
 }
