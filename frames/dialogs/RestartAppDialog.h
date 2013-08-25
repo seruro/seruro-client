@@ -4,16 +4,10 @@
 
 #include <wx/msgdlg.h>
 
-#include "../../apps/SeruroApps.h"
-
-/***
- * The error dialog is a message dialog that overrides the
- * YES / NO to a Send Error, Exit
- * Where both options will eventually close the application, but
- * 'Send Error' will allow the user to upload the crash report.
- *
- * Note: these 'function responses' must be implemented elsewhere.
- */
+#define TEXT_RESTART_WARNING "The application \"%s\" must be restarted \
+to apply the configuration changes. \
+Please save your work and quit the application yourself or use the button below. \
+If you choose the cancel the configuration changes may be lost."
 
 class RestartAppDialog : public wxMessageDialog
 {

@@ -4,6 +4,9 @@
 
 #include <wx/string.h>
 
+#define APPS_RESTART_DELAY 500
+#define APPS_RESTART_MAX_COUNT 10
+
 #if defined(__WXMSW__)
 
 class ProcessManagerMSW

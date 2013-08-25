@@ -2,7 +2,13 @@
 #include "SeruroApps.h"
 #include "../SeruroClient.h"
 
+#include "ProcessManager.h"
+
 DECLARE_APP(SeruroClient);
+
+//#define RESTART_FORCE wxID_YES
+//#define RESTART_DELAY wxID_CANCEL
+//#define RESTART_OK    wxID_NO
 
 wxString UUIDFromFingerprint(const wxString &fingerprint)
 {
@@ -277,8 +283,17 @@ bool SeruroApps::AssignIdentity(wxString app_name, wxString server_uuid, wxStrin
     AppHelper *helper;
     bool assign_status;
     
+    if (this->assign_pending == true) {
+        /* Cannot assign while waiting for another application. */
+        DEBUG_LOG(_("SeruroApps> (AssignIdentity) cannot to %s, there is another application pending."), app_name);
+        return false;
+    }
+    
     helper = this->GetHelper(app_name);
     if (helper == 0) return false;
+
+    wxCriticalSectionLocker enter(wxGetApp().seruro_critsection_assign);
+    this->assign_pending = true;
     
     /* Ask the application to assign. */
     assign_status = helper->AssignIdentity(server_uuid, address);
@@ -288,22 +303,45 @@ bool SeruroApps::AssignIdentity(wxString app_name, wxString server_uuid, wxStrin
     
     /* Check if the application needs a restart. */
     if (helper->needs_restart && helper->IsRunning()) {
-        return this->RequireRestart(helper, app_name);
+        assign_status = this->RequireRestart(helper, app_name);
     }
+    
+    /* No longer require application or user interaction. */
+    this->assign_pending = false;
+    if (! assign_status) {
+        /* Append to debug log. */
+    }
+    
     
     return true;
 }
 
 bool SeruroApps::RequireRestart(AppHelper *app, wxString app_name)
 {
+    int restart_state; 
+    
     /* Create and show a RestartApp dialog. */
+    this->restart_dialog = new RestartAppDialog(wxGetApp().GetFrame(), app_name);
     
-    /* If the dialog returns false then the app remains in a restart_pending state. */
-    
-    /* An event loop (thread) should continue to check for this, and return a state event if the restart occurs. */
+    /* A monitor thread should check for this, and return a state event if the restart occurs. */
+    /* Note: this application could already be pending a restart, we'll pop open the dialog anyway. */
     app->restart_pending = true;
     
-    /* This has impact on the caller, and they should run IdentityStatus to check the failure reason. */
+    restart_state = restart_dialog->ShowModal();
+    delete restart_dialog;
+        
+    if (restart_state == wxID_OK) {
+        /* Try to restart the application. */
+        this->RestartApp(app_name);
+        return true;
+    }
+    
+    if (restart_state == wxID_NO) {
+        /* The application was stopped by the user, and the modal was closed by the monitor thread. */
+        return true;
+    }
+    
+    /* The user canceled the dialog, the application is still running. */
     return false;
 }
 
@@ -340,11 +378,36 @@ bool SeruroApps::StartApp(wxString app_name)
 bool SeruroApps::RestartApp(wxString app_name)
 {
     AppHelper *helper;
+    size_t delay_count;
     
     helper = this->GetHelper(app_name);
     if (helper == 0) return false;
     
-    return helper->RestartApp();
+    /* Take control from the monitor thread. */
+    helper->restart_pending = false;
+    
+    /* Stop the application, then wait for it to end (this will block the main thread?). */
+    /* Todo: show modal for restarting? */
+    helper->StopApp();
+    
+    /* Timeout = APPS_RESTART_DELAY * APPS_RESTART_MAX_COUNT */
+    delay_count = 0;
+    while (helper->IsRunning() && delay_count < APPS_RESTART_MAX_COUNT) {
+        wxMilliSleep(APPS_RESTART_DELAY);
+        delay_count += 1;
+    }
+    
+    if (helper->IsRunning()) {
+        /* Could not stop application. Allow the the monitor thread to take over. */
+        helper->restart_pending = true;
+
+        return false;
+    }
+    
+    /* Don't worry about waiting for the application to start. */
+    /* Note: could check to make sure the identity is installed. */
+    helper->StartApp();
+    return true;
 }
 
 bool SeruroApps::CanAssign(wxString app_name)

@@ -14,6 +14,8 @@ public:
     AppOSX_Mail() : AppHelper() {
         can_assign = false;
         can_unassign = false;
+        
+        needs_restart = true;
     }
     
     bool IsInstalled();

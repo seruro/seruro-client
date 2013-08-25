@@ -21,20 +21,29 @@ pid_t GetPIDFromBundleID(wxString bundle_id)
     wxString current_bundle_id;
     pid_t pid;
 
-    psn.lowLongOfPSN = kNoProcess;
+    psn.lowLongOfPSN = 0;
     psn.highLongOfPSN = 0;
     pid = 0;
     
     //kCFBundleIdentifierKey
     while (GetNextProcess(&psn) == noErr) {
         process_info = ProcessInformationCopyDictionary(&psn, kProcessDictionaryIncludeAllInformationMask);
+        if (process_info == NULL) {
+            continue;
+        }
+        
+        if (! CFDictionaryContainsKey(process_info, kCFBundleIdentifierKey)) {
+            CFRelease(process_info);
+            continue;
+        }
+        
         bundle_string = (CFStringRef) CFDictionaryGetValue(process_info, kCFBundleIdentifierKey);
         CFRelease(process_info);
         
         /* There might not have been a value for bundle_id in the dict. */
         if (bundle_string != NULL) {
             current_bundle_id = AsString(bundle_string);
-            CFRelease(bundle_string);
+            //CFRelease(bundle_string);
         } else {
             continue;
         }
@@ -93,13 +102,12 @@ bool ProcessManagerOSX::StartProcess(wxString process_path)
         /* Problem getting FS reference? */
         return false;
     }
-    
-    LSApplicationParameters launch_parameters = {0, kLSLaunchDefaults};
+        
+    LSApplicationParameters launch_parameters = {0, kLSLaunchDontSwitch};
     launch_parameters.application = &fs_reference;
     
     /* No need to get PSN. */
     error_num = LSOpenApplication(&launch_parameters, NULL);
-    //error_num = LSOpenCFURLRef(app_reference, NULL);
     //CFRelease(app_reference);
     
     if (error_num != noErr) {

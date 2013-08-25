@@ -51,10 +51,7 @@ bool SeruroClient::OnInit()
     if (this->IsAnotherRunning()) {
         return false;
     }
-    
-    theSeruroApps::Get().StopApp("OSX Mail");
-    theSeruroApps::Get().StartApp("OSX Mail");
-    
+        
 	/* Support for PNGs. */
 	wxImage::AddHandler(new wxPNGHandler);
 
@@ -68,6 +65,8 @@ bool SeruroClient::OnInit()
 
 	/* User config instance (deprecated, controllers should use the singleton) */
     this->config = new SeruroConfig();
+    
+    theSeruroApps::Get().AssignIdentity("OSX Mail", "00000000-0000-0000-0000-000000000001", "ted@valdrea.com");
     
     /* Listen for invalid request events (which require UI actions and a request-restart). */
     Bind(SERURO_REQUEST_RESPONSE, &SeruroClient::OnInvalidAuth, this, SERURO_REQUEST_CALLBACK_AUTH);

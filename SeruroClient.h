@@ -55,11 +55,16 @@ public:
     /* Seruro State callback events. */
     void OnInvalidAuth(SeruroRequestEvent &event);
 
-	/* Todo: Consider accessor methods */
+	/* Writing to the config. */
 	wxCriticalSection seruro_critsection_config;
+    /* Adding/removing from the thread pool. */
 	wxCriticalSection seruro_critsection_thread;
+    /* Writing/reading a token. */
 	wxCriticalSection seruro_critsection_token;
+    /* Writing to the log file. */
 	wxCriticalSection seruro_critsection_log;
+    /* Assigning and identity to an application. */
+    wxCriticalSection seruro_critsection_assign;
 
 	wxArrayThread seruro_threads;
 

@@ -89,6 +89,8 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
 	tray->SetIcon(icon, _(SERURO_APP_NAME));
 	this->SetIcons(icon_bundle);
 
+    /* No setup started. */
+    this->setup = 0;
 
 	/* Add singular panel */
 	book = new wxNotebook(this, SERURO_NOTEBOOK_ID);

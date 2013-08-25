@@ -5,7 +5,8 @@
 
 #include <wx/wx.h>
 #include "../wxJSON/wx/jsonval.h"
-//#include <map>
+
+#include "../frames/dialogs/RestartAppDialog.h"
 
 #if defined(__WXOSX__) || defined(__WXMAC__)
 wxString AsString(CFStringRef string);
@@ -77,11 +78,7 @@ public:
 	virtual bool AssignIdentity(wxString server_uuid, wxString address) {
 		return false;
 	}
-    
-    /* Forcefully restart the application. */
-    virtual bool RestartApp() {
-        return false;
-    }
+
     /* Check if the application is running. */
     virtual bool IsRunning() {
         return false;
@@ -157,6 +154,11 @@ private:
     
     /* Show a prompt asking if to restart a restart_pending app. */
     bool RequireRestart(AppHelper *app, wxString app_name);
+    RestartAppDialog *restart_dialog;
+    
+    bool assign_pending;
+    
+    /* Todo: add event handler for application close. */
     
     /* A cheap way to implement a map, since the API/doc 
 	 * is not available in offline OSX. */
