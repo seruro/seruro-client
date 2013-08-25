@@ -50,17 +50,11 @@ wxString AsString(CFStringRef string)
 /* Converts an expected CF string from CF collection into a wx string. */
 wxString AsString(const void *value)
 {
-    //CFStringRef cf_string;
-    //wxString encoded = wxEmptyString;
-    
     if (CFGetTypeID(value) != CFStringGetTypeID()) {
         /* If the actual type is not a string, return an empty representation. */
-        //return encoded;
-        wxEmptyString;
+        return wxEmptyString;
     }
     
-    //cf_string = (CFString)
-    //return encoded;
     return AsString((CFStringRef) value);
 }
 
@@ -80,8 +74,6 @@ void SeruroApps::InitOSX()
 
 #include "AppMSW_LiveMail.h"
 #include "AppMSW_Outlook.h"
-
-
 
 wxRegKey *GetInstallKey(wxString key_install, wxRegKey::StdKey hive, wxString base)
 {
@@ -313,6 +305,46 @@ bool SeruroApps::RequireRestart(AppHelper *app, wxString app_name)
     
     /* This has impact on the caller, and they should run IdentityStatus to check the failure reason. */
     return false;
+}
+
+bool SeruroApps::IsAppRunning(wxString app_name)
+{
+    AppHelper *helper;
+    
+    helper = this->GetHelper(app_name);
+    if (helper == 0) return false;
+    
+    return helper->IsRunning();
+}
+
+bool SeruroApps::StopApp(wxString app_name)
+{
+    AppHelper *helper;
+    
+    helper = this->GetHelper(app_name);
+    if (helper == 0) return false;
+    
+    return helper->StopApp();
+}
+
+bool SeruroApps::StartApp(wxString app_name)
+{
+    AppHelper *helper;
+    
+    helper = this->GetHelper(app_name);
+    if (helper == 0) return false;
+    
+    return helper->StartApp();
+}
+
+bool SeruroApps::RestartApp(wxString app_name)
+{
+    AppHelper *helper;
+    
+    helper = this->GetHelper(app_name);
+    if (helper == 0) return false;
+    
+    return helper->RestartApp();
 }
 
 bool SeruroApps::CanAssign(wxString app_name)

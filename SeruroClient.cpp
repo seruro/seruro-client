@@ -10,6 +10,7 @@
 #endif
 
 #include "SeruroClient.h"
+#include "apps/SeruroApps.h"
 
 /* Note: SeruroConfig/SeruroLogger are placed in the header. */
 
@@ -50,6 +51,9 @@ bool SeruroClient::OnInit()
     if (this->IsAnotherRunning()) {
         return false;
     }
+    
+    theSeruroApps::Get().StopApp("OSX Mail");
+    theSeruroApps::Get().StartApp("OSX Mail");
     
 	/* Support for PNGs. */
 	wxImage::AddHandler(new wxPNGHandler);

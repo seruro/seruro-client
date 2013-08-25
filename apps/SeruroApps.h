@@ -86,6 +86,12 @@ public:
     virtual bool IsRunning() {
         return false;
     }
+    virtual bool StopApp() {
+        return false;
+    }
+    virtual bool StartApp() {
+        return false;
+    }
 
     /* Action helpers. */
     bool can_assign;
@@ -139,6 +145,12 @@ public:
 
     bool CanAssign(wxString app_name);
     bool CanUnassign(wxString app_name);
+    
+    /* Application control. */
+    bool IsAppRunning(wxString app_name);
+    bool StopApp(wxString app_name);
+    bool StartApp(wxString app_name);
+    bool RestartApp(wxString app_name);
 
 private:
     AppHelper* GetHelper(wxString app_name);

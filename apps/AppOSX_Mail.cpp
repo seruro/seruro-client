@@ -6,6 +6,8 @@
 #include <wx/log.h>
 
 #include "AppOSX_Mail.h"
+#include "ProcessManager.h"
+
 #include "../SeruroClient.h"
 #include "../crypto/SeruroCrypto.h"
 
@@ -68,6 +70,21 @@ bool ReadDataPList(CFMutableDictionaryRef &results_dict)
     
     results_dict = (CFMutableDictionaryRef) properties;
     return true;
+}
+
+bool AppOSX_Mail::IsRunning()
+{
+    return ProcessManager::IsProcessRunning(BUNDLE_ID);
+}
+
+bool AppOSX_Mail::StopApp()
+{
+    return ProcessManager::StopProcess(BUNDLE_ID);
+}
+
+bool AppOSX_Mail::StartApp()
+{
+    return ProcessManager::StartProcess(BUNDLE_ID);
 }
 
 bool AppOSX_Mail::IsInstalled()

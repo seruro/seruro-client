@@ -14,15 +14,24 @@ enum state_action_t
 {
 	STATE_ACTION_REMOVE = 0x01,
 	STATE_ACTION_ADD    = 0x02,
-	STATE_ACTION_UPDATE = 0x03
+	STATE_ACTION_UPDATE = 0x03,
+    
+    /* Special, for Certificates/Identities. */
+    STATE_ACTION_REVOKE = 0x11,
+    
+    /* Special, for Email applications. */
+    STATE_ACTION_CLOSE  = 0x21,
 };
 
 /* May later include identity/CA. */
 enum state_types_t
 {
-	STATE_TYPE_SERVER,
-	STATE_TYPE_ACCOUNT,
-	STATE_TYPE_CERTIFICATE,
+	STATE_TYPE_SERVER,      /* A Seruro server changed. */
+	STATE_TYPE_ACCOUNT,     /* A Seruro account changed. */
+	STATE_TYPE_CERTIFICATE, /* A Seruro certificate changed. */
+    STATE_TYPE_IDENTITY,    /* A Seruro account identity changed. */
+    
+    STATE_TYPE_APPLICATION, /* An Email application changed. */
 };
 
 class SeruroStateEvent : public wxCommandEvent

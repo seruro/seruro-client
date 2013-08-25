@@ -23,6 +23,10 @@ public:
     account_status_t IdentityStatus(wxString account_name, wxString &server_uuid);
     bool AssignIdentity(wxString server_uuid, wxString address);
     
+    bool IsRunning();
+    bool StopApp();
+    bool StartApp();
+    
 private:
     bool GetInfo();
 };
