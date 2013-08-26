@@ -23,6 +23,7 @@
 #include "../SeruroConfig.h"
 #include "SeruroCryptoMAC.h"
 #include "../SeruroClient.h"
+#include "../api/Utils.h"
 
 #define IDENTITY_KEYCHAIN       "login"
 #define CERTIFICATE_KEYCHAIN    "login"
@@ -35,11 +36,6 @@ enum search_types_t
 };
 
 DECLARE_APP(SeruroClient);
-
-const char* AsChar(const wxString &input)
-{
-	return input.mb_str(wxConvUTF8);
-}
 
 bool GetReferenceFromSubjectKeyID(wxString subject_key, search_types_t type, wxString keychain_name, CFTypeRef *reference)
 {

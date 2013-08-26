@@ -12,6 +12,11 @@
 const char hexa[] = {"0123456789ABCDEFabcdef"};
 const char nonencode[] = {"abcdefghijklmnopqrstuvwqyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_~"};
 
+const char* AsChar(const wxString &input)
+{
+	return input.mb_str(wxConvUTF8);
+}
+
 void URLEncode(char* dest, const char* source, int length)
 {
 	/* Used to encode POST data. */

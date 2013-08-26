@@ -7,6 +7,13 @@
 
 #include "SeruroApps.h"
 
+#include <Windows.h>
+#include <MAPI.h>
+
+/* Not available in the Windows 8 SDK, copied from 7A and linked explicitly. */
+#include <MAPIX.h>
+#include <MAPIUtil.h>
+
 class AppMSW_Outlook : public AppHelper
 {
 public:
@@ -24,6 +31,9 @@ public:
     
 private:
     bool GetInfo();
+
+void FindAccountProperties(LPSERVICEADMIN &service_admin, 
+	SPropValue &uid, wxString &account_name);
 
 	/* Get info from an account .oeaccount file. 
 	 *  - Set the account info in this->info,

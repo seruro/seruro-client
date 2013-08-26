@@ -2,6 +2,8 @@
 #ifndef H_SeruroAPIUtils
 #define H_SeruroAPIUtils
 
+const char* AsChar(const wxString &input);
+
 void URLEncode(char* dest, const char* source, int length);
 
 wxJSONValue parseResponse(wxString raw_response);

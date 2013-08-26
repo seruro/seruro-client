@@ -3,7 +3,7 @@
 #include "SeruroApps.h"
 
 /* Include the AsChar function */
-#include "../crypto/SeruroCryptoMAC.h"
+#include "../api/Utils.h"
 
 #if defined(__WXMAC__) || defined(__WXOSX__)
 

@@ -3,7 +3,7 @@
 #include "SeruroSetup.h"
 #include "../SeruroClient.h"
 
-#include "SeruroFrame.h"
+#include "../frames/SeruroFrame.h"
 
 enum application_setup_ids_t {
     BUTTON_ASSIGN,
