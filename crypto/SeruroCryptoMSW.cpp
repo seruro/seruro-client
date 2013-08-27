@@ -56,6 +56,44 @@ BSTR AsLongString(const char* input)
 	return AsLongString(wx_input);
 }
 
+bool IsHashInstalledAndSet(wxString address, wxMemoryBuffer hash)
+{
+	SeruroCryptoMSW crypto_helper;
+	wxString fingerprint;
+
+	/* Crypto expects all certificate as base64 encoded buffers. */
+	if (! crypto_helper.HaveIdentityByHash(wxBase64Encode(hash))) {
+		/* No certificate exists. */
+		return false;
+	}
+	
+	/* Search the certificate store for that HASH value, and retreive the SKID, then check config. */
+	fingerprint = crypto_helper.GetIdentitySKIDByHash(wxBase64Encode(hash));
+	/* This should always work, the certificate DOES exist. */
+
+	/* Get all identities, no server is specified, and try to match the fingerprint. */
+	wxArrayString server_list, address_list, cert_list;
+
+	server_list = wxGetApp().config->GetServerList();
+	for (size_t i = 0; i < server_list.size(); i++ ) {
+		address_list = wxGetApp().config->GetAddressList(server_list[i]);
+		for (size_t j = 0; j < address_list.size(); j++) {
+			if (address_list[j] != address) { continue; }
+
+			/* Check both certificates. */
+			cert_list = wxGetApp().config->GetIdentity(server_list[i], address_list[j]);
+			for (size_t k = 0; k < cert_list.size(); k++) {
+				if (fingerprint == cert_list[k]) {
+					/* Possibly fill in some server value. */
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
 void SeruroCryptoMSW::OnInit()
 {
 	wxLogStatus(wxT("SeruroCrypt::MSW> Initialized"));

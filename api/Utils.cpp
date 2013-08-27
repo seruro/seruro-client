@@ -17,6 +17,51 @@ const char* AsChar(const wxString &input)
 	return input.mb_str(wxConvUTF8);
 }
 
+wxMemoryBuffer AsBinary(wxString hex_string)
+{
+	wxMemoryBuffer buffer;
+	int byte;
+	char hex;
+
+	size_t length = hex_string.Length();
+	
+	/* Expect the string to be hex byte encoded. */
+	for (size_t i = 0; i < length/2; i++) {
+		byte = 0;
+		hex = hex_string.GetChar(i*2);
+		if (hex >= '0' && hex <= '9') { byte = hex-'0'; } 
+		else { byte = hex-'a'+10; }
+		
+		byte *= 16;
+		hex = hex_string.GetChar(i*2 + 1);
+		if (hex >= '0' && hex <= '9') { byte += hex-'0'; } 
+		else { byte += hex-'a'+10; }
+		buffer.AppendByte(byte);
+	}
+
+	return buffer;
+}
+
+wxString AsHex(wxMemoryBuffer binary_string)
+{
+	wxString hex_encoded;
+	wxString hex_byte;
+	int byte = 0;
+
+	void *binary = (void *) binary_string.GetData();
+	size_t length = binary_string.GetDataLen();
+
+	for (size_t i = 0; i < length; i++) {
+		byte = ((unsigned char *) binary)[i];
+		//hex_encoded.Append(wxString::Format(_("%x"), byte));
+		hex_byte = wxString::Format(_("%x"), byte);
+		/* Make sure bytes are 2 characters. */
+		hex_encoded.Append((hex_byte.Length() == 2) ? hex_byte : wxString::Format(_("0%s"), hex_byte));
+	}
+
+	return hex_encoded;
+}
+
 void URLEncode(char* dest, const char* source, int length)
 {
 	/* Used to encode POST data. */

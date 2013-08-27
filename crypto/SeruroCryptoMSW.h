@@ -9,6 +9,10 @@
 
 #include "../wxJSON/wx/jsonval.h"
 
+/* Given an addres/hash:
+ * (1) Check if the hash is installed, (2) if it belongs to the address. */
+bool IsHashInstalledAndSet(wxString address, wxMemoryBuffer hash);
+/* Return the SHA1 hex presentation of a SKID fingerprint. */
 wxString GetIdentityHashHex(wxString fingerprint);
 
 class SeruroCryptoMSW

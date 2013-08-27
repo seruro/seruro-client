@@ -5,6 +5,7 @@
 #include "../SeruroClient.h"
 #include "../SeruroConfig.h"
 #include "../crypto/SeruroCrypto.h"
+#include "../api/Utils.h"
 
 #include <wx/dir.h>
 #include <wx/filename.h>
@@ -44,51 +45,6 @@
 
 wxDECLARE_APP(SeruroClient);
 
-wxMemoryBuffer AsBinary(wxString hex_string)
-{
-	wxMemoryBuffer buffer;
-	int byte;
-	char hex;
-
-	size_t length = hex_string.Length();
-	
-	/* Expect the string to be hex byte encoded. */
-	for (size_t i = 0; i < length/2; i++) {
-		byte = 0;
-		hex = hex_string.GetChar(i*2);
-		if (hex >= '0' && hex <= '9') { byte = hex-'0'; } 
-		else { byte = hex-'a'+10; }
-		
-		byte *= 16;
-		hex = hex_string.GetChar(i*2 + 1);
-		if (hex >= '0' && hex <= '9') { byte += hex-'0'; } 
-		else { byte += hex-'a'+10; }
-		buffer.AppendByte(byte);
-	}
-
-	return buffer;
-}
-
-wxString AsHex(wxMemoryBuffer binary_string)
-{
-	wxString hex_encoded;
-	wxString hex_byte;
-	int byte = 0;
-
-	void *binary = (void *) binary_string.GetData();
-	size_t length = binary_string.GetDataLen();
-
-	for (size_t i = 0; i < length; i++) {
-		byte = ((unsigned char *) binary)[i];
-		//hex_encoded.Append(wxString::Format(_("%x"), byte));
-		hex_byte = wxString::Format(_("%x"), byte);
-		/* Make sure bytes are 2 characters. */
-		hex_encoded.Append((hex_byte.Length() == 2) ? hex_byte : wxString::Format(_("0%s"), hex_byte));
-	}
-
-	return hex_encoded;
-}
-
 bool AppMSW_LiveMail::IsInstalled()
 {
 	if (! GetInfo()) return false;
@@ -110,6 +66,9 @@ wxString AppMSW_LiveMail::GetVersion()
 wxArrayString AppMSW_LiveMail::GetAccountList()
 {
 	wxArrayString accounts;
+
+	/* Reset previous account info. */
+	this->info["accounts"] = wxJSONValue(wxJSONTYPE_OBJECT);
 
 	if (! this->GetInfo()) {
 		return accounts;
@@ -285,44 +244,6 @@ wxString AppMSW_LiveMail::GetAccountInfo(const wxString &account_folder, const w
 	return account_info["address"].AsString();
 }
 
-bool IsHashInstalledAndSet(wxString address, wxMemoryBuffer hash)
-{
-	SeruroCrypto crypto_helper;
-	wxString fingerprint;
-
-	/* Crypto expects all certificate as base64 encoded buffers. */
-	if (! crypto_helper.HaveIdentityByHash(wxBase64Encode(hash))) {
-		/* No certificate exists. */
-		return false;
-	}
-	
-	/* Search the certificate store for that HASH value, and retreive the SKID, then check config. */
-	fingerprint = crypto_helper.GetIdentitySKIDByHash(wxBase64Encode(hash));
-	/* This should always work, the certificate DOES exist. */
-
-	/* Get all identities, no server is specified, and try to match the fingerprint. */
-	wxArrayString server_list, address_list, cert_list;
-
-	server_list = wxGetApp().config->GetServerList();
-	for (size_t i = 0; i < server_list.size(); i++ ) {
-		address_list = wxGetApp().config->GetAddressList(server_list[i]);
-		for (size_t j = 0; j < address_list.size(); j++) {
-			if (address_list[j] != address) { continue; }
-
-			/* Check both certificates. */
-			cert_list = wxGetApp().config->GetIdentity(server_list[i], address_list[j]);
-			for (size_t k = 0; k < cert_list.size(); k++) {
-				if (fingerprint == cert_list[k]) {
-					/* Possibly fill in some server value. */
-					return true;
-				}
-			}
-		}
-	}
-
-	return false;
-}
-
 void SetNodeValue(wxXmlDocument &document, wxString key, wxString value)
 {
 	wxXmlNode *child;
@@ -419,6 +340,7 @@ wxString AppMSW_LiveMail::GetAccountFile(wxString address)
 account_status_t AppMSW_LiveMail::IdentityStatus(wxString address, wxString &server_uuid)
 {
 	wxString account_name;
+	wxJSONValue profile;
 
     server_uuid.Clear();
 	account_name = this->GetAccountFile(address);
@@ -427,9 +349,10 @@ account_status_t AppMSW_LiveMail::IdentityStatus(wxString address, wxString &ser
 		return APP_UNASSIGNED;
 	}
 
+	profile =  this->info["accounts"][account_name];
+
 	/* Test if certificate values exist. */
-	if (! this->info["accounts"][account_name].HasMember("encipherment") || 
-		! this->info["accounts"][account_name].HasMember("authentication")) {
+	if (! profile.HasMember("encipherment") || ! profile.HasMember("authentication")) {
 			/* STATE: missing certificates. */
 			return APP_UNASSIGNED;
 	}
@@ -437,7 +360,7 @@ account_status_t AppMSW_LiveMail::IdentityStatus(wxString address, wxString &ser
 	/* If those values are found, search the cert store, then turn them into their binary representations. */
 	wxMemoryBuffer search_hash;
 	
-	search_hash = AsBinary(this->info["accounts"][account_name]["authentication"].AsString());
+	search_hash = AsBinary(profile["authentication"].AsString());
 	if (! IsHashInstalledAndSet(address, search_hash)) {
 		DEBUG_LOG(_("AppMSW_LiveMail> (IsIdentityInstalled) Authentication hash does not exists for (%s)."), address);
 		/* STATE: no seruro configured certificates. */
@@ -445,7 +368,7 @@ account_status_t AppMSW_LiveMail::IdentityStatus(wxString address, wxString &ser
 		return APP_ALTERNATE_ASSIGNED;
 	}
 
-	search_hash = AsBinary(this->info["accounts"][account_name]["encipherment"].AsString());
+	search_hash = AsBinary(profile["encipherment"].AsString());
 	if (! IsHashInstalledAndSet(address, search_hash)) {
 		DEBUG_LOG(_("AppMSW_LiveMail> (IsIdentityInstalled) Encipherment hash does not exist for (%s)."), address);
 		/* STATE: no seruro configured certificates. */
@@ -453,8 +376,13 @@ account_status_t AppMSW_LiveMail::IdentityStatus(wxString address, wxString &ser
 		return APP_ALTERNATE_ASSIGNED;
 	}
 
+	SeruroCrypto crypto;
+	wxString fingerprint;
+
+	fingerprint = crypto.GetIdentitySKIDByHash(profile["authentication"].AsString());
+
 	/* STATE: seruro configured certificate installed. */
-    server_uuid.Append(UUIDFromFingerprint(this->info["accounts"][account_name]["authentication"].AsString()));
+	server_uuid.Append(UUIDFromFingerprint(fingerprint));
 	return APP_ASSIGNED;
 }
 

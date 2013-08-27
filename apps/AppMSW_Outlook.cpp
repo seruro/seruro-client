@@ -22,19 +22,41 @@
 #define HKCU_SUBSYSTEM_BASE L"Software\\Microsoft\\Windows NT\\CurrentVersion"
 #define HKCU_SUBSYSTEM L"Windows Messaging Subsystem\\Profiles\\Outlook"
 
-//const GUID CDECL GUID_Dilkie = {  0x53bc2ec0, 0xd953, 0x11cd, {0x97, 0x52, 0x00, 0xaa, 0x00, 0x4a, 0xe4, 0x0e}  };
+//const GUID CDECL GUID_Dilkie = {  0x53bc2ec0, 0xd953, 0x11cd, 
+//   {0x97, 0x52, 0x00, 0xaa, 0x00, 0x4a, 0xe4, 0x0e}  };
 #define DILKIE_GUID "\xc0\x2e\xbc\x53\x53\xd9\xcd\x11\x97\x52\x00\xaa\x00\x4a\xe4\x0e"
 #define PR_SECURITY_PROFILES PROP_TAG(PT_MV_BINARY, 0x355)
 
+enum security_properties {
+	PR_CERT_PROP_VERSION     = 0x0001, /* Reserved = 1 */
+	PR_CERT_MESSAGE_ENCODING = 0x0006, /* Type of encoding (S/MIME = 1) */
+	PR_CERT_DEFAULTS         = 0x0020, /* Bitmask 0x1 (default), 0x2 (default), 0x3 (send) */
+	PR_CERT_DISPLAY_NAME_A   = 0x000B, /* Display name. */
+	PR_CERT_KEYEX_SHA1_HASH  = 0x0022, /* hash of encryption certificate. */
+	PR_CERT_SIGN_SHA1_HASH   = 0x0009, /* hash of identity certificate. */
+	PR_CERT_ASYMETRIC_CAPS   = 0x0002  /* ASN1-encoded S/MIME capabilities. */
+};
 
 wxDECLARE_APP(SeruroClient);
+
+bool SafeANSIString(void *data, size_t length, wxString &safe_result)
+{
+	for (size_t i = 0; i < length; i++) {
+		if ((unsigned char) ((byte *) data)[i] < 128) {
+			safe_result.Append(((byte *) data)[i], 1);
+		} else {
+			safe_result.Clear();
+			return false;
+		}
+	}
+	return true;
+}
 
 bool AppMSW_Outlook::IsInstalled()
 {
 	if (! GetInfo()) return false;
 
-	//return this->is_installed;
-	return false;
+	return this->is_installed;
 }
 
 wxString AppMSW_Outlook::GetVersion()
@@ -103,8 +125,63 @@ bool MAPIProfileExists(LPPROFADMIN &profile_admin)
 wxJSONValue GetSecurityProperties(SBinary *entry)
 {
 	wxJSONValue properties;
+	wxString display_name;
+	wxMemoryBuffer certificate_hash;
+	wxString test;
+
+	unsigned short entry_offset = 0;
 
 	/* Parse TAG (2 bytes)/LENGTH (2 bytes)/DATA (LENGTH bytes) */
+	unsigned short tag;
+	unsigned short length;
+	byte* data;
+
+	/* Read through the entry, extracting each touple. */
+	while (entry_offset < entry->cb) {
+		tag = *(entry->lpb + entry_offset);
+		length = *(entry->lpb + entry_offset + 2);
+		//length = length / 2;
+
+		if ((entry_offset + length) > entry->cb) {
+			/* There is an overrun error in the ASN1 blob? */
+			break;
+		}
+
+		data = entry->lpb + entry_offset + 4;
+		entry_offset += length;
+
+		if (tag == PR_CERT_MESSAGE_ENCODING && *((unsigned long *) data) != 1) {
+			/* This is not an S/MIME profile, skip. */
+			break;
+		}
+
+		if (tag == PR_CERT_DISPLAY_NAME_A) {
+			if (! SafeANSIString(data, length, display_name)) {
+				/* The ANSI data type contained non-ASCII characters? */
+				break;
+			}
+			properties["entry_name"] = display_name;
+		}
+
+		if (tag == PR_CERT_DEFAULTS) {
+			properties["default_smime"] = ((unsigned long) *(data) & 0x1);
+			properties["default_certificate"] = ((unsigned long) *(data) & 0x2);
+		}
+
+		if (tag == PR_CERT_SIGN_SHA1_HASH) {
+			certificate_hash.Clear();
+			certificate_hash.AppendData(data, length-4);
+			properties["authentication"] = wxBase64Encode(certificate_hash);
+			test = properties["authentication"].AsString();
+		}
+
+		if (tag == PR_CERT_KEYEX_SHA1_HASH) {
+			certificate_hash.Clear();
+			certificate_hash.AppendData(data, length-4);
+			properties["encipherment"] = wxBase64Encode(certificate_hash);
+			test = properties["encipherment"].AsString();
+		}
+	}
 
 	return properties;
 }
@@ -194,6 +271,9 @@ wxArrayString AppMSW_Outlook::GetAccountList()
 {
 	wxArrayString accounts;
 
+	/* Reset previous account info. */
+	this->info["accounts"] = wxJSONValue(wxJSONTYPE_OBJECT);
+
 	/* Fail if no application info is detected. */
 	if (! this->GetInfo()) {
 		return accounts;
@@ -281,11 +361,82 @@ wxArrayString AppMSW_Outlook::GetAccountList()
 
 bool AppMSW_Outlook::AssignIdentity(wxString server_uuid, wxString address)
 {
+	wxString auth_skid, enc_skid;
+	wxString auth_hash, enc_hash;
+	SeruroCrypto crypto;
+
+	/* Get both certificate SKIDs from config. */
+	auth_skid = wxGetApp().config->GetIdentity(server_uuid, address, ID_AUTHENTICATION);
+	enc_skid  = wxGetApp().config->GetIdentity(server_uuid, address, ID_ENCIPHERMENT);
+
+	/* For each, GetIdentityHashBySKID */
+	auth_hash = crypto.GetIdentityHashBySKID(auth_skid);
+	enc_hash  = crypto.GetIdentityHashBySKID(enc_skid);
+
 	return false;
 }
 
 account_status_t AppMSW_Outlook::IdentityStatus(wxString address, wxString &server_uuid)
 {
+	wxMemoryBuffer search_hash;
+	wxJSONValue profile;
+	/* Since profiles are not bound to accounts:
+	 *   an alternate means at least one profile contains both certificates. */
+	bool alternated_assigned = false;
+
+	/* The account name is the address. */
+	server_uuid.Clear();
+
+	if (! this->info["accounts"].HasMember(address)) {
+		/* There was no account found for the given address. */
+		return APP_UNASSIGNED;
+	}
+
+	if (! this->info["accounts"][address].HasMember("profiles")) {
+		/* There are no profiles, profiles are not paired to accounts, there are just 0. */
+		return APP_UNASSIGNED;
+	}
+
+	for (int i = 0; i < this->info["accounts"][address]["profiles"].Size(); ++i) {
+		profile = this->info["accounts"][address]["profiles"][i];
+		if (! profile.HasMember("entry_name")) {
+			/* The profile is missing an entry name. This is ODD. */
+			continue;
+		}
+
+		if (! profile.HasMember("authentication") || ! profile.HasMember("encipherment")) {
+			/* Profile is missing a certificate. */
+			continue;
+		}
+
+		search_hash =  wxBase64Decode(profile["authentication"].AsString());
+		if (! IsHashInstalledAndSet(address, search_hash)) {
+			DEBUG_LOG(_("AppMSW_Outlook> (IsIdentityInstalled) Authentication hash does not exist for (%s)."), address);
+			alternated_assigned = true;
+			continue;
+		}
+
+		search_hash =  wxBase64Decode(profile["encipherment"].AsString());
+		if (! IsHashInstalledAndSet(address, search_hash)) {
+			DEBUG_LOG(_("AppMSW_Outlook> (IsIdentityInstalled) Encipherment hash does not exist for (%s)."), address);
+			alternated_assigned = true;
+			continue;
+		}
+
+		SeruroCrypto crypto;
+		wxString fingerprint;
+
+		fingerprint = crypto.GetIdentitySKIDByHash(profile["authentication"].AsString());
+
+		/* If both certificates in this profile match, the identity is assigned. */
+		server_uuid.Append(UUIDFromFingerprint(fingerprint));
+		return APP_ASSIGNED;
+	}
+
+	if (alternated_assigned) {
+		return APP_ALTERNATE_ASSIGNED;
+	}
+
 	return APP_UNASSIGNED;
 }
 
