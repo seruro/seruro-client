@@ -66,8 +66,6 @@ bool SeruroClient::OnInit()
 	/* User config instance (deprecated, controllers should use the singleton) */
     this->config = new SeruroConfig();
     
-    theSeruroApps::Get().AssignIdentity("OSX Mail", "00000000-0000-0000-0000-000000000001", "ted@valdrea.com");
-    
     /* Listen for invalid request events (which require UI actions and a request-restart). */
     Bind(SERURO_REQUEST_RESPONSE, &SeruroClient::OnInvalidAuth, this, SERURO_REQUEST_CALLBACK_AUTH);
 
@@ -75,6 +73,8 @@ bool SeruroClient::OnInit()
 	main_frame->AddPanels();
     /* Check to see if the application is running for the first time. */
     main_frame->StartSetup();
+
+	theSeruroApps::Get().AssignIdentity("Microsoft Outlook", "00000000-0000-0000-0000-000000000001", "ted@valdrea.com");
 
     //AlertDialog *alert = new AlertDialog();
     //this->SetTopWindow(alert);

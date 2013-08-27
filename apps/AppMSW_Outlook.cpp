@@ -37,6 +37,16 @@ enum security_properties {
 	PR_CERT_ASYMETRIC_CAPS   = 0x0002  /* ASN1-encoded S/MIME capabilities. */
 };
 
+#define ASYMETRIC_CAPS_BLOB "\
+30819A300B060960864801650304012A300B0609\
+608648016503040116300A06082A864886F70D03\
+07300B0609608648016503040102300E06082A86\
+4886F70D030202020080300706052B0E03020730\
+0D06082A864886F70D0302020140300D06082A86\
+4886F70D0302020128300706052B0E03021A300B\
+0609608648016503040203300B06096086480165\
+03040202300B0609608648016503040201"
+
 wxDECLARE_APP(SeruroClient);
 
 bool SafeANSIString(void *data, size_t length, wxString &safe_result)
@@ -122,6 +132,190 @@ bool MAPIProfileExists(LPPROFADMIN &profile_admin)
 	return true;
 }
 
+bool SetSecurityProperties(wxString &service_uid, wxJSONValue properties)
+{
+	HRESULT result;
+	LPPROFADMIN profile_admin;
+
+	/* Create a profile administration object. */
+	result = ::MAPIInitialize(NULL);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (SetSecurityProperties) cannot initialize MAPI (%0x)."), result);
+		return false;
+	}
+
+	result = ::MAPIAdminProfiles(0, &profile_admin);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (SetSecurityProperties) cannot open profile (%0x)."), result);
+		return false;
+	}
+
+	if (! MAPIProfileExists(profile_admin)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (SetSecurityProperties) no MAPI profile exists (%0x)."), result);
+		return false;
+	}
+
+	LPSERVICEADMIN service_admin;
+	//LPMAPITABLE service_table;
+	//LPSRowSet service_rows;
+
+	/* The profile name is in ANSI? */
+	result = profile_admin->AdminServices((LPTSTR) "Outlook", NULL, NULL, 0, &service_admin);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (SetSecurityProperties) cannot open Outlook service (%0x)."), result);
+
+		profile_admin->Release();
+		return false;
+	}
+	//result = service_admin->GetMsgServiceTable(0, &service_table);
+
+	//SRestriction service_restriction;
+	SPropValue service_property;
+	wxMemoryBuffer service_uid_buffer;
+
+	//service_restriction.rt = RES_CONTENT;
+	//service_restriction.res.resContent.ulFuzzyLevel = FL_FULLSTRING;
+	//service_restriction.res.resContent.ulPropTag = PR_SERVICE_UID;
+	//service_restriction.res.resContent.lpProp = &service_property;
+
+	service_property.ulPropTag = PR_SERVICE_UID;
+	service_uid_buffer = wxBase64Decode(service_uid);
+
+	service_property.Value.bin.cb = service_uid_buffer.GetDataLen();
+	service_property.Value.bin.lpb = (byte *) service_uid_buffer.GetData();
+	//service_property.Value.bin.lpb = (byte *) malloc(service_uid_buffer.GetDataLen());
+	//memcpy(service_property.Value.bin.lpb, service, 16);
+
+	//service_property.Value.lpszA = "MSEMS";
+
+	//result = ::HrQueryAllRows(service_table, NULL, &service_restriction, NULL, 1, &service_rows);
+	//if (FAILED(result) || service_rows == NULL || service_rows->cRows == 0) {
+	//	DEBUG_LOG(_("AppMSW_Outlook> (GetAccountList) cannot query service table (%0x)."), result);
+
+	//	service_table->Release();
+	//	service_admin->Release();
+	//	profile_admin->Release();
+	//	return false;
+	//}
+
+	LPPROVIDERADMIN provider_admin;
+	LPPROFSECT profile_section;
+
+	result = service_admin->AdminProviders((LPMAPIUID) service_property.Value.bin.lpb, 0, &provider_admin);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (SetSecurityProperties) cannot open provider (%0x)."), result);
+
+		service_admin->Release();
+		profile_admin->Release();
+		return false;
+	}
+
+	result = provider_admin->OpenProfileSection((LPMAPIUID) DILKIE_GUID, 
+		NULL, MAPI_MODIFY, &profile_section);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (SetSecurityProperties) cannot open section (%0x)."), result);
+
+		provider_admin->Release();
+		service_admin->Release();
+		profile_admin->Release();
+		return false;
+	}
+
+	/* Not sure how this is calculated. */
+	wxMemoryBuffer asymetric_caps = AsBinary(ASYMETRIC_CAPS_BLOB);
+	wxMemoryBuffer cert_buffer;
+
+	unsigned short profile_offset;
+	unsigned short entity_name_size = properties["entity_name"].AsString().size();
+	unsigned long profile_size = (
+		  (4+ 4) /* PR_CERT_PROP_VERSION */
+		+ (4+ 4) /* PR_CERT_MESSAGE_ENCODING */
+		+ (4+ 4) /* PR_CERT_DEFAULTS */
+		+ (4+ entity_name_size+1) /* PR_CERT_DISPLAY_NAME_A */
+		+ (4+ 20) /* PR_CERT_KEYEX_SHA1_HASH */
+		+ (4+ 20) /* PR_CERT_SIGN_SHA1_HASH */
+		+ (4+ asymetric_caps.GetDataLen()) /* PR_CERT_ASYMETRIC_CAPS */
+	);
+
+	unsigned short tag, length;
+	unsigned long type_data;
+	byte *profile_data;
+
+	profile_data = (byte *) malloc(profile_size);
+	profile_offset = 0;
+
+	tag = PR_CERT_PROP_VERSION, length = 4+ 4, type_data = 0x1;
+	memcpy(profile_data, &tag, 2);
+	memcpy(profile_data+2, &length, 2);
+	memcpy(profile_data+4, &type_data, 4);
+
+	profile_offset = 8;
+	tag = PR_CERT_MESSAGE_ENCODING, length = 4+ 4, type_data = 0x1;
+	memcpy(profile_data+profile_offset, &tag, 2);
+	memcpy(profile_data+profile_offset+2, &length, 2);
+	memcpy(profile_data+profile_offset+4, &type_data, 4);
+
+	profile_offset += 8;
+	tag = PR_CERT_DEFAULTS, length = 4+ 4, type_data = 0x1 | 0x2 | 0x4;
+	memcpy(profile_data+profile_offset, &tag, 2);
+	memcpy(profile_data+profile_offset+2, &length, 2);
+	memcpy(profile_data+profile_offset+4, &type_data, 4);
+
+	profile_offset += 8;
+	tag = PR_CERT_DISPLAY_NAME_A, length = 4+ entity_name_size+1;
+	memcpy(profile_data+profile_offset, &tag, 2);
+	memcpy(profile_data+profile_offset+2, &length, 2);
+	memcpy(profile_data+profile_offset+4, AsChar(properties["entity_name"].AsString()), length-1);
+	memset(profile_data+profile_offset+4+entity_name_size, 0, 1); 
+
+	profile_offset += entity_name_size+1 + 4;
+	tag = PR_CERT_KEYEX_SHA1_HASH, length = 4+ 20;
+	memcpy(profile_data+profile_offset, &tag, 2);
+	memcpy(profile_data+profile_offset+2, &length, 2);
+	cert_buffer.Clear();
+	cert_buffer = wxBase64Decode(properties["encipherment"].AsString());
+	memcpy(profile_data+profile_offset+4, AsChar(AsHex(cert_buffer)), 20);
+
+	profile_offset += 24;
+	tag = PR_CERT_SIGN_SHA1_HASH, length = 4+ 20;
+	memcpy(profile_data+profile_offset, &tag, 2);
+	memcpy(profile_data+profile_offset+2, &length, 2);
+	cert_buffer.Clear();
+	cert_buffer = wxBase64Decode(properties["authentication"].AsString());
+	memcpy(profile_data+profile_offset+4, AsChar(AsHex(cert_buffer)), 20);
+
+	profile_offset += 24;
+	tag = PR_CERT_ASYMETRIC_CAPS, length = 4+ asymetric_caps.GetDataLen();
+	memcpy(profile_data+profile_offset, &tag, 2);
+	memcpy(profile_data+profile_offset+2, &length, 2);
+	memcpy(profile_data+profile_offset+4, asymetric_caps.GetData(), asymetric_caps.GetDataLen());
+
+	SBinary security_profile;
+	SPropValue property_values;
+
+	/* Only support one MAPI security profile at a time. */
+	property_values.ulPropTag = PR_SECURITY_PROFILES;
+	property_values.Value.MVbin.cValues = 1;
+	property_values.Value.MVbin.lpbin = &security_profile;
+	property_values.Value.MVbin.lpbin[0].cb = profile_size;
+	property_values.Value.MVbin.lpbin[0].lpb = profile_data;
+
+	result = profile_section->SetProps(1, &property_values, NULL);
+
+	delete profile_data;
+	profile_section->Release();
+	provider_admin->Release();
+	service_admin->Release();
+	profile_admin->Release();
+
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (SetSecurityProperties) cannot set properties (%0x)."), result);
+		return false;
+	}
+
+	return true;
+}
+
 wxJSONValue GetSecurityProperties(SBinary *entry)
 {
 	wxJSONValue properties;
@@ -144,6 +338,11 @@ wxJSONValue GetSecurityProperties(SBinary *entry)
 
 		if ((entry_offset + length) > entry->cb) {
 			/* There is an overrun error in the ASN1 blob? */
+			break;
+		}
+
+		if (tag == 0 || length == 0) {
+			/* Problem reading data. */
 			break;
 		}
 
@@ -199,7 +398,7 @@ void AppMSW_Outlook::FindAccountProperties(LPSERVICEADMIN &service_admin, SPropV
 
 	result = service_admin->AdminProviders((LPMAPIUID) uid.Value.bin.lpb, 0, &provider_admin);
 	if (FAILED(result)) {
-		DEBUG_LOG(_("AppMSW_Outlook> (FindAccountProperties) cannot get provider for (%s) (%0x)."), 
+		DEBUG_LOG(_("AppMSW_Outlook> (FindAccountProperties) cannot get provider (%s) (%0x)."), 
 			account_name, result);
 		return;
 	}
@@ -207,7 +406,7 @@ void AppMSW_Outlook::FindAccountProperties(LPSERVICEADMIN &service_admin, SPropV
 	result = provider_admin->OpenProfileSection((LPMAPIUID) DILKIE_GUID, 
 		NULL, MAPI_MODIFY, &profile_section);
 	if (FAILED(result)) {
-		DEBUG_LOG(_("AppMSW_Outlook> (FindAccountProperties) cannot open profile section for (%s) (%0x)."),
+		DEBUG_LOG(_("AppMSW_Outlook> (FindAccountProperties) cannot open section (%s) (%0x)."),
 			account_name, result);
 
 		provider_admin->Release();
@@ -284,9 +483,19 @@ wxArrayString AppMSW_Outlook::GetAccountList()
 
 	/* Create a profile administration object. */
 	result = ::MAPIInitialize(NULL);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetAccountList) cannot initialize MAPI (%0x)."), result);
+		return accounts;
+	}
+
 	result = ::MAPIAdminProfiles(0, &profile_admin);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetAccountList) cannot open profile (%0x)."), result);
+		return accounts;
+	}
 
 	if (! MAPIProfileExists(profile_admin)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetAccountList) no MAPI profile exists (%0x)."), result);
 		return accounts;
 	}
 
@@ -296,7 +505,21 @@ wxArrayString AppMSW_Outlook::GetAccountList()
 
 	/* The profile name is in ANSI? */
 	result = profile_admin->AdminServices((LPTSTR) "Outlook", NULL, NULL, 0, &service_admin);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetAccountList) cannot open Outlook service (%0x)."), result);
+
+		profile_admin->Release();
+		return accounts;
+	}
+
 	result = service_admin->GetMsgServiceTable(0, &service_table);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetAccountList) cannot get service table (%0x)."), result);
+
+		service_admin->Release();
+		profile_admin->Release();
+		return accounts;
+	}
 
 	SRestriction service_restriction;
 	SPropValue service_property;
@@ -362,16 +585,32 @@ wxArrayString AppMSW_Outlook::GetAccountList()
 bool AppMSW_Outlook::AssignIdentity(wxString server_uuid, wxString address)
 {
 	wxString auth_skid, enc_skid;
-	wxString auth_hash, enc_hash;
+	wxString service_uid;
+	wxJSONValue properties;
+
 	SeruroCrypto crypto;
+
+	service_uid = this->info["accounts"][address]["service_uid"].AsString();
+	if (service_uid == wxEmptyString) {
+		/* The service uid was not probed during an account enumeration? */
+		return false;
+	}
 
 	/* Get both certificate SKIDs from config. */
 	auth_skid = wxGetApp().config->GetIdentity(server_uuid, address, ID_AUTHENTICATION);
 	enc_skid  = wxGetApp().config->GetIdentity(server_uuid, address, ID_ENCIPHERMENT);
 
 	/* For each, GetIdentityHashBySKID */
-	auth_hash = crypto.GetIdentityHashBySKID(auth_skid);
-	enc_hash  = crypto.GetIdentityHashBySKID(enc_skid);
+	properties["authentication"] = crypto.GetIdentityHashBySKID(auth_skid);
+	properties["encipherment"]  = crypto.GetIdentityHashBySKID(enc_skid);
+
+	properties["entity_name"] = wxString::Format(_("Seruro Identity (%s) for %s"), 
+		theSeruroConfig::Get().GetServerName(server_uuid),	address);
+
+	if (! SetSecurityProperties(service_uid, properties)) {
+		/* Could not assign an entity for the service_uid, does the account exist? */
+		return false;
+	}
 
 	return false;
 }
