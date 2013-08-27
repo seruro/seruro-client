@@ -7,6 +7,8 @@
 #include "../crypto/SeruroCrypto.h"
 #include "../api/Utils.h"
 
+#include "ProcessManager.h"
+
 #include <wx/dir.h>
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
@@ -43,7 +45,26 @@
 #define XML_FIELD_ENCIPHERMENT "SMTP_Encryption_Certificate"
 // #define XML_FIELD_DISPLAY_NAME "SMTP_DisplayName"
 
+#define LIVEMAIL_NAME "wlmail.exe"
+#define LIVEMAIL_DESCRIPTION "Windows Live Mail"
+#define LIVEMAIL_PATH ""
+
 wxDECLARE_APP(SeruroClient);
+
+bool AppMSW_LiveMail::IsRunning()
+{
+	return ProcessManager::IsProcessRunning(LIVEMAIL_NAME);
+}
+
+bool AppMSW_LiveMail::StopApp()
+{
+	return ProcessManager::StopProcess(LIVEMAIL_NAME);
+}
+
+bool AppMSW_LiveMail::StartApp()
+{
+	return ProcessManager::StartProcessByPath(LIVEMAIL_PATH);
+}
 
 bool AppMSW_LiveMail::IsInstalled()
 {
@@ -379,7 +400,9 @@ account_status_t AppMSW_LiveMail::IdentityStatus(wxString address, wxString &ser
 	SeruroCrypto crypto;
 	wxString fingerprint;
 
-	fingerprint = crypto.GetIdentitySKIDByHash(profile["authentication"].AsString());
+	fingerprint = crypto.GetIdentitySKIDByHash(
+		wxBase64Encode(AsBinary(profile["authentication"].AsString()))
+	);
 
 	/* STATE: seruro configured certificate installed. */
 	server_uuid.Append(UUIDFromFingerprint(fingerprint));

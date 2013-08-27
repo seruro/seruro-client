@@ -396,6 +396,12 @@ void AppMSW_Outlook::FindAccountProperties(LPSERVICEADMIN &service_admin, SPropV
 	/* Set a reference to the account name using itself as an index. */
 	this->info["accounts"][account_name]["name"] = account_name;
 
+	wxMemoryBuffer uid_buffer;
+	uid_buffer.AppendData((void *) uid.Value.bin.lpb, uid.Value.bin.cb);
+
+	/* The profile has a security "profile" property. Store it and parse later. */
+	this->info["accounts"][account_name]["service_uid"] = wxBase64Encode(uid_buffer);
+
 	result = service_admin->AdminProviders((LPMAPIUID) uid.Value.bin.lpb, 0, &provider_admin);
 	if (FAILED(result)) {
 		DEBUG_LOG(_("AppMSW_Outlook> (FindAccountProperties) cannot get provider (%s) (%0x)."), 
@@ -433,12 +439,6 @@ void AppMSW_Outlook::FindAccountProperties(LPSERVICEADMIN &service_admin, SPropV
 		provider_admin->Release();
 		return;
 	}
-
-	wxMemoryBuffer uid_buffer;
-	uid_buffer.AppendData((void *) uid.Value.bin.lpb, uid.Value.bin.cb);
-
-	/* The profile has a security "profile" property. Store it and parse later. */
-	this->info["accounts"][account_name]["service_uid"] = wxBase64Encode(uid_buffer);
 
 	/* The MVbin = # (4 bytes) of entires PT_BINARY: {size (2 bytes), data} */
 	/* SProperty (data): http://support.microsoft.com/kb/312900 */
@@ -612,7 +612,7 @@ bool AppMSW_Outlook::AssignIdentity(wxString server_uuid, wxString address)
 		return false;
 	}
 
-	return false;
+	return true;
 }
 
 account_status_t AppMSW_Outlook::IdentityStatus(wxString address, wxString &server_uuid)

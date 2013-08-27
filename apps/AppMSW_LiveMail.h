@@ -15,6 +15,11 @@ public:
     /* Most likely, will do nothing. */
     AppMSW_LiveMail() : AppHelper() {
 		this->info["accounts"] = wxJSONValue(wxJSONTYPE_OBJECT);
+
+		/* Application features. */
+		can_assign = true;
+		can_unassign = true;
+		needs_restart = true;
 	}
     
     bool IsInstalled();
@@ -24,6 +29,10 @@ public:
     account_status_t IdentityStatus(wxString address, wxString &server_uuid);
 	bool AssignIdentity(wxString server_uuid, wxString address);
     
+	bool IsRunning();
+	bool StopApp();
+	bool StartApp();
+
 private:
     bool GetInfo();
 

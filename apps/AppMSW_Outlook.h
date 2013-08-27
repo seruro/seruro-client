@@ -19,7 +19,11 @@ class AppMSW_Outlook : public AppHelper
 public:
     /* Most likely, will do nothing. */
     AppMSW_Outlook() : AppHelper() {
-		//this->info["accounts"] = wxJSONValue(wxJSONTYPE_OBJECT);
+		this->info["accounts"] = wxJSONValue(wxJSONTYPE_OBJECT);
+
+		can_assign = true;
+		can_unassign = true;
+		needs_restart = false;
 	}
     
     bool IsInstalled();

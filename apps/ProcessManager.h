@@ -13,8 +13,14 @@ class ProcessManagerMSW
 {
 public:
     static bool IsProcessRunning(wxString process_name);
-    static bool StartProcess(wxString process_path);
-    static bool StopProcess(wxString process_name);
+	static bool StopProcess(wxString process_name);
+
+	static bool StartProcess(wxString process_path);
+	static bool StartProcessByPath(wxString path);
+
+	/* Testing */
+	static bool IsProcessRunningByDescription(wxString description);
+	static bool StopProcessByDescription(wxString description);
     
     ProcessManagerMSW () { }
 };

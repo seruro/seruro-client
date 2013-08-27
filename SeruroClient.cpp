@@ -74,8 +74,6 @@ bool SeruroClient::OnInit()
     /* Check to see if the application is running for the first time. */
     main_frame->StartSetup();
 
-	theSeruroApps::Get().AssignIdentity("Microsoft Outlook", "00000000-0000-0000-0000-000000000001", "ted@valdrea.com");
-
     //AlertDialog *alert = new AlertDialog();
     //this->SetTopWindow(alert);
     //alert->ShowModal();

@@ -105,8 +105,8 @@ void SeruroApps::InitMSW()
 {
     AppHelper *helper;
 
-	//helper = (AppHelper *) new AppMSW_LiveMail();
-	//AddAppHelper(_("Windows Live Mail"), helper);
+	helper = (AppHelper *) new AppMSW_LiveMail();
+	AddAppHelper(_("Windows Live Mail"), helper);
 	helper = (AppHelper *) new AppMSW_Outlook();
 	AddAppHelper(_("Microsoft Outlook"), helper);
 }
