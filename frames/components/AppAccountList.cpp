@@ -14,7 +14,90 @@
 #define APPACCOUNT_LIST_NAME_COLUMN 1
 #define APPACCOUNT_LIST_APP_COLUMN  2
 
+#define APP_ASSIGNED_TEXT ""
+#define APP_PENDING_RESTART_TEXT "Requires Configuration"
+#define APP_ALTERNATE_ASSIGNED_TEXT "Using alternate Identity"
+#define APP_UNASSIGNED_TEXT "Not Configured"
+
 DECLARE_APP(SeruroClient);
+
+void AppAccountList::OnAccountStateChange(SeruroStateEvent &event)
+{    
+    if (event.GetAction() == STATE_ACTION_REMOVE) {
+        /* Since accounts may not be listed by their address. */
+        this->RemoveAccount(event.GetAccount());
+    } else {
+        /* For add/update. */
+        this->GenerateAccountsList();
+    }
+    
+    /* Do not skip, this is not part of the event binding chain. */
+}
+
+void AppAccountList::OnIdentityStateChange(SeruroStateEvent &event)
+{
+    wxListItem app_item, account_item;
+    wxString display_name, server_uuid;
+    
+    account_item.SetMask(wxLIST_MASK_TEXT);
+    account_item.SetColumn(1);
+    app_item.SetMask(wxLIST_MASK_TEXT);
+    app_item.SetColumn(2);
+    
+    display_name = (use_address) ? event.GetAccount() : this->address_map[account].AsString();
+
+    for (size_t i = 0; i < this->accounts_list->GetItemCount(); i++) {
+        account_item.SetId(i);
+        app_item.SetId(i);
+        
+        if (! accounts_list->GetItem(account_item) || ! accounts_list->GetItem(app_item)) {
+            continue;
+        }
+        
+        if (display_name != account_item.GetText() || event.GetValue("app") != app_item.GetText()) {
+            continue;
+        }
+        
+        /* If found, the event may have a custom status, otherwise check and set. */
+        if (event.HasValue("status")) {
+            accounts_list->SetItem(i, 3, event.GetValue("status"));
+            accounts_list->SetItemData(i, (long) APP_CUSTOM);
+        } else {
+            this->SetAccountStatus(i, event.GetValue("app"), event.GetAccount());
+        } 
+    }
+    /* Do not skip, this is not part of the event binding chain. */
+}
+
+void AppAccountList::SetAccountStatus(long index, const wxString &app, const wxString &account)
+{
+    wxString server_uuid;
+    account_status_t identity_status;
+    
+    identity_status = theSeruroApps::Get().IdentityStatus(app, account, server_uuid, this->is_initial);
+    accounts_list->SetItemData(index, (long) identity_status);
+    
+    if (identity_status == APP_ASSIGNED) {
+        accounts_list->SetItem(index, 3, wxGetApp().config->GetServerName(server_uuid));
+    } else if (identity_status == APP_UNASSIGNED) {
+        accounts_list->SetItem(index, 3, APP_UNASSIGNED_TEXT);
+    } else if (identity_status == APP_PENDING_RESTART) {
+        accounts_list->SetItem(index, 3, APP_PENDING_RESTART_TEXT);
+    } else {
+        accounts_list->SetItem(index, 3, APP_ALTERNATE_ASSIGNED_TEXT);
+    }
+}
+
+bool AppAccountList::HasAnyAssigned()
+{
+    /* Check for at least one assigned account. */
+    for (size_t i = 0; i < accounts_list->GetItemCount(); ++i) {
+        if (accounts_list->GetItemData(i) == (long) APP_ASSIGNED) {
+            return true;
+        }
+    }
+    return false;
+}
 
 bool AppAccountList::Assign()
 {
@@ -63,10 +146,12 @@ bool AppAccountList::Unassign()
     return false;
 }
 
-void AppAccountList::Create(wxWindow *parent, bool use_address)
+void AppAccountList::Create(wxWindow *parent, bool use_address, bool initial)
 {
     this->parent = parent;
     this->use_address = use_address;
+    /* Is this an initial applications list, created during setup? */
+    this->is_initial = initial;
     
     /* Create image list */
     list_images = new wxImageList(12, 12, true);
@@ -99,10 +184,41 @@ void AppAccountList::Create(wxWindow *parent, bool use_address)
     //wxGetApp().Bind(wxEVT_LIST_ITEM_DESELECTED, &AppAccountList::OnDeselect, this, APPACCOUNT_LIST_ID);
 }
 
+void AppAccountList::RemoveAccount(wxString account)
+{
+    //long item_index;
+    wxListItem app_item, account_item;
+    wxString display_name;
+
+    account_item.SetMask(wxLIST_MASK_TEXT);
+    account_item.SetColumn(APPACCOUNT_LIST_NAME_COLUMN);
+    //app_item.SetMask(wxLIST_MASK_TEXT);
+    //app_item.SetColumn(APPACCOUNT_LIST_APP_COLUMN);
+    
+    /* This could be displaying the app's canonical 'account name'. */
+    display_name = (use_address) ? account : this->address_map[account].AsString();
+    
+    for (size_t i = 0; i < this->accounts_list->GetItemCount(); i++) {
+        account_item.SetId(i);
+        //app_item.SetId(i);
+        
+        //if (! accounts_list->GetItem(account_item) || ! accounts_list->GetItem(app_item)) {
+        if (! accounts_list->GetItem(account_item)) {
+            continue;
+        }
+        
+        /* If both match, remove. */
+        //if (account_item.GetText() == account && app_item.GetText() == app) {
+        if (account_item.GetText() == account) {
+            accounts_list->DeleteItem(i);
+        }
+    }
+}
+
 void AppAccountList::AddAccount(wxString app, wxString account)
 {
     long item_index;
-    account_status_t identity_status;
+    //account_status_t identity_status;
     
     wxString display_name, server_uuid;
     
@@ -110,11 +226,16 @@ void AppAccountList::AddAccount(wxString app, wxString account)
     item_index = this->accounts_list->InsertItem(0, _(""), 0);
     
     /* Get the account status, and fill-in the uuid. */
-    identity_status = theSeruroApps::Get().IdentityStatus(app, account, server_uuid);
-    this->accounts_list->SetItemData(item_index, (long) identity_status);
+    //identity_status = theSeruroApps::Get().IdentityStatus(app, account, server_uuid, this->is_initial);
+    //this->accounts_list->SetItemData(item_index, (long) identity_status);
     
     /* Todo: set image based on status. */
     display_name = (this->use_address) ? account : theSeruroApps::Get().GetAccountName(app, account);
+    if (! this->use_address) {
+        /* Use this for lookups (address -> account translations). */
+        this->address_map[account] = display_name;
+    }
+    
     this->accounts_list->SetItem(item_index, 1, display_name);
     this->accounts_list->SetItem(item_index, 2, app);
     
@@ -123,14 +244,7 @@ void AppAccountList::AddAccount(wxString app, wxString account)
         accounts_list->SetItemTextColour(item_index, wxColour(DISABLED_TEXT_COLOR));
     }
     
-    /* Set the account status. */
-    if (identity_status == APP_ASSIGNED) {
-        accounts_list->SetItem(item_index, 3, wxGetApp().config->GetServerName(server_uuid));
-    } else if (identity_status == APP_UNASSIGNED) {
-        accounts_list->SetItem(item_index, 3, _("Unassigned"));
-    } else {
-        accounts_list->SetItem(item_index, 3, _("Using Unmanaged Identity"));
-    }
+    this->SetAccountStatus(item_index, app, account);
 }
 
 void AppAccountList::GenerateAccountsList()
@@ -207,11 +321,5 @@ void AppAccountList::AddAccountList(wxSizer *sizer)
         sizer->Add(accounts_list, DIALOGS_SIZER_OPTIONS.Proportion(1).Top().Bottom());
     }
 }
-
-void AppAccountList::OnAccountStateChange(SeruroStateEvent &event)
-{
-    /* Check if any accounts in the list need updating (account_whitelist). */
-}
-
 
 

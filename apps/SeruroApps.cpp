@@ -1,6 +1,7 @@
 
 #include "SeruroApps.h"
 #include "../SeruroClient.h"
+#include "../api/SeruroStateEvents.h"
 
 #include "ProcessManager.h"
 
@@ -268,14 +269,24 @@ wxString SeruroApps::GetAccountName(wxString app_name, wxString address)
     return helper->GetAccountName(address);
 }
 
-account_status_t SeruroApps::IdentityStatus(wxString app_name, wxString account_name, wxString &server_uuid)
+account_status_t SeruroApps::IdentityStatus(wxString app_name, wxString account_name, wxString &server_uuid, bool initial)
 {
     AppHelper *helper;
+    account_status_t status;
     
     helper = this->GetHelper(app_name);
     if (helper == 0) return APP_UNASSIGNED;
+
+    /* Get the status, then check if this is an inital check, if so APP_ASSIGNED becomes APP_PENDING_RESTART. */
+    status = helper->IdentityStatus(account_name, server_uuid);
+    if (initial && status == APP_ASSIGNED) {
+        if (helper->IsRunning()) {
+            //return APP_PENDING_RESTART;
+            status = APP_PENDING_RESTART;
+        }
+    }
     
-    return helper->IdentityStatus(account_name, server_uuid);
+    return status;
 }
 
 bool SeruroApps::AssignIdentity(wxString app_name, wxString server_uuid, wxString address)
@@ -301,6 +312,12 @@ bool SeruroApps::AssignIdentity(wxString app_name, wxString server_uuid, wxStrin
         return false;
     }
     
+    /* Create an identity update event. */
+    SeruroStateEvent identity_event(STATE_TYPE_IDENTITY, STATE_ACTION_UPDATE);
+    identity_event.SetServerUUID(server_uuid); /* This is normal discarded */
+    identity_event.SetValue("app", app_name);
+    identity_event.SetAccount(address);
+    
     /* Check if the application needs a restart. */
     if (helper->needs_restart && helper->IsRunning()) {
         assign_status = this->RequireRestart(helper, app_name);
@@ -310,8 +327,11 @@ bool SeruroApps::AssignIdentity(wxString app_name, wxString server_uuid, wxStrin
     this->assign_pending = false;
     if (! assign_status) {
         /* Append to debug log. */
+        identity_event.SetValue("status", "Restart Pending");
     }
     
+    /* Process the event. */
+    wxGetApp().AddEvent(identity_event);
     
     return true;
 }

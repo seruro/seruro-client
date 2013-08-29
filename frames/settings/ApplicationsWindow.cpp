@@ -34,10 +34,27 @@ void ApplicationsWindow::OnAccountStateChange(SeruroStateEvent &event)
 {
 	wxLogMessage(_("ApplicationsWindow> (OnAccountStateChange)"));
     
-    this->GenerateAccountsList();    
+    /* This might cause some headache, but it's the easiest at the moment. */
+    AppAccountList::DeselectAccounts();
+    
+    AppAccountList::GenerateAccountsList();
 	this->AlignLists();
     
 	event.Skip();
+}
+
+void ApplicationsWindow::OnApplicationStateChange(SeruroStateEvent &event)
+{
+    event.Skip();
+}
+
+void ApplicationsWindow::OnIdentityStateChange(SeruroStateEvent &event)
+{
+    AppAccountList::OnIdentityStateChange(event);
+    this->AlignLists();
+    
+    /* Check if the current selected app/name has changed, and update buttons. */
+    event.Skip();
 }
 
 void ApplicationsWindow::OnAssign(wxCommandEvent &event)
@@ -53,8 +70,11 @@ void ApplicationsWindow::OnUnassign(wxCommandEvent &event)
 void ApplicationsWindow::OnRefresh(wxCommandEvent &event)
 {
     /* Refresh applications list. */
+    this->GenerateApplicationsList();
     
     /* Refresh accounts list. */
+    AppAccountList::GenerateAccountsList();
+    this->AlignLists();
 }
 
 void ApplicationsWindow::OnAppSelected(wxListEvent &event)
@@ -187,6 +207,8 @@ ApplicationsWindow::ApplicationsWindow(SeruroPanelSettings *window) : SettingsVi
     
 	/* Set up event handler bindings. */
 	wxGetApp().Bind(SERURO_STATE_CHANGE, &ApplicationsWindow::OnAccountStateChange, this, STATE_TYPE_ACCOUNT);
+    wxGetApp().Bind(SERURO_STATE_CHANGE, &ApplicationsWindow::OnIdentityStateChange, this, STATE_TYPE_IDENTITY);
+    wxGetApp().Bind(SERURO_STATE_CHANGE, &ApplicationsWindow::OnApplicationStateChange, this, STATE_TYPE_APPLICATION);
     
     this->SetSizer(sizer);
     this->AlignLists();

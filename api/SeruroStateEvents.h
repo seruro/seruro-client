@@ -54,6 +54,7 @@ public:
     
 	wxString GetValue(wxString key) { return state_data[key].AsString(); }
 	void SetValue(wxString key, wxString value) { state_data[key] = value; }
+    bool HasValue(wxString key) { return state_data.HasMember(key); }
 	/* Every state has an associated action. */
 	int GetAction() { return state_data["action"].AsInt(); }
 	void SetAction(int action) { state_data["action"] = action; }

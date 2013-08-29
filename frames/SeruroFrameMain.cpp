@@ -221,6 +221,9 @@ void SeruroFrameMain::OnSetupRun(wxCommandEvent &event)
 
 void SeruroFrameMain::OnSetupCancel(wxWizardEvent& event)
 {
+    /* Is this correct? */
+    this->setup = 0;
+    
     if (wxGetApp().config->GetServerNames().size() == 0) {
         wxLogMessage(_("SeruroFrameMain> (OnSetupCancel) the initial setup was cancled."));
 		if (! SERURO_ALLOW_NO_ACCOUNTS) {
@@ -234,6 +237,9 @@ void SeruroFrameMain::OnSetupCancel(wxWizardEvent& event)
 
 void SeruroFrameMain::OnSetupFinished(wxWizardEvent& event)
 {
+    /* Is this correct? */
+    this->setup = 0;
+    
     if (wxGetApp().config->GetServerNames().size() == 0) {
         wxLogMessage(_("SeruroFrameMain> (OnSetupFinished) there were no servers added?"));
 		if (! SERURO_ALLOW_NO_ACCOUNTS) {

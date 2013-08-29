@@ -37,8 +37,10 @@ enum account_status_t
     /* Certificates are in use. */
     APP_ALTERNATE_ASSIGNED = 2,
     /* Certificates are in use, but not an identity managed by Seruro. */
-    APP_UNASSIGNED = 3
+    APP_UNASSIGNED = 3,
     /* No Certificates are un use. */
+    APP_PENDING_RESTART = 4,
+    APP_CUSTOM,
 };
 
 wxString UUIDFromFingerprint(const wxString &fingerprint);
@@ -135,7 +137,8 @@ public:
     /* Check if a 'Seruro' identity is configured/installed 
 	 * the given app/account pair. */
     account_status_t IdentityStatus(wxString app_name,
-        wxString address, wxString &server_uuid);
+        wxString address, wxString &server_uuid,
+        bool initial = false);
     
 	bool AssignIdentity(wxString app_name,
 		wxString server_uuid, wxString address);

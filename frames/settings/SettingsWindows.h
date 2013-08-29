@@ -138,6 +138,8 @@ public:
     
     /* The client changes something about an account. */
     void OnAccountStateChange(SeruroStateEvent &event);
+    void OnApplicationStateChange(SeruroStateEvent &event);
+    void OnIdentityStateChange(SeruroStateEvent &event);
     
 private:
     void AlignLists();

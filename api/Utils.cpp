@@ -54,9 +54,9 @@ wxString AsHex(wxMemoryBuffer binary_string)
 	for (size_t i = 0; i < length; i++) {
 		byte = ((unsigned char *) binary)[i];
 		//hex_encoded.Append(wxString::Format(_("%x"), byte));
-		hex_byte = wxString::Format(_("%x"), byte);
+		hex_byte = wxString::Format(wxT("%x"), byte);
 		/* Make sure bytes are 2 characters. */
-		hex_encoded.Append((hex_byte.Length() == 2) ? hex_byte : wxString::Format(_("0%s"), hex_byte));
+		hex_encoded.Append((hex_byte.Length() == 2) ? hex_byte : wxString::Format(wxT("0%s"), hex_byte));
 	}
 
 	return hex_encoded;

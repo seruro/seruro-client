@@ -24,7 +24,20 @@ END_EVENT_TABLE()
 
 void ApplicationsPage::OnApplicationStateChange(SeruroStateEvent &event)
 {
+    //AppAccountList::OnApplicationStateChange(event);
+    event.Skip();
+}
+
+void ApplicationsPage::OnIdentityStateChange(SeruroStateEvent &event)
+{
+    AppAccountList::OnIdentityStateChange(event);
     
+    if (AppAccountList::HasAnyAssigned()) {
+        /* This may have caused the automatic assigning (closing an application). */
+        this->wizard->SetButtonText(wxEmptyString, "Next >");
+    }
+    
+    event.Skip();
 }
 
 void ApplicationsPage::OnAccountSelected(wxListEvent &event)
@@ -36,14 +49,14 @@ void ApplicationsPage::OnAccountSelected(wxListEvent &event)
         return;
     }
     
-    /* Check if identity is unstalled. */
+    /* Check if identity is unstalled (note: can assign does not matter for initial). */
     assign_button->Enable(
-        theSeruroApps::Get().CanAssign(this->app_name) &&
+        //theSeruroApps::Get().CanAssign(this->app_name) &&
         accounts_list->GetItemData(index) != APP_ASSIGNED
     );
     
     unassign_button->Enable(
-        theSeruroApps::Get().CanUnassign(this->app_name) &&
+        //theSeruroApps::Get().CanUnassign(this->app_name) &&
         accounts_list->	GetItemData(index) == APP_ASSIGNED
     );
 }
@@ -64,7 +77,7 @@ void ApplicationsPage::OnAssign(wxCommandEvent &event)
     /* Todo: Should the assign controller create a failure alert? */
     
     /* Change the next text to indicate the assignment was successful. */
-    this->wizard->SetButtonText(wxEmptyString, _("&Next"));
+    this->wizard->SetButtonText(wxEmptyString, _("&Next >"));
 }
 
 void ApplicationsPage::OnUnassign(wxCommandEvent &event)
@@ -88,6 +101,11 @@ void ApplicationsPage::DoFocus()
     
     AppAccountList::SetAccountWhitelist(whitelist);
     AppAccountList::GenerateAccountsList();
+
+    if (AppAccountList::HasAnyAssigned()) {
+        /* This may have caused the automatic assigning (closing an application). */
+        this->wizard->SetButtonText(wxEmptyString, "Next >");
+    }
     
     /* Make sure the list fits correctly. */
     this->Layout();
@@ -122,7 +140,8 @@ ApplicationsPage::ApplicationsPage(SeruroSetup *parent) : SetupPage(parent)
     this->enable_prev = false;
     
     /* Use false to display the name of the accounts, since this is bound to an addres. */
-    AppAccountList::Create(this, false);
+    /* Use true for initial so that assigned applications will be restarted. */
+    AppAccountList::Create(this, false, true);
     //AppAccountList::CreateHelper();
     
     /* Generic explaination. */
@@ -146,6 +165,11 @@ ApplicationsPage::ApplicationsPage(SeruroSetup *parent) : SetupPage(parent)
     actions_sizer->Add(unassign_button, DIALOGS_SIZER_OPTIONS);
     actions_sizer->Add(refresh_button, DIALOGS_SIZER_OPTIONS);
     vert_sizer->Add(actions_sizer, DIALOGS_SIZER_OPTIONS.FixedMinSize().Bottom());
+    
+    /* Relevant state events. */
+    wxGetApp().Bind(SERURO_STATE_CHANGE, &ApplicationsPage::OnIdentityStateChange, this, STATE_TYPE_IDENTITY);
+    wxGetApp().Bind(SERURO_STATE_CHANGE, &ApplicationsPage::OnApplicationStateChange, this, STATE_TYPE_APPLICATION);
+    /* Why would the account/server change, unless someone is playing with the config. */
     
     this->SetSizer(vert_sizer);
 }

@@ -144,6 +144,18 @@ public:
     InitialPage (SeruroSetup *parent);
 };
 
+class SettingsPage : public SetupPage
+{
+public:
+    SettingsPage (SeruroSetup *parent);
+    void DoFocus();
+    
+private:
+    wxCheckBox *certs_option;   
+    
+	DECLARE_EVENT_TABLE()
+};
+
 /* Should be very similar to /frames/dialogs/AddAccountDialog */
 class AccountPage : public SetupPage, 
 	public AddAccountForm, public AddServerForm
@@ -266,6 +278,7 @@ private:
     
     /* Seruro-based events. */
     void OnApplicationStateChange(SeruroStateEvent &event);
+    void OnIdentityStateChange(SeruroStateEvent &event);
     
     /* Helpers. */
     void AlignList();

@@ -115,6 +115,12 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
 		this->SetIdentityStatus(_("Certificates already installed."));
 		this->wizard->SetButtonText(wxEmptyString, _("Proceed"));
 		identity_installed = true;
+        
+        /* Create Identity event. */
+        SeruroStateEvent identity_event(STATE_TYPE_IDENTITY, STATE_ACTION_UPDATE);
+        identity_event.SetServerUUID(server_uuid);
+        identity_event.SetAccount(address);
+        this->ProcessWindowEvent(identity_event);
 	} else {
 		this->SetIdentityStatus(_("Certificates downloaded, please install."));
 	}
@@ -337,7 +343,7 @@ bool IdentityPage::GoNext(bool from_callback)
 	}
     
     /* Create identity installed event. */
-    SeruroStateEvent event(STATE_TYPE_ACCOUNT, STATE_ACTION_UPDATE);
+    SeruroStateEvent event(STATE_TYPE_IDENTITY, STATE_ACTION_UPDATE);
     event.SetServerUUID(download_response["server_uuid"].AsString());
     event.SetAccount(download_response["address"].AsString());
     this->ProcessWindowEvent(event);
