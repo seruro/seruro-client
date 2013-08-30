@@ -93,7 +93,8 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
     this->setup = 0;
 
 	/* Add singular panel */
-	book = new wxNotebook(this, SERURO_NOTEBOOK_ID);
+	book = new wxNotebook(this, SERURO_NOTEBOOK_ID, wxDefaultPosition, wxDefaultSize, 
+		wxNB_FIXEDWIDTH);
 	this->mainSizer->Add(book, 1, wxEXPAND, 5);
 }
 

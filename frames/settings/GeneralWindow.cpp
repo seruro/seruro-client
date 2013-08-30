@@ -45,7 +45,7 @@ END_EVENT_TABLE()
 
 void GeneralWindow::OnServerStateEvent(SeruroStateEvent &event)
 {
-	this->GenerateServersList();
+	//this->GenerateServersList();
 	event.Skip();
 }
 
@@ -143,17 +143,18 @@ GeneralWindow::GeneralWindow(SeruroPanelSettings *window) : SettingsView(window)
 	option_auto_download = new wxCheckBox(this, OPTION_AUTO_DOWNLOAD_ID, TEXT_OPTION_AUTO_DOWNLOAD);
 	option_auto_download->SetValue(this->GetBoolean("auto_download"));
 	sizer->Add(option_auto_download, OPTION_SIZER_OPTIONS);
+	sizer->AddSpacer(10);
 
 	/* Put default server selector in it's own horizontal sizer. */
-	wxSizer *const server_sizer = new wxBoxSizer(wxHORIZONTAL);
-	server_sizer->Add(new Text(this, _(TEXT_OPTION_DEFAULT_SERVER)), OPTION_SIZER_OPTIONS);
+	//wxSizer *const server_sizer = new wxBoxSizer(wxHORIZONTAL);
+	//server_sizer->Add(new Text(this, _(TEXT_OPTION_DEFAULT_SERVER)), OPTION_SIZER_OPTIONS);
 
-	option_default_server = new wxChoice(this, OPTION_DEFAULT_SERVER_ID);
-	this->GenerateServersList();
+	//option_default_server = new wxChoice(this, OPTION_DEFAULT_SERVER_ID);
+	//this->GenerateServersList();
 
-	server_sizer->Add(option_default_server, SERVER_SIZER_OPTIONS);
-	sizer->Add(server_sizer, DIALOGS_BOXSIZER_SIZER_OPTIONS);
-	sizer->AddStretchSpacer();
+	//server_sizer->Add(option_default_server, SERVER_SIZER_OPTIONS);
+	//sizer->Add(server_sizer, DIALOGS_BOXSIZER_SIZER_OPTIONS);
+	//sizer->AddStretchSpacer();
 
 	/* Add the less-commonly-used options. */
 	option_save_encipherment = new wxCheckBox(this, OPTION_SAVE_ENCIPHERMENT_ID, TEXT_OPTION_SAVE_ENCIPHERMENT);
