@@ -24,12 +24,27 @@ You may change any of these options, at any time, using the Setting menu."
 
 void SettingsPage::OnCertsOption(wxCommandEvent &event)
 {
-    
+	/* Direct update. */
+	theSeruroConfig::Get().SetOption("auto_download", 
+		(this->certs_option->IsChecked()) ? "true" : "false", true);
+	return;
 }
 
 void SettingsPage::OnDefaultOption(wxCommandEvent &event)
 {
-    
+	wxJSONValue server_info;
+
+	server_info = this->wizard->GetServerInfo();
+	if (this->default_option->IsChecked()) {
+		/* Set the default server to this uuid. */
+		theSeruroConfig::Get().SetOption("default_server", server_info["uuid"].AsString(), true);
+		return;
+	}
+
+	/* Otherwise, if there was an existing default server, replace. */
+	if (this->existing_default_uuid != wxEmptyString) {
+		theSeruroConfig::Get().SetOption("default_server", this->existing_default_uuid, true);
+	}
 }
 
 void SettingsPage::DoFocus()
@@ -49,13 +64,14 @@ void SettingsPage::DoFocus()
     if (theSeruroConfig::Get().GetOption("auto_download") == "false") {
         this->certs_option->SetValue(false);
     } else {
-        theSeruroConfig::Get().SetOption("auto_download", "true");
+        theSeruroConfig::Get().SetOption("auto_download", "true", true);
     }
     
-    if (theSeruroConfig::Get().GetOption("default_server") != wxEmptyString) {
+	this->existing_default_uuid = theSeruroConfig::Get().GetOption("default_server");
+	if (this->existing_default_uuid != wxEmptyString) {
         this->default_option->SetValue(false);
     } else {
-        theSeruroConfig::Get().SetOption("default_server", server_info["uuid"].AsString());
+        theSeruroConfig::Get().SetOption("default_server", server_info["uuid"].AsString(), true);
     }
 }
 
@@ -70,9 +86,11 @@ SettingsPage::SettingsPage(SeruroSetup *parent) : SetupPage(parent)
     this->server_text = new Text(this, "");
     vert_sizer->Add(this->server_text, DIALOGS_SIZER_OPTIONS);
     
+	/* Auto-download contacts. */
     this->certs_option = new wxCheckBox(this, wxID_ANY, TEXT_DOWNLOAD_CERTS);
     this->certs_option->SetValue(true);
     
+	/* Use this server for API actions and as the default when searching. */
     this->default_option = new wxCheckBox(this, wxID_ANY, wxEmptyString);
     this->default_option->SetValue(true);
     this->default_option->Disable();

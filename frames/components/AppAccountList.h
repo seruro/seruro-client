@@ -77,6 +77,8 @@ protected:
     
     /* Events use address, save a map. */
     wxJSONValue address_map;
+	/* Keep a list of apps which we're assigned. */
+	wxJSONValue pending_list;
     
     //DECLARE_EVENT_TABLE()
     

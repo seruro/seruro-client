@@ -77,6 +77,19 @@ void AppAccountList::SetAccountStatus(long index, const wxString &app, const wxS
     identity_status = theSeruroApps::Get().IdentityStatus(app, account, server_uuid, this->is_initial);
     accounts_list->SetItemData(index, (long) identity_status);
     
+	/* Since Apps which auto-configure do not maintain state of their 'once-configured' accounts. */
+	if (identity_status == APP_PENDING_RESTART) {
+		/* Do not give false "unstateful" information about pending restarts. */
+		if (this->pending_list[app][account].AsInt() == APP_ASSIGNED) {
+			identity_status == APP_ASSIGNED;
+		}
+	}
+
+	/* Save 'assigned' status for potentially stateless-app running responses. */
+	if (identity_status == APP_ASSIGNED) {
+		this->pending_list[app][account] = APP_ASSIGNED;
+	}
+
     if (identity_status == APP_ASSIGNED) {
         accounts_list->SetItem(index, 3, wxGetApp().config->GetServerName(server_uuid));
     } else if (identity_status == APP_UNASSIGNED) {
@@ -143,6 +156,9 @@ bool AppAccountList::Assign()
 
 bool AppAccountList::Unassign()
 {
+	/* Forget assigned state. */
+	this->pending_list[this->app_name][this->account] = APP_UNASSIGNED;
+
     return false;
 }
 

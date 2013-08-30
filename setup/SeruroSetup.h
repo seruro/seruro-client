@@ -107,6 +107,9 @@ public:
 	void EnableNext(bool enable) {
 		this->m_btnNext->Enable(enable);
 	}
+	void FocusNext() {
+		this->m_btnNext->SetFocus();
+	}
 	/* Since this process will potentially install a CA, optionally
 	 * decorate the action button with an auth symbol. */
 	void RequireAuth(bool require) {
@@ -158,6 +161,8 @@ private:
     wxCheckBox *certs_option;
     wxCheckBox *default_option;
     Text *server_text;
+
+	wxString existing_default_uuid;
     
 	DECLARE_EVENT_TABLE()
 };

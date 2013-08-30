@@ -78,7 +78,7 @@ public:
     {
 		if (! auto_wrap) { return; }
         int soft_wrap = SERURO_APP_DEFAULT_WIDTH - 
-			SERURO_SETTINGS_TREE_MIN_WIDTH;
+			SERURO_SETTINGS_TREE_MIN_WIDTH - 30;
         this->Wrap(soft_wrap);
     }
 

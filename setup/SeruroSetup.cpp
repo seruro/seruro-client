@@ -51,11 +51,20 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
 {
 	wxGetApp().SetSetup(this);
 
+	/* Pre-check for sanity. */
+	if (type == SERURO_SETUP_ACCOUNT || type == SERURO_SETUP_IDENTITY) {
+		if (theSeruroConfig::Get().GetServerList().size() == 0) {
+			this->server_uuid = wxEmptyString;
+			this->account = wxEmptyString;
+			this->setup_type = SERURO_SETUP_SERVER;
+		}
+	}
+
 	/* Set title based on type of setup. */
 	wxString setup_title = wxString(_(SERURO_APP_NAME)) + _(" Setup");
-	if (type == SERURO_SETUP_SERVER) setup_title = _("Add Server Setup");
-	if (type == SERURO_SETUP_ACCOUNT) setup_title = _("Add Account Setup");
-	if (type == SERURO_SETUP_IDENTITY) setup_title = _("Install Identity");
+	if (setup_type == SERURO_SETUP_SERVER) setup_title = _("Add Server Setup");
+	if (setup_type == SERURO_SETUP_ACCOUNT) setup_title = _("Add Account Setup");
+	if (setup_type == SERURO_SETUP_IDENTITY) setup_title = _("Install Identity");
 
 	/* Create ICON. */
     wxIcon setup_icon;
@@ -71,7 +80,7 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
 	this->prev_button_orig = this->m_btnPrev->GetLabelText();
 
     /* Page creation, a welcome page for the initial setup. */
-	if (type == SERURO_SETUP_INITIAL) {
+	if (setup_type == SERURO_SETUP_INITIAL) {
 		this->initial_page  = new InitialPage(this);
         this->account_page  = new AccountPage(this);
 
@@ -81,16 +90,16 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
 	}
 
 	/* Only show if in the initial setup or a server/account setup. */
-	if (type == SERURO_SETUP_SERVER || type == SERURO_SETUP_ACCOUNT) {
+	if (setup_type == SERURO_SETUP_SERVER || setup_type == SERURO_SETUP_ACCOUNT) {
 		this->account_page  = new AccountPage(this);
 		this->initial_page  = this->account_page;
 	}
 
 	/* Downloading an identity is automatic if this is the initial setup. */
-	bool force_identity_download = (type == SERURO_SETUP_INITIAL);
+	bool force_identity_download = (setup_type == SERURO_SETUP_INITIAL);
 	this->identity_page = new IdentityPage(this, force_identity_download);
 
-	if (type != SERURO_SETUP_IDENTITY) {
+	if (setup_type != SERURO_SETUP_IDENTITY) {
 		account_page->SetNext(identity_page);
 		identity_page->SetPrev(account_page);
 	} else {
@@ -102,6 +111,11 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
 	this->applications_page = new ApplicationsPage(this);
 	identity_page->SetNext(applications_page);
 	applications_page->SetPrev(identity_page);
+
+	/* Settings page will always exist. */
+	this->settings_page = new SettingsPage(this);
+	applications_page->SetNext(settings_page);
+	settings_page->SetPrev(applications_page);
 
     this->GetPageAreaSizer()->Add(this->initial_page);
 }

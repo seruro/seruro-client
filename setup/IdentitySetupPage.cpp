@@ -113,7 +113,8 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
 
 	if (! install_authentication && ! install_encipherment) {
 		this->SetIdentityStatus(_("Certificates already installed."));
-		this->wizard->SetButtonText(wxEmptyString, _("Proceed"));
+		this->wizard->SetButtonText(wxEmptyString, _("Next >"));
+		this->wizard->FocusNext();
 		identity_installed = true;
         
         /* Create Identity event. */

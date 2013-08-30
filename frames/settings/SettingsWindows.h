@@ -55,6 +55,33 @@ class GeneralWindow : public SettingsView
 {
 public:
     GeneralWindow(SeruroPanelSettings *window);
+
+	void OnAutoDownload(wxCommandEvent &event);
+	void OnDefaultServer(wxCommandEvent &event);
+
+	void OnSaveEncipherment(wxCommandEvent &event);
+	void OnPollRevocations(wxCommandEvent &event);
+	void OnPollCertstore(wxCommandEvent &event);
+
+	/* State events. */
+	void OnServerStateEvent(SeruroStateEvent &event);
+
+private:
+	bool GetBoolean(wxString key);
+	void SetBoolean(wxString key, bool value);
+	void SetString(wxString key, wxString value);
+
+	void GenerateServersList();
+
+	/* Option controls */
+	wxCheckBox *option_auto_download;
+	wxChoice   *option_default_server;
+
+	wxCheckBox *option_save_encipherment;
+	wxCheckBox *option_poll_revocations;
+	wxCheckBox *option_poll_certstore;
+
+	DECLARE_EVENT_TABLE()
 };
 
 class AccountsWindow : public SettingsView
@@ -104,6 +131,7 @@ private:
 	/* Button components, enable/disable, change label. */
 	wxButton *update_button;
 	wxButton *remove_button;
+	wxButton *add_account_button;
 
 	/* List components (fire events and deselect). */
 	wxListCtrl *servers_list;

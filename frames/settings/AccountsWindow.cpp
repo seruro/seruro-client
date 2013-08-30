@@ -293,6 +293,13 @@ void AccountsWindow::GenerateServersList()
 	wxArrayString server_names;
     
     server_names = wxGetApp().config->GetServerNames();
+
+	/* Don't allow an 'add account' button if there are no servers. */
+	if (server_names.size() == 0) {
+		this->add_account_button->Disable();
+	} else {
+		this->add_account_button->Enable();
+	}
     
     servers_list->DeleteAllItems();
 	for (size_t i = 0; i < server_names.size(); i++) {
@@ -360,10 +367,9 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
 
 	servers_list->InsertColumn(1, _("Server Name"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
 	servers_list->InsertColumn(2, _("Expires"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
-
-    this->GenerateServersList();
 	servers_list->SetColumnWidth(0, 24);
 
+	
 	lists_sizer->Add(servers_list, DIALOGS_SIZER_OPTIONS);
 
 	accounts_list = new wxListCtrl(this, SETTINGS_ACCOUNTS_LIST_ID,
@@ -377,25 +383,23 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
 	accounts_list->InsertColumn(1, _("Address"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
 	accounts_list->InsertColumn(2, _("Server Name"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
 	accounts_list->InsertColumn(3, _("Expires"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
-
-    this->GenerateAccountsList();
 	accounts_list->SetColumnWidth(0, 24);
 
 	lists_sizer->Add(accounts_list, DIALOGS_SIZER_OPTIONS.Proportion(1).Top().Bottom());
 
 	/* A sizer for ACTION buttons. */
 	wxSizer *const actions_sizer = new wxBoxSizer(wxHORIZONTAL);
-	update_button = new wxButton(this, BUTTON_UPDATE, _("Update"));
-	update_button->Disable();
-	remove_button = new wxButton(this, BUTTON_REMOVE, _("Remove"));
-	remove_button->Disable();
+	this->update_button = new wxButton(this, BUTTON_UPDATE, _("Update"));
+	this->update_button->Disable();
+	this->remove_button = new wxButton(this, BUTTON_REMOVE, _("Remove"));
+	this->remove_button->Disable();
 	
     wxButton *add_server_button = new wxButton(this, BUTTON_ADD_SERVER, _("Add Server"));
-	wxButton *add_account_button = new wxButton(this, BUTTON_ADD_ACCOUNT, _("Add Account"));
-	actions_sizer->Add(update_button, DIALOGS_SIZER_OPTIONS);
-	actions_sizer->Add(remove_button, DIALOGS_SIZER_OPTIONS);
+	this->add_account_button = new wxButton(this, BUTTON_ADD_ACCOUNT, _("Add Account"));
+	actions_sizer->Add(this->update_button, DIALOGS_SIZER_OPTIONS);
+	actions_sizer->Add(this->remove_button, DIALOGS_SIZER_OPTIONS);
 	actions_sizer->Add(add_server_button, DIALOGS_SIZER_OPTIONS);
-	actions_sizer->Add(add_account_button, DIALOGS_SIZER_OPTIONS);
+	actions_sizer->Add(this->add_account_button, DIALOGS_SIZER_OPTIONS);
 
 	lists_sizer->Add(actions_sizer, DIALOGS_SIZER_OPTIONS.FixedMinSize().Bottom());
 
@@ -404,6 +408,9 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
 	wxGetApp().Bind(SERURO_STATE_CHANGE, &AccountsWindow::OnAccountStateChange, this, STATE_TYPE_ACCOUNT);
 
 	this->SetSizer(lists_sizer);
+
+    this->GenerateServersList();
+    this->GenerateAccountsList();
 
 	this->AlignLists();
 }
