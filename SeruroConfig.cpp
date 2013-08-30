@@ -253,6 +253,29 @@ void SeruroConfig::LoadConfig()
     this->config_valid = true;
 }
 
+bool SeruroConfig::SetOption(wxString option, wxString value, bool save_config)
+{
+    if (! this->HasConfig()) {
+        return false;
+    }
+    
+    config["options"][option] = value;
+    if (save_config) {
+        this->WriteConfig();
+    }
+    
+    return true;
+}
+
+wxString SeruroConfig::GetOption(wxString option)
+{
+    if (! this->HasConfig() || ! config.HasMember("options") || ! config["options"].HasMember(option)) {
+        return wxEmptyString;
+    }
+    
+    return config["options"][option].AsString();
+}
+
 /*****************************************************************************************/
 /************** TOKEN MANIPULATOR/ACCESSORS **********************************************/
 /*****************************************************************************************/

@@ -37,6 +37,9 @@ public:
 	bool WriteConfig();
     bool HasConfig(wxArrayString layers = wxArrayString());
     wxJSONValue GetConfig() { return this->config; }
+    
+    bool SetOption(wxString option, wxString value, bool save_config = true);
+    wxString GetOption(wxString option);
 
 	/***********************************************************/
 	/************** TOKEN MANIPULATOR/ACCESSORS ****************/

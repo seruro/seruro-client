@@ -150,8 +150,14 @@ public:
     SettingsPage (SeruroSetup *parent);
     void DoFocus();
     
+    /* Responsive events. */
+    void OnCertsOption(wxCommandEvent &event);
+    void OnDefaultOption(wxCommandEvent &event);
+    
 private:
-    wxCheckBox *certs_option;   
+    wxCheckBox *certs_option;
+    wxCheckBox *default_option;
+    Text *server_text;
     
 	DECLARE_EVENT_TABLE()
 };
