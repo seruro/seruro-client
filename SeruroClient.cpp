@@ -19,7 +19,7 @@
 #include "frames/dialogs/ErrorDialog.h"
 
 #include "frames/UIDefs.h"
-#include "frames/SeruroFrameMain.h"
+#include "frames/SeruroMain.h"
 
 #include "frames/dialogs/AlertDialog.h"
 

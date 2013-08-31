@@ -1,6 +1,6 @@
 
 #include "SettingsWindows.h"
-#include "../SeruroPanelSettings.h"
+#include "../SeruroSettings.h"
 #include "../UIDefs.h"
 
 ExtensionsWindow::ExtensionsWindow(SeruroPanelSettings *window) : SettingsView(window)

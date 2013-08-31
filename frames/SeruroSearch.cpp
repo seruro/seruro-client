@@ -1,5 +1,5 @@
 ﻿
-#include "SeruroPanelSearch.h"
+#include "SeruroSearch.h"
 #include "../SeruroClient.h"
 
 /* Need GetServerChoice */

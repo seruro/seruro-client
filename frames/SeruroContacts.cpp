@@ -1,5 +1,5 @@
 
-#include "SeruroPanelContacts.h"
+#include "SeruroContacts.h"
 #include "UIDefs.h"
 
 #include "../SeruroClient.h"

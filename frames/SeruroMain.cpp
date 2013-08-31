@@ -2,15 +2,15 @@
 #include <wx/icon.h>
 #include <wx/artprov.h>
 
-#include "SeruroFrameMain.h"
+#include "SeruroMain.h"
 
 #include "../setup/SeruroSetup.h"
 #include "../SeruroClient.h"
 #include "UIDefs.h"
 
-#include "SeruroPanelSettings.h"
-#include "SeruroPanelSearch.h"
-#include "SeruroPanelContacts.h"
+#include "SeruroSettings.h"
+#include "SeruroSearch.h"
+#include "SeruroContacts.h"
 
 #if SERURO_ENABLE_CRYPT_PANELS
 #include "SeruroPanelDecrypt.h"

@@ -1,5 +1,5 @@
 
-#include "SeruroPanelSettings.h"
+#include "SeruroSettings.h"
 #include "../logging/SeruroLogger.h"
 
 #include "UIDefs.h"

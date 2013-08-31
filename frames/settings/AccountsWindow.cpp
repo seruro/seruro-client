@@ -7,7 +7,7 @@
 #include "../../SeruroClient.h"
 
 #include "SettingsWindows.h"
-#include "../SeruroPanelSettings.h"
+#include "../SeruroSettings.h"
 #include "../UIDefs.h"
 
 #include <wx/log.h>

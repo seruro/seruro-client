@@ -1,6 +1,6 @@
 
 #include "CheckedListCtrl.h"
-#include "../SeruroPanelSearch.h"
+#include "../SeruroSearch.h"
 #include "../UIDefs.h"
 
 #include "../../SeruroClient.h"

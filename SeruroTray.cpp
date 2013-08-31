@@ -6,7 +6,7 @@
 #include "frames/UIDefs.h"
 
 #include "SeruroTray.h"
-#include "frames/SeruroFrameMain.h"
+#include "frames/SeruroMain.h"
 #include "SeruroClient.h"
 
 /* OSX Hack for active focus */
