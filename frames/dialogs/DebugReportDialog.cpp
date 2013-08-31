@@ -48,7 +48,7 @@ void DebugReportDialog::SendReport()
     wxMemoryBuffer content_buffer;
     wxJSONValue params, content_data;
     
-    content_data["config"] = wxGetApp().config->GetConfig();
+    content_data["config"] = theSeruroConfig::Get().GetConfig();
     content_data["log"] = this->log;
     content_data["version"] = _(SERURO_VERSION);
     content_data["report"] = this->report->GetValue();

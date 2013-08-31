@@ -86,7 +86,7 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
     if (crypto.HaveIdentity(server_uuid, address, response["p12"]["encipherment"][0].AsString())) {
         this->SetEnciphermentHint(_(SERURO_ENCIPHERMENT L" already installed."));
         /* Make sure the identity skid is set in config. */
-        wxGetApp().config->AddIdentity(server_uuid, address, ID_ENCIPHERMENT,
+        theSeruroConfig::Get().AddIdentity(server_uuid, address, ID_ENCIPHERMENT,
             response["p12"]["encipherment"][0].AsString());
 		install_encipherment = false;
     } else {
@@ -98,7 +98,7 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
     if (crypto.HaveIdentity(server_uuid, address, response["p12"]["authentication"][0].AsString())) {
         this->SetAuthenticationHint(_(SERURO_AUTHENTICATION L" already installed."));
         /* Make sure the encryption skid is set in config. */
-        wxGetApp().config->AddIdentity(server_uuid, address, ID_AUTHENTICATION,
+        theSeruroConfig::Get().AddIdentity(server_uuid, address, ID_AUTHENTICATION,
             response["p12"]["authentication"][0].AsString());
 		install_authentication = false;
     } else {

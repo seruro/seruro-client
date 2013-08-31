@@ -124,6 +124,7 @@ wxMenu* SeruroTray::CreatePopupMenu()
 	wxMenu *popup = new wxMenu;
 
     popup->Append(SERURO_PANEL_SEARCH_ID, wxT("&Search"));
+    
 #if SERURO_ENABLE_CRYPT_PANELS
 	popup->Append(SERURO_PANEL_ENCRYPT_ID, wxT("&Encrypt"));
 	popup->Append(SERURO_PANEL_DECRYPT_ID, wxT("&Decrypt"));

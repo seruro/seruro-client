@@ -2,6 +2,9 @@
 #include "SeruroClient.h"
 #include "SeruroConfig.h"
 
+/* Used for option edits. */
+#include "api/SeruroStateEvents.h"
+
 #include "wxJSON/wx/jsonreader.h"
 #include "wxJSON/wx/jsonwriter.h"
 
@@ -264,6 +267,12 @@ bool SeruroConfig::SetOption(wxString option, wxString value, bool save_config)
         this->WriteConfig();
     }
     
+    /* Create an option change event. */
+    SeruroStateEvent event(STATE_TYPE_OPTION);
+    event.SetValue("option_name", option);
+    event.SetValue("option_value", value);
+    wxGetApp().AddEvent(event);
+    
     return true;
 }
 
@@ -487,6 +496,60 @@ bool SeruroConfig::AddAddress(const wxString &server_uuid, const wxString &addre
 	return this->WriteConfig();
 }
 
+bool SeruroConfig::AddContact(wxString server_uuid, wxString address, wxString first_name, wxString last_name)
+{
+    wxArrayString layers;
+    
+    layers.Add("servers");
+    layers.Add(server_uuid);
+    
+    if (! HasConfig(layers)) {
+        return false;
+    }
+    
+    config["servers"][server_uuid]["contacts"][address] = wxJSONValue(wxJSONTYPE_OBJECT);
+    config["servers"][server_uuid]["contacts"][address]["name"] = wxJSONValue(wxJSONTYPE_OBJECT);
+    config["servers"][server_uuid]["contacts"][address]["name"].Append(first_name);
+    config["servers"][server_uuid]["contacts"][address]["name"].Append(last_name);
+    
+    return this->WriteConfig();
+}
+
+bool SeruroConfig::RemoveContact(wxString server_uuid, wxString address)
+{
+    wxArrayString layers;
+    
+    layers.Add("servers");
+    layers.Add(server_uuid);
+    layers.Add("contacts");
+    layers.Add(address);
+    
+    if (! HasConfig(layers)) {
+        return false;
+    }
+    
+    config["servers"][server_uuid]["contacts"].Remove(address);
+    return this->WriteConfig();
+}
+
+wxJSONValue SeruroConfig::GetContact(wxString server_uuid, wxString address)
+{
+    wxArrayString layers;
+    wxJSONValue contact;
+    
+    layers.Add("servers");
+    layers.Add(server_uuid);
+    layers.Add("contacts");
+    layers.Add(address);
+    
+    if (! HasConfig(layers)) {
+        return contact;
+    }
+    
+    contact = config["servers"][server_uuid]["contacts"][address];
+    return contact;
+}
+
 /*****************************************************************************************/
 /************** SERVER/ACCOUNT ACCESSORS *************************************************/
 /*****************************************************************************************/
@@ -575,9 +638,9 @@ bool SeruroConfig::AddressExists(wxString address)
     wxArrayString account_list;
     
     /* Is a server configured with the given address. */
-    server_list = wxGetApp().config->GetServerList();
+    server_list = theSeruroConfig::Get().GetServerList();
     for (size_t i = 0; i < server_list.size(); i++) {
-        account_list = wxGetApp().config->GetAddressList(server_list[i]);
+        account_list = theSeruroConfig::Get().GetAddressList(server_list[i]);
         for (size_t j = 0; j < account_list.size(); j++) {
             if (account_list[j] == address) return true;
         }
@@ -715,8 +778,6 @@ wxArrayString SeruroConfig::GetMemberArray(const wxString &member)
 /************** CERTIFICATE / FINGERPRINTING *********************************************/
 /*****************************************************************************************/
 
-/* Certificate tracking methods.
- */
 bool SeruroConfig::AddFingerprint(wxString location, wxString server_uuid,
 	wxString fingerprint, wxString address, identity_type_t cert_type)
 {
@@ -759,8 +820,7 @@ finished:
 	return WriteConfig();
 }
 
-bool SeruroConfig::RemoveFingerprints(wxString location, wxString server_uuid,
-    wxString address, identity_type_t cert_type)
+bool SeruroConfig::RemoveFingerprints(wxString location, wxString server_uuid, wxString address, identity_type_t cert_type)
 {
 	if (! HasConfig() || ! config["servers"].HasMember(server_uuid)) return false;
 
@@ -809,27 +869,41 @@ bool SeruroConfig::RemoveIdentity(wxString server_uuid, wxString address, identi
 	return RemoveFingerprints(location, server_uuid, address, cert_type);
 }
 
-bool SeruroConfig::AddCertificate(wxString server_uuid, wxString address, wxString fingerprint)
+bool SeruroConfig::AddCertificate(wxString server_uuid, wxString address, identity_type_t cert_type, wxString fingerprint)
 {
-	wxString location = _("certificates");
-	return AddFingerprint(location, server_uuid, fingerprint, address);
+	wxString location = _("contacts");
+	return AddFingerprint(location, server_uuid, fingerprint, address, cert_type);
 }
 
-bool SeruroConfig::RemoveCertificates(wxString server_uuid, wxString address, bool write_config)
+bool SeruroConfig::RemoveCertificate(wxString server_uuid, wxString address, identity_type_t cert_type, bool write_config)
 {
-	wxString location = _("certificates");
-	return RemoveFingerprints(location, server_uuid, address);
+	wxString location = _("contacts");
+	return RemoveFingerprints(location, server_uuid, address, cert_type);
 }
 
 bool SeruroConfig::HaveCertificates(wxString server_uuid, wxString address, wxString fingerprint)
 {
-	if (HasConfig() && config.HasMember("servers") &&
-		config["servers"].HasMember(server_uuid) &&
-		config["servers"][server_uuid].HasMember("certificates") &&
-		config["servers"][server_uuid]["certificates"].HasMember(address)) {
-		return (config["servers"][server_uuid]["certificates"][address].Size() > 0);
-	}
-    /* Todo: add check for specific fingerprint. */
+    wxJSONValue contact;
+    wxArrayString layers;
+    
+    layers.Add("servers");
+    layers.Add(server_uuid);
+    layers.Add("contacts");
+    layers.Add(address);
+    
+	if (! HasConfig(layers)) {
+        return false;
+    }
+    
+    contact = config["servers"][server_uuid]["contacts"][address];
+    
+    if (fingerprint == wxEmptyString && contact.HasMember("authentication") && contact.HasMember("encipherment")) {
+        return true;
+    }
+    
+    if (fingerprint.compare(contact["authentication"].AsString()) == 0) return true;
+    if (fingerprint.compare(contact["encipherment"].AsString()) == 0) return true;
+    
 	return false;
 }
 
@@ -883,16 +957,16 @@ wxArrayString SeruroConfig::GetIdentityList(wxString server_uuid)
     return config["servers"][server_uuid]["identities"].GetMemberNames();
 }
 
-wxArrayString SeruroConfig::GetCertificatesList(wxString server_uuid)
+wxArrayString SeruroConfig::GetContactsList(wxString server_uuid)
 {
     wxArrayString certificates;
     
     if (! HasConfig() || ! config["servers"].HasMember(server_uuid) ||
-        ! config["servers"][server_uuid].HasMember("certificates")) {
+        ! config["servers"][server_uuid].HasMember("contacts")) {
         return certificates;
     }
     
-    return config["servers"][server_uuid]["certificates"].GetMemberNames();
+    return config["servers"][server_uuid]["contacts"].GetMemberNames();
 }
 
 wxArrayString SeruroConfig::GetCertificates(wxString server_uuid, wxString address)
@@ -904,10 +978,12 @@ wxArrayString SeruroConfig::GetCertificates(wxString server_uuid, wxString addre
 		return certificates;
 	}
 
-	for (int i = config["servers"][server_uuid]["certificates"][address].Size()-1; i >= 0; i--) {
-		certificates.Add(config["servers"][server_uuid]["certificates"][address][i].AsString());
-	}
-	//certificates = config["servers"][server_uuid]["certificates"][address].AddComment
+	//for (int i = config["servers"][server_uuid]["certificates"][address].Size()-1; i >= 0; i--) {
+	//	certificates.Add(config["servers"][server_uuid]["certificates"][address][i].AsString());
+	//}
+    certificates.Add(config["servers"][server_uuid]["contacts"][address]["authentication"].AsString());
+    certificates.Add(config["servers"][server_uuid]["contacts"][address]["encipherment"].AsString());
+    
 	return certificates;
 }
 

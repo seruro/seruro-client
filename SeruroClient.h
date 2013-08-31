@@ -86,8 +86,8 @@ public:
 	void SetSetup(wxTopLevelWindow *wizard);
 	void RemoveSetup();
 
-public:
-	SeruroConfig *config;
+//public:
+//	SeruroConfig *config;
 
 private:
 	/* Shows a message and prompts to send an error report. */

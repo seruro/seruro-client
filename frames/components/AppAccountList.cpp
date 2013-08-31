@@ -91,7 +91,7 @@ void AppAccountList::SetAccountStatus(long index, const wxString &app, const wxS
 	}
 
     if (identity_status == APP_ASSIGNED) {
-        accounts_list->SetItem(index, 3, wxGetApp().config->GetServerName(server_uuid));
+        accounts_list->SetItem(index, 3, theSeruroConfig::Get().GetServerName(server_uuid));
     } else if (identity_status == APP_UNASSIGNED) {
         accounts_list->SetItem(index, 3, APP_UNASSIGNED_TEXT);
     } else if (identity_status == APP_PENDING_RESTART) {
@@ -125,9 +125,9 @@ bool AppAccountList::Assign()
     }
     
 	/* Check each servers' accounts, if a matching account is found, add the server to server_accounts. */
-	servers = wxGetApp().config->GetServerList();
+	servers = theSeruroConfig::Get().GetServerList();
 	for (size_t i = 0; i < servers.size(); i++) {
-		accounts = wxGetApp().config->GetAddressList(servers[i]);
+		accounts = theSeruroConfig::Get().GetAddressList(servers[i]);
 		for (size_t j = 0; j < accounts.size(); j++) {
 			if (accounts[j] == this->account) {
 				server_accounts.Add(servers[i]);
@@ -256,7 +256,7 @@ void AppAccountList::AddAccount(wxString app, wxString account)
     this->accounts_list->SetItem(item_index, 2, app);
     
     /* Check if account exists, and if not, "disable the row". */
-    if (! wxGetApp().config->AddressExists(account)) {
+    if (! theSeruroConfig::Get().AddressExists(account)) {
         accounts_list->SetItemTextColour(item_index, wxColour(DISABLED_TEXT_COLOR));
     }
     
@@ -296,7 +296,7 @@ bool AppAccountList::SelectAccount(long index)
     }
     
     /* This item will be shown as disabled. */
-    if (! wxGetApp().config->AddressExists(item.GetText())) {
+    if (! theSeruroConfig::Get().AddressExists(item.GetText())) {
         accounts_list->SetItemState(index, 0, wxLIST_STATE_SELECTED);
         return false;
     }

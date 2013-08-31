@@ -32,6 +32,7 @@ enum state_types_t
     STATE_TYPE_IDENTITY,    /* A Seruro account identity changed. */
     
     STATE_TYPE_APPLICATION, /* An Email application changed. */
+    STATE_TYPE_OPTION,
 };
 
 class SeruroStateEvent : public wxCommandEvent

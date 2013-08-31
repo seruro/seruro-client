@@ -92,6 +92,11 @@ public:
 
 	/* Reports the name (hostname:port) for the server. */
 	wxString GetServerString(wxString server_uuid);
+    
+    bool AddContact(wxString server_uuid, wxString address,
+        wxString first_name, wxString last_name);
+    bool RemoveContact(wxString server_uuid, wxString address);
+    wxJSONValue GetContact(wxString server_uuid, wxString address);
 
 	/***********************************************************/
 	/************** CERTIFICATE / FINGERPRINTING ***************/
@@ -111,9 +116,9 @@ public:
     
 	/* Each address under each server should be a list. */
 	bool AddCertificate(wxString server_uuid, wxString address,
-		wxString fingerprint);
-	bool RemoveCertificates(wxString server_uuid, wxString address,
-		bool write_config = false);
+		identity_type_t, wxString fingerprint);
+	bool RemoveCertificate(wxString server_uuid, wxString address,
+		identity_type_t, bool write_config = false);
 
 	/* May search the OS certificate store for the fingerprint. */
 	bool HaveCertificates(wxString server_uuid, wxString address,
@@ -127,7 +132,7 @@ public:
 
 	/* Fingerprint/thumbprint/hash retreival. */
     wxArrayString GetIdentityList(wxString server_uuid);
-    wxArrayString GetCertificatesList(wxString server_uuid);
+    wxArrayString GetContactsList(wxString server_uuid);
     
 	wxArrayString GetCertificates(wxString server_uuid, wxString address);
 	wxArrayString GetIdentity(wxString server_uuid, wxString address);

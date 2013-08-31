@@ -26,7 +26,7 @@ AuthDialog::AuthDialog(const wxString &server, const wxString &address, int sele
 	/* Create list of email addresses. */
 	wxArrayString address_list;
 	if (address.compare(wxEmptyString) == 0) {
-		address_list = wxGetApp().config->GetAddressList(server);
+		address_list = theSeruroConfig::Get().GetAddressList(server);
 		if (address_list.size() == 0) {
 			/* There is something very wrong here! */
 		}

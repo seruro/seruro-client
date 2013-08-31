@@ -148,7 +148,7 @@ wxJSONValue SeruroSetup::GetServerInfo()
         current_server_uuid = this->server_uuid;
     }
     
-    return wxGetApp().config->GetServer(current_server_uuid);
+    return theSeruroConfig::Get().GetServer(current_server_uuid);
 }
 
 wxString SeruroSetup::GetAccount()

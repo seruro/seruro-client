@@ -20,7 +20,7 @@ RemoveDialog::RemoveDialog(const wxString &server_uuid, const wxString &address)
     wxSizer *address_box;
     
 	/* To avoid many-string compares, initially set if we are removing a server. */
-    server_name = wxGetApp().config->GetServerName(server_uuid);
+    server_name = theSeruroConfig::Get().GetServerName(server_uuid);
 	remove_server = (address.compare(wxEmptyString) == 0);
     
 	wxSizer *const vert_sizer = new wxBoxSizer(wxVERTICAL);
@@ -44,7 +44,7 @@ RemoveDialog::RemoveDialog(const wxString &server_uuid, const wxString &address)
     
     /* Either allow all identities to be removed, or only the explicitly defined. */
 	if (remove_server) {
-		addresses = wxGetApp().config->GetIdentityList(server_uuid);
+		addresses = theSeruroConfig::Get().GetIdentityList(server_uuid);
 	} else {
 		addresses.Add(address);
 	}
@@ -82,7 +82,7 @@ void RemoveDialog::RemoveServer()
     wxCheckBox *identity;
     SeruroServerAPI *api;
 
-    accounts = wxGetApp().config->GetIdentityList(this->server_uuid);
+    accounts = theSeruroConfig::Get().GetIdentityList(this->server_uuid);
     if (accounts.size() != this->identity_count) {
         /* If the number of identities has changed, then at least we KNOW something is wrong. */
         wxLogMessage(_("RemoveDialog> (DoRemove) the number of identities has changed."));
@@ -109,7 +109,7 @@ void RemoveDialog::RemoveServer()
     
     if (this->remove_certs->IsChecked()) {
         /* Remove contact certificates if the user requested. */
-        certificates = wxGetApp().config->GetCertificatesList(this->server_uuid);
+        certificates = theSeruroConfig::Get().GetContactsList(this->server_uuid);
         for (size_t i = 0; i < certificates.size(); i++) {
             wxLogMessage(_("RemoveDialog> (DoRemove) removing cers for (%s) (%s)."), server_uuid, certificates[i]);
             api->UninstallCertificates(this->server_uuid, certificates[i]);
@@ -118,7 +118,7 @@ void RemoveDialog::RemoveServer()
     delete api;
     
     /* Remove from the config is the last action performed (however, the event occurs aftwared). */
-    wxGetApp().config->RemoveServer(this->server_uuid);
+    theSeruroConfig::Get().RemoveServer(this->server_uuid);
     
     SeruroStateEvent event(STATE_TYPE_SERVER, STATE_ACTION_REMOVE);
     event.SetServerUUID(this->server_uuid);
@@ -141,7 +141,7 @@ void RemoveDialog::RemoveAddress()
     
     delete api;
     
-    wxGetApp().config->RemoveAddress(this->server_uuid, this->address);
+    theSeruroConfig::Get().RemoveAddress(this->server_uuid, this->address);
     
     SeruroStateEvent event(STATE_TYPE_ACCOUNT, STATE_ACTION_REMOVE);
     event.SetServerUUID(this->server_uuid);

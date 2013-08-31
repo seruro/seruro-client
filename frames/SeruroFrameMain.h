@@ -8,6 +8,8 @@
 #include "SeruroFrame.h"
 #include "../SeruroTray.h"
 
+#include "../api/SeruroStateEvents.h"
+
 /* From SeruroTray */
 class SeruroTray;
 
@@ -36,11 +38,15 @@ public:
 	void OnChange(wxBookCtrlEvent &event);
 
 	void ChangePanel(int panel_id);
+    
+    /* Wait for "auto_download" option changes. */
+    void OnOptionChange(SeruroStateEvent &event);
 
 protected:
 	SeruroTray *tray;
 	wxNotebook *book;
     
+    wxPanel *contacts_panel;
     wxPanel *search_panel;
     wxPanel *settings_panel;
 #if SERURO_ENABLE_CRYPT_PANELS

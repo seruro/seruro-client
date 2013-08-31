@@ -100,11 +100,11 @@ void AccountsWindow::OnServerSelected(wxListEvent &event)
     DeselectAccounts();
     
     /* Server name is now available. */
-    //this->server_uuid = wxGetApp().config->GetServerUUID(item.GetText());
+    //this->server_uuid = theSeruroConfig::Get().GetServerUUID(item.GetText());
     this->server_uuid = theSeruroConfig::Get().GetServerUUID(item.GetText());
     this->account_selected = false;
     
-    if (! wxGetApp().config->HaveCA(server_uuid)) {
+    if (! theSeruroConfig::Get().HaveCA(server_uuid)) {
         SetActionLabel(_("Install"));
     } else {
         SetActionLabel(_("Update"));
@@ -136,9 +136,9 @@ void AccountsWindow::OnAccountSelected(wxListEvent &event)
     /* Also need the server name for this account. */
     item.SetColumn(ACCOUNTS_LIST_SERVER_COLUMN);
     accounts_list->GetItem(item);
-    this->server_uuid = wxGetApp().config->GetServerUUID(item.GetText());
+    this->server_uuid = theSeruroConfig::Get().GetServerUUID(item.GetText());
     
-    if (! wxGetApp().config->HaveIdentity(server_uuid, address)) {
+    if (! theSeruroConfig::Get().HaveIdentity(server_uuid, address)) {
         SetActionLabel(_("Install"));
     } else {
         SetActionLabel(_("Update"));
@@ -207,7 +207,7 @@ void AccountsWindow::OnUpdate(wxCommandEvent &event)
     wxJSONValue params;
     SeruroServerAPI *api = new SeruroServerAPI(this);
     
-    params["server"] = wxGetApp().config->GetServer(this->server_uuid);
+    params["server"] = theSeruroConfig::Get().GetServer(this->server_uuid);
     
     /* If updating/installing the server certificate. */
     if (! this->account_selected) {
@@ -249,7 +249,7 @@ void AccountsWindow::OnRemove(wxCommandEvent &event)
     
     /* UI is trying to remove a selected account. */
     if (SERURO_MUST_HAVE_ACCOUNT &&
-        wxGetApp().config->GetAddressList(server_uuid).size() == 1) {
+        theSeruroConfig::Get().GetAddressList(server_uuid).size() == 1) {
         /* Don't allow this account to be removed. */
         wxLogMessage(_("AddressPanel> (OnRemove) Cannot remove account for server (%s)."),
                      server_uuid);
@@ -292,7 +292,7 @@ void AccountsWindow::GenerateServersList()
     long item_index;
 	wxArrayString server_names;
     
-    server_names = wxGetApp().config->GetServerNames();
+    server_names = theSeruroConfig::Get().GetServerNames();
 
 	/* Don't allow an 'add account' button if there are no servers. */
 	if (server_names.size() == 0) {
@@ -305,7 +305,7 @@ void AccountsWindow::GenerateServersList()
 	for (size_t i = 0; i < server_names.size(); i++) {
 		/* Check if the server certificate is installed. */
 		item_index = servers_list->InsertItem(0, _(""),
-            (crypto.HaveCA(wxGetApp().config->GetServerUUID(server_names[i]))) ? 1 : 0);
+            (crypto.HaveCA(theSeruroConfig::Get().GetServerUUID(server_names[i]))) ? 1 : 0);
 		servers_list->SetItem(item_index, 1, _(server_names[i]));
 		servers_list->SetItem(item_index, 2, _("0"));
 	}
@@ -318,11 +318,11 @@ void AccountsWindow::GenerateAccountsList()
 	wxArrayString accounts;
     wxArrayString server_uuids;
     
-    server_uuids = wxGetApp().config->GetServerList();
+    server_uuids = theSeruroConfig::Get().GetServerList();
     
     accounts_list->DeleteAllItems();
 	for (size_t i = 0; i < server_uuids.size(); i++) {
-		accounts = wxGetApp().config->GetAddressList(server_uuids[i]);
+		accounts = theSeruroConfig::Get().GetAddressList(server_uuids[i]);
         
 		for (size_t j = 0; j < accounts.size(); j++) {
 			//cert_installed = crypto_helper.HaveIdentity(servers[i],
@@ -330,7 +330,7 @@ void AccountsWindow::GenerateAccountsList()
                 /* Display a key if the identity (cert/key) are installed. */
                 (crypto.HaveIdentity(server_uuids[i], accounts[j])) ? 2 : 0);
 			accounts_list->SetItem(item_index, 1, accounts[j]);
-			accounts_list->SetItem(item_index, 2, wxGetApp().config->GetServerName(server_uuids[i]));
+			accounts_list->SetItem(item_index, 2, theSeruroConfig::Get().GetServerName(server_uuids[i]));
 			accounts_list->SetItem(item_index, 3, _("Never"));
 		}
 	}

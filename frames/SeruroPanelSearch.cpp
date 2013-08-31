@@ -51,7 +51,7 @@ void SeruroPanelSearch::DoFocus()
 	wxArrayString server_names;
 	wxLogDebug(_("SeruroPanelSearch> (DoFocus) focusing the search."));
     
-    server_names = wxGetApp().config->GetServerNames();
+    server_names = theSeruroConfig::Get().GetServerNames();
 	/* If the config has changed, regenerate the list of servers. */
 	if (server_names.size() != servers_control->GetCount()) {
 		this->servers_control->Clear();
@@ -80,7 +80,8 @@ void SeruroPanelSearch::Install(const wxString& server_name, const wxString& add
     
     wxLogMessage(wxT("SeruroPanelSearch:Install> requesting certificate for (name= %s) (%s)."), server_name, address);
     
-    server_info = api->GetServer(wxGetApp().config->GetServerUUID(server_name));
+    server_info = api->GetServer(theSeruroConfig::Get().GetServerUUID(server_name));
+
     params["server"] = server_info;
     params["request_address"] = address;
     
@@ -107,7 +108,7 @@ void SeruroPanelSearch::OnInstallResult(SeruroRequestEvent &event)
     }
     
     /* Check the corresponding item(s) in the list control. */
-    server_name = wxGetApp().config->GetServerName(response["server_uuid"].AsString());
+    server_name = theSeruroConfig::Get().GetServerName(response["server_uuid"].AsString());
     if (api->InstallCertificate(response)) {
         list_control->SetCheck(server_name, response["address"].AsString(), true);
     }
@@ -118,7 +119,7 @@ void SeruroPanelSearch::Uninstall(const wxString& server_name, const wxString& a
 {
     wxString server_uuid;
     
-    server_uuid = wxGetApp().config->GetServerUUID(server_name);
+    server_uuid = theSeruroConfig::Get().GetServerUUID(server_name);
     wxLogMessage(_("SeruroPanelSearch> (Uninstall) trying to uninstall (name= %s) (%s)."), server_name, address);
     if (api->UninstallCertificates(server_uuid, address)) {
         list_control->SetCheck(server_name, address, false);
@@ -157,7 +158,7 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	check_box_column.SetId(0);
 	check_box_column.SetImage(mail_icon_index);
 	list_control->SetCheckboxColumn(check_box_column);
-	list_control->SetColumnWidth(0, 28);
+	list_control->SetColumnWidth(0, 25);
 	
 	/* Create all of the column for the search results response. 
 	 * This must start at the integer 1, where 0 is the place holder for the checkmark. 
@@ -201,11 +202,10 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	this->SetSizer(components_sizer);
 
 	/* Testing: setting even column widths. */
-	this->list_control->SetColumnWidth(0, 25);
-	this->list_control->SetColumnWidth(1, SEARCH_PANEL_COLUMN_WIDTH/4);
-	this->list_control->SetColumnWidth(2, SEARCH_PANEL_COLUMN_WIDTH/4);
-	this->list_control->SetColumnWidth(3, SEARCH_PANEL_COLUMN_WIDTH/4);
-    this->list_control->SetColumnWidth(4, SEARCH_PANEL_COLUMN_WIDTH/4);
+	this->list_control->SetColumnWidth(1, SEARCH_PANEL_COLUMN_WIDTH/3);
+	this->list_control->SetColumnWidth(2, SEARCH_PANEL_COLUMN_WIDTH/4.55);
+	this->list_control->SetColumnWidth(3, SEARCH_PANEL_COLUMN_WIDTH/4.55);
+    this->list_control->SetColumnWidth(4, SEARCH_PANEL_COLUMN_WIDTH/4.55);
 
     /* Debug for now, show a "nothing message" in the list. */
 	//this->AddResult(wxString("No Email Address"), wxString("No First Name"), wxString("No Last Name"));
@@ -231,7 +231,7 @@ void SeruroPanelSearch::AddResult(const wxString &address, const wxString &first
     
     /* Get server info from selected server. */
     server_name = this->GetSelectedServer();
-    server_uuid = wxGetApp().config->GetServerUUID(server_name);
+    server_uuid = theSeruroConfig::Get().GetServerUUID(server_name);
     
     /* When the certificate is requested, it must know what server manages the identity. */
 	item_index = this->list_control->InsertItem(0, wxT(" "));
@@ -241,8 +241,8 @@ void SeruroPanelSearch::AddResult(const wxString &address, const wxString &first
     }
     
     /* Determine if certificate is installed. */
-    bool have_certificate = wxGetApp().config->HaveCertificates(server_uuid, address);
-    bool have_identity = wxGetApp().config->HaveIdentity(server_uuid, address);
+    bool have_certificate = theSeruroConfig::Get().HaveCertificates(server_uuid, address);
+    bool have_identity = theSeruroConfig::Get().HaveIdentity(server_uuid, address);
     list_control->SetCheck(item_index, have_certificate);
 	if (have_identity) {
         list_control->DisableRow(item_index);
@@ -283,7 +283,7 @@ void SeruroPanelSearch::DoSearch()
 
 	if (! this->all_servers_control->IsChecked()) {
 		server_name = this->GetSelectedServer();
-		server_info = this->api->GetServer(wxGetApp().config->GetServerUUID(server_name));
+		server_info = this->api->GetServer(theSeruroConfig::Get().GetServerUUID(server_name));
 		/* Sanity check for no servers, but an interactive search input. */
 		//if (! server.HasMember("host")) {
 		//	wxLogMessage(_("SeruroPanelServer> (DoSearch) Invalid server selected."));
@@ -296,7 +296,7 @@ void SeruroPanelSearch::DoSearch()
 		api->CreateRequest(SERURO_API_SEARCH, params, SERURO_API_CALLBACK_SEARCH)->Run();
 	} else {
 		/* Send the request to all servers. */
-		wxArrayString servers_list = wxGetApp().config->GetServerList();
+		wxArrayString servers_list = theSeruroConfig::Get().GetServerList();
 		this->searched_server_name = wxEmptyString;
 		for (size_t i = 0; i < servers_list.size(); i++) {
 			server_info = this->api->GetServer(servers_list[i]);

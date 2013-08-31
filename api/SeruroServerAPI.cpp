@@ -51,7 +51,7 @@ bool DecodeBase64(const wxString &encoded, wxMemoryBuffer *decode)
 wxJSONValue SeruroServerAPI::GetServer(const wxString &server_uuid)
 {
 	//wxJSONValue server_info;
-	return wxGetApp().config->GetServer(server_uuid);
+	return theSeruroConfig::Get().GetServer(server_uuid);
 	//return server_info;
 }
 
@@ -120,11 +120,11 @@ wxJSONValue SeruroServerAPI::GetAuth(wxJSONValue params)
         /* Pin this request to an address. If the auth fails, the UI control will not allow the user to auth with another address. */
         auth["address"] = params["address"];
         if (params["server"].HasMember("uuid")) {
-            auth["token"] = wxGetApp().config->GetToken(params["server"]["uuid"].AsString(), params["address"].AsString());
+            auth["token"] = theSeruroConfig::Get().GetToken(params["server"]["uuid"].AsString(), params["address"].AsString());
         }
 	} else {
         /* Assume a uuid is present. */
-        auth["token"] = wxGetApp().config->GetActiveToken(params["server"]["uuid"].AsString());
+        auth["token"] = theSeruroConfig::Get().GetActiveToken(params["server"]["uuid"].AsString());
     }
 
     if (params.HasMember("password")) {
@@ -226,7 +226,7 @@ bool SeruroServerAPI::InstallCA(wxJSONValue response)
 
 	/* Set the CA fingerprint. */
     if (result) {
-        wxGetApp().config->SetCAFingerprint(server_uuid, ca_fingerprint);
+        theSeruroConfig::Get().SetCAFingerprint(server_uuid, ca_fingerprint);
     }
 
     wxLogMessage(_("SeruroServerAPI> (InstallCA) CA for (%s) status: %s"),
@@ -259,8 +259,9 @@ bool SeruroServerAPI::InstallCertificate(wxJSONValue response)
 		result = (result && crypto.InstallCertificate(cert_decoded, cert_fingerprint));
         if (! result) continue;
 
-		/* Track this certificate. */
-		wxGetApp().config->AddCertificate(server_uuid, response["address"].AsString(), cert_fingerprint);
+		/* Track this certificate. Todo: pull out of a loop. */
+		theSeruroConfig::Get().AddCertificate(server_uuid, response["address"].AsString(),
+            (i == 0) ? ID_AUTHENTICATION : ID_ENCIPHERMENT, cert_fingerprint);
 	}
     
     wxLogMessage(_("SeruroServerAPI> (InstallCertificate) Certificate for (%s, %s) status: %s"),
@@ -291,9 +292,9 @@ bool SeruroServerAPI::InstallP12(wxString server_uuid, wxString address, identit
         wxLogMessage(_("SeruroServerAPI> (InstallP12) installed (%d) p12."), cert_type);
     }
     
-    existing_fingerprint = wxGetApp().config->GetIdentity(server_uuid, address, cert_type);
-    wxGetApp().config->RemoveIdentity(server_uuid, address, cert_type, false);
-    wxGetApp().config->AddIdentity(server_uuid, address, cert_type, fingerprints[0]);
+    existing_fingerprint = theSeruroConfig::Get().GetIdentity(server_uuid, address, cert_type);
+    theSeruroConfig::Get().RemoveIdentity(server_uuid, address, cert_type, false);
+    theSeruroConfig::Get().AddIdentity(server_uuid, address, cert_type, fingerprints[0]);
     
     return true;
 }
@@ -303,7 +304,7 @@ bool SeruroServerAPI::UninstallIdentity(wxString server_uuid, wxString address)
     wxArrayString fingerprints;
     SeruroCrypto crypto;
     
-    fingerprints = wxGetApp().config->GetIdentity(server_uuid, address);
+    fingerprints = theSeruroConfig::Get().GetIdentity(server_uuid, address);
     if (fingerprints.size() == 0) return false;
     
     if (! crypto.RemoveIdentity(fingerprints)) {
@@ -311,8 +312,8 @@ bool SeruroServerAPI::UninstallIdentity(wxString server_uuid, wxString address)
         return false;
     }
     
-    wxGetApp().config->RemoveIdentity(server_uuid, address, ID_AUTHENTICATION, true);
-    wxGetApp().config->RemoveIdentity(server_uuid, address, ID_ENCIPHERMENT, true);
+    theSeruroConfig::Get().RemoveIdentity(server_uuid, address, ID_AUTHENTICATION, true);
+    theSeruroConfig::Get().RemoveIdentity(server_uuid, address, ID_ENCIPHERMENT, true);
     
     return true;
 }
@@ -322,14 +323,17 @@ bool SeruroServerAPI::UninstallCertificates(wxString server_uuid, wxString addre
     wxArrayString fingerprints;
     SeruroCrypto crypto;
     
-    fingerprints = wxGetApp().config->GetCertificates(server_uuid, address);
+    fingerprints = theSeruroConfig::Get().GetCertificates(server_uuid, address);
     if (fingerprints.size() == 0) return false;
     
     if (! crypto.RemoveCertificates(fingerprints)) {
         wxLogMessage(_("SeruroServerAPI> (UninstallAddress) could not remove (%s) (%s)."), server_uuid, address);
         return false;
     }
-    return wxGetApp().config->RemoveCertificates(server_uuid, address, true);
+    
+    theSeruroConfig::Get().RemoveCertificate(server_uuid, address, ID_AUTHENTICATION, true);
+    theSeruroConfig::Get().RemoveCertificate(server_uuid, address, ID_ENCIPHERMENT, true);
+    return true;
 }
 
 bool SeruroServerAPI::UninstallCA(wxString server_uuid)
@@ -337,14 +341,14 @@ bool SeruroServerAPI::UninstallCA(wxString server_uuid)
     wxString fingerprint;
     SeruroCrypto crypto;
     
-    fingerprint = wxGetApp().config->GetCA(server_uuid);
+    fingerprint = theSeruroConfig::Get().GetCA(server_uuid);
     if (fingerprint.compare(wxEmptyString) == 0) return false;
     
     if (! crypto.RemoveCA(fingerprint)) {
         wxLogMessage(_("SeruroServerAPI> (UninstallCA) could not remove (%s)."), server_uuid);
         return false;
     }
-    return wxGetApp().config->RemoveCACertificate(server_uuid, true);
+    return theSeruroConfig::Get().RemoveCACertificate(server_uuid, true);
 }
 
 

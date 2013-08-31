@@ -3,9 +3,13 @@
 #include "../SeruroPanelSearch.h"
 #include "../UIDefs.h"
 
+#include "../../SeruroClient.h"
+
 #include <wx/log.h>
 #include <wx/renderer.h>
 #include <wx/dcmemory.h>
+
+DECLARE_APP(SeruroClient);
 
 BEGIN_EVENT_TABLE(CheckedListCtrl, wxListCtrl)
 	/* Make sure they cannot select a disabled row. */
@@ -173,7 +177,8 @@ bool CheckedListCtrl::IsChecked(long item) const
 /* The user has checked/unchecked an item. */
 void CheckedListCtrl::DoCheck(long item, bool checked)
 {
-    wxListItem address, server;
+    wxListItem address, server, first_name, last_name;
+    wxString server_uuid;
     
 	/* Do now allow actions on a disabled item. */
 	if (IsDisabled(item)) return;
@@ -187,17 +192,40 @@ void CheckedListCtrl::DoCheck(long item, bool checked)
     server.SetId(item);
     server.SetColumn(SEARCH_LIST_SERVER_COLUMN);
     
+    first_name.SetMask(wxLIST_MASK_TEXT);
+    first_name.SetId(item);
+    first_name.SetColumn(SEARCH_LIST_FNAME_COLUMN);
+
+    last_name.SetMask(wxLIST_MASK_TEXT);
+    last_name.SetId(item);
+    last_name.SetColumn(SEARCH_LIST_LNAME_COLUMN);
+    
     /* Request the text for the item (item). */
     if (! this->GetItem(address) || ! this->GetItem(server)) {
         wxLogMessage(wxT("CheckedListCtrl:Check> Cannot find an item at index (%d)."), item);
         return;
     }
     
+    /* Also get the first/last name. */
+    this->GetItem(first_name);
+    this->GetItem(last_name);
+    
+    server_uuid = theSeruroConfig::Get().GetServerUUID(server.GetText());
+    SeruroStateEvent event(STATE_TYPE_CONTACT);
+    event.SetServerUUID(server_uuid);
+    event.SetAccount(address.GetText());
+    
 	if (this->IsChecked(item)) {
         ((SeruroPanelSearch *) this->parent)->Uninstall(server.GetText(), address.GetText());
+        theSeruroConfig::Get().RemoveContact(server_uuid, address.GetText());
+        event.SetAction(STATE_ACTION_REMOVE);
 	} else {
+        theSeruroConfig::Get().AddContact(server_uuid, address.GetText(), first_name.GetText(), last_name.GetText());
         ((SeruroPanelSearch *) this->parent)->Install(server.GetText(), address.GetText());
+        event.SetAction(STATE_ACTION_ADD);
     }
+    
+    wxGetApp().AddEvent(event);
 }
 
 void CheckedListCtrl::SetCheck(long item, bool checked)
@@ -218,17 +246,17 @@ void CheckedListCtrl::SetCheck(const wxString &server_name, const wxString &addr
     for (long i = this->GetItemCount()-1; i >= 0; i--) {
         item_address.SetId(i);
         item_server.SetId(i);
-        if (!this->GetItem(item_address) || !this->GetItem(item_server)) {
+        if (! this->GetItem(item_address) || ! this->GetItem(item_server)) {
             wxLogMessage(wxT("SetCheck> could not get item (%d)."), i);
             continue;
         }
         
-        wxLogMessage(wxT("SetCheck> trying (%d) with address of (%s) (%s)."), i,
-            item_server.GetText(), item_address.GetText());
+        //wxLogMessage(wxT("SetCheck> trying (%d) with address of (%s) (%s)."), i,
+        //    item_server.GetText(), item_address.GetText());
         
         /* If this is a valid item, compare the address to the installed address. */
         if (item_address.GetText().compare(address) == 0 && item_server.GetText().compare(server_name) == 0) {
-            wxLogMessage(wxT("SetCheck> checking item (%d) with address (%s) (%s)."), i, server_name, address);
+            //wxLogMessage(wxT("SetCheck> checking item (%d) with address (%s) (%s)."), i, server_name, address);
             this->SetCheck(i, checked);
         }
     }

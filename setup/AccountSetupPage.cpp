@@ -43,7 +43,7 @@ void AccountPage::OnCAResult(SeruroRequestEvent &event)
 		/* Remove the account and server which was saved to the config. */
 		wxJSONValue account_info = AddAccountForm::GetValues();
 
-		wxGetApp().config->RemoveServer(response["server_uuid"].AsString());
+		theSeruroConfig::Get().RemoveServer(response["server_uuid"].AsString());
 		SetAccountStatus(_("Unable to install certificate authority."));
 
         /* Process remove server event. */
@@ -111,7 +111,7 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
     server_info["name"] = response["name"];
     server_info["host"] = response["meta"]["host"];
     server_info["port"] = response["meta"]["port"];
-	new_server = wxGetApp().config->AddServer(server_info);
+	new_server = theSeruroConfig::Get().AddServer(server_info);
     
 	if (new_server) {
         /* Create new server event. */
@@ -125,7 +125,7 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	 * (If the server was new, and it successes, but the address fails, there is a larger problem.)
 	 */
 	address = response["address"].AsString();
-	if (! wxGetApp().config->AddAddress(this->server_uuid, address)) {
+	if (! theSeruroConfig::Get().AddAddress(this->server_uuid, address)) {
 		SetAccountStatus(_("Account already exists."));
 		goto enable_form;
 	} else {
@@ -257,13 +257,13 @@ void AccountPage::OnSelectServer(wxCommandEvent &event)
     new_server_name = server_menu->GetString(server_menu->GetSelection());
 	wxLogMessage(_("AccountPage> (OnSelectServer) server (%s) was selected."), new_server_name);
     
-	this->server_uuid = wxGetApp().config->GetServerUUID(new_server_name);
+	this->server_uuid = theSeruroConfig::Get().GetServerUUID(new_server_name);
 	this->has_ca = crypto_helper.HaveCA(this->server_uuid);
 }
 
 void AccountPage::DoFocus()
 {
-	//wxArrayString servers = wxGetApp().config->GetServerList();
+	//wxArrayString servers = theSeruroConfig::Get().GetServerList();
 	wxLogDebug(_("AccountSetupPage> (DoFocus) focusing the account page."));
 
 	/* If there is no server page, then the initially-generated list is OK. */
@@ -298,8 +298,8 @@ bool AccountPage::GoNext(bool from_callback) {
 		//server_info = ((ServerPage *) this->wizard->GetServerPage())->GetValues();
 		server_info = AddServerForm::GetValues();
 	} else {
-        server_info = wxGetApp().config->GetServer(
-            wxGetApp().config->GetServerUUID(server_menu->GetString(server_menu->GetSelection()))
+        server_info = theSeruroConfig::Get().GetServer(
+            theSeruroConfig::Get().GetServerUUID(server_menu->GetString(server_menu->GetSelection()))
         );
     }
 

@@ -18,11 +18,11 @@ wxString UUIDFromFingerprint(const wxString &fingerprint)
     wxArrayString identity_list;
     
     /* Find the first server which contains an account that has the given fingerprint. */
-    server_list = wxGetApp().config->GetServerList();
+    server_list = theSeruroConfig::Get().GetServerList();
     for (size_t i = 0; i < server_list.size(); i++) {
-        account_list = wxGetApp().config->GetAddressList(server_list[i]);
+        account_list = theSeruroConfig::Get().GetAddressList(server_list[i]);
         for (size_t j = 0; j < account_list.size(); j++) {
-            identity_list = wxGetApp().config->GetIdentity(server_list[i], account_list[j]);
+            identity_list = theSeruroConfig::Get().GetIdentity(server_list[i], account_list[j]);
             for (size_t k = 0; k < identity_list.size(); k++) {
                 if (identity_list[k] == fingerprint) {
                     return server_list[i];

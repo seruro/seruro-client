@@ -86,7 +86,7 @@ SeruroRequest::SeruroRequest(wxJSONValue api_params, wxEvtHandler *parent, int p
 {
     wxLogMessage(_("SeruroRequest> creating thread for event id (%d)."), evtId);
 	/* Catch-all for port configurations. */
-	params["server"]["port"] = wxGetApp().config->GetPortFromServer(params["server"]);
+	params["server"]["port"] = theSeruroConfig::Get().GetPortFromServer(params["server"]);
 
 	/* Add to data structure accessed by thread */
 	wxCriticalSectionLocker enter(wxGetApp().seruro_critsection_thread);
@@ -260,10 +260,10 @@ bool SeruroRequest::DoAuth(wxString &error_string)
 	/* Warning: depends on response["email"], response["uuid"] */
     wrote_token = false;
     if (response.HasMember("email") && response.HasMember("uuid")) {
-        wrote_token = wxGetApp().config->WriteToken(response["uuid"].AsString(),
+        wrote_token = theSeruroConfig::Get().WriteToken(response["uuid"].AsString(),
             response["email"].AsString(), response["token"].AsString());
         /* Setting the active token will fail if the account is being added. */
-        wxGetApp().config->SetActiveToken(response["uuid"].AsString(), response["email"].AsString());
+        theSeruroConfig::Get().SetActiveToken(response["uuid"].AsString(), response["email"].AsString());
     } else {
         wxLogMessage(_("SeruroRequest (DoAuth) cannot find 'email' or 'uuid' in response?"));
     }

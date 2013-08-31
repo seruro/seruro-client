@@ -603,8 +603,8 @@ bool SeruroCryptoMAC::HaveCA(wxString server_name, wxString fingerprint)
 	wxString ca_fingerprint;
     
 	if (fingerprint.compare(wxEmptyString) == 0) {
-		if (! wxGetApp().config->HaveCA(server_name)) return false;
-		ca_fingerprint = wxGetApp().config->GetCA(server_name);
+		if (! theSeruroConfig::Get().HaveCA(server_name)) return false;
+		ca_fingerprint = theSeruroConfig::Get().GetCA(server_name);
 	} else {
 		ca_fingerprint = fingerprint;
 	}
@@ -623,8 +623,8 @@ bool SeruroCryptoMAC::HaveCertificates(wxString server_name, wxString address, w
      */
     
     /* First get the fingerprint string from the config. */
-	if (! wxGetApp().config->HaveCertificates(server_name, address)) return false;
-	wxArrayString certificates = wxGetApp().config->GetCertificates(server_name, address);
+	if (! theSeruroConfig::Get().HaveCertificates(server_name, address)) return false;
+	wxArrayString certificates = theSeruroConfig::Get().GetCertificates(server_name, address);
     
 	if (certificates.size() != 2) {
 		wxLogMessage(_("SeruroCrypto> (HaveCertificates) the address (%s) (%s) does not have 2 certificates?"),
@@ -647,8 +647,8 @@ bool SeruroCryptoMAC::HaveIdentity(wxString server_name, wxString address, wxStr
     
 	/* First get the fingerprint string from the config. */
     if (fingerprint.compare(wxEmptyString) == 0) {
-        //if (! wxGetApp().config->HaveIdentity(server_name, address)) return false;
-        identity = wxGetApp().config->GetIdentity(server_name, address);
+        //if (! theSeruroConfig::Get().HaveIdentity(server_name, address)) return false;
+        identity = theSeruroConfig::Get().GetIdentity(server_name, address);
         if (identity.size() == 0) return false;
     } else {
         identity.Add(fingerprint);

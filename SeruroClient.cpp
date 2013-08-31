@@ -39,7 +39,7 @@ IMPLEMENT_APP(SeruroClient)
 int SeruroClient::OnExit()
 {
     delete instance_limiter;
-	delete config;
+//	delete config;
 	return 0;
 }
 
@@ -64,7 +64,7 @@ bool SeruroClient::OnInit()
 	InitLogger();
 
 	/* User config instance (deprecated, controllers should use the singleton) */
-    this->config = new SeruroConfig();
+    //this->config = new SeruroConfig();
     
     /* Listen for invalid request events (which require UI actions and a request-restart). */
     Bind(SERURO_REQUEST_RESPONSE, &SeruroClient::OnInvalidAuth, this, SERURO_REQUEST_CALLBACK_AUTH);

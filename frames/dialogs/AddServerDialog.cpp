@@ -22,7 +22,7 @@ wxChoice* GetServerChoice(wxWindow *parent, const wxString &server_name)
 
 	if (server_name.compare(wxEmptyString) == 0) {
 		/* Add all servers. */
-		servers_list = wxGetApp().config->GetServerNames();
+		servers_list = theSeruroConfig::Get().GetServerNames();
 	} else {
 		/* Add just this server. */
 		servers_list.Add(server_name);

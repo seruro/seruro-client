@@ -3,11 +3,14 @@
 #include <wx/artprov.h>
 
 #include "SeruroFrameMain.h"
-#include "SeruroPanelSettings.h"
-#include "SeruroPanelSearch.h"
+
 #include "../setup/SeruroSetup.h"
 #include "../SeruroClient.h"
 #include "UIDefs.h"
+
+#include "SeruroPanelSettings.h"
+#include "SeruroPanelSearch.h"
+#include "SeruroPanelContacts.h"
 
 #if SERURO_ENABLE_CRYPT_PANELS
 #include "SeruroPanelDecrypt.h"
@@ -19,14 +22,18 @@
 #endif
 
 /* Potential MSW icons. */
+#ifdef __WXMSW__
 #include "../resources/images/logo_block_256_flat.png.h"
 #include "../resources/images/logo_block_128_flat.png.h"
 #include "../resources/images/logo_block_64_flat.png.h"
 #include "../resources/images/logo_block_32_flat.png.h"
 #include "../resources/images/logo_block_16_flat.png.h"
+#endif
  
 /* Potential OSX icons. */
+#if defined(__WXOSX__) || defined(__WXMAC__)
 #include "../resources/images/tray_osx_hard_black.png.h"
+#endif
 
 /* OSX Hack for active focus */
 #if defined(__WXMAC__) || defined(__WXOSX__)
@@ -104,15 +111,25 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
 void SeruroFrameMain::AddPanels()
 {
 	/* Add content */
+    contacts_panel = new SeruroPanelContacts(book);
+    seruro_panels_ids[seruro_panels_size++] = SERURO_PANEL_CONTACTS_ID;
+    
+    /* Optional search panel (if certificates/contacts are not automatically downloaded). */
 	search_panel = new SeruroPanelSearch(book);
-	/* Must define the order of panels. */
 	seruro_panels_ids[seruro_panels_size++] = SERURO_PANEL_SEARCH_ID;
+    
+    /* Always create the search, but remove if it will not be used. */
+    if (theSeruroConfig::Get().GetOption("auto_download") == "true") {
+        book->RemovePage(seruro_panels_size-1);
+    }
+    
 #if SERURO_ENABLE_CRYPT_PANELS
 	SeruroPanelEncrypt	 *encrypt	= new SeruroPanelEncrypt(book);
 	seruro_panels_ids[seruro_panels_size++] = SERURO_PANEL_ENCRYPT_ID;
 	SeruroPanelDecrypt	 *decrypt	= new SeruroPanelDecrypt(book);
 	seruro_panels_ids[seruro_panels_size++] = SERURO_PANEL_DECRYPT_ID;
 #endif
+    
 	settings_panel = new SeruroPanelSettings(book);
 	seruro_panels_ids[seruro_panels_size++] = SERURO_PANEL_SETTINGS_ID;
 	
@@ -121,9 +138,38 @@ void SeruroFrameMain::AddPanels()
 	seruro_panels_ids[seruro_panels_size++] = 0; /* Test is not controllable. */
 #endif
     
+    wxGetApp().Bind(SERURO_STATE_CHANGE, &SeruroFrameMain::OnOptionChange, this, STATE_TYPE_OPTION);
+    
     this->Show();
     this->Layout();
     this->Center();
+}
+
+void SeruroFrameMain::OnOptionChange(SeruroStateEvent &event)
+{
+    size_t search_panel_id = -1;
+    
+    /* Only handle "auto_download" option changes. */
+    if (event.GetValue("option_name") != "auto_download") {
+        event.Skip();
+        return;
+    }
+
+    for (size_t i = 0; i < book->GetPageCount(); ++i) {
+        if (this->search_panel == book->GetPage(i)) {
+            search_panel_id = i;
+            break;
+        }
+    }
+    
+    /* Perform the appropriate UI action. */
+    if (event.GetValue("option_value") == "true") {
+        book->RemovePage(search_panel_id);
+    } else {
+        book->InsertPage(1, this->search_panel, _("Search"));
+    }
+    
+    event.Skip();
 }
 
 /* The tray menu generates events based on IDs, these IDs correspond to pages. 
@@ -225,7 +271,7 @@ void SeruroFrameMain::OnSetupCancel(wxWizardEvent& event)
     /* Is this correct? */
     this->setup = 0;
     
-    if (wxGetApp().config->GetServerNames().size() == 0) {
+    if (theSeruroConfig::Get().GetServerNames().size() == 0) {
         wxLogMessage(_("SeruroFrameMain> (OnSetupCancel) the initial setup was cancled."));
 		if (! SERURO_ALLOW_NO_ACCOUNTS) {
 			this->Close(true);
@@ -241,7 +287,7 @@ void SeruroFrameMain::OnSetupFinished(wxWizardEvent& event)
     /* Is this correct? */
     this->setup = 0;
     
-    if (wxGetApp().config->GetServerNames().size() == 0) {
+    if (theSeruroConfig::Get().GetServerNames().size() == 0) {
         wxLogMessage(_("SeruroFrameMain> (OnSetupFinished) there were no servers added?"));
 		if (! SERURO_ALLOW_NO_ACCOUNTS) {
 			this->Close(true);

@@ -202,10 +202,10 @@ account_status_t AppOSX_Mail::IdentityStatus(wxString account_name, wxString &se
 
     /* OSX will use a matching identity automatically. */
     /* Check for any account with an installed identity, matching the account name. */
-    server_list = wxGetApp().config->GetServerList();
+    server_list = theSeruroConfig::Get().GetServerList();
     
     for (size_t i = 0; i < server_list.size(); i++) {
-        account_list = wxGetApp().config->GetAddressList(server_list[i]);
+        account_list = theSeruroConfig::Get().GetAddressList(server_list[i]);
         
         for (size_t j = 0; j < account_list.size(); j++) {
             if (account_name.compare(account_list[j]) != 0) continue;
