@@ -49,10 +49,15 @@ protected:
     wxPanel *contacts_panel;
     wxPanel *search_panel;
     wxPanel *settings_panel;
+    
+    wxPanel *home_panel;
+    wxPanel *help_panel;
+    
 #if SERURO_ENABLE_CRYPT_PANELS
 	wxPanel *encrypt;
 	wxPanel *decrypt;
 #endif
+    
 #if SERURO_ENABLE_DEBUG_PANELS
     wxPanel *test_panel;
 #endif

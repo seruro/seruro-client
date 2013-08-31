@@ -103,8 +103,9 @@ void SeruroPanelSettings::AddMenu(wxSizer *sizer)
     menu->InsertColumn(0, column);
 	/* We want each selection to highlight the entire row. */
 	menu->SetColumnWidth(0, SERURO_SETTINGS_TREE_MIN_WIDTH);
-
 	menu->InsertItem(0, _("General"), 0);
+    menu->SetItemState(0, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
+    
     menu->InsertItem(1, _("Accounts"), 1);
 	menu->InsertItem(2, _("Applications"), 2);
 	menu->InsertItem(3, _("Extensions"), 3);

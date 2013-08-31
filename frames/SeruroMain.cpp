@@ -12,6 +12,9 @@
 #include "SeruroSearch.h"
 #include "SeruroContacts.h"
 
+#include "SeruroHome.h"
+#include "SeruroHelp.h"
+
 #if SERURO_ENABLE_CRYPT_PANELS
 #include "SeruroPanelDecrypt.h"
 #include "SeruroPanelEncrypt.h"
@@ -42,6 +45,12 @@ extern "C" { void CPSEnableForegroundOperation(ProcessSerialNumber *psn); }
 #endif
 
 #include <wx/iconbndl.h>
+
+enum extra_panel_ids_t
+{
+    SERURO_PANEL_HOME_ID = 1024,
+    SERURO_PANEL_HELP_ID = 1025
+};
 
 int seruro_panels_ids[SERURO_MAX_PANELS];
 int seruro_panels_size;
@@ -111,6 +120,9 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
 void SeruroFrameMain::AddPanels()
 {
 	/* Add content */
+    home_panel = new SeruroPanelHome(book);
+    seruro_panels_ids[seruro_panels_size++] = SERURO_PANEL_HOME_ID;
+    
     contacts_panel = new SeruroPanelContacts(book);
     seruro_panels_ids[seruro_panels_size++] = SERURO_PANEL_CONTACTS_ID;
     
@@ -132,6 +144,9 @@ void SeruroFrameMain::AddPanels()
     
 	settings_panel = new SeruroPanelSettings(book);
 	seruro_panels_ids[seruro_panels_size++] = SERURO_PANEL_SETTINGS_ID;
+    
+    help_panel = new SeruroPanelHelp(book);
+    seruro_panels_ids[seruro_panels_size++] = SERURO_PANEL_HELP_ID;
 	
 #if SERURO_ENABLE_DEBUG_PANELS
 	test_panel = new SeruroPanelTest(book);
