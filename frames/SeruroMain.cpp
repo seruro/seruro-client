@@ -15,6 +15,9 @@
 #include "SeruroHome.h"
 #include "SeruroHelp.h"
 
+/* Close the app if the wizard is canceled. */
+#define SERURO_ALLOW_NO_ACCOUNTS 0
+
 #if SERURO_ENABLE_CRYPT_PANELS
 #include "SeruroPanelDecrypt.h"
 #include "SeruroPanelEncrypt.h"
@@ -45,12 +48,6 @@ extern "C" { void CPSEnableForegroundOperation(ProcessSerialNumber *psn); }
 #endif
 
 #include <wx/iconbndl.h>
-
-enum extra_panel_ids_t
-{
-    SERURO_PANEL_HOME_ID = 1024,
-    SERURO_PANEL_HELP_ID = 1025
-};
 
 int seruro_panels_ids[SERURO_MAX_PANELS];
 int seruro_panels_size;
@@ -153,11 +150,28 @@ void SeruroFrameMain::AddPanels()
 	seruro_panels_ids[seruro_panels_size++] = 0; /* Test is not controllable. */
 #endif
     
+	/* No setup at construction. */
+	this->setup_running = false;
+
     wxGetApp().Bind(SERURO_STATE_CHANGE, &SeruroFrameMain::OnOptionChange, this, STATE_TYPE_OPTION);
+	wxGetApp().Bind(SERURO_STATE_CHANGE, &SeruroFrameMain::OnServerStateChange, this, STATE_TYPE_SERVER);
     
     this->Show();
     this->Layout();
     this->Center();
+}
+
+void SeruroFrameMain::OnServerStateChange(SeruroStateEvent &event)
+{
+	event.Skip();
+
+	/* If there are no servers left after a remove action, open the setup. */
+	if (event.GetAction() == STATE_ACTION_REMOVE) {
+		if (theSeruroConfig::Get().GetServerList().size() == 0) {
+			this->StartSetup();
+		}
+	}
+
 }
 
 void SeruroFrameMain::OnOptionChange(SeruroStateEvent &event)
@@ -165,8 +179,8 @@ void SeruroFrameMain::OnOptionChange(SeruroStateEvent &event)
     size_t search_panel_id = -1;
     
     /* Only handle "auto_download" option changes. */
-    if (event.GetValue("option_name") != "auto_download") {
-        event.Skip();
+    event.Skip();
+	if (event.GetValue("option_name") != "auto_download") {
         return;
     }
 
@@ -176,15 +190,18 @@ void SeruroFrameMain::OnOptionChange(SeruroStateEvent &event)
             break;
         }
     }
+
+	/* The search panel was never added. */
+	if (search_panel_id < 0) {
+		return;
+	}
     
     /* Perform the appropriate UI action. */
     if (event.GetValue("option_value") == "true") {
         book->RemovePage(search_panel_id);
     } else {
-        book->InsertPage(1, this->search_panel, _("Search"));
+        book->InsertPage(2, this->search_panel, _("Search"));
     }
-    
-    event.Skip();
 }
 
 /* The tray menu generates events based on IDs, these IDs correspond to pages. 
@@ -192,6 +209,10 @@ void SeruroFrameMain::OnOptionChange(SeruroStateEvent &event)
  */
 void SeruroFrameMain::ChangePanel(int panel_id)
 {
+	if (this->IsSetupRunning()) {
+		return;
+	}
+
 	/* Iterate through the vector of panel ids, if a match is found, set selection. */
 	for (int i = 0; i < seruro_panels_size; i++) {
 		if (panel_id == seruro_panels_ids[i]) {
@@ -243,13 +264,13 @@ void SeruroFrameMain::OnQuit(wxCommandEvent& WXUNUSED(event))
     this->Close(true);
 }
 
-void SeruroFrameMain::StartSetup()
+void SeruroFrameMain::StartSetup(bool force)
 {
     SeruroSetup *initial_setup;
     
     /* There is a "first-launch" setup wizard. */
     this->setup = 0;
-	if (theSeruroConfig::Get().HasConfig()) {
+	if (! force && theSeruroConfig::Get().HasConfig()) {
         /* No setup needed. */
         return;
     }
@@ -257,6 +278,7 @@ void SeruroFrameMain::StartSetup()
     /* The panels and "book view" should be hidden while the wizard is running. */
     this->Hide();
         
+	this->setup_running = true;
     initial_setup = new SeruroSetup(this);
     initial_setup->RunWizard(initial_setup->GetInitialPage());
     
@@ -267,12 +289,14 @@ void SeruroFrameMain::StartSetup()
 void SeruroFrameMain::StopSetup()
 {
     /* Ask the setup to stop, the application is closing. */
-    if (this->setup == 0) {
+    if (! this->setup_running || this->setup == 0) {
         return;
     }
     
     ((SeruroSetup *) this->setup)->EndModal(0);
     this->setup->Close();
+
+	this->setup_running = false;
     this->setup = 0;
 }
 
@@ -284,7 +308,7 @@ void SeruroFrameMain::OnSetupRun(wxCommandEvent &event)
 void SeruroFrameMain::OnSetupCancel(wxWizardEvent& event)
 {
     /* Is this correct? */
-    this->setup = 0;
+	this->setup_running = false;
     
     if (theSeruroConfig::Get().GetServerNames().size() == 0) {
         wxLogMessage(_("SeruroFrameMain> (OnSetupCancel) the initial setup was cancled."));
@@ -295,12 +319,13 @@ void SeruroFrameMain::OnSetupCancel(wxWizardEvent& event)
     }
     
     this->Show();
+	this->ChangePanel(SERURO_PANEL_HOME_ID);
 }
 
 void SeruroFrameMain::OnSetupFinished(wxWizardEvent& event)
 {
     /* Is this correct? */
-    this->setup = 0;
+    this->setup_running = false;
     
     if (theSeruroConfig::Get().GetServerNames().size() == 0) {
         wxLogMessage(_("SeruroFrameMain> (OnSetupFinished) there were no servers added?"));
@@ -311,4 +336,5 @@ void SeruroFrameMain::OnSetupFinished(wxWizardEvent& event)
     }
     
     this->Show();
+	this->ChangePanel(SERURO_PANEL_HOME_ID);
 }

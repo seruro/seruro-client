@@ -28,9 +28,11 @@ void SeruroPanelSettings::OnSelected(wxListEvent &event)
 	accounts_window->Hide();
 	applications_window->Hide();
 	extensions_window->Hide();
+
     if (SERURO_USE_SETTINGSLOG) {
         log_window->Hide();
     }
+
 	if (event.GetItem() == 0) general_window->Show();
 	if (event.GetItem() == 1) accounts_window->Show();
 	if (event.GetItem() == 2) applications_window->Show();
@@ -72,6 +74,9 @@ SeruroPanelSettings::SeruroPanelSettings(wxBookCtrlBase *book) : SeruroPanel(boo
         log_window->Hide();
     }
     
+	/* Select the first item in the settings list. */
+	this->menu->SetItemState(0, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
+
     /* Select the first item, General. */
     //menu->SetItemState(0, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
 
@@ -103,9 +108,7 @@ void SeruroPanelSettings::AddMenu(wxSizer *sizer)
     menu->InsertColumn(0, column);
 	/* We want each selection to highlight the entire row. */
 	menu->SetColumnWidth(0, SERURO_SETTINGS_TREE_MIN_WIDTH);
-	menu->InsertItem(0, _("General"), 0);
-    menu->SetItemState(0, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
-    
+	menu->InsertItem(0, _("General"), 0);  
     menu->InsertItem(1, _("Accounts"), 1);
 	menu->InsertItem(2, _("Applications"), 2);
 	menu->InsertItem(3, _("Extensions"), 3);

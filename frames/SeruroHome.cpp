@@ -12,7 +12,7 @@ DECLARE_APP(SeruroClient);
 #define HOME_SERVERS_TEXT "You are using %d Seruro server(s), and the default server is %s."
 #define HOME_ACCOUNTS_TEXT "The following Seruro accounts are installed: %s."
 
-#define HOME_CONTACTS_TEXT "There are %d Seruro contacts installed. \
+#define HOME_CONTACTS_TEXT "There are %d Seruro contact(s) installed. \
 Contacts are added %s, you may view them using the \n'Contacts' tab above. "
 #define HOME_CONTACTS_MANUAL_TEXT "To add additional contacts use the 'Search' tab above."
 
@@ -203,5 +203,42 @@ SeruroPanelHome::SeruroPanelHome(wxBookCtrlBase *book) : SeruroPanel(book, wxT("
 
 bool SeruroPanelHome::IsReady()
 {
-    return true;
+	wxArrayString servers, accounts, contacts, apps;
+	wxString server_uuid;
+
+	servers = theSeruroConfig::Get().GetServerList();
+	if (servers.size() == 0) {
+		return false;
+	}
+
+	apps = theSeruroApps::Get().GetAppList();
+
+	bool has_account = false;
+	bool has_contact = false;
+	bool has_assigned = false;
+	for (size_t i = 0; i < servers.size(); ++i) {
+		accounts = theSeruroConfig::Get().GetAddressList(servers[i]);
+		contacts = theSeruroConfig::Get().GetContactsList(servers[i]);
+		has_contact = (has_contact || contacts.size() > 0);
+		has_account = (has_account || accounts.size() > 0);
+
+		if (has_assigned) continue;
+
+		/* Check for at least one assigned account. */
+		for (size_t j = 0; j < accounts.size(); ++j) {
+			if (has_assigned) continue;
+			for (size_t k = 0; k < apps.size(); ++k) {
+				if (theSeruroApps::Get().IdentityStatus(apps[k], accounts[j], server_uuid) == APP_ASSIGNED) {
+					has_assigned = true;
+					break;
+				}
+			}
+		}
+	}
+
+	if (has_account && has_contact && has_assigned) {
+		return true;
+	}
+
+    return false;
 }

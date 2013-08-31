@@ -10,6 +10,13 @@
 
 #include "../api/SeruroStateEvents.h"
 
+enum extra_panel_ids_t
+{
+    SERURO_PANEL_HOME_ID = 1024,
+    SERURO_PANEL_HELP_ID = 1025
+};
+
+
 /* From SeruroTray */
 class SeruroTray;
 
@@ -28,11 +35,14 @@ public:
 	void OnClose(wxCloseEvent &event);
 
 	/* Setup events */
-    void StartSetup();
+    void StartSetup(bool force = true);
     void StopSetup();
 	void OnSetupRun(wxCommandEvent &event);
     void OnSetupCancel(wxWizardEvent& event);
     void OnSetupFinished(wxWizardEvent& event);
+	bool IsSetupRunning() {
+		return this->setup_running;
+	}
 
 	/* When the panels change, their UI elements may need updating. */
 	void OnChange(wxBookCtrlEvent &event);
@@ -41,6 +51,7 @@ public:
     
     /* Wait for "auto_download" option changes. */
     void OnOptionChange(SeruroStateEvent &event);
+	void OnServerStateChange(SeruroStateEvent &event);
 
 protected:
 	SeruroTray *tray;
@@ -65,6 +76,7 @@ protected:
 private:
     /* An instance of a running setup. */
     wxTopLevelWindow *setup;
+	bool setup_running;
     
 	DECLARE_EVENT_TABLE()
 };

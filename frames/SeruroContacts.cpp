@@ -20,6 +20,7 @@ SeruroPanelContacts::SeruroPanelContacts(wxBookCtrlBase *book) : SeruroPanel(boo
     this->SetSizer(sizer);
     
     wxGetApp().Bind(SERURO_STATE_CHANGE, &SeruroPanelContacts::OnContactStateChange, this, STATE_TYPE_CONTACT);
+	wxGetApp().Bind(SERURO_STATE_CHANGE, &SeruroPanelContacts::OnServerStateChange, this, STATE_TYPE_SERVER);
     
     this->Layout();
 
@@ -33,6 +34,17 @@ void SeruroPanelContacts::OnContactStateChange(SeruroStateEvent &event)
 {
     ContactList::OnContactStateChange(event);
     this->AlignList();
+    
+    event.Skip();
+}
+
+void SeruroPanelContacts::OnServerStateChange(SeruroStateEvent &event)
+{
+    /* This is a little brutish. */
+	if (event.GetAction() == STATE_ACTION_REMOVE) {
+		ContactList::GenerateContactList();
+		this->AlignList();
+	}
     
     event.Skip();
 }

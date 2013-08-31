@@ -19,6 +19,7 @@ public:
 
 private:
 	void OnContactStateChange(SeruroStateEvent &event);
+	void OnServerStateChange(SeruroStateEvent &event);
     
     void AlignList();
 };

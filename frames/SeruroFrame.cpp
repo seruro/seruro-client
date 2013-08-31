@@ -6,7 +6,7 @@
 
 size_t GetMaxColumnWidth(wxListCtrl *list, int col)
 {
-	size_t width;
+	int width;
 
 	/* Get the width for the header. */
 	list->SetColumnWidth(col, wxLIST_AUTOSIZE_USEHEADER);
@@ -15,7 +15,7 @@ size_t GetMaxColumnWidth(wxListCtrl *list, int col)
 	/* Compare to the width for the data, take the larger. */
 	list->SetColumnWidth(col, wxLIST_AUTOSIZE);
     width = (width > list->GetColumnWidth(col)) ? width : list->GetColumnWidth(col);
-	return width;
+	return (size_t) width;
 }
 
 void MaximizeAndAlignLists(wxListCtrl **lists, size_t count, size_t first_column)

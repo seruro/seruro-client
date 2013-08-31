@@ -72,7 +72,7 @@ bool SeruroClient::OnInit()
 	/* Now safe to start sub-frames (panels). */
 	main_frame->AddPanels();
     /* Check to see if the application is running for the first time. */
-    main_frame->StartSetup();
+    main_frame->StartSetup(false);
 
     //AlertDialog *alert = new AlertDialog();
     //this->SetTopWindow(alert);

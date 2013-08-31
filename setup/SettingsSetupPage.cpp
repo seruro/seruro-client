@@ -63,7 +63,7 @@ void SettingsPage::DoFocus()
     /* Check if there were previous settings. */
     if (theSeruroConfig::Get().GetOption("auto_download") == "false") {
         this->certs_option->SetValue(false);
-    } else {
+    } else if (theSeruroConfig::Get().GetOption("auto_download") != "true") {
         theSeruroConfig::Get().SetOption("auto_download", "true", true);
     }
     
@@ -77,6 +77,9 @@ void SettingsPage::DoFocus()
 
 SettingsPage::SettingsPage(SeruroSetup *parent) : SetupPage(parent)
 {
+	/* Allow them to finish. */
+	this->enable_next = true;
+
     wxSizer *const vert_sizer = new wxBoxSizer(wxVERTICAL);
     
     /* Generic explaination. */
@@ -94,6 +97,9 @@ SettingsPage::SettingsPage(SeruroSetup *parent) : SetupPage(parent)
     this->default_option = new wxCheckBox(this, wxID_ANY, wxEmptyString);
     this->default_option->SetValue(true);
     this->default_option->Disable();
+
+	vert_sizer->Add(this->certs_option, 0, wxEXPAND | wxTOP | wxLEFT, 10);
+	vert_sizer->Add(this->default_option, 0, wxEXPAND | wxLEFT | wxTOP, 10);
     
     this->SetSizer(vert_sizer);
 }

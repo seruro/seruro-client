@@ -1,13 +1,15 @@
 
-#include <wx/menu.h>
 #include <wx/msgdlg.h>
 
 #include "Defs.h"
 #include "frames/UIDefs.h"
 
 #include "SeruroTray.h"
+
 #include "frames/SeruroMain.h"
+#include "api/SeruroStateEvents.h"
 #include "SeruroClient.h"
+
 
 /* OSX Hack for active focus */
 #if defined(__WXMAC__) || defined(__WXOSX__)
@@ -28,13 +30,31 @@ BEGIN_EVENT_TABLE(SeruroTray, wxTaskBarIcon)
 	EVT_MENU(SERURO_EXIT_ID, SeruroTray::OnQuit)
 END_EVENT_TABLE()
 
+void SeruroTray::OnOptionStateChange(SeruroStateEvent &event)
+{
+	if (event.GetValue("option_name") == "auto_download") {
+		if (event.GetValue("option_value") == "true") {
+			this->menu->Delete(SERURO_PANEL_SEARCH_ID);
+		} else {
+			this->menu->Insert(3, SERURO_PANEL_SEARCH_ID, _("Search"));
+		}
+	}
+	event.Skip();
+}
+
 void SeruroTray::RaiseFrame()
 {
     if (! main_frame) return;
+
+	/* Do not raise the frame if a setup is running. */
+	if (main_frame->IsSetupRunning()) {
+		return;
+	}
+
 	if (main_frame->IsIconized()) {
         main_frame->Iconize(false);
     }
-    
+
     main_frame->SetFocus();
     main_frame->Raise();
     main_frame->Show(true);
@@ -75,6 +95,24 @@ void SeruroTray::onDecrypt(wxCommandEvent &event)
 	main_frame->ChangePanel(SERURO_PANEL_DECRYPT_ID);
 }
 #endif
+
+void SeruroTray::OnHome(wxCommandEvent &event)
+{
+    RaiseFrame();
+	main_frame->ChangePanel(SERURO_PANEL_HOME_ID);
+}
+
+void SeruroTray::OnHelp(wxCommandEvent &event)
+{
+    RaiseFrame();
+	main_frame->ChangePanel(SERURO_PANEL_HELP_ID);
+}
+
+void SeruroTray::OnContacts(wxCommandEvent &event)
+{
+    RaiseFrame();
+	main_frame->ChangePanel(SERURO_PANEL_CONTACTS_ID);
+}
 
 void SeruroTray::onSearch(wxCommandEvent &event)
 {
@@ -121,18 +159,26 @@ void SeruroTray::OnAbout(wxCommandEvent& WXUNUSED(event))
 
 wxMenu* SeruroTray::CreatePopupMenu()
 {
-	wxMenu *popup = new wxMenu;
+	menu = new wxMenu;
 
-    popup->Append(SERURO_PANEL_SEARCH_ID, wxT("&Search"));
-    
+	menu->Append(SERURO_PANEL_HOME_ID, _("Home"));
+	menu->Append(SERURO_PANEL_CONTACTS_ID, _("Contacts"));
+
+	if (theSeruroConfig::Get().GetOption("auto_download") != "true") {
+		/* Position 2, before 3. */
+		menu->Append(SERURO_PANEL_SEARCH_ID, wxT("&Search"));
+	}
+
+	menu->Append(SERURO_PANEL_HELP_ID, _("Help"));
+
 #if SERURO_ENABLE_CRYPT_PANELS
-	popup->Append(SERURO_PANEL_ENCRYPT_ID, wxT("&Encrypt"));
-	popup->Append(SERURO_PANEL_DECRYPT_ID, wxT("&Decrypt"));
+	menu->Append(SERURO_PANEL_ENCRYPT_ID, wxT("&Encrypt"));
+	menu->Append(SERURO_PANEL_DECRYPT_ID, wxT("&Decrypt"));
 #endif
     
-	popup->AppendSeparator();
-	popup->Append(SERURO_PANEL_SETTINGS_ID, wxT("Settings"));
-	popup->Append(SERURO_EXIT_ID, wxT("E&xit"));
+	menu->AppendSeparator();
+	menu->Append(SERURO_PANEL_SETTINGS_ID, wxT("Settings"));
+	menu->Append(SERURO_EXIT_ID, wxT("E&xit"));
 
-	return popup;
+	return menu;
 }
