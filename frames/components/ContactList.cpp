@@ -133,7 +133,7 @@ void ContactList::RemoveContact(wxString address, wxString server_uuid)
     server_item.SetColumn(4);
     
     server_name = theSeruroConfig::Get().GetServerName(server_uuid);
-    for (size_t i = 0; i < this->contact_list->GetItemCount(); i++) {
+    for (int i = 0; i < this->contact_list->GetItemCount(); i++) {
         address_item.SetId(i);
         server_item.SetId(i);
         

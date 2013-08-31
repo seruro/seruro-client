@@ -336,7 +336,7 @@ wxJSONValue GetSecurityProperties(SBinary *entry)
 		length = *(entry->lpb + entry_offset + 2);
 		//length = length / 2;
 
-		if ((entry_offset + length) > entry->cb) {
+		if ((entry_offset + length) > (unsigned short) entry->cb) {
 			/* There is an overrun error in the ASN1 blob? */
 			break;
 		}
@@ -597,8 +597,8 @@ bool AppMSW_Outlook::AssignIdentity(wxString server_uuid, wxString address)
 	}
 
 	/* Get both certificate SKIDs from config. */
-	auth_skid = wxGetApp().config->GetIdentity(server_uuid, address, ID_AUTHENTICATION);
-	enc_skid  = wxGetApp().config->GetIdentity(server_uuid, address, ID_ENCIPHERMENT);
+	auth_skid = theSeruroConfig::Get().GetIdentity(server_uuid, address, ID_AUTHENTICATION);
+	enc_skid  = theSeruroConfig::Get().GetIdentity(server_uuid, address, ID_ENCIPHERMENT);
 
 	/* For each, GetIdentityHashBySKID */
 	properties["authentication"] = crypto.GetIdentityHashBySKID(auth_skid);

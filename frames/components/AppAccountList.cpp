@@ -46,7 +46,7 @@ void AppAccountList::OnIdentityStateChange(SeruroStateEvent &event)
     
     display_name = (use_address) ? event.GetAccount() : this->address_map[account].AsString();
 
-    for (size_t i = 0; i < this->accounts_list->GetItemCount(); i++) {
+    for (int i = 0; i < this->accounts_list->GetItemCount(); i++) {
         account_item.SetId(i);
         app_item.SetId(i);
         
@@ -81,7 +81,7 @@ void AppAccountList::SetAccountStatus(long index, const wxString &app, const wxS
 	if (identity_status == APP_PENDING_RESTART) {
 		/* Do not give false "unstateful" information about pending restarts. */
 		if (this->pending_list[app][account].AsInt() == APP_ASSIGNED) {
-			identity_status == APP_ASSIGNED;
+			identity_status = APP_ASSIGNED;
 		}
 	}
 
@@ -104,7 +104,7 @@ void AppAccountList::SetAccountStatus(long index, const wxString &app, const wxS
 bool AppAccountList::HasAnyAssigned()
 {
     /* Check for at least one assigned account. */
-    for (size_t i = 0; i < accounts_list->GetItemCount(); ++i) {
+    for (int i = 0; i < accounts_list->GetItemCount(); ++i) {
         if (accounts_list->GetItemData(i) == (long) APP_ASSIGNED) {
             return true;
         }
@@ -214,7 +214,7 @@ void AppAccountList::RemoveAccount(wxString account)
     /* This could be displaying the app's canonical 'account name'. */
     display_name = (use_address) ? account : this->address_map[account].AsString();
     
-    for (size_t i = 0; i < this->accounts_list->GetItemCount(); i++) {
+    for (int i = 0; i < this->accounts_list->GetItemCount(); i++) {
         account_item.SetId(i);
         //app_item.SetId(i);
         

@@ -310,8 +310,8 @@ bool AppMSW_LiveMail::AssignIdentity(wxString server_uuid, wxString address)
 	}
 
 	/* Get both certificate SKIDs from config. */
-	auth_skid = wxGetApp().config->GetIdentity(server_uuid, address, ID_AUTHENTICATION);
-	enc_skid  = wxGetApp().config->GetIdentity(server_uuid, address, ID_ENCIPHERMENT);
+	auth_skid = theSeruroConfig::Get().GetIdentity(server_uuid, address, ID_AUTHENTICATION);
+	enc_skid  =theSeruroConfig::Get().GetIdentity(server_uuid, address, ID_ENCIPHERMENT);
 
 	/* For each, GetIdentityHashBySKID */
 	auth_hash = crypto.GetIdentityHashBySKID(auth_skid);
