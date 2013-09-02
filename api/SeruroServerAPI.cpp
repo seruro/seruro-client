@@ -162,30 +162,41 @@ wxJSONValue SeruroServerAPI::GetRequest(api_name_t name, wxJSONValue params)
 	/* Switch over each API call and set it's URL */
 	switch (name) {
 		/* The SETUP api call (/api/setup) should return an encrypted P12 (using password auth) */
-	case SERURO_API_P12S:
-		request["verb"] = _("POST");
-		request["object"] = _(SERURO_API_OBJECT_P12S);
-		/* Include support for optional explicit address to retreive from. */
-		break;
-	case SERURO_API_SEARCH:
-		if (! params.HasMember("query")) {
-			/* Return some error (not event, we are not in a thread yet) and stop. */
-		}
-        request["query"]["query"] = params["query"];
-		request["object"] = _(SERURO_API_OBJECT_SEARCH);
-		break;
-	case SERURO_API_CERTS:
-		if (! params.HasMember("request_address")) {
-			/* Error and stop!. */
-		}
-        request["query"]["address"] = params["request_address"];
-        request["object"] = _(SERURO_API_OBJECT_CERTS);
-		break;
-	case SERURO_API_CA:
-		request["object"] = _(SERURO_API_OBJECT_CA);
-		break;
-	case SERURO_API_PING:
-		request["object"] = _(SERURO_API_OBJECT_PING);
+        case SERURO_API_P12S:
+            request["verb"] = _("POST");
+            request["object"] = _(SERURO_API_OBJECT_P12S);
+            /* Include support for optional explicit address to retreive from. */
+            break;
+        case SERURO_API_SEARCH:
+            if (! params.HasMember("query")) {
+                /* Return some error (not event, we are not in a thread yet) and stop. */
+            }
+            request["query"]["query"] = params["query"];
+            request["object"] = _(SERURO_API_OBJECT_SEARCH);
+            break;
+        case SERURO_API_CERTS:
+            if (! params.HasMember("request_address")) {
+                /* Error and stop!. */
+            }
+            request["query"]["address"] = params["request_address"];
+            request["object"] = _(SERURO_API_OBJECT_CERTS);
+            break;
+        case SERURO_API_UPDATE:
+            if (! params.HasMember("update")) {
+                /* Error and stop. */
+            }
+            request["query"]["update"] = params["update"];
+            request["object"] = _(SERURO_API_OBJECT_UPDATE);
+            break;
+        case SERURO_API_CA:
+            request["object"] = _(SERURO_API_OBJECT_CA);
+            break;
+        case SERURO_API_CRL:
+            request["object"] = _(SERURO_API_OBJECT_CRL);
+            break;
+        case SERURO_API_PING:
+            request["object"] = _(SERURO_API_OBJECT_PING);
+            break;
 	}
 
 	/* Todo: Check to make sure server is in the params. */

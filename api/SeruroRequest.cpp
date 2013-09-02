@@ -2,6 +2,7 @@
 #include "SeruroRequest.h"
 #include "Utils.h"
 
+#include "../SeruroConfig.h"
 #include "../SeruroClient.h"
 #include "../frames/dialogs/AuthDialog.h"
 
@@ -12,7 +13,8 @@ wxDEFINE_EVENT(SERURO_REQUEST_RESPONSE, SeruroRequestEvent);
 
 DECLARE_APP(SeruroClient);
 
-void SendFailureEvent(wxEvtHandler *handler, int event_id, const wxString &error_msg = wxEmptyString);
+void SendFailureEvent(wxEvtHandler *handler, int event_id,
+    const wxString &server_uuid, size_t request_id, const wxString &error_msg = wxEmptyString);
 
 SeruroRequestEvent::SeruroRequestEvent(int id)
     : wxCommandEvent(SERURO_REQUEST_RESPONSE, id)
@@ -20,13 +22,18 @@ SeruroRequestEvent::SeruroRequestEvent(int id)
     response_data = wxJSONValue(wxJSONTYPE_OBJECT);
 }
 
-void SendFailureEvent(wxEvtHandler *handler, int event_id, const wxString &error_msg)
+void SendFailureEvent(wxEvtHandler *handler, int event_id,
+    const wxString &server_uuid, size_t request_id, const wxString &error_msg)
 {
     wxJSONValue response;
     
     /* Simple failure response. */
     response["error"] = error_msg;
     response["success"] = false;
+    
+    /* Add meta-data. */
+    response["server_uuid"] = server_uuid;
+    response["request_id"] = request_id;
     
     /* Create and send response. */
     SeruroRequestEvent event(event_id);
@@ -66,7 +73,8 @@ void PerformRequestAuth(SeruroRequestEvent &event)
     
     /* The user cancled the auth prompt, reply with failure to the original handler. */
     if (! new_auth.HasMember(SERURO_API_AUTH_FIELD_EMAIL)) {
-        SendFailureEvent(event.GetEventHandler(), event.GetEventID(), wxString(wxEmptyString));
+        SendFailureEvent(event.GetEventHandler(), event.GetEventID(),
+            og_params["server_uuid"].AsString(), og_params["request_id"].AsUInt(), wxString(wxEmptyString));
         return;
     }
     
@@ -81,6 +89,8 @@ void PerformRequestAuth(SeruroRequestEvent &event)
     (new SeruroRequest(og_params, event.GetEventHandler(), event.GetEventID()))->Run();
 }
 
+size_t SeruroRequest::current_request_id = 0;
+
 SeruroRequest::SeruroRequest(wxJSONValue api_params, wxEvtHandler *parent, int parentEvtId)
 	: wxThread(wxTHREAD_DETACHED), params(api_params), evtHandler(parent), evtId(parentEvtId)
 {
@@ -88,6 +98,9 @@ SeruroRequest::SeruroRequest(wxJSONValue api_params, wxEvtHandler *parent, int p
 	/* Catch-all for port configurations. */
 	params["server"]["port"] = theSeruroConfig::Get().GetPortFromServer(params["server"]);
 
+    /* Generate an instance-unique request ID */
+    this->request_id = ++SeruroRequest::current_request_id;
+    
 	/* Add to data structure accessed by thread */
 	wxCriticalSectionLocker enter(wxGetApp().seruro_critsection_thread);
 	wxGetApp().seruro_threads.Add(this);
@@ -116,6 +129,7 @@ void SeruroRequest::Reply(wxJSONValue response)
 	}
 
 	/* Set the server uuid. */
+    response["request_id"] = this->request_id;
     if (response.HasMember("uuid")) {
         response["server_uuid"] = response["uuid"];
     } else {
@@ -135,7 +149,8 @@ void SeruroRequest::Reply(wxJSONValue response)
 void SeruroRequest::ReplyWithFailure(const wxString &error_msg)
 {
     /* The failure event is generic. */
-    SendFailureEvent(this->evtHandler, this->evtId, error_msg);
+    SendFailureEvent(this->evtHandler, this->evtId,
+        params["server"]["uuid"].AsString(), this->request_id, error_msg);
 }
 
 /* Async-Requesting:

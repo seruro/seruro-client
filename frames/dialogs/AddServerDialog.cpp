@@ -3,6 +3,7 @@
 #include "../UIDefs.h"
 
 #include "../../SeruroClient.h"
+#include "../../SeruroConfig.h"
 
 #include <wx/grid.h>
 #include <wx/checkbox.h>

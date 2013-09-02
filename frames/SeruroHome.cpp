@@ -2,6 +2,7 @@
 #include "SeruroHome.h"
 
 #include "../SeruroClient.h"
+#include "../SeruroConfig.h"
 #include "../apps/SeruroApps.h"
 
 DECLARE_APP(SeruroClient);

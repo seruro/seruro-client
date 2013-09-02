@@ -4,6 +4,7 @@
 #include "Defs.h"
 #include "frames/UIDefs.h"
 
+#include "SeruroConfig.h"
 #include "SeruroTray.h"
 
 #include "frames/SeruroMain.h"

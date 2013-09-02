@@ -88,6 +88,10 @@ public:
     /* The request has determined a parameter/auth failure, create a response. */
     void ReplyWithFailure(const wxString &error_msg = wxEmptyString);
 
+    /* Keep track of the ID, allow an external to pause/delete. */
+    size_t request_id;
+    static size_t current_request_id;
+    
 protected:
     /* Creates a TLS Request (as an attempt) to create an authentication token. */
 	//wxString GetAuthToken();

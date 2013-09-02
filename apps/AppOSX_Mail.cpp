@@ -9,6 +9,7 @@
 #include "ProcessManager.h"
 
 #include "../SeruroClient.h"
+#include "../SeruroConfig.h"
 #include "../crypto/SeruroCrypto.h"
 
 /* When looking up OSX applications ( from PLIST ):

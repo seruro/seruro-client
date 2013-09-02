@@ -16,6 +16,9 @@ public:
     virtual bool Monitor() { return false; }
 };
 
+#include <wx/dynarray.h>
+WX_DEFINE_ARRAY_PTR(MonitorHelper *, ArrayMonitorHelper);
+
 class SeruroMonitor : public wxThread
 {
 public:
@@ -24,11 +27,15 @@ public:
     
 protected:
     virtual ExitCode Entry();
+    void Monitor();
     
 private:
     size_t poll_milli_delay;
     /* Will need to delete client's pointer. */
     SeruroClient *client;
+    
+    /* Helpers. */
+    ArrayMonitorHelper monitor_helpers;
 };
 
 #endif

@@ -4,6 +4,7 @@
 
 /* Used for option edits. */
 #include "api/SeruroStateEvents.h"
+#include "logging/SeruroLogger.h"
 
 #include "wxJSON/wx/jsonreader.h"
 #include "wxJSON/wx/jsonwriter.h"
@@ -276,6 +277,24 @@ bool SeruroConfig::SetOption(wxString option, wxString value, bool save_config)
     return true;
 }
 
+bool SeruroConfig::SetServerOption(wxString server_uuid, wxString option, wxString value, bool save_config)
+{
+    if (! this->HasConfig()) {
+        return false;
+    }
+    
+    if (! config["servers"].HasMember(server_uuid)) {
+        return false;
+    }
+    
+    config["servers"][server_uuid]["options"][option] = value;
+    if (save_config) {
+        this->WriteConfig();
+    }
+    
+    return true;
+}
+
 wxString SeruroConfig::GetOption(wxString option)
 {
     if (! this->HasConfig() || ! config.HasMember("options") || ! config["options"].HasMember(option)) {
@@ -283,6 +302,16 @@ wxString SeruroConfig::GetOption(wxString option)
     }
     
     return config["options"][option].AsString();
+}
+
+wxString SeruroConfig::GetServerOption(wxString server_uuid, wxString option)
+{
+    if (! this->HasConfig() || ! config["servers"].HasMember(server_uuid) ||
+        ! config["servers"][server_uuid]["options"].HasMember(option)) {
+        return wxEmptyString;
+    }
+    
+    return config["servers"][server_uuid]["options"][option].AsString();
 }
 
 /*****************************************************************************************/

@@ -8,22 +8,22 @@
 #include <wx/wxprec.h>
 #include <wx/wx.h>
 
-#include <wx/toplevel.h>
-#include <wx/notebook.h>
 #include <wx/thread.h>
 #include <wx/event.h>
-#include <wx/log.h>
 #include <wx/snglinst.h>
 
+#include "wxJSON/wx/jsonval.h"
+
 /* Inlcude the Config header so all classes may use wxGetApp().config. */
-#include "SeruroConfig.h"
-#include "SeruroMonitor.h"
-#include "logging/SeruroLogger.h"
+//#include "SeruroConfig.h"
 
 //class SeruroConfig;
+class SeruroMonitor;
+class SeruroLogger;
+class SeruroLoggerTarget;
 class SeruroFrameMain;
 class SeruroRequestEvent;
-class SeruroConfig;
+//class SeruroConfig;
 
 /* Source: thread samples */
 #include <wx/dynarray.h>

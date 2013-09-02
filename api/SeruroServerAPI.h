@@ -21,7 +21,8 @@ enum api_name_t
 	SERURO_API_CRL,
 	SERURO_API_P12S,
 	/* Special API call. */
-	SERURO_API_PING
+	SERURO_API_PING,
+    SERURO_API_UPDATE
 };
 
 /* Used by Create Request to bind result to callback method. */
@@ -33,7 +34,8 @@ enum seruro_api_callbacks_t
 	SERURO_API_CALLBACK_CRL,
 	SERURO_API_CALLBACK_SEARCH,
 	/* Special API call. */
-	SERURO_API_CALLBACK_PING
+	SERURO_API_CALLBACK_PING,
+    SERURO_API_CALLBACK_UPDATE
 };
 
 //extern enum api_name api_name_t;
@@ -43,6 +45,8 @@ enum seruro_api_callbacks_t
  * When the SeruroClient must make an API call a thread is spawned (or run)
  * which takes the call command and optional parameters and data.
  */
+
+bool DecodeBase64(const wxString &encoded, wxMemoryBuffer *decode);
 
 class SeruroServerAPI
 {

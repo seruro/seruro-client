@@ -2,6 +2,7 @@
 #include "ContactList.h"
 
 #include "../../SeruroClient.h"
+#include "../../SeruroConfig.h"
 #include "../UIDefs.h"
 
 /* Image data. */

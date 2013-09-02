@@ -21,6 +21,7 @@
 
 /* Code goes here */
 #include "../SeruroConfig.h"
+#include "../logging/SeruroLogger.h"
 #include "SeruroCryptoMAC.h"
 #include "../SeruroClient.h"
 #include "../api/Utils.h"

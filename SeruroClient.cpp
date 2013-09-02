@@ -10,18 +10,17 @@
 #endif
 
 #include "SeruroClient.h"
+#include "SeruroMonitor.h"
+#include "SeruroConfig.h"
 #include "apps/SeruroApps.h"
-
-/* Note: SeruroConfig/SeruroLogger are placed in the header. */
-
+#include "logging/SeruroLogger.h"
 #include "crypto/SeruroCrypto.h"
 #include "api/SeruroRequest.h"
-#include "frames/dialogs/ErrorDialog.h"
 
 #include "frames/UIDefs.h"
 #include "frames/SeruroMain.h"
-
 #include "frames/dialogs/AlertDialog.h"
+#include "frames/dialogs/ErrorDialog.h"
 
 #include <wx/image.h>
 

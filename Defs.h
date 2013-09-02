@@ -77,6 +77,7 @@
 #define SERURO_API_OBJECT_CRL    "/api/seruro/crl"
 /* A special API which does nothing, but allows auth checking. */
 #define SERURO_API_OBJECT_PING	 "/api/seruro/ping"
+#define SERURO_API_OBJECT_UPDATE "/api/seruro/update"
 
 /* Seruro API authentication POST fields. */
 #define SERURO_API_AUTH_FIELD_EMAIL		"user_login[email]"

@@ -1,6 +1,9 @@
 
 #include "SeruroApps.h"
 #include "../SeruroClient.h"
+#include "../SeruroConfig.h"
+
+#include "../logging/SeruroLogger.h"
 #include "../api/SeruroStateEvents.h"
 
 #include "ProcessManager.h"

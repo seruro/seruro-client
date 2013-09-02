@@ -39,7 +39,9 @@ public:
     wxJSONValue GetConfig() { return this->config; }
     
     bool SetOption(wxString option, wxString value, bool save_config = true);
+    bool SetServerOption(wxString server_uuid, wxString option, wxString value, bool save_config = true);
     wxString GetOption(wxString option);
+    wxString GetServerOption(wxString server_uuid, wxString option);
 
 	/***********************************************************/
 	/************** TOKEN MANIPULATOR/ACCESSORS ****************/

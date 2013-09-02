@@ -7,6 +7,7 @@
 
 #include "../../SeruroClient.h"
 #include "../../SeruroConfig.h"
+#include "../../logging/SeruroLogger.h"
 
 #include "../../wxJSON/wx/jsonval.h"
 #include "../../wxJSON/wx/jsonwriter.h"

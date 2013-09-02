@@ -3,6 +3,7 @@
 #include "../UIDefs.h"
 
 #include "../../SeruroClient.h"
+#include "../../SeruroConfig.h"
 
 DECLARE_APP(SeruroClient);
 
