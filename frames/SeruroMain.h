@@ -37,7 +37,7 @@ public:
 	/* Setup events */
     void StartSetup(bool force = true);
     void StopSetup();
-	void OnSetupRun(wxCommandEvent &event);
+	//void OnSetupRun(wxCommandEvent &event);
     void OnSetupCancel(wxWizardEvent& event);
     void OnSetupFinished(wxWizardEvent& event);
 	bool IsSetupRunning() {

@@ -17,6 +17,7 @@
 
 /* Inlcude the Config header so all classes may use wxGetApp().config. */
 #include "SeruroConfig.h"
+#include "SeruroMonitor.h"
 #include "logging/SeruroLogger.h"
 
 //class SeruroConfig;
@@ -40,11 +41,6 @@ public:
     virtual bool OnInit();
 	int OnExit();
     
-    /* Abstraction for instance limiter. */
-    bool IsAnotherRunning();
-
-    /* Logging functions. */
-	void InitLogger();
     //void SetLogger(wxLog *logger);
     //wxString ReplaceLogger();
     void SetLoggerTarget(SeruroLoggerTarget *log_target);
@@ -59,6 +55,7 @@ public:
 	wxCriticalSection seruro_critsection_config;
     /* Adding/removing from the thread pool. */
 	wxCriticalSection seruro_critsection_thread;
+    wxCriticalSection seruro_critsection_monitor;
     /* Writing/reading a token. */
 	wxCriticalSection seruro_critsection_token;
     /* Writing to the log file. */
@@ -81,26 +78,31 @@ public:
 	/* For other components to use (for handled exceptions. */
 	void ErrorAndExit(wxString msg);
 
-	/* Various wizard controls. */
-	void DestroySetup();
-	void SetSetup(wxTopLevelWindow *wizard);
-	void RemoveSetup();
-
-//public:
-//	SeruroConfig *config;
-
+    /* Allow the monitor to reach in an remove the pointer. */
+    void PauseMonitor();
+    void DeleteMonitor() {
+        this->seruro_monitor = NULL;
+    }
+    
 private:
+    /* Abstraction for instance limiter. */
+    bool IsAnotherRunning();
+    
+    /* Logging functions. */
+	void InitLogger();
+    
+    /* Monitoring functions. */
+    void StartMonitor();
+    
 	/* Shows a message and prompts to send an error report. */
 	void ReportAndExit(wxJSONValue report, 
 		wxString msg = wxEmptyString, bool close_app = true);
 
 	SeruroFrameMain *main_frame;
     SeruroLogger *default_logger;
-
-	/* Keep track of any running wizards, if the application
-	 * is closed while the wizard is running, it will need to be
-     * destroyed. */
-	wxTopLevelWindow *running_setup;
+    
+    /* A "monitoring" thread which polls for various external updates. */
+    SeruroMonitor *seruro_monitor;
     
     /* Assure only one instance of the application is running. */
     wxSingleInstanceChecker *instance_limiter;

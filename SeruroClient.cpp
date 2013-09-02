@@ -34,12 +34,33 @@
     void VLDEnable (void) {}
 #endif
 
+#define SERURO_MONITOR_MILLI_DELAY 4000
+
 IMPLEMENT_APP(SeruroClient)
 
 int SeruroClient::OnExit()
 {
+    {
+        /* Assure the thread still exists when it is checked. */
+        wxCriticalSectionLocker enter(seruro_critsection_monitor);
+        if (this->seruro_monitor) {
+            if (this->seruro_monitor->Delete() != wxTHREAD_NO_ERROR) {
+                /* This is a problem. */
+            }
+        }
+        /* Allow the thread to enter it's destructor. */
+    }
+    
+    while (1) {
+        {
+            wxCriticalSectionLocker enter(seruro_critsection_monitor);
+            if (! this->seruro_monitor) break;
+        }
+        /* Wait for the destructor to function. */
+        wxThread::This()->Sleep(1);
+    }
+    
     delete instance_limiter;
-//	delete config;
 	return 0;
 }
 
@@ -62,13 +83,13 @@ bool SeruroClient::OnInit()
     
 	/* Start logger */
 	InitLogger();
-
-	/* User config instance (deprecated, controllers should use the singleton) */
-    //this->config = new SeruroConfig();
     
     /* Listen for invalid request events (which require UI actions and a request-restart). */
     Bind(SERURO_REQUEST_RESPONSE, &SeruroClient::OnInvalidAuth, this, SERURO_REQUEST_CALLBACK_AUTH);
 
+    /* Start external state monitor. */
+    StartMonitor();
+    
 	/* Now safe to start sub-frames (panels). */
 	main_frame->AddPanels();
     /* Check to see if the application is running for the first time. */
@@ -79,6 +100,32 @@ bool SeruroClient::OnInit()
     //alert->ShowModal();
 
     return true;
+}
+
+void SeruroClient::PauseMonitor()
+{
+    /* Assure the thread pointer is not deleted while pausing. */
+    wxCriticalSectionLocker enter(seruro_critsection_monitor);
+    if (this->seruro_monitor) {
+        /* The thread may return, or the app my cause a delete. */
+        if (this->seruro_monitor->Pause() != wxTHREAD_NO_ERROR) {
+            DEBUG_LOG(_("SeruroClient> (PauseMonitor) Cannot pause monitor."));
+        }
+    }
+}
+
+void SeruroClient::StartMonitor()
+{
+    /* Start monitoring for external state changes. */
+    seruro_monitor = new SeruroMonitor(this, SERURO_MONITOR_MILLI_DELAY);
+    if (seruro_monitor->Run() != wxTHREAD_NO_ERROR) {
+        DEBUG_LOG(_("SeruroClient> (StartMonitor) Cannot create monitor."));
+        
+        delete seruro_monitor;
+        DeleteMonitor();
+    } else {
+        DEBUG_LOG(_("SeruroClient> (StartMonitor) external event monitor started."));
+    }
 }
 
 bool SeruroClient::IsAnotherRunning()
@@ -98,16 +145,6 @@ bool SeruroClient::IsAnotherRunning()
     }
     
     return false;
-}
-
-void SeruroClient::SetSetup(wxTopLevelWindow *wizard)
-{
-	this->running_setup = wizard;
-}
-
-void SeruroClient::RemoveSetup()
-{
-	this->running_setup = 0;
 }
 
 wxWindow* SeruroClient::GetFrame()

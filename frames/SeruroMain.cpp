@@ -277,13 +277,14 @@ void SeruroFrameMain::StartSetup(bool force)
     
     /* The panels and "book view" should be hidden while the wizard is running. */
     this->Hide();
-        
-	this->setup_running = true;
-    initial_setup = new SeruroSetup(this);
-    initial_setup->RunWizard(initial_setup->GetInitialPage());
     
+    initial_setup = new SeruroSetup(this);
+	this->setup_running = true;
     /* Save pointer to setup. */
     this->setup = initial_setup;
+    
+    /* Execute the wizard. */
+    initial_setup->RunWizard(initial_setup->GetInitialPage());
 }
 
 void SeruroFrameMain::StopSetup()
@@ -298,11 +299,6 @@ void SeruroFrameMain::StopSetup()
 
 	this->setup_running = false;
     this->setup = 0;
-}
-
-void SeruroFrameMain::OnSetupRun(wxCommandEvent &event)
-{
-
 }
 
 void SeruroFrameMain::OnSetupCancel(wxWizardEvent& event)

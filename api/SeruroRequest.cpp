@@ -82,7 +82,7 @@ void PerformRequestAuth(SeruroRequestEvent &event)
 }
 
 SeruroRequest::SeruroRequest(wxJSONValue api_params, wxEvtHandler *parent, int parentEvtId)
-	: wxThread(), params(api_params), evtHandler(parent), evtId(parentEvtId)
+	: wxThread(wxTHREAD_DETACHED), params(api_params), evtHandler(parent), evtId(parentEvtId)
 {
     wxLogMessage(_("SeruroRequest> creating thread for event id (%d)."), evtId);
 	/* Catch-all for port configurations. */

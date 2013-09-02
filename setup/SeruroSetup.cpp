@@ -13,8 +13,8 @@ BEGIN_EVENT_TABLE(SeruroSetup, wxWizard)
 	EVT_WIZARD_PAGE_CHANGED(SERURO_SETUP_ID, SeruroSetup::OnChanged)
 	EVT_WIZARD_BEFORE_PAGE_CHANGED(SERURO_SETUP_ID, SeruroSetup::OnChanging)
 
-    EVT_WIZARD_CANCEL(SERURO_SETUP_ID,   SeruroSetup::OnCanceled)
-    EVT_WIZARD_FINISHED(SERURO_SETUP_ID, SeruroSetup::OnFinished)
+    //EVT_WIZARD_CANCEL(SERURO_SETUP_ID,   SeruroSetup::OnCanceled)
+    //EVT_WIZARD_FINISHED(SERURO_SETUP_ID, SeruroSetup::OnFinished)
 END_EVENT_TABLE()
 
 DECLARE_APP(SeruroClient);
@@ -49,7 +49,7 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
   : setup_type(type), server_uuid(server_uuid), account(account)
 	//server_setup(type), address_setup(type)
 {
-	wxGetApp().SetSetup(this);
+	//wxGetApp().SetSetup(this);
 
 	/* Pre-check for sanity. */
 	if (type == SERURO_SETUP_ACCOUNT || type == SERURO_SETUP_IDENTITY) {
@@ -122,12 +122,12 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
 
 void SeruroSetup::OnFinished(wxWizardEvent &event)
 {
-	wxGetApp().RemoveSetup();
+	//wxGetApp().RemoveSetup();
 }
 
 void SeruroSetup::OnCanceled(wxWizardEvent &event)
 {
-	wxGetApp().RemoveSetup();
+	//wxGetApp().RemoveSetup();
 }
 
 bool SeruroSetup::IsNewServer()
