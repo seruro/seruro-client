@@ -4,6 +4,7 @@
 #include "AppMSW_Outlook.h"
 #include "../SeruroClient.h"
 #include "../SeruroConfig.h"
+#include "../logging/SeruroLogger.h"
 
 #include "../crypto/SeruroCrypto.h"
 #include "../api/Utils.h"

@@ -78,6 +78,7 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
 	/* Set tray icon data */
 	tray = new SeruroTray();
 	tray->SetMainFrame(this);
+	this->app_ending = false;
 
 	wxIconBundle icon_bundle;
 	wxIcon icon;
@@ -240,6 +241,9 @@ void SeruroFrameMain::OnClose(wxCloseEvent &event)
         return;
 	}
 	
+	/* Signal to potential lazy-event handlers that the application is ending. */
+	this->app_ending = true;
+
 	/* If there is a running wizard, cancel it. */
 	this->StopSetup();
 
@@ -296,6 +300,7 @@ void SeruroFrameMain::StopSetup()
     
     ((SeruroSetup *) this->setup)->EndModal(0);
     this->setup->Close();
+	this->setup->Destroy();
 
 	this->setup_running = false;
     this->setup = 0;
@@ -305,6 +310,10 @@ void SeruroFrameMain::OnFinishSetup()
 {
     /* Is this correct? */
 	this->setup_running = false;
+
+	if (this->app_ending) {
+		return;
+	}
     
     if (theSeruroConfig::Get().GetServerNames().size() == 0) {
         wxLogMessage(_("SeruroFrameMain> (OnSetupCancel) the initial setup was cancled."));

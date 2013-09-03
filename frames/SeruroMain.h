@@ -79,6 +79,7 @@ private:
     /* An instance of a running setup. */
     wxTopLevelWindow *setup;
 	bool setup_running;
+	bool app_ending;
     
 	DECLARE_EVENT_TABLE()
 };
