@@ -33,31 +33,13 @@
     void VLDEnable (void) {}
 #endif
 
-#define SERURO_MONITOR_MILLI_DELAY 4000
+#define SERURO_MONITOR_MILLI_DELAY 600000
 
 IMPLEMENT_APP(SeruroClient)
 
 int SeruroClient::OnExit()
 {
-    {
-        /* Assure the thread still exists when it is checked. */
-        wxCriticalSectionLocker enter(seruro_critsection_monitor);
-        if (this->seruro_monitor) {
-            if (this->seruro_monitor->Delete() != wxTHREAD_NO_ERROR) {
-                /* This is a problem. */
-            }
-        }
-        /* Allow the thread to enter it's destructor. */
-    }
-    
-    while (1) {
-        {
-            wxCriticalSectionLocker enter(seruro_critsection_monitor);
-            if (! this->seruro_monitor) break;
-        }
-        /* Wait for the destructor to function. */
-        wxThread::This()->Sleep(1);
-    }
+    this->StopMonitor();
     
     delete instance_limiter;
 	return 0;
@@ -113,8 +95,36 @@ void SeruroClient::PauseMonitor()
     }
 }
 
+void SeruroClient::ResumeMonitor()
+{
+    /* Assure the thread pointer is not deleted while pausing. */
+    wxCriticalSectionLocker enter(seruro_critsection_monitor);
+    
+    if (this->seruro_monitor) {
+        if (!this->seruro_monitor->IsPaused()) {
+            /* Cannot resume when not paused. */
+            return;
+        }
+        
+        /* The thread may return, or the app my cause a delete. */
+        if (this->seruro_monitor->Resume() != wxTHREAD_NO_ERROR) {
+            DEBUG_LOG(_("SeruroClient> (ResumeMonitor) Cannot resume monitor."));
+        }
+    }
+}
+
 void SeruroClient::StartMonitor()
 {
+    {
+        /* Multiple threads will cause unknown behavior. */
+        wxCriticalSectionLocker enter(seruro_critsection_monitor);
+        
+        if (this->seruro_monitor) {
+            /* Do not allow multiple monitor threads. */
+            return;
+        }
+    }
+    
     /* Start monitoring for external state changes. */
     seruro_monitor = new SeruroMonitor(this, SERURO_MONITOR_MILLI_DELAY);
     if (seruro_monitor->Run() != wxTHREAD_NO_ERROR) {
@@ -124,6 +134,29 @@ void SeruroClient::StartMonitor()
         DeleteMonitor();
     } else {
         DEBUG_LOG(_("SeruroClient> (StartMonitor) external event monitor started."));
+    }
+}
+
+void SeruroClient::StopMonitor()
+{
+    {
+        /* Assure the thread still exists when it is checked. */
+        wxCriticalSectionLocker enter(seruro_critsection_monitor);
+        if (this->seruro_monitor) {
+            if (this->seruro_monitor->Delete() != wxTHREAD_NO_ERROR) {
+                /* This is a problem. */
+            }
+        }
+        /* Allow the thread to enter it's destructor. */
+    }
+    
+    while (1) {
+        {
+            wxCriticalSectionLocker enter(seruro_critsection_monitor);
+            if (! this->seruro_monitor) break;
+        }
+        /* Wait for the destructor to function. */
+        wxThread::This()->Sleep(100);
     }
 }
 

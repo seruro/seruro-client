@@ -74,6 +74,8 @@ protected:
 #endif
 
 private:
+    void OnFinishSetup();
+    
     /* An instance of a running setup. */
     wxTopLevelWindow *setup;
 	bool setup_running;

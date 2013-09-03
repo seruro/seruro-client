@@ -78,8 +78,12 @@ public:
 	/* For other components to use (for handled exceptions. */
 	void ErrorAndExit(wxString msg);
 
+    /* Monitoring functions. */
+    void StartMonitor();
+    void StopMonitor();
     /* Allow the monitor to reach in an remove the pointer. */
     void PauseMonitor();
+    void ResumeMonitor();	
     void DeleteMonitor() {
         this->seruro_monitor = NULL;
     }
@@ -90,9 +94,6 @@ private:
     
     /* Logging functions. */
 	void InitLogger();
-    
-    /* Monitoring functions. */
-    void StartMonitor();
     
 	/* Shows a message and prompts to send an error report. */
 	void ReportAndExit(wxJSONValue report, 

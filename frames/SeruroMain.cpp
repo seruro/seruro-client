@@ -301,7 +301,7 @@ void SeruroFrameMain::StopSetup()
     this->setup = 0;
 }
 
-void SeruroFrameMain::OnSetupCancel(wxWizardEvent& event)
+void SeruroFrameMain::OnFinishSetup()
 {
     /* Is this correct? */
 	this->setup_running = false;
@@ -314,23 +314,20 @@ void SeruroFrameMain::OnSetupCancel(wxWizardEvent& event)
 		}
     }
     
+    /* Restart the monitor thread (to allow certificates/contacts to download). */
+    wxGetApp().StopMonitor();
+    wxGetApp().StartMonitor();
+    
     this->Show();
-	this->ChangePanel(SERURO_PANEL_HOME_ID);
+	//this->ChangePanel(SERURO_PANEL_HOME_ID);
+}
+
+void SeruroFrameMain::OnSetupCancel(wxWizardEvent& event)
+{
+    this->OnFinishSetup();
 }
 
 void SeruroFrameMain::OnSetupFinished(wxWizardEvent& event)
 {
-    /* Is this correct? */
-    this->setup_running = false;
-    
-    if (theSeruroConfig::Get().GetServerNames().size() == 0) {
-        wxLogMessage(_("SeruroFrameMain> (OnSetupFinished) there were no servers added?"));
-		if (! SERURO_ALLOW_NO_ACCOUNTS) {
-			this->Close(true);
-            return;
-		}
-    }
-    
-    this->Show();
-	this->ChangePanel(SERURO_PANEL_HOME_ID);
+    this->OnFinishSetup();
 }

@@ -37,12 +37,12 @@ void ServerMonitor::OnUpdateResponse(SeruroRequestEvent &event)
         /* Store the last_update as the last time the server responded. */
         theSeruroConfig::Get().SetServerOption(server_uuid, "last_update", response["now"].AsString());
     
-        if (response.HasMember("users")) {
-            this->AddContacts(server_uuid, response["contacts"]);
+        if (response["results"].HasMember("users")) {
+            ProcessContacts(server_uuid, response["results"]["users"]);
         }
     
-        if (response.HasMember("certificates")) {
-            this->AddCertificates(server_uuid, response["certificates"]);
+        if (response["results"].HasMember("certificates")) {
+            ProcessCertificates(server_uuid, response["results"]["certificates"]);
         }
     }
     
@@ -52,18 +52,31 @@ void ServerMonitor::OnUpdateResponse(SeruroRequestEvent &event)
     }
 }
 
-bool ServerMonitor::AddContacts(wxString server_uuid, wxJSONValue contacts)
+bool ServerMonitor::ProcessContacts(wxString server_uuid, wxJSONValue contacts)
 {
     int num_contacts;
     wxString address;
+    bool update_contact;
+    wxJSONValue existing_contact;
     
     num_contacts = contacts.Size();
     for (int i = 0; i < num_contacts; ++i) {
         address = contacts[i]["address"].AsString();
+        
+        update_contact = theSeruroConfig::Get().HasContact(server_uuid, address);
+        if (update_contact) {
+            existing_contact = theSeruroConfig::Get().GetContact(server_uuid, address);
+            if (existing_contact["name"][0].AsString() == contacts[i]["first_name"].AsString() &&
+                existing_contact["name"][1].AsString() == contacts[i]["last_name"].AsString()) {
+                /* There was no change to the contact, do not create an event. */
+                continue;
+            }
+        }
+        
         theSeruroConfig::Get().AddContact(server_uuid, address,
             contacts[i]["first_name"].AsString(), contacts[i]["last_name"].AsString());
         
-        SeruroStateEvent event(STATE_TYPE_CONTACT, STATE_ACTION_ADD);
+        SeruroStateEvent event(STATE_TYPE_CONTACT, (update_contact) ? STATE_ACTION_UPDATE : STATE_ACTION_ADD);
         event.SetAccount(address);
         event.SetServerUUID(server_uuid);
         wxGetApp().AddEvent(event);
@@ -72,7 +85,7 @@ bool ServerMonitor::AddContacts(wxString server_uuid, wxJSONValue contacts)
     return true;
 }
 
-bool ServerMonitor::AddCertificates(wxString server_uuid, wxJSONValue certificates)
+bool ServerMonitor::ProcessCertificates(wxString server_uuid, wxJSONValue certificates)
 {
     wxString address;
     int num_certificates;
@@ -91,7 +104,7 @@ bool ServerMonitor::AddCertificates(wxString server_uuid, wxJSONValue certificat
         if (! DecodeBase64(cert_encoded, &cert_decoded)) continue;
         
         cert_fingerprint = wxEmptyString; /* must reset the fingerprint */
-		result = (result && crypto.InstallCertificate(cert_decoded, cert_fingerprint));
+		result = crypto.InstallCertificate(cert_decoded, cert_fingerprint);
         if (! result) continue;
         
         /* Track this certificate. Todo: pull out of a loop. */
@@ -99,10 +112,11 @@ bool ServerMonitor::AddCertificates(wxString server_uuid, wxJSONValue certificat
             (certificates[i]["type"].AsString() == _("authentication")) ? ID_AUTHENTICATION : ID_ENCIPHERMENT,
             cert_fingerprint);
         
-        //SeruroStateEvent event(STATE_TYPE_, STATE_ACTION_ADD);
-        //event.SetAccount(address);
-        //event.SetServerUUID(server_uuid);
-        //wxGetApp().AddEvent(event);
+        /* This may cause duplicate events for a contact add/ then update. but that's fine. */
+        SeruroStateEvent event(STATE_TYPE_CONTACT, STATE_ACTION_UPDATE);
+        event.SetAccount(address);
+        event.SetServerUUID(server_uuid);
+        wxGetApp().AddEvent(event);
     }
     
     return true;

@@ -23,18 +23,19 @@ private:
     
     /* The server will reduce the info to a single
      * API call, the results will trigger various installs. */
-    bool AddContacts(wxString server_uuid, wxJSONValue contacts);
-    bool RemoveContacts(wxJSONValue contacts) { return true; }
+    bool ProcessContacts(wxString server_uuid, wxJSONValue contacts);
+    //bool RemoveContacts(wxJSONValue contacts) { return true; }
     
-    bool AddCertificates(wxString server_uuid, wxJSONValue certificates);
-    bool RevokeCertificate(wxJSONValue certificates) { return true; }
+    bool ProcessCertificates(wxString server_uuid, wxJSONValue certificates);
+    //bool RevokeCertificate(wxJSONValue certificates) { return true; }
     
     /* Check the CA/CRL status. */
+    bool NotifyAuthority(wxJSONValue authority) { return true; }
     
     /* Check your own status. */
-    bool RevokeAccount(wxJSONValue account) {}
+    bool RevokeAccount(wxJSONValue account) { return true; }
     /* Set some status icon saying new certs are available. */
-    bool NotifyAccount(wxJSONValue account) {}
+    bool NotifyAccount(wxJSONValue account) { return true; }
     
     /* Keep track of running requests, do not send multiple. */
     wxJSONValue requests;

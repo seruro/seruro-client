@@ -536,6 +536,7 @@ bool SeruroConfig::AddContact(wxString server_uuid, wxString address, wxString f
         return false;
     }
     
+    /* Replace the contact. */
     config["servers"][server_uuid]["contacts"][address] = wxJSONValue(wxJSONTYPE_OBJECT);
     config["servers"][server_uuid]["contacts"][address]["name"] = wxJSONValue(wxJSONTYPE_OBJECT);
     config["servers"][server_uuid]["contacts"][address]["name"].Append(first_name);
@@ -559,6 +560,22 @@ bool SeruroConfig::RemoveContact(wxString server_uuid, wxString address)
     
     config["servers"][server_uuid]["contacts"].Remove(address);
     return this->WriteConfig();
+}
+
+bool SeruroConfig::HasContact(wxString server_uuid, wxString address)
+{
+    wxArrayString layers;
+    
+    layers.Add("servers");
+    layers.Add(server_uuid);
+    layers.Add("contacts");
+    layers.Add(address);
+    
+    if (! HasConfig(layers)) {
+        return false;
+    }
+    
+    return true;
 }
 
 wxJSONValue SeruroConfig::GetContact(wxString server_uuid, wxString address)

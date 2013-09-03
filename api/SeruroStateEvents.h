@@ -28,7 +28,8 @@ enum state_types_t
 {
 	STATE_TYPE_SERVER,      /* A Seruro server changed. */
 	STATE_TYPE_ACCOUNT,     /* A Seruro account changed. */
-	STATE_TYPE_CONTACT,     /* A Seruro certificate (contact) changed. */
+	STATE_TYPE_CONTACT,     /* A Seruro contact (names) changed. */
+    //STATE_TYPE_CERTIFICATE, /* A contact certificate changed. */
     STATE_TYPE_IDENTITY,    /* A Seruro account identity changed. */
     
     STATE_TYPE_APPLICATION, /* An Email application changed. */

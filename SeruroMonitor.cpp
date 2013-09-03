@@ -29,14 +29,24 @@ wxThread::ExitCode SeruroMonitor::Entry()
 {
     /* Create helpers. */
     MonitorHelper *helper;
+    size_t delay_counter;
     
     helper = new ServerMonitor();
     this->monitor_helpers.Add(helper);
     
+    DEBUG_LOG(_("SeruroMonitor> Monitor thread started..."));
+    
+    delay_counter = 0;
     while (! this->TestDestroy()) {
-        this->Sleep(this->poll_milli_delay);
-        //DEBUG_LOG(_("SeruroMonitor> polling..."));
-        this->Monitor();
+        /* This quick-wait allows TestDestroy to run often. */
+        this->Sleep(100);
+        ++delay_counter;
+        
+        if (delay_counter >= this->poll_milli_delay/100) {
+            //DEBUG_LOG(_("SeruroMonitor> polling..."));
+            this->Monitor();
+            delay_counter = 0;
+        }
     }
     
     return (wxThread::ExitCode)0;

@@ -98,6 +98,7 @@ public:
     bool AddContact(wxString server_uuid, wxString address,
         wxString first_name, wxString last_name);
     bool RemoveContact(wxString server_uuid, wxString address);
+    bool HasContact(wxString server_uuid, wxString address);
     wxJSONValue GetContact(wxString server_uuid, wxString address);
 
 	/***********************************************************/
