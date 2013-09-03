@@ -29,6 +29,13 @@ void ServerMonitor::OnUpdateResponse(SeruroRequestEvent &event)
         //this->requests[response["server_uuid"]]
         request_id = (size_t) response["request_id"].AsUInt();
     }
+
+	if (response.HasMember("success") && response["success"].AsBool() == false) {
+		DEBUG_LOG(_("ServerMonitor> (OnUpdateResponse) update responded with %s."), response["error"].AsString());
+
+		/* Reset the last_update to backtrack. */
+		theSeruroConfig::Get().SetServerOption(server_uuid, "last_update", "0");
+	}
     
     /* Make sure the client is still auto downloading from servers. */
     auto_install = (theSeruroConfig::Get().GetOption("auto_download") == "true");
@@ -128,7 +135,6 @@ bool ServerMonitor::Monitor()
     SeruroRequest *request;
     wxArrayString servers;
     wxJSONValue params;
-    wxString last_update;
     
     /* Only run the server monitor if this client is auto downloading. */
     if (! theSeruroConfig::Get().GetOption("auto_download") == _("true")) {
@@ -147,8 +153,8 @@ bool ServerMonitor::Monitor()
         
         /* Use each server's specific "last_update" timestamp. */
         params["server"] = theSeruroConfig::Get().GetServer(servers[i]);
-        last_update = theSeruroConfig::Get().GetServerOption(servers[i], "last_update");
-        params["update"] = (last_update == wxEmptyString) ? "1" : last_update;
+        params["update"] = theSeruroConfig::Get().HasServerOption(servers[i], "last_update") ?
+			theSeruroConfig::Get().GetServerOption(servers[i], "last_update") : "1";
         
         /* Create thread, watch the thread ID, and run. */
         request = api->CreateRequest(SERURO_API_UPDATE, params, SERURO_API_CALLBACK_UPDATE);

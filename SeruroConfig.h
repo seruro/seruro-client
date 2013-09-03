@@ -40,8 +40,10 @@ public:
     
     bool SetOption(wxString option, wxString value, bool save_config = true);
     bool SetServerOption(wxString server_uuid, wxString option, wxString value, bool save_config = true);
+	bool HasServerOption(wxString server_uuid, wxString option);
     wxString GetOption(wxString option);
     wxString GetServerOption(wxString server_uuid, wxString option);
+	bool HasOption(wxString option);
 
 	/***********************************************************/
 	/************** TOKEN MANIPULATOR/ACCESSORS ****************/
