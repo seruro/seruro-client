@@ -74,6 +74,11 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
         setup_icon, wxDefaultPosition,
         wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
 	this->SetIcon(setup_icon);
+    
+    /* OSX uses a larger font, the identity page warning text may fall off. */
+#if defined(__WXOSX__) || defined(__WXMAC__)
+    this->SetPageSize(wxSize(SERURO_APP_DEFAULT_WIDTH - 150, -1));
+#endif
 
 	/* Set the default values of the navigation buttons. */
 	this->next_button_orig = this->m_btnNext->GetLabelText();

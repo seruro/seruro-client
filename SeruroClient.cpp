@@ -69,6 +69,7 @@ bool SeruroClient::OnInit()
     Bind(SERURO_REQUEST_RESPONSE, &SeruroClient::OnInvalidAuth, this, SERURO_REQUEST_CALLBACK_AUTH);
 
     /* Start external state monitor. */
+    this->seruro_monitor = NULL;
     StartMonitor();
     
 	/* Now safe to start sub-frames (panels). */

@@ -37,16 +37,16 @@ wxThread::ExitCode SeruroMonitor::Entry()
     DEBUG_LOG(_("SeruroMonitor> Monitor thread started..."));
     
     delay_counter = 0;
-    while (! this->TestDestroy()) {
+    while (! this->TestDestroy()) {        
+        if (delay_counter <= 0) {
+            //DEBUG_LOG(_("SeruroMonitor> polling..."));
+            this->Monitor();
+            delay_counter = this->poll_milli_delay/100;
+        }
+        
         /* This quick-wait allows TestDestroy to run often. */
         this->Sleep(100);
         ++delay_counter;
-        
-        if (delay_counter >= this->poll_milli_delay/100) {
-            //DEBUG_LOG(_("SeruroMonitor> polling..."));
-            this->Monitor();
-            delay_counter = 0;
-        }
     }
     
     return (wxThread::ExitCode)0;

@@ -31,14 +31,19 @@ void SeruroPanelHome::OnAccountStateChange(SeruroStateEvent &event)
 
 void SeruroPanelHome::OnServerStateChange(SeruroStateEvent &event)
 {
-    this->GenerateWelcomeBox();
-    this->GenerateServerBox();
+    if (event.GetAction() == STATE_ACTION_ADD || event.GetAction() == STATE_ACTION_REMOVE) {
+        this->GenerateWelcomeBox();
+        this->GenerateServerBox();
+    }
     event.Skip();
 }
 
 void SeruroPanelHome::OnContactStateChange(SeruroStateEvent &event)
 {
-    this->GenerateServerBox();
+    if (event.GetAction() == STATE_ACTION_ADD || event.GetAction() == STATE_ACTION_REMOVE) {
+        this->GenerateWelcomeBox();
+        this->GenerateServerBox();
+    }
     event.Skip();
 }
 
