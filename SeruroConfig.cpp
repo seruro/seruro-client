@@ -320,6 +320,28 @@ wxString SeruroConfig::GetServerOption(wxString server_uuid, wxString option)
     return config["servers"][server_uuid]["options"][option].AsString();
 }
 
+bool SeruroConfig::HasServerOption(wxString server_uuid, wxString option)
+{
+	wxArrayString layers;
+
+	layers.Add("servers");
+	layers.Add(server_uuid);
+	layers.Add("options");
+	layers.Add(option);
+
+	return HasConfig(layers);
+}
+
+bool SeruroConfig::HasOption(wxString option)
+{
+	wxArrayString layers;
+
+	layers.Add("options");
+	layers.Add(option);
+
+	return HasConfig(layers);
+}
+
 /*****************************************************************************************/
 /************** TOKEN MANIPULATOR/ACCESSORS **********************************************/
 /*****************************************************************************************/
