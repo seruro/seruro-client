@@ -292,6 +292,12 @@ bool SeruroConfig::SetServerOption(wxString server_uuid, wxString option, wxStri
         this->WriteConfig();
     }
     
+    SeruroStateEvent event(STATE_TYPE_OPTION);
+    event.SetServerUUID(server_uuid);
+    event.SetValue("option_name", option);
+    event.SetValue("option_value", value);
+    wxGetApp().AddEvent(event);
+    
     return true;
 }
 
@@ -906,13 +912,35 @@ bool SeruroConfig::RemoveCACertificate(wxString server_uuid, bool write_config)
 bool SeruroConfig::AddIdentity(wxString server_uuid, wxString address, identity_type_t cert_type, wxString fingerprint)
 {
 	wxString location = _("identities");
-	return AddFingerprint(location, server_uuid, fingerprint, address, cert_type);
+    bool result;
+    
+	result = AddFingerprint(location, server_uuid, fingerprint, address, cert_type);
+    if (result) {
+        /* Create identity installed event. */
+        SeruroStateEvent event(STATE_TYPE_IDENTITY, STATE_ACTION_UPDATE);
+        event.SetServerUUID(server_uuid);
+        event.SetAccount(address);
+        wxGetApp().AddEvent(event);
+    }
+    
+    return result;
 }
 
 bool SeruroConfig::RemoveIdentity(wxString server_uuid, wxString address, identity_type_t cert_type, bool write_config)
 {
 	wxString location = _("identities");
-	return RemoveFingerprints(location, server_uuid, address, cert_type);
+    bool result;
+    
+	result = RemoveFingerprints(location, server_uuid, address, cert_type);
+    if (result) {
+        /* Create identity installed event. */
+        SeruroStateEvent event(STATE_TYPE_IDENTITY, STATE_ACTION_UPDATE);
+        event.SetServerUUID(server_uuid);
+        event.SetAccount(address);
+        wxGetApp().AddEvent(event);
+    }
+    
+    return result;
 }
 
 bool SeruroConfig::AddCertificate(wxString server_uuid, wxString address, identity_type_t cert_type, wxString fingerprint)

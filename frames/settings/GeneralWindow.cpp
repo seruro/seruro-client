@@ -4,6 +4,7 @@
 #include "../UIDefs.h"
 
 #include "../../SeruroConfig.h"
+#include "../../SeruroClient.h"
 
 #include <wx/textctrl.h>
 
@@ -43,10 +44,52 @@ BEGIN_EVENT_TABLE(GeneralWindow, SettingsView)
 	EVT_CHECKBOX(OPTION_POLL_CERTSTORE_ID, GeneralWindow::OnPollCertstore)
 END_EVENT_TABLE()
 
+DECLARE_APP(SeruroClient);
+
 void GeneralWindow::OnServerStateEvent(SeruroStateEvent &event)
 {
-	//this->GenerateServersList();
+    if (event.GetAction() == STATE_ACTION_ADD || event.GetAction() == STATE_ACTION_REMOVE) {
+        //this->GenerateServersList();
+    }
 	event.Skip();
+}
+
+void GeneralWindow::OnOptionStateChange(SeruroStateEvent &event)
+{
+    wxCheckBox *affected_option;
+    wxString option_name;
+    wxString option_value;
+    
+    event.Skip();
+    
+    option_name = event.GetValue("option_name");
+    option_value = event.GetValue("option_value");
+    
+    /* Set the server selection. */
+    if (option_name == "default_server") {
+        //this->GenerateServersList();
+        return;
+    }
+    
+    /* Switch over possible boolean controls. */
+    if (option_name == "auto_download") {
+        affected_option = this->option_auto_download;
+    } else if (option_name == "save_encipherment") {
+        affected_option = this->option_save_encipherment;
+    } else if (option_name == "poll_revocations") {
+        affected_option = this->option_poll_revocations;
+    } else if (option_name == "poll_certstore") {
+        affected_option = this->option_poll_certstore;
+    } else {
+        return;
+    }
+    
+    /* This works event if this control set the value. */
+    if (option_value == "true") {
+        affected_option->SetValue(true);
+    } else {
+        affected_option->SetValue(false);
+    }
 }
 
 void GeneralWindow::GenerateServersList()
@@ -173,7 +216,8 @@ GeneralWindow::GeneralWindow(SeruroPanelSettings *window) : SettingsView(window)
 	sizer->Add(option_poll_certstore, OPTION_SIZER_OPTIONS);
 
 	/* Monitor server changes. */
-	this->Bind(SERURO_STATE_CHANGE, &GeneralWindow::OnServerStateEvent, this, STATE_TYPE_SERVER);
+	wxGetApp().Bind(SERURO_STATE_CHANGE, &GeneralWindow::OnServerStateEvent, this, STATE_TYPE_SERVER);
+    wxGetApp().Bind(SERURO_STATE_CHANGE, &GeneralWindow::OnOptionStateChange, this, STATE_TYPE_OPTION);
 
     this->SetSizer(sizer);
 	this->Layout();

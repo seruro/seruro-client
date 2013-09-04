@@ -56,21 +56,24 @@ class GeneralWindow : public SettingsView
 public:
     GeneralWindow(SeruroPanelSettings *window);
 
-	void OnAutoDownload(wxCommandEvent &event);
-	void OnDefaultServer(wxCommandEvent &event);
-
-	void OnSaveEncipherment(wxCommandEvent &event);
-	void OnPollRevocations(wxCommandEvent &event);
-	void OnPollCertstore(wxCommandEvent &event);
-
-	/* State events. */
-	void OnServerStateEvent(SeruroStateEvent &event);
-
 private:
 	bool GetBoolean(wxString key);
 	void SetBoolean(wxString key, bool value);
 	void SetString(wxString key, wxString value);
 
+    /* Listen for other option setters. */
+    void OnOptionStateChange(SeruroStateEvent &event);
+	/* State events. */
+	void OnServerStateEvent(SeruroStateEvent &event);
+
+    /* Button handlers. */
+    void OnAutoDownload(wxCommandEvent &event);
+	void OnDefaultServer(wxCommandEvent &event);
+    
+	void OnSaveEncipherment(wxCommandEvent &event);
+	void OnPollRevocations(wxCommandEvent &event);
+	void OnPollCertstore(wxCommandEvent &event);
+    
 	void GenerateServersList();
 
 	/* Option controls */
@@ -103,10 +106,6 @@ public:
 
 	void OnAddServer(wxCommandEvent &event);
 	void OnAddAccount(wxCommandEvent &event);
-
-	/* What happens when the UI or OS events change settings!? */
-	void OnServerStateChange(SeruroStateEvent &event);
-	void OnAccountStateChange(SeruroStateEvent &event);
         
     /* Add action. */
     void SetActionLabel(wxString label) {
@@ -116,6 +115,11 @@ public:
 	/* Todo: d-click to view certificate information. */
 
 private:
+    /* What happens when the UI or OS events change settings!? */
+	void OnServerStateChange(SeruroStateEvent &event);
+	void OnAccountStateChange(SeruroStateEvent &event);
+    void OnIdentityStateChange(SeruroStateEvent &event);
+    
     /* Add servers/accounts to lists. */
     void GenerateServersList();
     void GenerateAccountsList();

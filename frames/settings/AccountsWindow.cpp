@@ -82,6 +82,15 @@ void AccountsWindow::OnAccountStateChange(SeruroStateEvent &event)
 	event.Skip();
 }
 
+void AccountsWindow::OnIdentityStateChange(SeruroStateEvent &event)
+{
+    event.Skip();
+    
+    /* Brute force regenerate. */
+    this->GenerateAccountsList();
+    this->AlignLists();
+}
+
 void AccountsWindow::OnServerSelected(wxListEvent &event)
 {
     wxListItem item;
@@ -406,6 +415,7 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
 	/* Set up event handler bindings. */
 	wxGetApp().Bind(SERURO_STATE_CHANGE, &AccountsWindow::OnServerStateChange, this, STATE_TYPE_SERVER);
 	wxGetApp().Bind(SERURO_STATE_CHANGE, &AccountsWindow::OnAccountStateChange, this, STATE_TYPE_ACCOUNT);
+    wxGetApp().Bind(SERURO_STATE_CHANGE, &AccountsWindow::OnIdentityStateChange, this, STATE_TYPE_IDENTITY);
 
 	this->SetSizer(lists_sizer);
 

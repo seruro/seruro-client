@@ -116,12 +116,6 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
 		this->wizard->SetButtonText(wxEmptyString, _("Next >"));
 		this->wizard->FocusNext();
 		identity_installed = true;
-        
-        /* Create Identity event. */
-        SeruroStateEvent identity_event(STATE_TYPE_IDENTITY, STATE_ACTION_UPDATE);
-        identity_event.SetServerUUID(server_uuid);
-        identity_event.SetAccount(address);
-        this->ProcessWindowEvent(identity_event);
 	} else {
 		this->SetIdentityStatus(_("Certificates downloaded, please install."));
 	}
@@ -342,12 +336,6 @@ bool IdentityPage::GoNext(bool from_callback)
 		this->SetIdentityStatus(wxString::Format(_("Unable to unlock %s certificate."), failure_text));
 		return false;
 	}
-    
-    /* Create identity installed event. */
-    SeruroStateEvent event(STATE_TYPE_IDENTITY, STATE_ACTION_UPDATE);
-    event.SetServerUUID(download_response["server_uuid"].AsString());
-    event.SetAccount(download_response["address"].AsString());
-    this->ProcessWindowEvent(event);
 
 	/* Proceed to the next page. */
 	this->SetIdentityStatus(_("Success."));

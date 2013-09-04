@@ -45,7 +45,7 @@ void AppAccountList::OnIdentityStateChange(SeruroStateEvent &event)
     app_item.SetMask(wxLIST_MASK_TEXT);
     app_item.SetColumn(2);
     
-    display_name = (use_address) ? event.GetAccount() : this->address_map[account].AsString();
+    display_name = (use_address) ? event.GetAccount() : this->address_map[event.GetAccount()].AsString();
 
     for (int i = 0; i < this->accounts_list->GetItemCount(); i++) {
         account_item.SetId(i);
@@ -73,6 +73,7 @@ void AppAccountList::OnIdentityStateChange(SeruroStateEvent &event)
 void AppAccountList::SetAccountStatus(long index, const wxString &app, const wxString &account)
 {
     wxString server_uuid;
+    wxString server_name;
     account_status_t identity_status;
     
     identity_status = theSeruroApps::Get().IdentityStatus(app, account, server_uuid, this->is_initial);
@@ -92,7 +93,9 @@ void AppAccountList::SetAccountStatus(long index, const wxString &app, const wxS
 	}
 
     if (identity_status == APP_ASSIGNED) {
-        accounts_list->SetItem(index, 3, theSeruroConfig::Get().GetServerName(server_uuid));
+        /* Show which server the account is using an Identity from. */
+        server_name = theSeruroConfig::Get().GetServerName(server_uuid);
+        accounts_list->SetItem(index, 3, wxString::Format(_("Using Seruro: %s"), server_name));
     } else if (identity_status == APP_UNASSIGNED) {
         accounts_list->SetItem(index, 3, APP_UNASSIGNED_TEXT);
     } else if (identity_status == APP_PENDING_RESTART) {

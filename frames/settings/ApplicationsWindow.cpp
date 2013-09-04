@@ -46,6 +46,14 @@ void ApplicationsWindow::OnAccountStateChange(SeruroStateEvent &event)
 void ApplicationsWindow::OnApplicationStateChange(SeruroStateEvent &event)
 {
     event.Skip();
+    
+    /* Refresh applications. */
+    if (event.GetAction() == STATE_ACTION_ADD || event.GetAction() == STATE_ACTION_REMOVE) {
+        this->GenerateApplicationsList();
+    }
+    
+    AppAccountList::GenerateAccountsList();
+    this->AlignLists();
 }
 
 void ApplicationsWindow::OnIdentityStateChange(SeruroStateEvent &event)

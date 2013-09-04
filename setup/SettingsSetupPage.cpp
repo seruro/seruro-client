@@ -2,7 +2,7 @@
 
 #include "SeruroSetup.h"
 #include "../SeruroClient.h"
-
+#include "../api/SeruroStateEvents.h"
 
 #include "../frames/SeruroFrame.h"
 
