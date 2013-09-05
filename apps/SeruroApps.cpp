@@ -331,6 +331,11 @@ bool SeruroApps::AssignIdentity(wxString app_name, wxString server_uuid, wxStrin
     if (! assign_status) {
         /* Append to debug log. */
         identity_event.SetValue("status", "Restart Pending");
+    } else {
+        /* A call to IdentityStatus with an initial boolean will send PENDING_RESTART.
+         * This will allow a 'checker' to override.
+         */
+        identity_event.SetValue("assign_override", "true");
     }
     
     /* Process the event. */
@@ -348,9 +353,12 @@ bool SeruroApps::RequireRestart(AppHelper *app, wxString app_name)
     
     /* A monitor thread should check for this, and return a state event if the restart occurs. */
     /* Note: this application could already be pending a restart, we'll pop open the dialog anyway. */
-    app->restart_pending = true;
+    {
+        app->restart_pending = true;
     
-    restart_state = restart_dialog->ShowModal();
+        /* This will block until the user hits a button or the monitor ends the modal. */
+        restart_state = restart_dialog->ShowModal();
+    }
     delete restart_dialog;
         
     if (restart_state == wxID_OK) {
@@ -407,11 +415,13 @@ bool SeruroApps::RestartApp(wxString app_name)
     if (helper == 0) return false;
     
     /* Take control from the monitor thread. */
-    helper->restart_pending = false;
+    {
+        helper->restart_pending = false;
     
-    /* Stop the application, then wait for it to end (this will block the main thread?). */
-    /* Todo: show modal for restarting? */
-    helper->StopApp();
+        /* Stop the application, then wait for it to end (this will block the main thread?). */
+        /* Todo: show modal for restarting? */
+        helper->StopApp();
+    }
     
     /* Timeout = APPS_RESTART_DELAY * APPS_RESTART_MAX_COUNT */
     delay_count = 0;

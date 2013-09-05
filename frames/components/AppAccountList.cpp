@@ -39,6 +39,7 @@ void AppAccountList::OnIdentityStateChange(SeruroStateEvent &event)
 {
     wxListItem app_item, account_item;
     wxString display_name, server_uuid;
+    bool pending_override;
     
     account_item.SetMask(wxLIST_MASK_TEXT);
     account_item.SetColumn(1);
@@ -59,18 +60,21 @@ void AppAccountList::OnIdentityStateChange(SeruroStateEvent &event)
             continue;
         }
         
+        /* Allow the event to override a state-less identity status check. */
+        pending_override = event.HasValue("assign_override");
+        
         /* If found, the event may have a custom status, otherwise check and set. */
         if (event.HasValue("status")) {
             accounts_list->SetItem(i, 3, event.GetValue("status"));
             accounts_list->SetItemData(i, (long) APP_CUSTOM);
         } else {
-            this->SetAccountStatus(i, event.GetValue("app"), event.GetAccount());
+            this->SetAccountStatus(i, event.GetValue("app"), event.GetAccount(), pending_override);
         } 
     }
     /* Do not skip, this is not part of the event binding chain. */
 }
 
-void AppAccountList::SetAccountStatus(long index, const wxString &app, const wxString &account)
+void AppAccountList::SetAccountStatus(long index, const wxString &app, const wxString &account, bool pending_override)
 {
     wxString server_uuid;
     wxString server_name;
@@ -80,17 +84,19 @@ void AppAccountList::SetAccountStatus(long index, const wxString &app, const wxS
     accounts_list->SetItemData(index, (long) identity_status);
     
 	/* Since Apps which auto-configure do not maintain state of their 'once-configured' accounts. */
-	if (identity_status == APP_PENDING_RESTART) {
+	if (identity_status == APP_PENDING_RESTART && pending_override) {
+        identity_status = APP_ASSIGNED;
 		/* Do not give false "unstateful" information about pending restarts. */
-		if (this->pending_list[app][account].AsInt() == APP_ASSIGNED) {
-			identity_status = APP_ASSIGNED;
-		}
+		//if (this->pending_list[app].HasMember(account) &&
+        //    this->pending_list[app][account].AsUInt() == APP_ASSIGNED) {
+		//	identity_status = APP_ASSIGNED;
+		//}
 	}
 
 	/* Save 'assigned' status for potentially stateless-app running responses. */
-	if (identity_status == APP_ASSIGNED) {
-		this->pending_list[app][account] = APP_ASSIGNED;
-	}
+	//if (identity_status == APP_ASSIGNED) {
+	//	this->pending_list[app][account] = wxJSONValue((unsigned int) APP_ASSIGNED);
+	//}
 
     if (identity_status == APP_ASSIGNED) {
         /* Show which server the account is using an Identity from. */
@@ -123,10 +129,15 @@ bool AppAccountList::Assign()
 	wxArrayString accounts, server_accounts;
 	wxString server_uuid;
     
-    if (! theSeruroApps::Get().CanAssign(this->app_name)) {
-        /* The application used by the selected account cannot be assigned. */
-        return false;
-    }
+    /* Note: an account might belong to an application that cannot be assigned (meaning it's auto-assigned).
+     *   But if that application is running then an assign will cause the application to restart.
+     *   So... should this still check for the assignment ability?
+     */
+    
+    //if (! theSeruroApps::Get().CanAssign(this->app_name)) {
+    //    /* The application used by the selected account cannot be assigned. */
+    //    return false;
+    //}
     
 	/* Check each servers' accounts, if a matching account is found, add the server to server_accounts. */
 	servers = theSeruroConfig::Get().GetServerList();
@@ -161,7 +172,7 @@ bool AppAccountList::Assign()
 bool AppAccountList::Unassign()
 {
 	/* Forget assigned state. */
-	this->pending_list[this->app_name][this->account] = APP_UNASSIGNED;
+	//this->pending_list[this->app_name][this->account] = wxJSONValue((unsigned int) APP_UNASSIGNED);
 
     return false;
 }

@@ -32,7 +32,8 @@ public:
         this->account_whitelist = whitelist;
     }
     
-    void SetAccountStatus(long index, const wxString &app_name, const wxString &account);
+    void SetAccountStatus(long index, const wxString &app_name,
+        const wxString &account, bool pending_overrite = false);
     void AddAccount(wxString app, wxString account);
     void RemoveAccount(wxString account);
     void GenerateAccountsList();

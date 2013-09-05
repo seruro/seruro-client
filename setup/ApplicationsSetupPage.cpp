@@ -56,7 +56,7 @@ void ApplicationsPage::OnAccountSelected(wxListEvent &event)
     );
     
     unassign_button->Enable(
-        //theSeruroApps::Get().CanUnassign(this->app_name) &&
+        theSeruroApps::Get().CanUnassign(this->app_name) &&
         accounts_list->	GetItemData(index) == APP_ASSIGNED
     );
 }
@@ -65,6 +65,9 @@ void ApplicationsPage::OnAccountDeselected(wxListEvent &event)
 {
     /* No need to reset the account name, it is static. */
     this->app_name = wxEmptyString;
+    
+    assign_button->Disable();
+    unassign_button->Disable();
 }
 
 void ApplicationsPage::OnAssign(wxCommandEvent &event)
@@ -74,7 +77,9 @@ void ApplicationsPage::OnAssign(wxCommandEvent &event)
         return;
     }
     
-    /* Todo: Should the assign controller create a failure alert? */
+    AppAccountList::DeselectAccounts();
+    assign_button->Disable();
+    unassign_button->Disable();
     
     /* Change the next text to indicate the assignment was successful. */
     this->wizard->SetButtonText(wxEmptyString, _("&Next >"));

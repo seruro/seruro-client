@@ -11,6 +11,7 @@
 #include "../SeruroClient.h"
 #include "../SeruroConfig.h"
 #include "../crypto/SeruroCrypto.h"
+#include "../logging/SeruroLogger.h"
 
 /* When looking up OSX applications ( from PLIST ):
  * <key>CFBundleIdentifier</key>
@@ -37,7 +38,7 @@ bool ReadDataPList(CFMutableDictionaryRef &results_dict)
     CFDataRef resource_data; /* File contents. */
     /* Error/state handleing. */
     SInt32 error_code = 0;
-    CFStringRef error_string;
+    CFErrorRef error_string;
     bool success;
     
     /* Get url to account data. */
@@ -58,8 +59,15 @@ bool ReadDataPList(CFMutableDictionaryRef &results_dict)
         return false;
     }
     
-    properties = CFPropertyListCreateFromXMLData(kCFAllocatorDefault, resource_data, kCFPropertyListImmutable, &error_string);
+    /* This is deprecated. */
+    //properties = CFPropertyListCreateFromXMLData(kCFAllocatorDefault, resource_data, kCFPropertyListImmutable, &error_string);
+    properties = CFPropertyListCreateWithData(kCFAllocatorDefault, resource_data, kCFPropertyListImmutable, NULL, &error_string);
     CFRelease(resource_data);
+    
+    //if (CFErrorGetCode(error_string) != 0) {
+    //    DEBUG_LOG(_("AppOSX_Mail> (ReadDataPList) encountered error while reading account plist (%d)."), CFErrorGetCode(error_string));
+    //    //CFRelease(error_string);
+    //}
     
     /* Make sure the property list can be represented as a dictionary. */
     if (CFGetTypeID(properties) != CFDictionaryGetTypeID()) {
