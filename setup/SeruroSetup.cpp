@@ -6,7 +6,36 @@
 #include <wx/clipbrd.h>
 #include <wx/dataobj.h>
 
+#include <wx/statbmp.h>
+
 #include "../resources/images/logo_block_128_flat.png.h"
+#include "../resources/images/setup_connect_24.png.h"
+
+#if defined(__WXMSW__)
+#define SETUP_TEXT_WRAP 400
+#define SETUP_TAB_SIZE  20
+#define SETUP_TEXT_PADDING 5
+#define SETUP_TEXT_PADDING_OPTIONS wxLEFT | wxTOP
+#elif defined(__WXOSX__) || defined(__WXMAC__)
+#define SETUP_TEXT_WRAP 300
+#define SETUP_TAB_SIZE 20
+#define SETUP_TEXT_PADDING 5
+#define SETUP_TEXT_PADDING_OPTIONS wxLEFT | wxTOP
+#endif
+
+#define TEXT_SETUP_WELCOME_PREAMBLE "Welcome to Seruro! \
+Let's take a moment and configure your computer.\
+\n\n\
+If this is your first time installing Seruro, \
+this setup wizard will guide you through the following steps:"
+
+#define TEXT_SETUP_WELCOME_POSTAMBLE "This setup may be canceled and restarted at a later time. \
+After completing the setup you may add additional Seruro servers and accounts."
+
+#define TEXT_SETUP_WELCOME_STEP1 "Connect to a Seruro server."
+#define TEXT_SETUP_WELCOME_STEP2 "Install your Seruro certificates."
+#define TEXT_SETUP_WELCOME_STEP3 "Configure your email application(s)."
+#define TEXT_SETUP_WELCOME_STEP4 "Download Seruro contacts and adjust settings."
 
 BEGIN_EVENT_TABLE(SeruroSetup, wxWizard)
     EVT_BUTTON(wxID_BACKWARD, SeruroSetup::GoPrev)
@@ -37,9 +66,25 @@ InitialPage::InitialPage(SeruroSetup *parent) : SetupPage(parent)
     this->enable_prev = false;
     this->enable_next = true;
     
-    Text *msg = new Text(this, wxT(TEXT_SETUP_WELCOME));
-    vert_sizer->Add(msg, DIALOGS_BOXSIZER_OPTIONS);
+	/* Preamble welcome text. */
+	Text *preamble_text = new Text(this, _(TEXT_SETUP_WELCOME_PREAMBLE), false);
+	preamble_text->Wrap(SETUP_TEXT_WRAP);
+    vert_sizer->Add(preamble_text, DIALOGS_BOXSIZER_OPTIONS);
     
+	/* Step 1: connect. */
+	wxSizer *step1_sizer = new wxBoxSizer(wxHORIZONTAL);
+	wxStaticBitmap *step1_icon = new wxStaticBitmap(this, wxID_ANY, wxGetBitmapFromMemory(setup_connect_24));
+	step1_sizer->Add(step1_icon, DIALOGS_BOXSIZER_OPTIONS.Border(wxLEFT, SETUP_TAB_SIZE));
+	step1_sizer->Add(new Text(this, _(TEXT_SETUP_WELCOME_STEP1)), 
+		DIALOGS_BOXSIZER_OPTIONS.Border(SETUP_TEXT_PADDING_OPTIONS, SETUP_TEXT_PADDING));
+	vert_sizer->Add(step1_sizer, DIALOGS_BOXSIZER_OPTIONS);
+
+
+
+	Text *postamble_text = new Text(this, _(TEXT_SETUP_WELCOME_POSTAMBLE), false);
+	postamble_text->Wrap(SETUP_TEXT_WRAP);
+	vert_sizer->Add(postamble_text, DIALOGS_BOXSIZER_OPTIONS);
+
     this->SetSizer(vert_sizer);
 }
 
