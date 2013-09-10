@@ -13,10 +13,7 @@
 #include <wx/log.h>
 #include <wx/imaglist.h>
 
-/* Include image data. */
-#include "../../resources/images/blank.png.h"
-#include "../../resources/images/certificate_icon_12_flat.png.h"
-#include "../../resources/images/identity_icon_12_flat.png.h"
+#include "../ImageDefs.h"
 
 /* Set these to help search for strings on selection. */
 #define SERVERS_LIST_NAME_COLUMN 1

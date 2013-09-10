@@ -6,6 +6,9 @@
 #include "SeruroSetup.h"
 //#include "../frames/UIDefs.h"
 
+#include "../resources/images/setup_full_step_2.png.h"
+#include "../resources/images/setup_identity_step_1.png.h"
+
 #include <wx/event.h>
 
 enum {
@@ -131,6 +134,12 @@ void IdentityPage::OnDownloadIdentity(wxCommandEvent &event)
 
 void IdentityPage::DoFocus()
 {
+    if (wizard->GetSetupType() == SERURO_SETUP_IDENTITY) {
+        wizard->SetBitmap(wxGetBitmapFromMemory(setup_identity_step_1));
+    } else {
+        wizard->SetBitmap(wxGetBitmapFromMemory(setup_full_step_2));
+    }
+    
 	/* This is only focued using success response. */
 	if (! this->identity_downloaded) {
 		this->DisableForm();

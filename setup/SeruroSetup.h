@@ -83,6 +83,9 @@ public:
 	//SetupPage* GetServerPage() { return server_page; }
 	SetupPage* GetAccountPage() { return account_page; }
 	bool IsNewServer();
+    setup_type_t GetSetupType() {
+        return this->setup_type;
+    }
     wxJSONValue GetServerInfo();
     wxString GetAccount();
     
@@ -145,6 +148,7 @@ class InitialPage : public SetupPage
 {
 public:
     InitialPage (SeruroSetup *parent);
+    void DoFocus();
 };
 
 class SettingsPage : public SetupPage

@@ -6,6 +6,8 @@
 #include "../crypto/SeruroCrypto.h"
 #include "../api/SeruroStateEvents.h"
 
+#include "../resources/images/setup_full_step_1.png.h"
+
 #include <wx/event.h>
 
 BEGIN_EVENT_TABLE(AccountPage, SetupPage)
@@ -266,6 +268,9 @@ void AccountPage::DoFocus()
 	//wxArrayString servers = theSeruroConfig::Get().GetServerList();
 	wxLogDebug(_("AccountSetupPage> (DoFocus) focusing the account page."));
 
+    /* Set the account bitmap, account pages only show on full setups. */
+    wizard->SetBitmap(wxGetBitmapFromMemory(setup_full_step_1));
+    
 	/* If there is no server page, then the initially-generated list is OK. */
 	if (! wizard->IsNewServer()) return;
 

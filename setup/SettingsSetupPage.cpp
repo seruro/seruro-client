@@ -6,6 +6,9 @@
 
 #include "../frames/SeruroFrame.h"
 
+#include "../resources/images/setup_full_step_4.png.h"
+#include "../resources/images/setup_identity_step_3.png.h"
+
 DECLARE_APP(SeruroClient);
 
 BEGIN_EVENT_TABLE(SettingsPage, SetupPage)
@@ -50,6 +53,12 @@ void SettingsPage::OnDefaultOption(wxCommandEvent &event)
 void SettingsPage::DoFocus()
 {
     wxJSONValue server_info;
+
+    if (wizard->GetSetupType() == SERURO_SETUP_IDENTITY) {
+        wizard->SetBitmap(wxGetBitmapFromMemory(setup_identity_step_3));
+    } else {
+        wizard->SetBitmap(wxGetBitmapFromMemory(setup_full_step_4));
+    }
     
     server_info = this->wizard->GetServerInfo();
     this->default_option->SetLabel(wxString::Format(_(TEXT_DEFAULT_SERVER), server_info["name"].AsString()));

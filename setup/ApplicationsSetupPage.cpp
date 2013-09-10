@@ -5,6 +5,9 @@
 
 #include "../frames/SeruroFrame.h"
 
+#include "../resources/images/setup_full_step_3.png.h"
+#include "../resources/images/setup_identity_step_2.png.h"
+
 enum application_setup_ids_t {
     BUTTON_ASSIGN,
     BUTTON_UNASSIGN,
@@ -99,6 +102,12 @@ void ApplicationsPage::OnRefresh(wxCommandEvent &event)
 void ApplicationsPage::DoFocus()
 {
     wxArrayString whitelist;
+
+    if (wizard->GetSetupType() == SERURO_SETUP_IDENTITY) {
+        wizard->SetBitmap(wxGetBitmapFromMemory(setup_identity_step_2));
+    } else {
+        wizard->SetBitmap(wxGetBitmapFromMemory(setup_full_step_3));
+    }
     
     /* Set account from setup wizard. */
     this->account = wizard->GetAccount();

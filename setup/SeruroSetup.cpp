@@ -8,8 +8,14 @@
 
 #include <wx/statbmp.h>
 
-#include "../resources/images/logo_block_128_flat.png.h"
+#include "../resources/images/setup_full_step_0.png.h"
+
+/* Individual step images. */
 #include "../resources/images/setup_connect_24.png.h"
+#include "../resources/images/setup_unlock_24.png.h"
+#include "../resources/images/setup_applications_24.png.h"
+#include "../resources/images/setup_settings_24.png.h"
+
 
 #if defined(__WXMSW__)
 #define SETUP_TEXT_WRAP 400
@@ -17,7 +23,7 @@
 #define SETUP_TEXT_PADDING 5
 #define SETUP_TEXT_PADDING_OPTIONS wxLEFT | wxTOP
 #elif defined(__WXOSX__) || defined(__WXMAC__)
-#define SETUP_TEXT_WRAP 300
+#define SETUP_TEXT_WRAP 500
 #define SETUP_TAB_SIZE 20
 #define SETUP_TEXT_PADDING 5
 #define SETUP_TEXT_PADDING_OPTIONS wxLEFT | wxTOP
@@ -70,6 +76,7 @@ InitialPage::InitialPage(SeruroSetup *parent) : SetupPage(parent)
 	Text *preamble_text = new Text(this, _(TEXT_SETUP_WELCOME_PREAMBLE), false);
 	preamble_text->Wrap(SETUP_TEXT_WRAP);
     vert_sizer->Add(preamble_text, DIALOGS_BOXSIZER_OPTIONS);
+    vert_sizer->AddSpacer(SETUP_TAB_SIZE);
     
 	/* Step 1: connect. */
 	wxSizer *step1_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -79,13 +86,42 @@ InitialPage::InitialPage(SeruroSetup *parent) : SetupPage(parent)
 		DIALOGS_BOXSIZER_OPTIONS.Border(SETUP_TEXT_PADDING_OPTIONS, SETUP_TEXT_PADDING));
 	vert_sizer->Add(step1_sizer, DIALOGS_BOXSIZER_OPTIONS);
 
-
-
+    /* Step 2: install (unlock). */
+	wxSizer *step2_sizer = new wxBoxSizer(wxHORIZONTAL);
+	wxStaticBitmap *step2_icon = new wxStaticBitmap(this, wxID_ANY, wxGetBitmapFromMemory(setup_unlock_24));
+	step2_sizer->Add(step2_icon, DIALOGS_BOXSIZER_OPTIONS.Border(wxLEFT, SETUP_TAB_SIZE+2));
+	step2_sizer->Add(new Text(this, _(TEXT_SETUP_WELCOME_STEP2)),
+                     DIALOGS_BOXSIZER_OPTIONS.Border(SETUP_TEXT_PADDING_OPTIONS, SETUP_TEXT_PADDING));
+	vert_sizer->Add(step2_sizer, DIALOGS_BOXSIZER_OPTIONS);
+    
+    /* Step 3: configure (assign to application security settings/profile). */
+	wxSizer *step3_sizer = new wxBoxSizer(wxHORIZONTAL);
+	wxStaticBitmap *step3_icon = new wxStaticBitmap(this, wxID_ANY, wxGetBitmapFromMemory(setup_applications_24));
+	step3_sizer->Add(step3_icon, DIALOGS_BOXSIZER_OPTIONS.Border(wxLEFT, SETUP_TAB_SIZE));
+	step3_sizer->Add(new Text(this, _(TEXT_SETUP_WELCOME_STEP3)),
+                     DIALOGS_BOXSIZER_OPTIONS.Border(SETUP_TEXT_PADDING_OPTIONS, SETUP_TEXT_PADDING));
+	vert_sizer->Add(step3_sizer, DIALOGS_BOXSIZER_OPTIONS);
+    
+    /* Step 4: settings (auto download contacts). */
+	wxSizer *step4_sizer = new wxBoxSizer(wxHORIZONTAL);
+	wxStaticBitmap *step4_icon = new wxStaticBitmap(this, wxID_ANY, wxGetBitmapFromMemory(setup_settings_24));
+	step4_sizer->Add(step4_icon, DIALOGS_BOXSIZER_OPTIONS.Border(wxLEFT, SETUP_TAB_SIZE));
+	step4_sizer->Add(new Text(this, _(TEXT_SETUP_WELCOME_STEP4)),
+                     DIALOGS_BOXSIZER_OPTIONS.Border(SETUP_TEXT_PADDING_OPTIONS, SETUP_TEXT_PADDING));
+	vert_sizer->Add(step4_sizer, DIALOGS_BOXSIZER_OPTIONS);
+    
+    vert_sizer->AddSpacer(SETUP_TAB_SIZE);
 	Text *postamble_text = new Text(this, _(TEXT_SETUP_WELCOME_POSTAMBLE), false);
 	postamble_text->Wrap(SETUP_TEXT_WRAP);
 	vert_sizer->Add(postamble_text, DIALOGS_BOXSIZER_OPTIONS);
 
     this->SetSizer(vert_sizer);
+}
+
+void InitialPage::DoFocus()
+{
+    /* Replace the setup bitmap. */
+    wizard->SetBitmap(wxGetBitmapFromMemory(setup_full_step_0));
 }
 
 //SeruroSetup::SeruroSetup(wxFrame *parent, bool add_server, bool add_address) : 
@@ -112,13 +148,13 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
 	if (setup_type == SERURO_SETUP_IDENTITY) setup_title = _("Install Identity");
 
 	/* Create ICON. */
-    wxIcon setup_icon;
-    setup_icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_block_128_flat));
+    //wxIcon setup_icon;
+    //setup_icon.CopyFromBitmap(wxGetBitmapFromMemory(setup_full_step_0));
 
     this->Create(parent, SERURO_SETUP_ID, setup_title,
-        setup_icon, wxDefaultPosition,
+        wxGetBitmapFromMemory(setup_full_step_0), wxDefaultPosition,
         wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
-	this->SetIcon(setup_icon);
+	//this->SetIcon(setup_icon);
     
     /* OSX uses a larger font, the identity page warning text may fall off. */
 #if defined(__WXOSX__) || defined(__WXMAC__)
