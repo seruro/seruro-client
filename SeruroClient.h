@@ -23,6 +23,7 @@ class SeruroLogger;
 class SeruroLoggerTarget;
 class SeruroFrameMain;
 class SeruroRequestEvent;
+class SeruroStateEvent;
 //class SeruroConfig;
 
 /* Source: thread samples */
@@ -50,6 +51,7 @@ public:
     
     /* Seruro State callback events. */
     void OnInvalidAuth(SeruroRequestEvent &event);
+    void OnApplicationClose(SeruroStateEvent &event);
 
 	/* Writing to the config. */
 	wxCriticalSection seruro_critsection_config;

@@ -4,6 +4,7 @@
 #include "logging/SeruroLogger.h"
 
 #include "api/ServerMonitor.h"
+#include "apps/AppMonitor.h"
 
 #include <wx/time.h>
 
@@ -33,11 +34,17 @@ wxThread::ExitCode SeruroMonitor::Entry()
     
     helper = new ServerMonitor();
     this->monitor_helpers.Add(helper);
+    helper = new AppMonitor();
+    this->monitor_helpers.Add(helper);
     
-    DEBUG_LOG(_("SeruroMonitor> Monitor thread started..."));
+    //DEBUG_LOG(_("SeruroMonitor> Monitor thread started..."));
     
     delay_counter = 0;
-    while (! this->TestDestroy()) {        
+    while (! this->TestDestroy()) {
+        if (delay_counter % 10 == 0) {
+            /* The fast monitor happens every second. */
+            this->FastMonitor();
+        }
         if (delay_counter <= 0) {
             //DEBUG_LOG(_("SeruroMonitor> polling..."));
             this->Monitor();
@@ -50,6 +57,13 @@ wxThread::ExitCode SeruroMonitor::Entry()
     }
     
     return (wxThread::ExitCode)0;
+}
+
+void SeruroMonitor::FastMonitor()
+{
+    for (size_t i = 0; i < this->monitor_helpers.size(); ++i) {
+        this->monitor_helpers[i]->FastMonitor();
+    }
 }
 
 void SeruroMonitor::Monitor()

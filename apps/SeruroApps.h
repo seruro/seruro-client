@@ -58,6 +58,7 @@ public:
         can_assign = true;
         can_unassign = true;
         needs_restart = false;
+        restart_pending = false;
 	}
     
     virtual bool IsInstalled() { return false; }
@@ -151,6 +152,10 @@ public:
     bool StopApp(wxString app_name);
     bool StartApp(wxString app_name);
     bool RestartApp(wxString app_name);
+    bool IsRestartPending(wxString app_name);
+    
+    /* Called from Client during callback events. */
+    void ApplicationClosed(wxString app_name);
 
 private:
     AppHelper* GetHelper(wxString app_name);
@@ -158,6 +163,8 @@ private:
     /* Show a prompt asking if to restart a restart_pending app. */
     bool RequireRestart(AppHelper *app, wxString app_name);
     RestartAppDialog *restart_dialog;
+    /* Only allow one restart dialog, and only manage through main thread. */
+    bool restart_dialog_pending;
     
     bool assign_pending;
     

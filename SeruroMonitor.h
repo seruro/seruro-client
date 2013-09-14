@@ -14,6 +14,8 @@ public:
     
     /* This mix-in makes life easy for the thread. */
     virtual bool Monitor() { return false; }
+    /* This happens very quickly and should not include any type of blocking. */
+    virtual bool FastMonitor() { return false; }
 };
 
 #include <wx/dynarray.h>
@@ -28,6 +30,7 @@ public:
 protected:
     virtual ExitCode Entry();
     void Monitor();
+    void FastMonitor();
     
 private:
     size_t poll_milli_delay;

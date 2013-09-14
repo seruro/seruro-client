@@ -348,7 +348,8 @@ bool SeruroApps::RequireRestart(AppHelper *app, wxString app_name)
 {
     int restart_state; 
     
-    /* Create and show a RestartApp dialog. */
+    /* Create and show a RestartApp dialog (what prevents multiple restart dialogs?) */
+    this->restart_dialog_pending = true;
     this->restart_dialog = new RestartAppDialog(wxGetApp().GetFrame(), app_name);
     
     /* A monitor thread should check for this, and return a state event if the restart occurs. */
@@ -357,9 +358,10 @@ bool SeruroApps::RequireRestart(AppHelper *app, wxString app_name)
         app->restart_pending = true;
     
         /* This will block until the user hits a button or the monitor ends the modal. */
-        restart_state = restart_dialog->ShowModal();
+        restart_state = restart_dialog->ShowWindowModal();
     }
     delete restart_dialog;
+    this->restart_dialog_pending = false;
         
     if (restart_state == wxID_OK) {
         /* Try to restart the application. */
@@ -374,6 +376,18 @@ bool SeruroApps::RequireRestart(AppHelper *app, wxString app_name)
     
     /* The user canceled the dialog, the application is still running. */
     return false;
+}
+
+void SeruroApps::ApplicationClosed(wxString app_name)
+{
+    if (! this->restart_dialog_pending) {
+        DEBUG_LOG(_("SeruroApps> (ApplicationClosed) The app monitor alerts on (%s), but it was not pending."), app_name);
+        return;
+    }
+    
+    if (this->restart_dialog != NULL && app_name == this->restart_dialog->GetAppName()) {
+        this->restart_dialog->EndModal(wxID_NO);
+    }
 }
 
 bool SeruroApps::IsAppRunning(wxString app_name)
@@ -394,6 +408,16 @@ bool SeruroApps::StopApp(wxString app_name)
     if (helper == 0) return false;
     
     return helper->StopApp();
+}
+
+bool SeruroApps::IsRestartPending(wxString app_name)
+{
+    AppHelper *helper;
+    
+    helper = this->GetHelper(app_name);
+    if (helper == 0) return false;
+    
+    return helper->restart_pending;
 }
 
 bool SeruroApps::StartApp(wxString app_name)

@@ -13,6 +13,10 @@ class RestartAppDialog : public wxMessageDialog
 {
 public:
 	RestartAppDialog(wxWindow *parent, const wxString &app_name);
+    wxString GetAppName();
+    
+private:
+    wxString app_name;
 };
 
 #endif

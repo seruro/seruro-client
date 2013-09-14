@@ -67,15 +67,18 @@ bool SeruroClient::OnInit()
     
     /* Listen for invalid request events (which require UI actions and a request-restart). */
     Bind(SERURO_REQUEST_RESPONSE, &SeruroClient::OnInvalidAuth, this, SERURO_REQUEST_CALLBACK_AUTH);
-
-    /* Start external state monitor. */
-    this->seruro_monitor = NULL;
-    StartMonitor();
+    Bind(SERURO_STATE_CHANGE, &SeruroClient::OnApplicationClose, this, STATE_TYPE_APPLICATION);
     
 	/* Now safe to start sub-frames (panels). */
 	main_frame->AddPanels();
+    
     /* Check to see if the application is running for the first time. */
     main_frame->StartSetup(false);
+    
+    /* Start external state monitor. */
+    wxThread::Sleep(1000);
+    this->seruro_monitor = NULL;
+    StartMonitor();
 
     //AlertDialog *alert = new AlertDialog();
     //this->SetTopWindow(alert);
@@ -134,7 +137,7 @@ void SeruroClient::StartMonitor()
         delete seruro_monitor;
         DeleteMonitor();
     } else {
-        DEBUG_LOG(_("SeruroClient> (StartMonitor) external event monitor started."));
+        //DEBUG_LOG(_("SeruroClient> (StartMonitor) external event monitor started."));
     }
 }
 
@@ -350,3 +353,19 @@ void SeruroClient::OnInvalidAuth(SeruroRequestEvent &event)
     /* (From api/SeruroRequest) Perform UI actions, then create identical request. */
     PerformRequestAuth(event);
 }
+
+void SeruroClient::OnApplicationClose(SeruroStateEvent &event)
+{
+    event.Skip();
+    
+    /* At the time of writing there was only one action for applications "CLOSE" */
+    if (event.GetAction() != STATE_ACTION_CLOSE) {
+        return;
+    }
+     
+    /* An application closed, which was originally pending a restart. */
+    theSeruroApps::Get().ApplicationClosed(event.GetValue("app_name"));
+}
+
+
+
