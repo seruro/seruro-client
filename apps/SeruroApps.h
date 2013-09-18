@@ -161,7 +161,8 @@ private:
     AppHelper* GetHelper(wxString app_name);
     
     /* Show a prompt asking if to restart a restart_pending app. */
-    bool RequireRestart(AppHelper *app, wxString app_name);
+    bool RequireRestart(AppHelper *app, wxString app_name,
+        wxString address = wxEmptyString);
     RestartAppDialog *restart_dialog;
     /* Only allow one restart dialog, and only manage through main thread. */
     bool restart_dialog_pending;

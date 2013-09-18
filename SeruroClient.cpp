@@ -147,6 +147,7 @@ void SeruroClient::StopMonitor()
         /* Assure the thread still exists when it is checked. */
         wxCriticalSectionLocker enter(seruro_critsection_monitor);
         if (this->seruro_monitor) {
+            /* Todo: this sometimes creates a "EXC_BAD_ACCESS" */   
             if (this->seruro_monitor->Delete() != wxTHREAD_NO_ERROR) {
                 /* This is a problem. */
             }

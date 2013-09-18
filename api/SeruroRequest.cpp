@@ -143,7 +143,9 @@ void SeruroRequest::Reply(wxJSONValue response)
     event.SetResponse(response);
     
     /* Event handler requires a critical section. */
-	this->evtHandler->AddPendingEvent(event);
+    if (this->evtHandler != NULL) {
+        this->evtHandler->AddPendingEvent(event);
+    }
 }
 
 void SeruroRequest::ReplyWithFailure(const wxString &error_msg)

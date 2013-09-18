@@ -21,6 +21,9 @@
 #include "../frames/dialogs/DecryptDialog.h"
 #include "../frames/components/AppAccountList.h"
 
+/* Individial status images. */
+#include "../resources/images/other_warning_20.png.h"
+
 enum setup_type_t
 {
 	SERURO_SETUP_SERVER,
@@ -39,6 +42,7 @@ class SeruroSetup;
 
 /* Helper fuction for pasting into various text controls. */
 void PasteIntoControl(wxTextCtrl *control);
+void AddIconText(wxWindow *parent, wxSizer* sizer, const wxBitmap& icon, wxWindow *text);
 
 class SetupPage : public wxWizardPageSimple
 {
@@ -197,12 +201,11 @@ public:
 	void EnablePage();
 
 	/* Help update the UI to reflect callback status. */
-	void SetAccountStatus(wxString status) {
-		this->account_status->SetLabelText(status);
-	}
+	void SetAccountStatus(wxString status, bool is_error = false);
 
 private:
 	bool login_success;
+    bool was_error;
 	bool has_ca;
 
 	/* Server list is a choice, even if there is only one. */
@@ -212,6 +215,7 @@ private:
 	/* Textual messages indicating address/server install status. */
 	//Text *server_status;
 	Text *account_status;
+    wxSizer *status_sizer;
 
 	DECLARE_EVENT_TABLE()
 };
@@ -240,9 +244,7 @@ public:
 	void DownloadIdentity();
 
 	/* Show the status, including the method of key retrevial. */
-	void SetIdentityStatus(wxString status) {
-		this->identity_status->SetLabelText(status);
-	}
+	void SetIdentityStatus(wxString status, bool is_error = false);
     
     /* The key form and download button are enabled/disabled. */
 	void DoFocus();
@@ -265,11 +267,14 @@ private:
      */
     bool install_encipherment;
     bool install_authentication;
+    bool was_error;
     
     bool identity_downloaded;
 	bool force_download;
 	bool identity_installed;
+    
 	Text *identity_status;
+    wxSizer *status_sizer;
 
 	DECLARE_EVENT_TABLE()
 };

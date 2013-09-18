@@ -33,6 +33,16 @@ RestartAppDialog::RestartAppDialog(wxWindow *parent, const wxString &app_name)
     //this->Center();
 }
 
+void RestartAppDialog::DialogClosed(wxWindowModalDialogEvent& event)
+{
+    int i = 0;
+}
+
+void RestartAppDialog::SetIdentity(wxString address)
+{
+    this->identity = address;
+}
+
 wxString RestartAppDialog::GetAppName()
 {
     return this->app_name;

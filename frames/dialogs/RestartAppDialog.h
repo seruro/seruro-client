@@ -15,8 +15,14 @@ public:
 	RestartAppDialog(wxWindow *parent, const wxString &app_name);
     wxString GetAppName();
     
+    void SetIdentity(wxString address);
+    void DialogClosed(wxWindowModalDialogEvent& event);
+    
 private:
     wxString app_name;
+    
+    /* If this restart is bound to an identity-configuration. */
+    wxString identity;
 };
 
 #endif

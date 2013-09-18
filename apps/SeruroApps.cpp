@@ -315,67 +315,79 @@ bool SeruroApps::AssignIdentity(wxString app_name, wxString server_uuid, wxStrin
         return false;
     }
     
+    /* Check if the application needs a restart. */
+    if (helper->needs_restart && helper->IsRunning()) {
+        if (this->RequireRestart(helper, app_name, address)) {
+            /* A callback will generate the identity event, pending the application restart. */
+            return true;
+        }
+    }
+    
+    /* The assignment operation is complete. */
+    this->assign_pending = false;
+    
     /* Create an identity update event. */
     SeruroStateEvent identity_event(STATE_TYPE_IDENTITY, STATE_ACTION_UPDATE);
     identity_event.SetServerUUID(server_uuid); /* This is normal discarded */
     identity_event.SetValue("app", app_name);
     identity_event.SetAccount(address);
     
-    /* Check if the application needs a restart. */
-    if (helper->needs_restart && helper->IsRunning()) {
-        assign_status = this->RequireRestart(helper, app_name);
-    }
-    
-    /* No longer require application or user interaction. */
-    this->assign_pending = false;
-    if (! assign_status) {
-        /* Append to debug log. */
-        identity_event.SetValue("status", "Restart Pending");
-    } else {
-        /* A call to IdentityStatus with an initial boolean will send PENDING_RESTART.
-         * This will allow a 'checker' to override.
-         */
-        identity_event.SetValue("assign_override", "true");
-    }
-    
+    /* A call to IdentityStatus with an initial boolean will send PENDING_RESTART.
+     * This will allow a 'checker' to override.
+     */
+    identity_event.SetValue("assign_override", "true");
+
     /* Process the event. */
     wxGetApp().AddEvent(identity_event);
     
     return true;
 }
 
-bool SeruroApps::RequireRestart(AppHelper *app, wxString app_name)
+bool SeruroApps::RequireRestart(AppHelper *app, wxString app_name, wxString address)
 {
-    int restart_state; 
+    //int restart_state;
+    
+    if (this->restart_dialog_pending) {
+        /* If a restart dialog is shown, then do not create a second, and ignore a restart decision. */
+        return false;
+    }
     
     /* Create and show a RestartApp dialog (what prevents multiple restart dialogs?) */
     this->restart_dialog_pending = true;
     this->restart_dialog = new RestartAppDialog(wxGetApp().GetFrame(), app_name);
+    
+    if (address != wxEmptyString) {
+        restart_dialog->SetIdentity(address);
+    }
     
     /* A monitor thread should check for this, and return a state event if the restart occurs. */
     /* Note: this application could already be pending a restart, we'll pop open the dialog anyway. */
     {
         app->restart_pending = true;
     
-        /* This will block until the user hits a button or the monitor ends the modal. */
-        restart_state = restart_dialog->ShowWindowModal();
+        /* This will *not* block until the user hits a button or the monitor ends the modal. */
+        restart_dialog->Connect( wxEVT_WINDOW_MODAL_DIALOG_CLOSED, wxWindowModalDialogEventHandler(RestartAppDialog::DialogClosed)); //, NULL, this 
+        restart_dialog->ShowWindowModal();
     }
-    delete restart_dialog;
-    this->restart_dialog_pending = false;
+    //delete restart_dialog;
+    //this->restart_dialog_pending = false;
         
-    if (restart_state == wxID_OK) {
-        /* Try to restart the application. */
-        this->RestartApp(app_name);
-        return true;
-    }
+    //if (restart_state == wxID_OK) {
+    //    /* Try to restart the application. */
+    //    this->RestartApp(app_name);
+    //    return true;
+    //}
     
-    if (restart_state == wxID_NO) {
-        /* The application was stopped by the user, and the modal was closed by the monitor thread. */
-        return true;
-    }
+    //if (restart_state == wxID_NO) {
+    //    /* The application was stopped by the user, and the modal was closed by the monitor thread. */
+    //    return true;
+    //}
     
     /* The user canceled the dialog, the application is still running. */
-    return false;
+    //return false;
+    
+    /* The dialog was created */
+    return true;
 }
 
 void SeruroApps::ApplicationClosed(wxString app_name)

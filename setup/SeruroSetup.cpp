@@ -1,5 +1,6 @@
 
 #include "SeruroSetup.h"
+#include "../logging/SeruroLogger.h"
 //#include "../frames/UIDefs.h"
 
 #include <wx/event.h>
@@ -8,6 +9,7 @@
 
 #include <wx/statbmp.h>
 
+/* Initial side image, this will change on each step. */
 #include "../resources/images/setup_full_step_0.png.h"
 
 /* Individual step images. */
@@ -64,6 +66,16 @@ SetupPage::SetupPage(SeruroSetup *parent) : wxWizardPageSimple(parent), wizard(p
 	//this->wizard->RequireAuth(false);
 }
 
+void AddIconText(wxWindow *parent, wxSizer* sizer, const wxBitmap& icon, wxWindow *text)
+{
+    wxSizer *horz_sizer = new wxBoxSizer(wxHORIZONTAL);
+    wxStaticBitmap *static_icon = new wxStaticBitmap(parent, wxID_ANY, icon);
+    
+    horz_sizer->Add(static_icon, DIALOGS_BOXSIZER_OPTIONS.Border(wxRIGHT, 10));
+    horz_sizer->Add(text, wxALIGN_CENTER_VERTICAL|wxALL, 1);
+    sizer->Add(horz_sizer, DIALOGS_BOXSIZER_OPTIONS);
+}
+
 InitialPage::InitialPage(SeruroSetup *parent) : SetupPage(parent)
 {
     /* Show welcome message, and overview of the workflow to follow. */
@@ -79,36 +91,40 @@ InitialPage::InitialPage(SeruroSetup *parent) : SetupPage(parent)
     vert_sizer->AddSpacer(SETUP_TAB_SIZE);
     
 	/* Step 1: connect. */
-	wxSizer *step1_sizer = new wxBoxSizer(wxHORIZONTAL);
-	wxStaticBitmap *step1_icon = new wxStaticBitmap(this, wxID_ANY, wxGetBitmapFromMemory(setup_connect_24));
-	step1_sizer->Add(step1_icon, DIALOGS_BOXSIZER_OPTIONS.Border(wxLEFT, SETUP_TAB_SIZE));
-	step1_sizer->Add(new Text(this, _(TEXT_SETUP_WELCOME_STEP1)), 
-		DIALOGS_BOXSIZER_OPTIONS.Border(SETUP_TEXT_PADDING_OPTIONS, SETUP_TEXT_PADDING));
-	vert_sizer->Add(step1_sizer, DIALOGS_BOXSIZER_OPTIONS);
-
+	//wxSizer *step1_sizer = new wxBoxSizer(wxHORIZONTAL);
+	//wxStaticBitmap *step1_icon = new wxStaticBitmap(this, wxID_ANY, wxGetBitmapFromMemory(setup_connect_24));
+	//step1_sizer->Add(step1_icon, DIALOGS_BOXSIZER_OPTIONS.Border(wxLEFT, SETUP_TAB_SIZE));
+	//step1_sizer->Add(new Text(this, _(TEXT_SETUP_WELCOME_STEP1)),
+	//	DIALOGS_BOXSIZER_OPTIONS.Border(SETUP_TEXT_PADDING_OPTIONS, SETUP_TEXT_PADDING));
+	//vert_sizer->Add(step1_sizer, DIALOGS_BOXSIZER_OPTIONS);
+    AddIconText(this, vert_sizer, wxGetBitmapFromMemory(setup_connect_24), new Text(this, _(TEXT_SETUP_WELCOME_STEP1)));
+    AddIconText(this, vert_sizer, wxGetBitmapFromMemory(setup_unlock_24), new Text(this, _(TEXT_SETUP_WELCOME_STEP2)));
+    AddIconText(this, vert_sizer, wxGetBitmapFromMemory(setup_applications_24), new Text(this, _(TEXT_SETUP_WELCOME_STEP3)));
+    AddIconText(this, vert_sizer, wxGetBitmapFromMemory(setup_settings_24), new Text(this, _(TEXT_SETUP_WELCOME_STEP4)));
+    
     /* Step 2: install (unlock). */
-	wxSizer *step2_sizer = new wxBoxSizer(wxHORIZONTAL);
-	wxStaticBitmap *step2_icon = new wxStaticBitmap(this, wxID_ANY, wxGetBitmapFromMemory(setup_unlock_24));
-	step2_sizer->Add(step2_icon, DIALOGS_BOXSIZER_OPTIONS.Border(wxLEFT, SETUP_TAB_SIZE+2));
-	step2_sizer->Add(new Text(this, _(TEXT_SETUP_WELCOME_STEP2)),
-                     DIALOGS_BOXSIZER_OPTIONS.Border(SETUP_TEXT_PADDING_OPTIONS, SETUP_TEXT_PADDING));
-	vert_sizer->Add(step2_sizer, DIALOGS_BOXSIZER_OPTIONS);
+	//wxSizer *step2_sizer = new wxBoxSizer(wxHORIZONTAL);
+	//wxStaticBitmap *step2_icon = new wxStaticBitmap(this, wxID_ANY, wxGetBitmapFromMemory(setup_unlock_24));
+	//step2_sizer->Add(step2_icon, DIALOGS_BOXSIZER_OPTIONS.Border(wxLEFT, SETUP_TAB_SIZE+2));
+	//step2_sizer->Add(new Text(this, _(TEXT_SETUP_WELCOME_STEP2)),
+    //                 DIALOGS_BOXSIZER_OPTIONS.Border(SETUP_TEXT_PADDING_OPTIONS, SETUP_TEXT_PADDING));
+	//vert_sizer->Add(step2_sizer, DIALOGS_BOXSIZER_OPTIONS);
     
     /* Step 3: configure (assign to application security settings/profile). */
-	wxSizer *step3_sizer = new wxBoxSizer(wxHORIZONTAL);
-	wxStaticBitmap *step3_icon = new wxStaticBitmap(this, wxID_ANY, wxGetBitmapFromMemory(setup_applications_24));
-	step3_sizer->Add(step3_icon, DIALOGS_BOXSIZER_OPTIONS.Border(wxLEFT, SETUP_TAB_SIZE));
-	step3_sizer->Add(new Text(this, _(TEXT_SETUP_WELCOME_STEP3)),
-                     DIALOGS_BOXSIZER_OPTIONS.Border(SETUP_TEXT_PADDING_OPTIONS, SETUP_TEXT_PADDING));
-	vert_sizer->Add(step3_sizer, DIALOGS_BOXSIZER_OPTIONS);
+	//wxSizer *step3_sizer = new wxBoxSizer(wxHORIZONTAL);
+	//wxStaticBitmap *step3_icon = new wxStaticBitmap(this, wxID_ANY, wxGetBitmapFromMemory(setup_applications_24));
+	//step3_sizer->Add(step3_icon, DIALOGS_BOXSIZER_OPTIONS.Border(wxLEFT, SETUP_TAB_SIZE));
+	//step3_sizer->Add(new Text(this, _(TEXT_SETUP_WELCOME_STEP3)),
+    //                 DIALOGS_BOXSIZER_OPTIONS.Border(SETUP_TEXT_PADDING_OPTIONS, SETUP_TEXT_PADDING));
+	//vert_sizer->Add(step3_sizer, DIALOGS_BOXSIZER_OPTIONS);
     
     /* Step 4: settings (auto download contacts). */
-	wxSizer *step4_sizer = new wxBoxSizer(wxHORIZONTAL);
-	wxStaticBitmap *step4_icon = new wxStaticBitmap(this, wxID_ANY, wxGetBitmapFromMemory(setup_settings_24));
-	step4_sizer->Add(step4_icon, DIALOGS_BOXSIZER_OPTIONS.Border(wxLEFT, SETUP_TAB_SIZE));
-	step4_sizer->Add(new Text(this, _(TEXT_SETUP_WELCOME_STEP4)),
-                     DIALOGS_BOXSIZER_OPTIONS.Border(SETUP_TEXT_PADDING_OPTIONS, SETUP_TEXT_PADDING));
-	vert_sizer->Add(step4_sizer, DIALOGS_BOXSIZER_OPTIONS);
+	//wxSizer *step4_sizer = new wxBoxSizer(wxHORIZONTAL);
+	//wxStaticBitmap *step4_icon = new wxStaticBitmap(this, wxID_ANY, wxGetBitmapFromMemory(setup_settings_24));
+	//step4_sizer->Add(step4_icon, DIALOGS_BOXSIZER_OPTIONS.Border(wxLEFT, SETUP_TAB_SIZE));
+	//step4_sizer->Add(new Text(this, _(TEXT_SETUP_WELCOME_STEP4)),
+    //                 DIALOGS_BOXSIZER_OPTIONS.Border(SETUP_TEXT_PADDING_OPTIONS, SETUP_TEXT_PADDING));
+	//vert_sizer->Add(step4_sizer, DIALOGS_BOXSIZER_OPTIONS);
     
     vert_sizer->AddSpacer(SETUP_TAB_SIZE);
 	Text *postamble_text = new Text(this, _(TEXT_SETUP_WELCOME_POSTAMBLE), false);

@@ -19,18 +19,49 @@ END_EVENT_TABLE()
 
 DECLARE_APP(SeruroClient);
 
+void AccountPage::SetAccountStatus(wxString status, bool is_error)
+{
+    //wxSizer *containing_sizer;
+    wxSizer *error_sizer;
+    
+    /* Step 1, set the text for the status message. */
+    this->account_status->SetLabelText(status);
+    
+    /* Step 2, if the status is an error, add an icon, else check and clear potential existing icons. */
+    if (is_error && ! this->was_error) {
+        /* Add an icon and text. */
+        status_sizer->Remove(1);
+        AddIconText(this, status_sizer, wxGetBitmapFromMemory(other_warning_20), this->account_status);
+        this->was_error = true;
+    } else if (this->was_error) {
+        /* Remove an icon. */
+        error_sizer = status_sizer->GetItem(1)->GetSizer();
+        error_sizer->GetItem((size_t) 0)->GetWindow()->Destroy();
+        status_sizer->GetItem(1)->DetachSizer();
+        status_sizer->Remove(1);
+        
+        status_sizer->Add(this->account_status, DIALOGS_SIZER_OPTIONS);
+        this->was_error = false;
+    }
+    this->Layout();
+}
+
 /* CA installer (triggered from adding a new server) */
 void AccountPage::OnCAResult(SeruroRequestEvent &event)
 {
 	wxJSONValue response;
 	SeruroServerAPI *api;
 	SeruroCrypto crypto_helper;
+    wxString server_uuid;
 
 	/* There are no more callback actions. */
 	this->EnablePage();
 
 	response = event.GetResponse();
 	api = new SeruroServerAPI(this);
+    
+    /* If the response includes a server error the uuid might not make it. */
+    server_uuid = (response.HasMember("server_uuid")) ? response["server_uuid"].AsString() : this->server_uuid;
 
 	/* This is a boolean, which indicates a successful add, but the user may deny. */
 	/* The install ca API command will also check if the user already has the CA skid installed. */
@@ -38,20 +69,24 @@ void AccountPage::OnCAResult(SeruroRequestEvent &event)
 	delete api;
 
 	/* Check that the (now-known) CA hash exists within the trusted Root store. */
-	this->has_ca = crypto_helper.HaveCA(response["server_uuid"].AsString());
+	this->has_ca = crypto_helper.HaveCA(server_uuid);
 
 	/* If the user canceled the install, stop. */
 	if (! has_ca) {
 		/* Remove the account and server which was saved to the config. */
 		wxJSONValue account_info = AddAccountForm::GetValues();
 
-		theSeruroConfig::Get().RemoveServer(response["server_uuid"].AsString());
-		SetAccountStatus(_("Unable to install certificate authority."));
+		theSeruroConfig::Get().RemoveServer(server_uuid);
+        if (response.HasMember("success") && ! response["success"].AsBool()) {
+            SetAccountStatus(response["error"].AsString(), true);
+        } else {
+            SetAccountStatus(_("Unable to install certificate authority."), true);
+        }
 
         /* Process remove server event. */
         SeruroStateEvent state_event(STATE_TYPE_SERVER, STATE_ACTION_REMOVE);
-		state_event.SetServerUUID(response["server_uuid"].AsString());
-		this->ProcessWindowEvent(state_event);
+		state_event.SetServerUUID(server_uuid);
+        wxGetApp().AddEvent(state_event);
         
 		/* Allow the login to "try-again". */
 		this->FocusForm();
@@ -61,8 +96,9 @@ void AccountPage::OnCAResult(SeruroRequestEvent &event)
     
     /* Process update server event (now with certificate). */
     SeruroStateEvent state_event(STATE_TYPE_SERVER, STATE_ACTION_UPDATE);
-    state_event.SetServerUUID(response["server_uuid"].AsString());
-    this->ProcessWindowEvent(state_event);
+    state_event.SetServerUUID(server_uuid);
+    //this->ProcessWindowEvent(state_event);
+    wxGetApp().AddEvent(state_event);
 	
 	/* This result handler may be able to proceed the setup. */
 	if (response.HasMember("meta") && response["meta"].HasMember("go_forward")) {
@@ -84,9 +120,9 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	if (! response["success"].AsBool() || ! response.HasMember("address")) {
 		wxLogMessage(_("AccountPage> (OnPingResult) failed to ping server."));
 		if (response["error"].AsString().compare(_(SERURO_API_ERROR_CONNECTION)) == 0) {
-			SetAccountStatus(response["error"].AsString());
+			SetAccountStatus(response["error"].AsString(), true);
 		} else {
-			SetAccountStatus(_("Invalid account information."));
+			SetAccountStatus(_("Invalid account information."), true);
 		}
 
 		goto enable_form;
@@ -101,7 +137,7 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	 */
 	if (! response.HasMember("name")) {
 		wxLogMessage(_("RootAccounts> (AddAddressResult) no server name in response."));
-		SetAccountStatus(_("Invalid server response."));
+		SetAccountStatus(_("Invalid server response."), true);
 		goto enable_form;
 	}
 
@@ -119,7 +155,8 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
         /* Create new server event. */
         SeruroStateEvent event(STATE_TYPE_SERVER, STATE_ACTION_ADD);
 		event.SetServerUUID(this->server_uuid);
-		this->ProcessWindowEvent(event);
+		//this->ProcessWindowEvent(event);
+        wxGetApp().AddEvent(event);
 	}
 
 	/* Regardless of the addServer response, the addAddress will determine a UI update.
@@ -128,14 +165,15 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	 */
 	address = response["address"].AsString();
 	if (! theSeruroConfig::Get().AddAddress(this->server_uuid, address)) {
-		SetAccountStatus(_("Account already exists."));
-		goto enable_form;
+		//SetAccountStatus(_("Account already exists."));
+		//goto enable_form;
 	} else {
         /* Create new server event. */
         SeruroStateEvent event(STATE_TYPE_ACCOUNT, STATE_ACTION_ADD);
 		event.SetServerUUID(this->server_uuid);
         event.SetAccount(address);
-		this->ProcessWindowEvent(event);
+		//this->ProcessWindowEvent(event);
+        wxGetApp().AddEvent(event);
 	}
 
 	/* Only set login_success if the address has been added. */
@@ -198,6 +236,7 @@ AccountPage::AccountPage(SeruroSetup *parent)
 	this->require_auth = true;
     this->enable_next = true;
     this->enable_prev = false;
+    this->was_error = false;
 
     wxString msg_text = wxT("Please enter the information for your account:");
     Text *msg = new Text(this, msg_text);
@@ -219,7 +258,7 @@ AccountPage::AccountPage(SeruroSetup *parent)
 		wxSizer *const server_form = new wxStaticBoxSizer(wxVERTICAL, this, "&Server Information");
     
 		AddServerForm::AddForm(server_form);
-        Bind(wxEVT_COMMAND_CHECKBOX_CLICKED, &AccountPage::OnCustomPort, this, SERURO_ADD_SERVER_PORT_ID);
+        wxGetApp().Bind(wxEVT_COMMAND_CHECKBOX_CLICKED, &AccountPage::OnCustomPort, this, SERURO_ADD_SERVER_PORT_ID);
         
 		vert_sizer->Add(server_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);
 	}
@@ -230,7 +269,7 @@ AccountPage::AccountPage(SeruroSetup *parent)
     AddAccountForm::AddForm(account_form);
 
     /* Add a status message (display a response if the 'add' was not successful). */
-    wxSizer *const status_sizer = new wxBoxSizer(wxHORIZONTAL);
+    status_sizer = new wxBoxSizer(wxHORIZONTAL);
 	status_sizer->Add(new Text(this, _("Login status: ")), DIALOGS_SIZER_OPTIONS);
     status_sizer->SetItemMinSize((size_t) 0, SERURO_SETTINGS_FLEX_LABEL_WIDTH, -1);
     

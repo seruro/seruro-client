@@ -25,6 +25,33 @@ END_EVENT_TABLE()
 
 DECLARE_APP(SeruroClient);
 
+void IdentityPage::SetIdentityStatus(wxString status, bool is_error)
+{
+    //wxSizer *containing_sizer;
+    wxSizer *error_sizer;
+    
+    /* Step 1, set the text for the status message. */
+    this->identity_status->SetLabelText(status);
+    
+    /* Step 2, if the status is an error, add an icon, else check and clear potential existing icons. */
+    if (is_error && ! this->was_error) {
+        /* Add an icon and text. */
+        status_sizer->Remove(1);
+        AddIconText(this, status_sizer, wxGetBitmapFromMemory(other_warning_20), this->identity_status);
+        this->was_error = true;
+    } else if (this->was_error) {
+        /* Remove an icon. */
+        error_sizer = status_sizer->GetItem(1)->GetSizer();
+        error_sizer->GetItem((size_t) 0)->GetWindow()->Destroy();
+        status_sizer->GetItem(1)->DetachSizer();
+        status_sizer->Remove(1);
+        
+        status_sizer->Add(this->identity_status, DIALOGS_SIZER_OPTIONS);
+        this->was_error = false;
+    }
+    this->Layout();
+}
+
 void IdentityPage::DownloadIdentity()
 {
     wxJSONValue params; /* no params */
@@ -57,9 +84,9 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
 	/* Make sure the request worked, and enable the page. */
 	if (! response["success"].AsBool()) {
         if (response.HasMember("error")) {
-            this->SetIdentityStatus(response["error"].AsString());
+            this->SetIdentityStatus(response["error"].AsString(), true);
         } else {
-            this->SetIdentityStatus(_("Unable to download."));
+            this->SetIdentityStatus(_("Unable to download identity."), true);
         }
         
         if (! SETUP_REQUIRE_DOWNLOAD) {
@@ -194,6 +221,7 @@ IdentityPage::IdentityPage(SeruroSetup *parent, bool force_download)
 {    
     wxSizer *const vert_sizer = new wxBoxSizer(wxVERTICAL);
     
+    this->was_error = false;
 	/* The identity page does not allow the user to go backward. */
 	this->enable_prev = false;
     this->enable_next = false;
@@ -227,7 +255,7 @@ IdentityPage::IdentityPage(SeruroSetup *parent, bool force_download)
     this->DisableForm();
 
     /* Add status message. */
-    wxSizer *const status_sizer = new wxBoxSizer(wxHORIZONTAL);
+    status_sizer = new wxBoxSizer(wxHORIZONTAL);
 	status_sizer->Add(new Text(this, _("Install status: ")), DIALOGS_SIZER_OPTIONS);
     status_sizer->SetItemMinSize((size_t) 0, SERURO_SETTINGS_FLEX_LABEL_WIDTH, -1);
     
@@ -342,7 +370,7 @@ bool IdentityPage::GoNext(bool from_callback)
 	if (! authentication_result || ! encipherment_result) {
         /* Enable page is responsible for checking each p12/skid from download_response. */
 		this->EnablePage();
-		this->SetIdentityStatus(wxString::Format(_("Unable to unlock %s certificate."), failure_text));
+		this->SetIdentityStatus(wxString::Format(_("Unable to unlock %s certificate."), failure_text), true);
 		return false;
 	}
 

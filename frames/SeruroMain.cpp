@@ -272,6 +272,11 @@ void SeruroFrameMain::StartSetup(bool force)
 {
     SeruroSetup *initial_setup;
     
+    if (this->setup_running) {
+        /* Something asked for a new setup, but one was already running. */
+        return;
+    }
+    
     /* There is a "first-launch" setup wizard. */
     this->setup = 0;
 	if (! force && theSeruroConfig::Get().HasConfig()) {
