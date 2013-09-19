@@ -268,6 +268,19 @@ void SeruroFrameMain::OnQuit(wxCommandEvent& WXUNUSED(event))
     this->Close(true);
 }
 
+void SeruroFrameMain::SetSetup(SeruroSetup *setup)
+{
+    if (this->setup_running) {
+        /* There should never be more than one setup running. */
+        setup->Destroy();
+        return;
+    }
+    
+    this->setup = setup;
+    this->setup_running = true;
+    setup->RunWizard(setup->GetInitialPage());
+}
+
 void SeruroFrameMain::StartSetup(bool force)
 {
     SeruroSetup *initial_setup;
@@ -294,6 +307,15 @@ void SeruroFrameMain::StartSetup(bool force)
     
     /* Execute the wizard. */
     initial_setup->RunWizard(initial_setup->GetInitialPage());
+}
+
+wxWindow *SeruroFrameMain::GetTop()
+{
+    if (this->setup_running) {
+        return setup;
+    } else {
+        return this;
+    }
 }
 
 void SeruroFrameMain::StopSetup()

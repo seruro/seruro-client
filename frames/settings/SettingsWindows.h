@@ -14,6 +14,9 @@
 #include <wx/listctrl.h>
 #include <wx/imaglist.h>
 
+#define SETTINGS_SERVERS_LIST_HEIGHT 100
+#define SETTINGS_APPLICATION_LIST_HEIGHT 100
+
 enum settings_ids_t {
     SETTINGS_MENU_ID,
 	SETTINGS_SERVERS_LIST_ID,
@@ -108,9 +111,7 @@ public:
 	void OnAddAccount(wxCommandEvent &event);
         
     /* Add action. */
-    void SetActionLabel(wxString label) {
-        update_button->SetLabel(label);
-    }
+    void SetActionLabel(wxString label, bool is_bold = false);
 
 	/* Todo: d-click to view certificate information. */
 

@@ -174,8 +174,8 @@ ApplicationsWindow::ApplicationsWindow(SeruroPanelSettings *window) : SettingsVi
 	apps_list_images->Add(wxGetBitmapFromMemory(certificate_icon_12_flat));
 	apps_list_images->Add(wxGetBitmapFromMemory(identity_icon_12_flat));
     
-	apps_list = new wxListCtrl(this, SETTINGS_APPS_LIST_ID, wxDefaultPosition, wxDefaultSize,
-        wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_THEME);
+	apps_list = new wxListCtrl(this, SETTINGS_APPS_LIST_ID,
+        wxDefaultPosition, wxSize(-1, SETTINGS_APPLICATION_LIST_HEIGHT), wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_THEME);
     apps_list->SetImageList(apps_list_images, wxIMAGE_LIST_SMALL);
  
     /* Add Image column. */

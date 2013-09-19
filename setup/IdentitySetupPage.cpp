@@ -205,7 +205,8 @@ void IdentityPage::AddDownloadForm()
     identity_form->Add(new Text(this, _(TEXT_DOWNLOAD_INSTALL_WARNING)), DIALOGS_SIZER_OPTIONS);
     identity_form->AddStretchSpacer();
     
-    download_button = new wxButton(this, BUTTON_DOWNLOAD_IDENTITY, _("Retry Download"));
+    download_button = new wxButton(this, BUTTON_DOWNLOAD_IDENTITY, wxEmptyString);
+    download_button->SetLabelMarkup(_("Retry Download"));
     identity_form->Add(download_button, DIALOGS_SIZER_OPTIONS);
     
     page_sizer->Insert(1, identity_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);

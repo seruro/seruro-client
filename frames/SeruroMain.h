@@ -19,6 +19,7 @@ enum extra_panel_ids_t
 
 /* From SeruroTray */
 class SeruroTray;
+class SeruroSetup;
 
 //extern enum tray_option_t;
 
@@ -36,6 +37,7 @@ public:
 
 	/* Setup events */
     void StartSetup(bool force = true);
+    void SetSetup(SeruroSetup *setup);
     void StopSetup();
 	//void OnSetupRun(wxCommandEvent &event);
     void OnSetupCancel(wxWizardEvent& event);
@@ -43,6 +45,8 @@ public:
 	bool IsSetupRunning() {
 		return this->setup_running;
 	}
+    
+    wxWindow *GetTop();
 
 	/* When the panels change, their UI elements may need updating. */
 	void OnChange(wxBookCtrlEvent &event);

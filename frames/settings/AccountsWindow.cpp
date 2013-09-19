@@ -7,6 +7,7 @@
 #include "../../SeruroClient.h"
 
 #include "SettingsWindows.h"
+#include "../SeruroMain.h"
 #include "../SeruroSettings.h"
 #include "../UIDefs.h"
 
@@ -15,10 +16,17 @@
 
 #include "../ImageDefs.h"
 
+/* Status (for accounts/identities) */
+#include "../../resources/images/check_icon_12_flat.png.h"
+#include "../../resources/images/cross_icon_12_flat.png.h"
+
 /* Set these to help search for strings on selection. */
 #define SERVERS_LIST_NAME_COLUMN 1
 #define ACCOUNTS_LIST_NAME_COLUMN 1
 #define ACCOUNTS_LIST_SERVER_COLUMN 2
+
+#define ITEM_IMAGE_EXISTS 3
+#define ITEM_IMAGE_NOT_EXISTS 4
 
 BEGIN_EVENT_TABLE(AccountsWindow, SettingsView)
 	EVT_LIST_ITEM_SELECTED(SETTINGS_SERVERS_LIST_ID, AccountsWindow::OnServerSelected)
@@ -120,6 +128,15 @@ void AccountsWindow::OnServerSelected(wxListEvent &event)
     this->remove_button->Enable(true);
 }
 
+void AccountsWindow::SetActionLabel(wxString label, bool is_bold)
+{
+    if (is_bold) {
+        this->update_button->SetLabelMarkup(wxString::Format(_("<b>%s</b>"), label));
+    } else {
+        this->update_button->SetLabel(label);
+    }
+}
+
 void AccountsWindow::OnAccountSelected(wxListEvent &event)
 {
     wxListItem item;
@@ -145,13 +162,19 @@ void AccountsWindow::OnAccountSelected(wxListEvent &event)
     this->server_uuid = theSeruroConfig::Get().GetServerUUID(item.GetText());
     
     if (! theSeruroConfig::Get().HaveIdentity(server_uuid, address)) {
-        SetActionLabel(_("Install"));
+        SetActionLabel(_("Install"), true);
     } else {
         SetActionLabel(_("Update"));
     }
     
     this->update_button->Enable(true);
-    this->remove_button->Enable(true);
+    
+    /* UI is trying to remove a selected account. */
+    if (SERURO_MUST_HAVE_ACCOUNT && theSeruroConfig::Get().GetAddressList(server_uuid).size() == 1) {
+        this->remove_button->Disable();
+    } else {
+        this->remove_button->Enable(true);
+    }
 }
 
 void AccountsWindow::DeselectServers()
@@ -183,6 +206,7 @@ void AccountsWindow::DoDeselect()
     this->server_uuid = wxEmptyString;
     this->address = wxEmptyString;
     
+    SetActionLabel(_("Update"));
     this->update_button->Disable();
     this->remove_button->Disable();
 }
@@ -205,6 +229,8 @@ void AccountsWindow::OnCAResult(SeruroRequestEvent &event)
 
 void AccountsWindow::OnUpdate(wxCommandEvent &event)
 {
+    SeruroSetup *identity_setup;
+    
     /* All actions must have a server to act on. */
     if (this->server_uuid.compare(wxEmptyString) == 0) {
         return;
@@ -227,10 +253,12 @@ void AccountsWindow::OnUpdate(wxCommandEvent &event)
     }
     
     /* Open the setup wizard on the identity page. */
-    /* Todo: have an event which updates the status of an identity. */
-	SeruroSetup identity_setup((wxFrame*) (wxGetApp().GetFrame()), SERURO_SETUP_IDENTITY,
-        this->server_uuid, this->address);
-	identity_setup.RunWizard(identity_setup.GetInitialPage());
+    //SeruroSetup identity_setup((wxFrame*) (wxGetApp().GetFrame()), SERURO_SETUP_IDENTITY,
+    //    this->server_uuid, this->address);
+	//identity_setup.RunWizard(identity_setup.GetInitialPage());
+    identity_setup = new SeruroSetup((wxFrame*) (wxGetApp().GetFrame()), SERURO_SETUP_IDENTITY, server_uuid, address);
+    /* And release control. */
+    ((SeruroFrameMain *) wxGetApp().GetFrame())->SetSetup(identity_setup);
 }
 
 void AccountsWindow::OnRemove(wxCommandEvent &event)
@@ -310,10 +338,10 @@ void AccountsWindow::GenerateServersList()
     servers_list->DeleteAllItems();
 	for (size_t i = 0; i < server_names.size(); i++) {
 		/* Check if the server certificate is installed. */
-		item_index = servers_list->InsertItem(0, _(""),
-            (crypto.HaveCA(theSeruroConfig::Get().GetServerUUID(server_names[i]))) ? 1 : 0);
+		item_index = servers_list->InsertItem(0, wxEmptyString,
+            (crypto.HaveCA(theSeruroConfig::Get().GetServerUUID(server_names[i]))) ? ITEM_IMAGE_EXISTS : ITEM_IMAGE_NOT_EXISTS);
 		servers_list->SetItem(item_index, 1, _(server_names[i]));
-		servers_list->SetItem(item_index, 2, _("0"));
+		servers_list->SetItem(item_index, 2, _("Never"));
 	}
 }
 
@@ -332,9 +360,9 @@ void AccountsWindow::GenerateAccountsList()
         
 		for (size_t j = 0; j < accounts.size(); j++) {
 			//cert_installed = crypto_helper.HaveIdentity(servers[i],
-			item_index = accounts_list->InsertItem(0, _(""),
+			item_index = accounts_list->InsertItem(0, wxEmptyString,
                 /* Display a key if the identity (cert/key) are installed. */
-                (crypto.HaveIdentity(server_uuids[i], accounts[j])) ? 2 : 0);
+                (crypto.HaveIdentity(server_uuids[i], accounts[j])) ? ITEM_IMAGE_EXISTS : ITEM_IMAGE_NOT_EXISTS);
 			accounts_list->SetItem(item_index, 1, accounts[j]);
 			accounts_list->SetItem(item_index, 2, theSeruroConfig::Get().GetServerName(server_uuids[i]));
 			accounts_list->SetItem(item_index, 3, _("Never"));
@@ -359,11 +387,21 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
     list_images->Add(wxGetBitmapFromMemory(blank));
 	list_images->Add(wxGetBitmapFromMemory(certificate_icon_12_flat));
 	list_images->Add(wxGetBitmapFromMemory(identity_icon_12_flat));
+    
+    /* Status icons. */
+    list_images->Add(wxGetBitmapFromMemory(check_icon_12_flat));
+    list_images->Add(wxGetBitmapFromMemory(cross_icon_12_flat));
 
-	servers_list = new wxListCtrl(this, SETTINGS_SERVERS_LIST_ID,
-		wxDefaultPosition, wxDefaultSize, 
-		wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_THEME);
+	//servers_list = new wxListCtrl(this, SETTINGS_SERVERS_LIST_ID,
+	//	wxDefaultPosition, wxDefaultSize,
+	//	wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_THEME);
+    
+    servers_list = new wxListView();
+    servers_list->Create(this, SETTINGS_SERVERS_LIST_ID,
+        wxDefaultPosition, wxSize(-1, SETTINGS_SERVERS_LIST_HEIGHT), wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_THEME);
 	servers_list->SetImageList(list_images, wxIMAGE_LIST_SMALL);
+    //servers_list->SetSize(wxSize(-1, 100));
+    //servers_list->EnableAlternateRowColours(true);
 
 	/* Server list columns. */
 	wxListItem image_column;
@@ -375,8 +413,7 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
 	servers_list->InsertColumn(2, _("Expires"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
 	servers_list->SetColumnWidth(0, 24);
 
-	
-	lists_sizer->Add(servers_list, DIALOGS_SIZER_OPTIONS);
+    lists_sizer->Add(servers_list, DIALOGS_SIZER_OPTIONS);
 
 	accounts_list = new wxListCtrl(this, SETTINGS_ACCOUNTS_LIST_ID,
 		wxDefaultPosition, wxDefaultSize,

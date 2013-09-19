@@ -12,6 +12,13 @@
 #include "../../resources/images/certificate_icon_12_flat.png.h"
 #include "../../resources/images/identity_icon_12_flat.png.h"
 
+/* Status (for accounts/identities) */
+#include "../../resources/images/check_icon_12_flat.png.h"
+#include "../../resources/images/cross_icon_12_flat.png.h"
+
+#define ITEM_IMAGE_EXISTS 3
+#define ITEM_IMAGE_NOT_EXISTS 4
+
 #define APPACCOUNT_LIST_NAME_COLUMN 1
 #define APPACCOUNT_LIST_APP_COLUMN  2
 
@@ -81,33 +88,37 @@ void AppAccountList::SetAccountStatus(long index, const wxString &app, const wxS
     account_status_t identity_status;
     
     identity_status = theSeruroApps::Get().IdentityStatus(app, account, server_uuid, this->is_initial);
-    accounts_list->SetItemData(index, (long) identity_status);
     
 	/* Since Apps which auto-configure do not maintain state of their 'once-configured' accounts. */
 	if (identity_status == APP_PENDING_RESTART && pending_override) {
         identity_status = APP_ASSIGNED;
-		/* Do not give false "unstateful" information about pending restarts. */
-		//if (this->pending_list[app].HasMember(account) &&
-        //    this->pending_list[app][account].AsUInt() == APP_ASSIGNED) {
-		//	identity_status = APP_ASSIGNED;
-		//}
 	}
+    
+    /* Save 'assigned' status for potentially stateless-app running responses (refresh list button). */
+	if (identity_status == APP_ASSIGNED) {
+		this->pending_list[app][account] = wxJSONValue((unsigned int) APP_ASSIGNED);
+	}
+    
+    /* Do not give false "unstateful" information about pending restarts (refresh list button). */
+    if (this->pending_list[app].HasMember(account) && this->pending_list[app][account].AsUInt() == APP_ASSIGNED) {
+        identity_status = APP_ASSIGNED;
+    }
 
-	/* Save 'assigned' status for potentially stateless-app running responses. */
-	//if (identity_status == APP_ASSIGNED) {
-	//	this->pending_list[app][account] = wxJSONValue((unsigned int) APP_ASSIGNED);
-	//}
-
+    accounts_list->SetItemData(index, (long) identity_status);
     if (identity_status == APP_ASSIGNED) {
         /* Show which server the account is using an Identity from. */
         server_name = theSeruroConfig::Get().GetServerName(server_uuid);
-        accounts_list->SetItem(index, 3, wxString::Format(_("Using Seruro: %s"), server_name));
+        accounts_list->SetItem(index, 3, wxString::Format(_("Using %s"), server_name));
+        accounts_list->SetItemImage(index, ITEM_IMAGE_EXISTS);
     } else if (identity_status == APP_UNASSIGNED) {
         accounts_list->SetItem(index, 3, APP_UNASSIGNED_TEXT);
+        accounts_list->SetItemImage(index, ITEM_IMAGE_NOT_EXISTS);
     } else if (identity_status == APP_PENDING_RESTART) {
         accounts_list->SetItem(index, 3, APP_PENDING_RESTART_TEXT);
+        accounts_list->SetItemImage(index, ITEM_IMAGE_NOT_EXISTS);
     } else {
         accounts_list->SetItem(index, 3, APP_ALTERNATE_ASSIGNED_TEXT);
+        accounts_list->SetItemImage(index, ITEM_IMAGE_NOT_EXISTS);
     }
 }
 
@@ -189,6 +200,8 @@ void AppAccountList::Create(wxWindow *parent, bool use_address, bool initial)
     list_images->Add(wxGetBitmapFromMemory(blank));
 	list_images->Add(wxGetBitmapFromMemory(certificate_icon_12_flat));
 	list_images->Add(wxGetBitmapFromMemory(identity_icon_12_flat));
+    list_images->Add(wxGetBitmapFromMemory(check_icon_12_flat));
+    list_images->Add(wxGetBitmapFromMemory(cross_icon_12_flat));
 
     /* Create accounts list. */
     accounts_list = new wxListCtrl(parent, APPACCOUNT_LIST_ID,

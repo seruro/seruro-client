@@ -34,7 +34,7 @@ DebugReportDialog::DebugReportDialog()
     sizer->Add(version_sizer, DIALOGS_BOXSIZER_SIZER_OPTIONS);
     
     report = new wxTextCtrl(this, wxID_ANY, _("Optionally, describe this report..."),
-        wxDefaultPosition, wxSize(300, 150));
+        wxDefaultPosition, wxSize(300, 150), wxTE_MULTILINE);
     sizer->Add(report, wxSizerFlags().Expand().Border(wxTOP | wxRIGHT | wxLEFT, 10));
     this->log = wxEmptyString;
     

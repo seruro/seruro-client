@@ -18,9 +18,13 @@ public:
     void SetIdentity(wxString address);
     void DialogClosed(wxWindowModalDialogEvent& event);
     
-private:
-    wxString app_name;
+    /* Not required. */
+    void CloseModal();
     
+private:
+    void SendIdentityEvent();
+    
+    wxString app_name;
     /* If this restart is bound to an identity-configuration. */
     wxString identity;
 };

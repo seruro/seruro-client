@@ -40,6 +40,10 @@ void ApplicationsPage::OnIdentityStateChange(SeruroStateEvent &event)
         this->wizard->SetButtonText(wxEmptyString, "Next >");
     }
     
+    /* The status text may have changed. */
+    this->AlignList();
+    this->Layout();
+    
     event.Skip();
 }
 

@@ -156,6 +156,7 @@ public:
     
     /* Called from Client during callback events. */
     void ApplicationClosed(wxString app_name);
+    void RestartDialogFinished();
 
 private:
     AppHelper* GetHelper(wxString app_name);

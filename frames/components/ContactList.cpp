@@ -3,11 +3,19 @@
 
 #include "../../SeruroClient.h"
 #include "../../SeruroConfig.h"
+#include "../../crypto/SeruroCrypto.h"
 #include "../UIDefs.h"
 
 /* Image data. */
 #include "../../resources/images/blank.png.h"
 #include "../../resources/images/certificate_icon_12_flat.png.h"
+
+/* Status (for accounts/identities) */
+#include "../../resources/images/check_icon_12_flat.png.h"
+//#include "../../resources/images/cross_icon_12_flat.png.h"
+
+#define ITEM_IMAGE_EXISTS 2
+#define ITEM_IMAGE_NOT_EXISTS 0
 
 DECLARE_APP(SeruroClient);
 
@@ -52,6 +60,7 @@ void ContactList::Create(wxWindow *parent)
     list_images = new wxImageList(12, 12, true);
     list_images->Add(wxGetBitmapFromMemory(blank));
     list_images->Add(wxGetBitmapFromMemory(certificate_icon_12_flat));
+    list_images->Add(wxGetBitmapFromMemory(check_icon_12_flat));
     
     this->contact_list->SetImageList(list_images, wxIMAGE_LIST_SMALL);
     
@@ -108,12 +117,14 @@ void ContactList::AddContact(wxString address, wxString server_uuid)
     long item_index;
     wxString server_name;
     wxJSONValue contact;
+    SeruroCrypto crypto;
 
     server_name = theSeruroConfig::Get().GetServerName(server_uuid);
     contact = theSeruroConfig::Get().GetContact(server_uuid, address);
     
     /* Create a new row. */
-    item_index = this->contact_list->InsertItem(0, _(""), 0);
+    item_index = this->contact_list->InsertItem(0, wxEmptyString,
+        (crypto.HaveCertificates(server_uuid, address)) ? ITEM_IMAGE_EXISTS : ITEM_IMAGE_NOT_EXISTS);
 
     this->contact_list->SetItem(item_index, 1, address);
     this->contact_list->SetItem(item_index, 2, contact["name"][0].AsString());

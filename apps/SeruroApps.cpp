@@ -3,6 +3,9 @@
 #include "../SeruroClient.h"
 #include "../SeruroConfig.h"
 
+/* Needed to resolve exports. */
+#include "../frames/SeruroMain.h"
+
 #include "../logging/SeruroLogger.h"
 #include "../api/SeruroStateEvents.h"
 
@@ -335,12 +338,19 @@ bool SeruroApps::AssignIdentity(wxString app_name, wxString server_uuid, wxStrin
     /* A call to IdentityStatus with an initial boolean will send PENDING_RESTART.
      * This will allow a 'checker' to override.
      */
-    identity_event.SetValue("assign_override", "true");
+    //identity_event.SetValue("assign_override", "true");
 
     /* Process the event. */
     wxGetApp().AddEvent(identity_event);
     
     return true;
+}
+
+void SeruroApps::RestartDialogFinished()
+{
+    /* State management. */
+    this->restart_dialog_pending = false;
+    this->assign_pending = false;
 }
 
 bool SeruroApps::RequireRestart(AppHelper *app, wxString app_name, wxString address)
@@ -354,7 +364,7 @@ bool SeruroApps::RequireRestart(AppHelper *app, wxString app_name, wxString addr
     
     /* Create and show a RestartApp dialog (what prevents multiple restart dialogs?) */
     this->restart_dialog_pending = true;
-    this->restart_dialog = new RestartAppDialog(wxGetApp().GetFrame(), app_name);
+    this->restart_dialog = new RestartAppDialog(((SeruroFrameMain *) wxGetApp().GetFrame())->GetTop(), app_name);
     
     if (address != wxEmptyString) {
         restart_dialog->SetIdentity(address);
@@ -398,7 +408,9 @@ void SeruroApps::ApplicationClosed(wxString app_name)
     }
     
     if (this->restart_dialog != NULL && app_name == this->restart_dialog->GetAppName()) {
-        this->restart_dialog->EndModal(wxID_NO);
+        //this->restart_dialog->EndModal(wxID_NO);
+        this->RestartDialogFinished();
+        restart_dialog->CloseModal();
     }
 }
 
