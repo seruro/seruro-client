@@ -212,7 +212,13 @@ finished:
 
 void AccountPage::EnablePage()
 {
-	this->EnableForm();
+	if (! wizard->IsNewServer()) {
+		server_menu->Enable();
+	} else {
+		AddServerForm::EnableForm();
+	}
+
+	AddAccountForm::EnableForm();
 	wizard->EnablePrev(true);
 	wizard->EnableNext(true);
 
@@ -221,7 +227,13 @@ void AccountPage::EnablePage()
 
 void AccountPage::DisablePage()
 {
-	this->DisableForm();
+	if (! wizard->IsNewServer()) {
+		server_menu->Disable();
+	} else {
+		AddServerForm::DisableForm();
+	}
+
+	AddAccountForm::DisableForm();
 	wizard->EnablePrev(false);
 	wizard->EnableNext(false);
 }

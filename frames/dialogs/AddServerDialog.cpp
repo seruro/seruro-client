@@ -39,6 +39,16 @@ wxChoice* GetServerChoice(wxWindow *parent, const wxString &server_name)
 	return server_menu;
 }
 
+void AddServerForm::DisableForm() 
+{
+	this->server_host->Disable();
+}
+
+void AddServerForm::EnableForm()
+{
+	this->server_host->Enable();
+}
+
 void AddServerForm::AddForm(wxSizer *sizer, 
 	const wxString &host, const wxString &port)
 {

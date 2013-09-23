@@ -27,7 +27,9 @@ public:
 		const wxString &host = wxEmptyString,
         const wxString &port = SERURO_DEFAULT_PORT);
     wxJSONValue GetValues();
-    
+    void DisableForm();
+	void EnableForm();
+
 	/* Handle the single checkbox click. */
 	/* Todo: find a better way to implement this event handler,
 	 * within the base abstract class would be great, tried inheriting
