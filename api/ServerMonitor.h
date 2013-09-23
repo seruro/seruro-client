@@ -13,13 +13,14 @@
 class ServerMonitor : public MonitorHelper
 {
 public:
-    ServerMonitor();
+    ServerMonitor(bool is_transient = false);
     
     bool Monitor();
     
 private:
     /* Request callbacks. */
     void OnUpdateResponse(SeruroRequestEvent &event);
+    static void StaticUpdateResponse(SeruroRequestEvent &event);
     
     /* The server will reduce the info to a single
      * API call, the results will trigger various installs. */

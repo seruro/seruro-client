@@ -54,7 +54,7 @@ bool GetReferenceFromSubjectKeyID(wxString subject_key, search_types_t type, wxS
     /* Create search query. */
     query = CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
     if (type == CRYPTO_SEARCH_IDENTITY) {
-        CFDictionaryAddValue(query, kSecClass, kSecClassIdentity);
+        CFDictionaryAddValue(query, kSecClass, kSecClassCertificate); /* kSecClassCertificate */
     } else if (type == CRYPTO_SEARCH_CERT) {
         CFDictionaryAddValue(query, kSecClass, kSecClassCertificate);
     }
@@ -122,11 +122,12 @@ bool DeleteSubjectKeyIDInKeychain(wxString subject_key, search_types_t type, wxS
     
     /* Sec API says the class must be specified. */
     if (type == CRYPTO_SEARCH_IDENTITY) {
-        CFDictionaryAddValue(query, kSecClass, kSecClassIdentity);
+        CFDictionaryAddValue(query, kSecClass, kSecClassCertificate); /* kSecClassIdentity */
     } else if (type == CRYPTO_SEARCH_CERT) {
         CFDictionaryAddValue(query, kSecClass, kSecClassCertificate);
     }
     CFDictionaryAddValue(query, kSecMatchItemList, result_items);
+    CFDictionaryAddValue(query, kSecMatchLimit, kSecMatchLimitOne);
     CFRelease(result_data);
     CFRelease(result_items);
     
@@ -235,11 +236,14 @@ bool SetTrustPolicy(SecCertificateRef &cert)
 bool InstallIdentityToKeychain(SecIdentityRef &identity, wxString keychain_name)
 {
     OSStatus success;
-    /* Todo: implement keychain access. */
-
+    
+    //SecKeyRef priv_key;
+    //priv_key = identity->_privateKey;
+    /* OpenSSL: -name friendlyname */
+    
     /* Find the identity item, add it to a dictionary, add it to the keychain. */
     CFMutableDictionaryRef identity_item;
-    identity_item = CFDictionaryCreateMutable(kCFAllocatorDefault, 3,
+    identity_item = CFDictionaryCreateMutable(kCFAllocatorDefault, 0,
         &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
     
     CFDictionarySetValue(identity_item, kSecValueRef, identity);
@@ -577,14 +581,6 @@ bool SeruroCryptoMAC::RemoveIdentity(wxArrayString fingerprints)
     return true;
 }
 
-bool SeruroCryptoMAC::RemoveCA(wxString fingerprint)
-{
-    bool status;
-    
-    status = DeleteSubjectKeyIDInKeychain(fingerprint, CRYPTO_SEARCH_CERT, _(CA_KEYCHAIN));
-    return status;
-}
-
 bool SeruroCryptoMAC::RemoveCertificates(wxArrayString fingerprints)
 {
     bool status;
@@ -596,6 +592,13 @@ bool SeruroCryptoMAC::RemoveCertificates(wxArrayString fingerprints)
     return true;
 }
 
+bool SeruroCryptoMAC::RemoveCA(wxString fingerprint)
+{
+    bool status;
+    
+    status = DeleteSubjectKeyIDInKeychain(fingerprint, CRYPTO_SEARCH_CERT, _(CA_KEYCHAIN));
+    return status;
+}
 
 /* Methods to query certificates by their name (meaning SHA1) */
 bool SeruroCryptoMAC::HaveCA(wxString server_name, wxString fingerprint)

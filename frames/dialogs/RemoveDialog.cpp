@@ -25,11 +25,13 @@ RemoveDialog::RemoveDialog(const wxString &server_uuid, const wxString &address)
     
 	wxSizer *const vert_sizer = new wxBoxSizer(wxVERTICAL);
 
+    wxSizer *message_sizer = new wxBoxSizer(wxHORIZONTAL);
 	Text *msg = new Text(this, (remove_server) 
 		? wxString::Format(_(TEXT_REMOVE_SERVER), server_name, server_name, server_name) 
-		: wxString::Format(_(TEXT_REMOVE_ADDRESS), address, server_name));
-	msg->Wrap(300);
-	vert_sizer->Add(msg, DIALOGS_SIZER_OPTIONS);
+		: wxString::Format(_(TEXT_REMOVE_ADDRESS), address, server_name), false);
+	msg->Wrap(400);
+	message_sizer->Add(msg, DIALOGS_SIZER_OPTIONS);
+    vert_sizer->Add(message_sizer, DIALOGS_SIZER_OPTIONS);
 
 	if (remove_server) {
 		wxSizer *const server_box = new wxStaticBoxSizer(wxVERTICAL, this, "&Associated Data");

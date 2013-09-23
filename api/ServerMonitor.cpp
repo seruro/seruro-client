@@ -10,11 +10,23 @@
 
 DECLARE_APP(SeruroClient);
 
-ServerMonitor::ServerMonitor()
+ServerMonitor::ServerMonitor(bool is_transient)
 {
     this->requests = wxJSONValue(wxJSONTYPE_OBJECT);
     
-    wxGetApp().Bind(SERURO_REQUEST_RESPONSE, &ServerMonitor::OnUpdateResponse, this, SERURO_API_CALLBACK_UPDATE);
+    if (is_transient) {
+        /* Bind statically. */
+        wxGetApp().Bind(SERURO_REQUEST_RESPONSE, &ServerMonitor::StaticUpdateResponse, SERURO_API_CALLBACK_UPDATE);
+    } else {
+        wxGetApp().Bind(SERURO_REQUEST_RESPONSE, &ServerMonitor::OnUpdateResponse, this, SERURO_API_CALLBACK_UPDATE);
+    }
+}
+
+void ServerMonitor::StaticUpdateResponse(SeruroRequestEvent &event)
+{
+    ServerMonitor *transient_monitor = new ServerMonitor();
+    transient_monitor->OnUpdateResponse(event);
+    delete transient_monitor;
 }
 
 void ServerMonitor::OnUpdateResponse(SeruroRequestEvent &event)

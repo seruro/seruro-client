@@ -368,7 +368,7 @@ void SeruroFrameMain::OnFinishSetup()
     //wxGetApp().StartMonitor();
     
     /* Restart the monitor (server) using a transient call to the server monitor. */
-    ServerMonitor *transient_monitor = new ServerMonitor();
+    ServerMonitor *transient_monitor = new ServerMonitor(true);
     transient_monitor->Monitor();
     delete transient_monitor;
     
