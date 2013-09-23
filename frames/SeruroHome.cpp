@@ -236,6 +236,7 @@ SeruroPanelHome::SeruroPanelHome(wxBookCtrlBase *book) : SeruroPanel(book, wxT("
     wxStaticBitmap *world_image = new wxStaticBitmap(this, wxID_ANY, wxGetBitmapFromMemory(home_servers));
     world_sizer->Add(world_image, 1, wxALIGN_CENTER, 0);
     status_sizer->Add(world_sizer, 1, wxALIGN_CENTER, 1);
+    world_sizer->AddSpacer(20);
     
     servers_welcome = new Text(this, wxEmptyString, false);
     servers_welcome->Wrap((SERURO_APP_DEFAULT_WIDTH-20)/3);
@@ -273,6 +274,7 @@ SeruroPanelHome::SeruroPanelHome(wxBookCtrlBase *book) : SeruroPanel(book, wxT("
     wxStaticBitmap *people_image = new wxStaticBitmap(this, wxID_ANY, wxGetBitmapFromMemory(home_contacts));
     people_sizer->Add(people_image, 1, wxALIGN_CENTER, 0);
     status_sizer->Add(people_sizer, 1, wxALIGN_CENTER, 1);
+    people_sizer->AddSpacer(20);
     
     contacts_welcome = new Text(this, wxEmptyString, false);
     contacts_welcome->Wrap((SERURO_APP_DEFAULT_WIDTH-20)/3);
