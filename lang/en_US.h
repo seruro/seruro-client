@@ -36,8 +36,8 @@ To install please enter the Encryption and Digital Identity unlock codes (sent v
 
 #define TEXT_DOWNLOAD_INSTALL_WARNING "Could not download certificates, please retry."
 
-#define TEXT_ASSIGN_IDENTITY " Email applications (like Outlook and Apple Mail) must be configured to use your Seruro certificates. \
-Select your email account below, the use the 'Configure' button to associate your Seruro certificates to the application."
+#define TEXT_ASSIGN_IDENTITY "Email applications (like Outlook and Apple Mail) must be configured to use your Seruro certificates. \
+Select your email account below, then use the 'Configure' button to associate your Seruro certificates to the application."
 
 #define TEXT_SETUP_WELCOME "Welcome to Seruro! Let's take a moment and configure your computer.\
 \n\
