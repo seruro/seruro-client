@@ -26,8 +26,12 @@ BEGIN_EVENT_TABLE(SeruroTray, wxTaskBarIcon)
 	EVT_MENU(SERURO_PANEL_ENCRYPT_ID, SeruroTray::onEncrypt)
 	EVT_MENU(SERURO_PANEL_DECRYPT_ID, SeruroTray::onDecrypt)
 #endif
+    EVT_MENU(SERURO_PANEL_HOME_ID, SeruroTray::OnHome)
+    EVT_MENU(SERURO_PANEL_CONTACTS_ID, SeruroTray::OnContacts)
 	EVT_MENU(SERURO_PANEL_SEARCH_ID, SeruroTray::onSearch)
 	EVT_MENU(SERURO_PANEL_SETTINGS_ID, SeruroTray::onSettings)
+    EVT_MENU(SERURO_PANEL_HELP_ID, SeruroTray::OnHelp)
+
 	EVT_MENU(SERURO_EXIT_ID, SeruroTray::OnQuit)
 END_EVENT_TABLE()
 
@@ -130,6 +134,8 @@ void SeruroTray::onSettings(wxCommandEvent& WXUNUSED(event))
 SeruroTray::SeruroTray() : wxTaskBarIcon(wxTBI_CUSTOM_STATUSITEM) /* wxTBI_CUSTOM_STATUSITEM */
 {
 	this->main_frame = NULL;
+    
+    //wxGetApp().Bind(SERURO_STATE_CHANGE, &SeruroTray::OnOptionChange, this, STATE_TYPE_OPTION);
 }
 
 void SeruroTray::SetMainFrame(SeruroFrameMain *frame)
@@ -153,9 +159,9 @@ void SeruroTray::OnQuit(wxCommandEvent& WXUNUSED(event)){
 void SeruroTray::OnAbout(wxCommandEvent& WXUNUSED(event))
 {
     wxMessageBox(wxString::Format(
-		wxT("Welcome to %s!\n\nThis is the minimal wxWidgets sample\nrunning under %s."), 
+		wxT("Seruro Client for %s."), 
 		wxVERSION_STRING, wxGetOsDescription()), 
-		wxT("About wxWidgets minimal sample"), wxOK | wxICON_INFORMATION);
+		wxT("About Seruro Client"), wxOK | wxICON_INFORMATION);
 }
 
 wxMenu* SeruroTray::CreatePopupMenu()

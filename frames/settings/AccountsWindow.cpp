@@ -245,7 +245,6 @@ void AccountsWindow::OnUpdate(wxCommandEvent &event)
     if (! this->account_selected) {
         /* Create API request to download certificate. */
         /* On callback update the UI based on the status of the cert. */
-        
         api->CreateRequest(SERURO_API_CA, params, SERURO_API_CALLBACK_CA)->Run();
         delete api;
         
@@ -253,11 +252,7 @@ void AccountsWindow::OnUpdate(wxCommandEvent &event)
     }
     
     /* Open the setup wizard on the identity page. */
-    //SeruroSetup identity_setup((wxFrame*) (wxGetApp().GetFrame()), SERURO_SETUP_IDENTITY,
-    //    this->server_uuid, this->address);
-	//identity_setup.RunWizard(identity_setup.GetInitialPage());
     identity_setup = new SeruroSetup((wxFrame*) (wxGetApp().GetFrame()), SERURO_SETUP_IDENTITY, server_uuid, address);
-    /* And release control. */
     ((SeruroFrameMain *) wxGetApp().GetFrame())->SetSetup(identity_setup);
 }
 
@@ -303,19 +298,17 @@ void AccountsWindow::OnRemove(wxCommandEvent &event)
 
 void AccountsWindow::OnAddServer(wxCommandEvent &event)
 {
-    /* Todo: consider having a new account/new server event? */
-    
 	/* Testing wizard-implementation. */
-	SeruroSetup add_server_setup((wxFrame*) (wxGetApp().GetFrame()), SERURO_SETUP_SERVER);
-	add_server_setup.RunWizard(add_server_setup.GetInitialPage());
+	SeruroSetup *add_server_setup = new SeruroSetup((wxFrame*) (wxGetApp().GetFrame()), SERURO_SETUP_SERVER);
+    ((SeruroFrameMain *) wxGetApp().GetFrame())->SetSetup(add_server_setup);
 	return;
 }
 
 void AccountsWindow::OnAddAccount(wxCommandEvent &event)
 {
 	/* Testing wizard-implementation. */
-	SeruroSetup add_account_setup((wxFrame*) (wxGetApp().GetFrame()), SERURO_SETUP_ACCOUNT);
-	add_account_setup.RunWizard(add_account_setup.GetInitialPage());
+	SeruroSetup *add_account_setup = new SeruroSetup((wxFrame*) (wxGetApp().GetFrame()), SERURO_SETUP_ACCOUNT);
+    ((SeruroFrameMain *) wxGetApp().GetFrame())->SetSetup(add_account_setup);
 	return;
 }
 

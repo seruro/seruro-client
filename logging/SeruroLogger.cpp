@@ -6,6 +6,8 @@
 #include <wx/filename.h>
 #include <wx/datetime.h>
 
+#define DELETE_LOG_ON_STARTUP 1
+
 DECLARE_APP(SeruroClient);
 
 bool SeruroLogger::InitLogger()
@@ -50,6 +52,9 @@ bool SeruroLogger::CreateLog()
 			log_initializing = false;
 			return false;
 		}
+    } else if (DELETE_LOG_ON_STARTUP == 1) {
+        log_file->Clear();
+        log_file->Write();
     }
     
     log_opened = true;

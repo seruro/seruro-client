@@ -15,6 +15,9 @@
 #include "SeruroHome.h"
 #include "SeruroHelp.h"
 
+/* For downloading contacts. */
+#include "../api/ServerMonitor.h"
+
 /* Close the app if the wizard is canceled. */
 #define SERURO_ALLOW_NO_ACCOUNTS 0
 
@@ -210,14 +213,24 @@ void SeruroFrameMain::OnOptionChange(SeruroStateEvent &event)
  */
 void SeruroFrameMain::ChangePanel(int panel_id)
 {
+    int offset;
+    
 	if (this->IsSetupRunning()) {
 		return;
 	}
+    
+    /* Search may be removed. */
+    offset = 0;
+    if (theSeruroConfig::Get().GetOption("auto_download") == "true") {
+        if (panel_id != SERURO_PANEL_HOME_ID && panel_id != SERURO_PANEL_CONTACTS_ID) {
+            offset -= 1;
+        }
+    }
 
 	/* Iterate through the vector of panel ids, if a match is found, set selection. */
 	for (int i = 0; i < seruro_panels_size; i++) {
 		if (panel_id == seruro_panels_ids[i]) {
-			this->book->SetSelection(i);
+			this->book->SetSelection(i + offset);
 		}
 	}
 }
@@ -351,8 +364,13 @@ void SeruroFrameMain::OnFinishSetup()
     }
     
     /* Restart the monitor thread (to allow certificates/contacts to download). */
-    wxGetApp().StopMonitor();
-    wxGetApp().StartMonitor();
+    //wxGetApp().StopMonitor();
+    //wxGetApp().StartMonitor();
+    
+    /* Restart the monitor (server) using a transient call to the server monitor. */
+    ServerMonitor *transient_monitor = new ServerMonitor();
+    transient_monitor->Monitor();
+    delete transient_monitor;
     
     this->Show();
 	//this->ChangePanel(SERURO_PANEL_HOME_ID);

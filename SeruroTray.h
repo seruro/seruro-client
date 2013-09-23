@@ -2,6 +2,8 @@
 #ifndef H_SeruroTray
 #define H_SeruroTray
 
+#include "api/SeruroStateEvents.h"
+
 #include <wx/taskbar.h>
 #include <wx/menu.h>
 
@@ -46,6 +48,9 @@ public:
 	void OnOptionStateChange(SeruroStateEvent &event);
 
 protected:
+    /* May have to remove the "search" option. */
+    //void OnOptionChange(SeruroStateEvent &event);
+    
 	SeruroFrameMain *main_frame;
 
 private:

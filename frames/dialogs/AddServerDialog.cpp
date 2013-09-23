@@ -9,6 +9,8 @@
 #include <wx/checkbox.h>
 #include <wx/log.h>
 
+#define SERVER_NAME_HINT "example.seruro.com"
+
 DECLARE_APP(SeruroClient);
 
 BEGIN_EVENT_TABLE(AddServerDialog, wxDialog)
@@ -55,7 +57,7 @@ void AddServerForm::AddForm(wxSizer *sizer,
     
     /* Host controller. */
 	this->server_host = new wxTextCtrl(parent, wxID_ANY, host, wxDefaultPosition, wxDefaultSize, 0, host_validator);
-    this->server_host->SetHint(_("alpha.seruro.com"));
+    this->server_host->SetHint(_(SERVER_NAME_HINT));
 	grid_sizer->Add(this->server_host, DIALOGS_BOXSIZER_OPTIONS);
 	
 	/* Optional server port (validator included). */

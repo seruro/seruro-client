@@ -365,7 +365,7 @@ bool IdentityPage::GoNext(bool from_callback)
 		this->SetEnciphermentHint(_(SERURO_ENCIPHERMENT L" installed."));
 	} else {
 		/* They may have failed both, or just encipherment? */
-		failure_text = (failure_text.IsEmpty()) ? _(SERURO_ENCIPHERMENT) : _(SERURO_AUTHENTICATION L" and " SERURO_ENCIPHERMENT);
+		failure_text = (failure_text.IsEmpty()) ? _(SERURO_ENCIPHERMENT) : _("either");
 	}
 
 	if (! authentication_result || ! encipherment_result) {

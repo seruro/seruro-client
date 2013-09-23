@@ -8,6 +8,17 @@
 #include "../wxJSON/wx/jsonval.h"
 #include "../api/SeruroStateEvents.h"
 
+#include <wx/button.h>
+
+/* The type of required action. */
+enum home_actions_t
+{
+    HOME_ACTION_CONTACTS,
+    HOME_ACTION_SERVER,
+    HOME_ACTION_ACCOUNT,
+    HOME_ACTION_IDENTITY
+};
+
 class SeruroPanelHome : public SeruroPanel
 {
 public:
@@ -29,6 +40,9 @@ private:
     void GenerateApplicationBox();
     void GenerateWelcomeBox();
     
+    /* If there is an action to be taken. */
+    void OnAction(wxCommandEvent &event);
+    
     /* This is a general welcome message. */
     Text *text_welcome;
     
@@ -40,6 +54,14 @@ private:
     Text *contacts_welcome;
     /* This is a comment on the state of applications. */
     Text *applications_welcome;
+    
+    /* Action button */
+     wxButton *action_button;
+    home_actions_t action_type;
+    /* Show the button, set label, and store action. */
+    void SetAction(home_actions_t action);
+    
+    DECLARE_EVENT_TABLE()
 };
 
 #endif

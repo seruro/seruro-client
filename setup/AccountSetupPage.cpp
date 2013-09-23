@@ -120,7 +120,7 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	if (! response["success"].AsBool() || ! response.HasMember("address")) {
 		wxLogMessage(_("AccountPage> (OnPingResult) failed to ping server."));
 		if (response["error"].AsString().compare(_(SERURO_API_ERROR_CONNECTION)) == 0) {
-			SetAccountStatus(response["error"].AsString(), true);
+			SetAccountStatus(_("Connection failed (check the hostname)."), true);
 		} else {
 			SetAccountStatus(_("Invalid account information."), true);
 		}

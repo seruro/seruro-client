@@ -4,28 +4,75 @@
 #include "../SeruroClient.h"
 #include "../SeruroConfig.h"
 #include "../apps/SeruroApps.h"
+#include "UIDefs.h"
+
+#include "SeruroMain.h"
+#include "SeruroSetup.h"
+
+#include <wx/statbmp.h>
+
+#define HOME_SUCCESS_WELCOME_TEXT "You are ready to use secured email"
+#define HOME_FAILURE_WELCOME_TEXT "Some steps need your attention"
+
+//#define HOME_SERVERS_TEXT "You are using %d Seruro server(s), and the default server is %s."
+//#define HOME_ACCOUNTS_TEXT "The following Seruro accounts are installed: %s."
+
+//#define HOME_CONTACTS_TEXT "There are %d Seruro contact(s) installed. \
+Contacts are added %s, you may view them using the \n'Contacts' tab above. "
+//#define HOME_CONTACTS_MANUAL_TEXT "To add additional contacts use the 'Search' tab above."
+
+//#define HOME_APPLICATIONS_TEXT "The following email applications: %s, \
+are configured to send and receive secured email."
+
+#define HOME_SERVERS_TEXT "Servers Connected: %d"
+#define HOME_ACCOUNTS_TEXT "Secured Accounts: %d"
+#define HOME_CONTACTS_TEXT "Contacts Installed: %d"
+#define HOME_APPLICATIONS_TEXT "%s, %s configured to use Seruro"
+
+#define HOME_HELP_TEXT "Thank you for using Seruro to secure your email. \
+You can find help and tutorials on sending and receiving secure email \
+anytime using the 'help' icons or 'Help' tab above. \
+If you need to make changes to your Seruro identity please visit the web address of your Seruro application."
+
+#include "../resources/images/logo_block_128_flat.png.h"
+#include "../resources/images/home_servers.png.h"
+#include "../resources/images/home_contacts.png.h"
+
+enum home_buttons_t
+{
+    BUTTON_ACTION_ID,
+};
+
+BEGIN_EVENT_TABLE(SeruroPanelHome, SeruroPanel)
+    EVT_BUTTON(BUTTON_ACTION_ID, SeruroPanelHome::OnAction)
+END_EVENT_TABLE()
 
 DECLARE_APP(SeruroClient);
 
-#define HOME_SUCCESS_WELCOME_TEXT "You are ready to send and receive secure email!"
-#define HOME_FAILURE_WELCOME_TEXT "You are almost ready, there are some steps that need your attention."
-
-#define HOME_SERVERS_TEXT "You are using %d Seruro server(s), and the default server is %s."
-#define HOME_ACCOUNTS_TEXT "The following Seruro accounts are installed: %s."
-
-#define HOME_CONTACTS_TEXT "There are %d Seruro contact(s) installed. \
-Contacts are added %s, you may view them using the \n'Contacts' tab above. "
-#define HOME_CONTACTS_MANUAL_TEXT "To add additional contacts use the 'Search' tab above."
-
-#define HOME_APPLICATIONS_TEXT "The following email applications: %s, \
-are configured to send and receive secured email."
-#define HOME_HELP_TEXT "For help and tutorials on Seruro and secure email, \
-please use the 'help' icons or 'Help' tab above."
+void SeruroPanelHome::OnAction(wxCommandEvent &event)
+{
+    if (action_type == HOME_ACTION_SERVER) {
+        SeruroSetup *add_server_setup = new SeruroSetup((wxFrame*) (wxGetApp().GetFrame()), SERURO_SETUP_SERVER);
+        ((SeruroFrameMain *) wxGetApp().GetFrame())->SetSetup(add_server_setup);
+    } else if (action_type == HOME_ACTION_ACCOUNT) {
+        SeruroSetup *add_account_setup = new SeruroSetup((wxFrame*) (wxGetApp().GetFrame()), SERURO_SETUP_ACCOUNT);
+        ((SeruroFrameMain *) wxGetApp().GetFrame())->SetSetup(add_account_setup);
+    } else if (action_type == HOME_ACTION_IDENTITY) {
+        /* Show identity setup page for first account? */
+    } else if (action_type == HOME_ACTION_CONTACTS) {
+        /* If the auto download is set, then fail, else go to search. */
+        if (theSeruroConfig::Get().GetOption("auto_download") != "true") {
+            /* Show search page. */
+        }
+    }
+}
 
 void SeruroPanelHome::OnAccountStateChange(SeruroStateEvent &event)
 {
     this->GenerateWelcomeBox();
     this->GenerateServerBox();
+    
+    this->Layout();
     event.Skip();
 }
 
@@ -35,6 +82,8 @@ void SeruroPanelHome::OnServerStateChange(SeruroStateEvent &event)
         this->GenerateWelcomeBox();
         this->GenerateServerBox();
     }
+    
+    this->Layout();
     event.Skip();
 }
 
@@ -44,6 +93,8 @@ void SeruroPanelHome::OnContactStateChange(SeruroStateEvent &event)
         this->GenerateWelcomeBox();
         this->GenerateServerBox();
     }
+
+    this->Layout();
     event.Skip();
 }
 
@@ -51,6 +102,8 @@ void SeruroPanelHome::OnApplicationStateChange(SeruroStateEvent &event)
 {
     this->GenerateWelcomeBox();
     this->GenerateApplicationBox();
+
+    this->Layout();
     event.Skip();
 }
 
@@ -59,6 +112,8 @@ void SeruroPanelHome::OnIdentityStateChange(SeruroStateEvent &event)
     this->GenerateWelcomeBox();
     this->GenerateServerBox();
     this->GenerateApplicationBox();
+    
+    this->Layout();
     event.Skip();
 }
 
@@ -66,6 +121,7 @@ void SeruroPanelHome::OnOptionStateChange(SeruroStateEvent &event)
 {
     if (event.GetValue("option_name") == "auto_download") {
         this->GenerateServerBox();
+        this->Layout();
     }
     event.Skip();
 }
@@ -77,6 +133,8 @@ void SeruroPanelHome::GenerateWelcomeBox()
     } else {
         text_welcome->SetLabel(HOME_FAILURE_WELCOME_TEXT);
     }
+
+    this->Layout();
 }
 
 void SeruroPanelHome::GenerateServerBox()
@@ -98,7 +156,9 @@ void SeruroPanelHome::GenerateServerBox()
         default_server_name = _("(None)");
     }
     
-    servers_welcome->SetLabel(wxString::Format(_(HOME_SERVERS_TEXT), (int) servers_count, default_server_name));
+    //servers_welcome->SetLabel(wxString::Format(_(HOME_SERVERS_TEXT), (int) servers_count, default_server_name));
+    servers_welcome->SetLabel(wxString::Format(_(HOME_SERVERS_TEXT), (int) servers_count));
+    
     
     contacts_count = 0;
     for (size_t i = 0; i < servers.size(); ++i) {
@@ -117,11 +177,16 @@ void SeruroPanelHome::GenerateServerBox()
     }
     
     automatic_contacts = (theSeruroConfig::Get().GetOption("auto_download") == "true");
-    accounts_welcome->SetLabel(wxString::Format(_(HOME_ACCOUNTS_TEXT), accounts_string));
-    contacts_welcome->SetLabel(wxString::Format(_(HOME_CONTACTS_TEXT), (int) contacts_count,
-        (automatic_contacts) ? "automatic" : "manual"));
+    
+    //accounts_welcome->SetLabel(wxString::Format(_(HOME_ACCOUNTS_TEXT), accounts_string));
+    accounts_welcome->SetLabel(wxString::Format(_(HOME_ACCOUNTS_TEXT), (int) accounts.size()));
+    
+    //contacts_welcome->SetLabel(wxString::Format(_(HOME_CONTACTS_TEXT), (int) contacts_count,
+    //    (automatic_contacts) ? "automatic" : "manual"));
+    contacts_welcome->SetLabel(wxString::Format(_(HOME_CONTACTS_TEXT), (int) contacts_count));
+    
     if (! automatic_contacts) {
-        contacts_welcome->SetLabel(wxString::Format(_("%s%s"), contacts_welcome->GetLabel(), _(HOME_CONTACTS_MANUAL_TEXT)));
+        //contacts_welcome->SetLabel(wxString::Format(_("%s%s"), contacts_welcome->GetLabel(), _(HOME_CONTACTS_MANUAL_TEXT)));
     }
 }
 
@@ -129,9 +194,11 @@ void SeruroPanelHome::GenerateApplicationBox()
 {
     wxString apps_string;
     wxArrayString apps, app_accounts;
+    size_t configured_apps;
     /* Not used. */
     wxString server_uuid;
     
+    configured_apps = 0;
     apps = theSeruroApps::Get().GetAppList();
     for (size_t i = 0; i < apps.size(); ++i) {
         app_accounts = theSeruroApps::Get().GetAccountList(apps[i]);
@@ -140,6 +207,7 @@ void SeruroPanelHome::GenerateApplicationBox()
                 continue;
             }
             
+            configured_apps += 1;
             if (apps_string != wxEmptyString) {
                 apps_string = wxString::Format(_("%s, "), apps_string);
             }
@@ -149,40 +217,69 @@ void SeruroPanelHome::GenerateApplicationBox()
     }
     
     if (apps_string == wxEmptyString) {
-        apps_string = _("(None)");
+        apps_string = _("No applications");
     }
     
-    applications_welcome->SetLabel(wxString::Format(_(HOME_APPLICATIONS_TEXT), apps_string));
+    //applications_welcome->SetLabel(wxString::Format(_(HOME_APPLICATIONS_TEXT), apps_string));
+    applications_welcome->SetLabel(wxString::Format(_(HOME_APPLICATIONS_TEXT), apps_string, (configured_apps == 1) ? _("is") : _("are")));
 }
 
 SeruroPanelHome::SeruroPanelHome(wxBookCtrlBase *book) : SeruroPanel(book, wxT("Home"))
-{
+{    
+    /* Improved home. */
     wxSizer *sizer = new wxBoxSizer(wxVERTICAL);
-    wxStaticBoxSizer *welcome_box = new wxStaticBoxSizer(wxHORIZONTAL, this);
-    wxStaticBoxSizer *server_box = new wxStaticBoxSizer(wxHORIZONTAL, this);
-    wxSizer *server_messages = new wxBoxSizer(wxVERTICAL);
-    wxStaticBoxSizer *application_box = new wxStaticBoxSizer(wxHORIZONTAL, this);
-    wxSizer *application_messages = new wxBoxSizer(wxVERTICAL);
+    wxSizer *status_sizer = new wxBoxSizer(wxHORIZONTAL);
     
-    text_welcome = new Text(welcome_box->GetStaticBox(), wxEmptyString, false);
-    text_welcome->Wrap(SERURO_APP_DEFAULT_WIDTH - 20);
-    welcome_box->Add(text_welcome, DIALOGS_BOXSIZER_OPTIONS);
+    /* Improved "world". */
+    wxSizer *world_sizer = new wxBoxSizer(wxVERTICAL);
+    //world_sizer->SetMinSize((SERURO_APP_DEFAULT_WIDTH-20)/3, SERURO_APP_DEFAULT_HEIGHT-20);
+    wxStaticBitmap *world_image = new wxStaticBitmap(this, wxID_ANY, wxGetBitmapFromMemory(home_servers));
+    world_sizer->Add(world_image, 1, wxALIGN_CENTER, 0);
+    status_sizer->Add(world_sizer, 1, wxALIGN_CENTER, 1);
     
-    /* Server messages / icon. */
-    this->servers_welcome = new Text(server_box->GetStaticBox(), wxEmptyString, false);
-    server_messages->Add(servers_welcome, DIALOGS_BOXSIZER_OPTIONS);
-    servers_welcome->Wrap(SERURO_APP_DEFAULT_WIDTH - 20);
-    this->accounts_welcome = new Text(server_box->GetStaticBox(), wxEmptyString, false);
-    server_messages->Add(accounts_welcome, DIALOGS_BOXSIZER_OPTIONS);
-    accounts_welcome->Wrap(SERURO_APP_DEFAULT_WIDTH - 20);
-    this->contacts_welcome = new Text(server_box->GetStaticBox(), wxEmptyString, false);
-    server_messages->Add(contacts_welcome, DIALOGS_BOXSIZER_OPTIONS);
-    contacts_welcome->Wrap(SERURO_APP_DEFAULT_WIDTH - 20);
+    servers_welcome = new Text(this, wxEmptyString, false);
+    servers_welcome->Wrap((SERURO_APP_DEFAULT_WIDTH-20)/3);
+    world_sizer->Add(servers_welcome, 0, wxALIGN_CENTER, 0);
     
-    /* Applications box. */
-    this->applications_welcome = new Text(application_box->GetStaticBox(), wxEmptyString, false);
-    application_messages->Add(applications_welcome, DIALOGS_BOXSIZER_OPTIONS);
-    application_messages->Add(new Text(application_box->GetStaticBox(), _(HOME_HELP_TEXT), false), DIALOGS_BOXSIZER_OPTIONS);
+    accounts_welcome = new Text(this, wxEmptyString, false);
+    accounts_welcome->Wrap((SERURO_APP_DEFAULT_WIDTH-20)/3);
+    world_sizer->Add(accounts_welcome, 0, wxALIGN_CENTER, 0);
+    
+    world_sizer->Add(new Text(this, _("Notifications: None")), 0, wxALIGN_CENTER, 0);
+    
+    /* Improved "Seruro-center". */
+    wxSizer *seruro_sizer = new wxBoxSizer(wxVERTICAL);
+    //seruro_sizer->SetMinSize((SERURO_APP_DEFAULT_WIDTH-20)/3, SERURO_APP_DEFAULT_HEIGHT-50);
+    wxStaticBitmap *seruro_image = new wxStaticBitmap(this, wxID_ANY, wxGetBitmapFromMemory(logo_block_128_flat));
+    seruro_sizer->Add(seruro_image, 1, wxALIGN_CENTER, 0);
+    status_sizer->Add(seruro_sizer, 0, wxALIGN_CENTER, 0);
+    
+    text_welcome = new Text(this, wxEmptyString, false);
+    text_welcome->Wrap((SERURO_APP_DEFAULT_WIDTH-20)/3);
+    seruro_sizer->Add(text_welcome, 0, wxALIGN_CENTER, 0);
+    
+    applications_welcome = new Text(this, wxEmptyString, false);
+    applications_welcome->Wrap((SERURO_APP_DEFAULT_WIDTH-20)/3);
+    seruro_sizer->Add(applications_welcome, 0, wxALIGN_CENTER, 0);
+    
+    /* Add a potential "action" button if there's an action required. */
+    seruro_sizer->AddSpacer(20);
+    this->action_button = new wxButton(this, BUTTON_ACTION_ID, wxEmptyString);
+    seruro_sizer->Add(action_button, 0, wxALIGN_CENTER, 0);
+    action_button->Hide();
+    
+    /* Improved "people". */
+    wxSizer *people_sizer = new wxBoxSizer(wxVERTICAL);
+    wxStaticBitmap *people_image = new wxStaticBitmap(this, wxID_ANY, wxGetBitmapFromMemory(home_contacts));
+    people_sizer->Add(people_image, 1, wxALIGN_CENTER, 0);
+    status_sizer->Add(people_sizer, 1, wxALIGN_CENTER, 1);
+    
+    contacts_welcome = new Text(this, wxEmptyString, false);
+    contacts_welcome->Wrap((SERURO_APP_DEFAULT_WIDTH-20)/3);
+    people_sizer->Add(contacts_welcome, 0, wxALIGN_CENTER, 0);
+    
+    people_sizer->Add(new Text(this, _("Contact Retrieval: Automatic")), 0, wxALIGN_CENTER, 0);
+    people_sizer->Add(new Text(this, _("Extensions: None")), 0, wxALIGN_CENTER, 0);
     
     /* Apply original state. */
     this->GenerateWelcomeBox();
@@ -197,14 +294,35 @@ SeruroPanelHome::SeruroPanelHome(wxBookCtrlBase *book) : SeruroPanel(book, wxT("
     wxGetApp().Bind(SERURO_STATE_CHANGE, &SeruroPanelHome::OnApplicationStateChange, this, STATE_TYPE_APPLICATION);
     wxGetApp().Bind(SERURO_STATE_CHANGE, &SeruroPanelHome::OnOptionStateChange, this, STATE_TYPE_OPTION);
     
-    /* Plug sizers in. */
-    sizer->Add(welcome_box, 1, wxEXPAND | wxALL, 10);
-    sizer->Add(server_box, 1, wxEXPAND | wxALL, 10);
-    server_box->Add(server_messages, DIALOGS_BOXSIZER_OPTIONS);
-    sizer->Add(application_box, 1, wxEXPAND | wxALL, 10);
-    application_box->Add(application_messages, DIALOGS_BOXSIZER_OPTIONS);
+    /* Bottom message / informational box. */
+    wxStaticBoxSizer *message_box = new wxStaticBoxSizer(wxHORIZONTAL, this);
+    message_box->SetMinSize(-1, 100);
+    
+    Text *message_text = new Text(message_box->GetStaticBox(), _(HOME_HELP_TEXT), false);
+    //message_text->Wrap(SERURO_APP_DEFAULT_WIDTH-20-20);
+    message_box->Add(message_text, DIALOGS_BOXSIZER_OPTIONS.Proportion(1));
+    
+    /* Plug in sizers. */
+    sizer->Add(status_sizer, 1, wxEXPAND, 0);
+    sizer->Add(message_box, 0, wxEXPAND | wxALL, 10);
     this->SetSizer(sizer);
     this->Layout();
+}
+
+void SeruroPanelHome::SetAction(home_actions_t action)
+{
+    this->action_type = action;
+    
+    if (action == HOME_ACTION_SERVER) {
+        this->action_button->SetLabel(_("Add a Seruro Server"));
+    } else if (action == HOME_ACTION_ACCOUNT) {
+        this->action_button->SetLabel(_("Add a Seruro Account"));
+    } else if (action == HOME_ACTION_IDENTITY) {
+        this->action_button->SetLabel(_("Unlock your Seruro Identity"));
+    } else if (action == HOME_ACTION_CONTACTS) {
+        this->action_button->SetLabel(_("Install Seruro Contacts"));
+    }
+    this->action_button->Show();
 }
 
 bool SeruroPanelHome::IsReady()
@@ -214,6 +332,7 @@ bool SeruroPanelHome::IsReady()
 
 	servers = theSeruroConfig::Get().GetServerList();
 	if (servers.size() == 0) {
+        SetAction(HOME_ACTION_SERVER);
 		return false;
 	}
 
@@ -242,9 +361,18 @@ bool SeruroPanelHome::IsReady()
 		}
 	}
 
-	if (has_account && has_contact && has_assigned) {
-		return true;
-	}
-
-    return false;
+    /* If there was any cause for failure (false), set the appropriate action. */
+    if (!has_account) {
+        SetAction(HOME_ACTION_ACCOUNT);
+        return false;
+    } else if (!has_assigned) {
+        SetAction(HOME_ACTION_IDENTITY);
+        return false;
+    } else if (!has_contact) {
+        SetAction(HOME_ACTION_CONTACTS);
+        return false;
+    }
+    
+    this->action_button->Hide();
+    return true;
 }

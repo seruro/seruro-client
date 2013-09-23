@@ -61,6 +61,7 @@ bool SeruroClient::OnInit()
 	main_frame = new SeruroFrameMain(wxT(SERURO_APP_NAME),
 		SERURO_APP_DEFAULT_WIDTH, SERURO_APP_DEFAULT_HEIGHT);
     this->SetTopWindow(main_frame);
+    main_frame->SetMinSize(wxSize(SERURO_APP_DEFAULT_WIDTH, SERURO_APP_DEFAULT_HEIGHT));
     
 	/* Start logger */
 	InitLogger();
