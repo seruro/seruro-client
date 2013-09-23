@@ -142,7 +142,7 @@ void AccountPage::OnPingResult(SeruroRequestEvent &event)
 	}
 
     /* Set the instance variable for additiona pages to access. */
-    this->server_uuid = response["uuid"].AsString();
+    this->server_uuid = response["server_uuid"].AsString();
     
     /* Try to add the server to the config, will fail if server existed. */
     server_info["uuid"] = this->server_uuid;

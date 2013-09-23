@@ -466,7 +466,13 @@ bool SeruroConfig::RemoveServer(wxString server_uuid)
 	/* Remove tokens for all addresses belonging to this server. */
 	RemoveTokens(server_uuid);
 
-	config["servers"].Remove(server_uuid);
+    if (this->GetServerList().size() == 1) {
+        config.Remove("servers");
+        config["servers"] = wxJSONValue(wxJSONTYPE_OBJECT);
+    } else {
+        config["servers"].Remove(server_uuid);
+    }
+        
 	return this->WriteConfig();
 }
 
@@ -474,9 +480,11 @@ bool SeruroConfig::AddServer(wxJSONValue server_info)
 {
 	wxJSONValue new_server;
 	//wxJSONValue servers_list;
-
+    
 	/* Only require a name and host to identity a server. */
-	if (!server_info.HasMember("uuid") || ! server_info.HasMember("name") || ! server_info.HasMember("host")) {
+	if (! server_info.HasMember("uuid") || server_info["uuid"].AsString() == wxEmptyString ||
+        ! server_info.HasMember("name") || server_info["name"].AsString() == wxEmptyString || 
+        ! server_info.HasMember("host") || server_info["host"].AsString() == wxEmptyString) {
 		ERROR_LOG(_("SeruroConfig> (AddServer) Cannot add a server without knowing the uuid, name, and host."));
 		return false;
 	}

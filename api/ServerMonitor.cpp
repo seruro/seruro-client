@@ -24,7 +24,7 @@ ServerMonitor::ServerMonitor(bool is_transient)
 
 void ServerMonitor::StaticUpdateResponse(SeruroRequestEvent &event)
 {
-    ServerMonitor *transient_monitor = new ServerMonitor();
+    ServerMonitor *transient_monitor = new ServerMonitor(true);
     transient_monitor->OnUpdateResponse(event);
     delete transient_monitor;
 }
