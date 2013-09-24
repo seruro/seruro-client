@@ -7,7 +7,7 @@
 #include "UIDefs.h"
 
 #include "SeruroMain.h"
-#include "SeruroSetup.h"
+#include "../setup/SeruroSetup.h"
 
 #include <wx/statbmp.h>
 
@@ -18,11 +18,11 @@
 //#define HOME_ACCOUNTS_TEXT "The following Seruro accounts are installed: %s."
 
 //#define HOME_CONTACTS_TEXT "There are %d Seruro contact(s) installed. \
-Contacts are added %s, you may view them using the \n'Contacts' tab above. "
+//Contacts are added %s, you may view them using the \n'Contacts' tab above. "
 //#define HOME_CONTACTS_MANUAL_TEXT "To add additional contacts use the 'Search' tab above."
 
 //#define HOME_APPLICATIONS_TEXT "The following email applications: %s, \
-are configured to send and receive secured email."
+//are configured to send and receive secured email."
 
 #define HOME_SERVERS_TEXT "Servers Connected: %d"
 #define HOME_ACCOUNTS_TEXT "Secured Accounts: %d"
@@ -34,9 +34,15 @@ You can find help and tutorials on sending and receiving secure email \
 anytime using the 'help' icons or 'Help' tab above. \
 If you need to make changes to your Seruro identity please visit the web address of your Seruro application."
 
-#include "../resources/images/logo_block_128_flat.png.h"
+#include "../resources/images/logo_new_128_flat.png.h"
 #include "../resources/images/home_servers.png.h"
 #include "../resources/images/home_contacts.png.h"
+
+#if defined(__WXMSW__)
+#define MAX_CENTER_WIDTH (SERURO_APP_DEFAULT_WIDTH-20)/3
+#else
+#define MAX_CENTER_WIDTH (SERURO_APP_DEFAULT_WIDTH-20)/3
+#endif
 
 enum home_buttons_t
 {
@@ -222,6 +228,7 @@ void SeruroPanelHome::GenerateApplicationBox()
     
     //applications_welcome->SetLabel(wxString::Format(_(HOME_APPLICATIONS_TEXT), apps_string));
     applications_welcome->SetLabel(wxString::Format(_(HOME_APPLICATIONS_TEXT), apps_string, (configured_apps == 1) ? _("is") : _("are")));
+	applications_welcome->Wrap(MAX_CENTER_WIDTH);
 }
 
 SeruroPanelHome::SeruroPanelHome(wxBookCtrlBase *book) : SeruroPanel(book, wxT("Home"))
@@ -251,17 +258,21 @@ SeruroPanelHome::SeruroPanelHome(wxBookCtrlBase *book) : SeruroPanel(book, wxT("
     /* Improved "Seruro-center". */
     wxSizer *seruro_sizer = new wxBoxSizer(wxVERTICAL);
     //seruro_sizer->SetMinSize((SERURO_APP_DEFAULT_WIDTH-20)/3, SERURO_APP_DEFAULT_HEIGHT-50);
-    wxStaticBitmap *seruro_image = new wxStaticBitmap(this, wxID_ANY, wxGetBitmapFromMemory(logo_block_128_flat));
+    wxStaticBitmap *seruro_image = new wxStaticBitmap(this, wxID_ANY, wxGetBitmapFromMemory(logo_new_128_flat));
     seruro_sizer->Add(seruro_image, 1, wxALIGN_CENTER, 0);
     status_sizer->Add(seruro_sizer, 0, wxALIGN_CENTER, 0);
     
+	seruro_sizer->AddSpacer(20);
     text_welcome = new Text(this, wxEmptyString, false);
-    text_welcome->Wrap((SERURO_APP_DEFAULT_WIDTH-20)/3);
+    text_welcome->Wrap(MAX_CENTER_WIDTH);
     seruro_sizer->Add(text_welcome, 0, wxALIGN_CENTER, 0);
     
+	//wxSizer *appwelcome_sizer = new wxBoxSizer(wxHORIZONTAL); 
     applications_welcome = new Text(this, wxEmptyString, false);
-    applications_welcome->Wrap((SERURO_APP_DEFAULT_WIDTH-20)/3);
+    applications_welcome->Wrap(MAX_CENTER_WIDTH);
     seruro_sizer->Add(applications_welcome, 0, wxALIGN_CENTER, 0);
+	//appwelcome_sizer->Add(applications_welcome, 0, wxALIGN_CENTER, 1);
+	//seruro_sizer->Add(appwelcome_sizer, 0, wxALIGN_CENTER, 0);
     
     /* Add a potential "action" button if there's an action required. */
     seruro_sizer->AddSpacer(20);

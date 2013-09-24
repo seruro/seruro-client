@@ -6,8 +6,8 @@
 
 #include "../frames/SeruroFrame.h"
 
-#include "../resources/images/setup_full_step_4.png.h"
-#include "../resources/images/setup_identity_step_3.png.h"
+#include "../resources/images/setup_full_step_4_flat.png.h"
+#include "../resources/images/setup_identity_step_3_flat.png.h"
 
 DECLARE_APP(SeruroClient);
 
@@ -55,9 +55,9 @@ void SettingsPage::DoFocus()
     wxJSONValue server_info;
 
     if (wizard->GetSetupType() == SERURO_SETUP_IDENTITY) {
-        wizard->SetBitmap(wxGetBitmapFromMemory(setup_identity_step_3));
+        wizard->SetBitmap(wxGetBitmapFromMemory(setup_identity_step_3_flat));
     } else {
-        wizard->SetBitmap(wxGetBitmapFromMemory(setup_full_step_4));
+        wizard->SetBitmap(wxGetBitmapFromMemory(setup_full_step_4_flat));
     }
     
     server_info = this->wizard->GetServerInfo();

@@ -6,8 +6,8 @@
 #include "SeruroSetup.h"
 //#include "../frames/UIDefs.h"
 
-#include "../resources/images/setup_full_step_2.png.h"
-#include "../resources/images/setup_identity_step_1.png.h"
+#include "../resources/images/setup_full_step_2_flat.png.h"
+#include "../resources/images/setup_identity_step_1_flat.png.h"
 
 #include <wx/event.h>
 
@@ -162,9 +162,9 @@ void IdentityPage::OnDownloadIdentity(wxCommandEvent &event)
 void IdentityPage::DoFocus()
 {
     if (wizard->GetSetupType() == SERURO_SETUP_IDENTITY) {
-        wizard->SetBitmap(wxGetBitmapFromMemory(setup_identity_step_1));
+        wizard->SetBitmap(wxGetBitmapFromMemory(setup_identity_step_1_flat));
     } else {
-        wizard->SetBitmap(wxGetBitmapFromMemory(setup_full_step_2));
+        wizard->SetBitmap(wxGetBitmapFromMemory(setup_full_step_2_flat));
     }
     
 	/* This is only focued using success response. */

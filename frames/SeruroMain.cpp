@@ -32,11 +32,11 @@
 
 /* Potential MSW icons. */
 #ifdef __WXMSW__
-#include "../resources/images/logo_block_256_flat.png.h"
-#include "../resources/images/logo_block_128_flat.png.h"
-#include "../resources/images/logo_block_64_flat.png.h"
-#include "../resources/images/logo_block_32_flat.png.h"
-#include "../resources/images/logo_block_16_flat.png.h"
+#include "../resources/images/logo_new_256_flat.png.h"
+#include "../resources/images/logo_new_128_flat.png.h"
+#include "../resources/images/logo_new_64_flat.png.h"
+#include "../resources/images/logo_new_32_flat.png.h"
+#include "../resources/images/logo_new_16_flat.png.h"
 #endif
  
 /* Potential OSX icons. */
@@ -87,15 +87,15 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
 	wxIcon icon;
 
 #ifdef __WXMSW__
-	icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_block_256_flat));
+	icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_new_256_flat));
 	icon_bundle.AddIcon(icon);
-	icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_block_128_flat));
+	icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_new_128_flat));
 	icon_bundle.AddIcon(icon);
-	icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_block_64_flat));
+	icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_new_64_flat));
 	icon_bundle.AddIcon(icon);
-	icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_block_32_flat));
+	icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_new_32_flat));
 	icon_bundle.AddIcon(icon);
-	icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_block_16_flat));
+	icon.CopyFromBitmap(wxGetBitmapFromMemory(logo_new_16_flat));
 	icon_bundle.AddIcon(icon);
 #endif
     
