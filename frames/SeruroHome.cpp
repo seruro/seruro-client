@@ -27,7 +27,7 @@
 #define HOME_SERVERS_TEXT "Servers Connected: %d"
 #define HOME_ACCOUNTS_TEXT "Secured Accounts: %d"
 #define HOME_CONTACTS_TEXT "Contacts Installed: %d"
-#define HOME_APPLICATIONS_TEXT "%s, %s configured to use Seruro"
+#define HOME_APPLICATIONS_TEXT "%s configured to use Seruro"
 
 #define HOME_HELP_TEXT "Thank you for using Seruro to secure your email. \
 You can find help and tutorials on sending and receiving secure email \
@@ -57,6 +57,8 @@ DECLARE_APP(SeruroClient);
 
 void SeruroPanelHome::OnAction(wxCommandEvent &event)
 {
+    wxString server_uuid, address;
+    
     if (action_type == HOME_ACTION_SERVER) {
         SeruroSetup *add_server_setup = new SeruroSetup((wxFrame*) (wxGetApp().GetFrame()), SERURO_SETUP_SERVER);
         ((SeruroFrameMain *) wxGetApp().GetFrame())->SetSetup(add_server_setup);
@@ -65,10 +67,15 @@ void SeruroPanelHome::OnAction(wxCommandEvent &event)
         ((SeruroFrameMain *) wxGetApp().GetFrame())->SetSetup(add_account_setup);
     } else if (action_type == HOME_ACTION_IDENTITY) {
         /* Show identity setup page for first account? */
+        server_uuid = theSeruroConfig::Get().GetServerList()[0];
+        address = theSeruroConfig::Get().GetAddressList(server_uuid)[0];
+        SeruroSetup *identity_setup = new SeruroSetup((wxFrame*) (wxGetApp().GetFrame()), SERURO_SETUP_IDENTITY, server_uuid, address);
+        ((SeruroFrameMain *) wxGetApp().GetFrame())->SetSetup(identity_setup);
     } else if (action_type == HOME_ACTION_CONTACTS) {
         /* If the auto download is set, then fail, else go to search. */
         if (theSeruroConfig::Get().GetOption("auto_download") != "true") {
             /* Show search page. */
+            ((SeruroFrameMain *) wxGetApp().GetFrame())->ChangePanel(SERURO_PANEL_SEARCH_ID);
         }
     }
 }
@@ -226,9 +233,9 @@ void SeruroPanelHome::GenerateApplicationBox()
         apps_string = _("No applications");
     }
     
-    //applications_welcome->SetLabel(wxString::Format(_(HOME_APPLICATIONS_TEXT), apps_string));
-    applications_welcome->SetLabel(wxString::Format(_(HOME_APPLICATIONS_TEXT), apps_string, (configured_apps == 1) ? _("is") : _("are")));
-	applications_welcome->Wrap(MAX_CENTER_WIDTH);
+    //applications_list->SetLabel(apps_string);
+    //applications_welcome->SetLabel(wxString::Format(_(HOME_APPLICATIONS_TEXT), (configured_apps == 1) ? _("is") : _("are")));
+	//applications_welcome->Wrap(MAX_CENTER_WIDTH);
 }
 
 SeruroPanelHome::SeruroPanelHome(wxBookCtrlBase *book) : SeruroPanel(book, wxT("Home"))
@@ -239,7 +246,6 @@ SeruroPanelHome::SeruroPanelHome(wxBookCtrlBase *book) : SeruroPanel(book, wxT("
     
     /* Improved "world". */
     wxSizer *world_sizer = new wxBoxSizer(wxVERTICAL);
-    //world_sizer->SetMinSize((SERURO_APP_DEFAULT_WIDTH-20)/3, SERURO_APP_DEFAULT_HEIGHT-20);
     wxStaticBitmap *world_image = new wxStaticBitmap(this, wxID_ANY, wxGetBitmapFromMemory(home_servers));
     world_sizer->Add(world_image, 1, wxALIGN_CENTER, 0);
     status_sizer->Add(world_sizer, 1, wxALIGN_CENTER, 1);
@@ -257,22 +263,23 @@ SeruroPanelHome::SeruroPanelHome(wxBookCtrlBase *book) : SeruroPanel(book, wxT("
     
     /* Improved "Seruro-center". */
     wxSizer *seruro_sizer = new wxBoxSizer(wxVERTICAL);
-    //seruro_sizer->SetMinSize((SERURO_APP_DEFAULT_WIDTH-20)/3, SERURO_APP_DEFAULT_HEIGHT-50);
     wxStaticBitmap *seruro_image = new wxStaticBitmap(this, wxID_ANY, wxGetBitmapFromMemory(logo_new_128_flat));
     seruro_sizer->Add(seruro_image, 1, wxALIGN_CENTER, 0);
     status_sizer->Add(seruro_sizer, 0, wxALIGN_CENTER, 0);
     
-	seruro_sizer->AddSpacer(20);
+    /* List of applications, and a note with the correct verbs. */
+	//seruro_sizer->AddSpacer(20);
+    //applications_list = new Text(this, wxEmptyString, false);
+    //seruro_sizer->Add(applications_list, 0, wxALIGN_CENTER, 0);
+	//applications_welcome = new Text(this, wxEmptyString, false);
+    //applications_welcome->Wrap(MAX_CENTER_WIDTH);
+    //seruro_sizer->Add(applications_welcome, 0, wxALIGN_CENTER, 0);
+	
+    /* A note about the state of the application. */
+    seruro_sizer->AddSpacer(20);
     text_welcome = new Text(this, wxEmptyString, false);
     text_welcome->Wrap(MAX_CENTER_WIDTH);
     seruro_sizer->Add(text_welcome, 0, wxALIGN_CENTER, 0);
-    
-	//wxSizer *appwelcome_sizer = new wxBoxSizer(wxHORIZONTAL); 
-    applications_welcome = new Text(this, wxEmptyString, false);
-    applications_welcome->Wrap(MAX_CENTER_WIDTH);
-    seruro_sizer->Add(applications_welcome, 0, wxALIGN_CENTER, 0);
-	//appwelcome_sizer->Add(applications_welcome, 0, wxALIGN_CENTER, 1);
-	//seruro_sizer->Add(appwelcome_sizer, 0, wxALIGN_CENTER, 0);
     
     /* Add a potential "action" button if there's an action required. */
     seruro_sizer->AddSpacer(20);
@@ -312,7 +319,6 @@ SeruroPanelHome::SeruroPanelHome(wxBookCtrlBase *book) : SeruroPanel(book, wxT("
     message_box->SetMinSize(-1, 100);
     
     Text *message_text = new Text(message_box->GetStaticBox(), _(HOME_HELP_TEXT), false);
-    //message_text->Wrap(SERURO_APP_DEFAULT_WIDTH-20-20);
     message_box->Add(message_text, DIALOGS_BOXSIZER_OPTIONS.Proportion(1));
     
     /* Plug in sizers. */
@@ -333,7 +339,13 @@ void SeruroPanelHome::SetAction(home_actions_t action)
     } else if (action == HOME_ACTION_IDENTITY) {
         this->action_button->SetLabel(_("Unlock your Seruro Identity"));
     } else if (action == HOME_ACTION_CONTACTS) {
-        this->action_button->SetLabel(_("Install Seruro Contacts"));
+        if (theSeruroConfig::Get().GetOption("auto_download") != "true") {
+            this->action_button->SetLabel(_("Install Seruro Contacts"));
+        } else {
+            /* Even if there are no contacts, do not display a button if downloads are automatic. */
+            this->action_button->Hide();
+            return;
+        }
     }
     this->action_button->Show();
 }

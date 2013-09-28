@@ -10,7 +10,7 @@
 #include <wx/statbmp.h>
 
 /* Initial side image, this will change on each step. */
-#include "../resources/images/setup_full_step_0.png.h"
+#include "../resources/images/setup_full_step_0_flat.png.h"
 
 /* Individual step images. */
 #include "../resources/images/setup_connect_24.png.h"
@@ -137,7 +137,7 @@ InitialPage::InitialPage(SeruroSetup *parent) : SetupPage(parent)
 void InitialPage::DoFocus()
 {
     /* Replace the setup bitmap. */
-    wizard->SetBitmap(wxGetBitmapFromMemory(setup_full_step_0));
+    wizard->SetBitmap(wxGetBitmapFromMemory(setup_full_step_0_flat));
 }
 
 //SeruroSetup::SeruroSetup(wxFrame *parent, bool add_server, bool add_address) : 
@@ -168,7 +168,7 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
     //setup_icon.CopyFromBitmap(wxGetBitmapFromMemory(setup_full_step_0));
 
     this->Create(parent, SERURO_SETUP_ID, setup_title,
-        wxGetBitmapFromMemory(setup_full_step_0), wxDefaultPosition,
+        wxGetBitmapFromMemory(setup_full_step_0_flat), wxDefaultPosition,
         wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
 	//this->SetIcon(setup_icon);
     

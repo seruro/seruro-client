@@ -53,6 +53,7 @@ private:
     /* This is a comment on how to add/remove contacts. */
     Text *contacts_welcome;
     /* This is a comment on the state of applications. */
+    Text *applications_list;
     Text *applications_welcome;
     
     /* Action button */
