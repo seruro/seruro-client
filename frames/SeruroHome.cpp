@@ -279,6 +279,12 @@ SeruroPanelHome::SeruroPanelHome(wxBookCtrlBase *book) : SeruroPanel(book, wxT("
     seruro_sizer->AddSpacer(20);
     text_welcome = new Text(this, wxEmptyString, false);
     text_welcome->Wrap(MAX_CENTER_WIDTH);
+    Text *title = new Text(this, _("Easy Email Encryption"), false);
+    wxFont title_font = title->GetFont();
+    title_font.MakeBold();
+    title_font.Larger();
+    title->SetFont(title_font);
+    seruro_sizer->Add(title, 0, wxALIGN_CENTER, 0);
     seruro_sizer->Add(text_welcome, 0, wxALIGN_CENTER, 0);
     
     /* Add a potential "action" button if there's an action required. */

@@ -41,7 +41,7 @@ void SeruroTray::OnOptionStateChange(SeruroStateEvent &event)
 		if (event.GetValue("option_value") == "true") {
 			this->menu->Delete(SERURO_PANEL_SEARCH_ID);
 		} else {
-			this->menu->Insert(3, SERURO_PANEL_SEARCH_ID, _("Search"));
+			this->menu->Insert(3, SERURO_PANEL_SEARCH_ID, _(SERURO_MENU_SEARCH));
 		}
 	}
 	event.Skip();
@@ -168,15 +168,13 @@ wxMenu* SeruroTray::CreatePopupMenu()
 {
 	menu = new wxMenu;
 
-	menu->Append(SERURO_PANEL_HOME_ID, _("Home"));
-	menu->Append(SERURO_PANEL_CONTACTS_ID, _("Contacts"));
+	menu->Append(SERURO_PANEL_HOME_ID, _(SERURO_MENU_HOME));
+	menu->Append(SERURO_PANEL_CONTACTS_ID, _(SERURO_MENU_CONTACTS));
 
 	if (theSeruroConfig::Get().GetOption("auto_download") != "true") {
 		/* Position 2, before 3. */
-		menu->Append(SERURO_PANEL_SEARCH_ID, wxT("&Search"));
+		menu->Append(SERURO_PANEL_SEARCH_ID, _(SERURO_MENU_SEARCH));
 	}
-
-	menu->Append(SERURO_PANEL_HELP_ID, _("Help"));
 
 #if SERURO_ENABLE_CRYPT_PANELS
 	menu->Append(SERURO_PANEL_ENCRYPT_ID, wxT("&Encrypt"));
@@ -184,8 +182,9 @@ wxMenu* SeruroTray::CreatePopupMenu()
 #endif
     
 	menu->AppendSeparator();
-	menu->Append(SERURO_PANEL_SETTINGS_ID, wxT("Settings"));
-	menu->Append(SERURO_EXIT_ID, wxT("E&xit"));
+    menu->Append(SERURO_PANEL_HELP_ID, _(SERURO_MENU_HELP));
+	menu->Append(SERURO_PANEL_SETTINGS_ID, _(SERURO_MENU_SETTINGS));
+	menu->Append(SERURO_EXIT_ID, _(SERURO_MENU_EXIT));
 
 	return menu;
 }

@@ -30,6 +30,7 @@ public:
 		int width, int height);
 
 	void AddPanels();
+    void AddOSXMenu();
 
 	void OnIconize(wxIconizeEvent& event);
 	void OnQuit(wxCommandEvent &event);

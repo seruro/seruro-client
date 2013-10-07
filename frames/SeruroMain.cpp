@@ -100,7 +100,11 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
 #endif
     
 #if defined(__WXOSX__) || defined(__WXMAC__)
+    /* Set monochromatic icon for OSX's status bar. */
     icon.CopyFromBitmap(wxGetBitmapFromMemory(tray_osx_hard_black));
+    
+    /* Create menubar for OSX. */
+    this->AddOSXMenu();
 #endif
 
 	tray->SetIcon(icon, _(SERURO_APP_NAME));
@@ -113,6 +117,27 @@ SeruroFrameMain::SeruroFrameMain(const wxString& title, int width, int height) :
 	book = new wxNotebook(this, SERURO_NOTEBOOK_ID, wxDefaultPosition, wxDefaultSize, 
 		wxNB_FIXEDWIDTH);
 	this->mainSizer->Add(book, 1, wxEXPAND, 5);
+}
+
+void SeruroFrameMain::AddOSXMenu()
+{
+    //wxApp::s_macPreferencesMenuItemId = 1;
+    wxMenuBar *menubar = new wxMenuBar();
+    //wxMenu *main_menu = new wxMenu();
+    wxMenu *help_menu = new wxMenu();
+    
+    /* Set up standard menu items. */
+    help_menu->Append(SERURO_PANEL_SETTINGS_ID, _("Preferences...") + "\tCtrl+,");
+    //help_menu->Append(SERURO_EXIT_ID, _(SERURO_MENU_EXIT));
+    
+    /* Set up help items. */
+    help_menu->Append(SERURO_PANEL_HELP_ID, _("Seruro Help"));
+    
+    //menubar->Append(main_menu, );
+//#if !wxOSX_USE_CARBON
+    menubar->Append(help_menu, _("Help"));
+    this->SetMenuBar(menubar);
+//#endif
 }
 
 /* The frame's (book's) panels may depend on objects created after the first frame,

@@ -53,6 +53,14 @@ bool SeruroClient::OnInit()
     if (this->IsAnotherRunning()) {
         return false;
     }
+    
+    /* Setup OSX menu positioning. */
+#ifdef __WXMAC__
+    //wxApp::s_macAboutMenuItemId = AboutID;
+    wxApp::s_macPreferencesMenuItemId = SERURO_PANEL_SETTINGS_ID;
+    wxApp::s_macExitMenuItemId = SERURO_EXIT_ID;
+    wxApp::s_macHelpMenuTitleName = SERURO_MENU_HELP;
+#endif
         
 	/* Support for PNGs. */
 	wxImage::AddHandler(new wxPNGHandler);

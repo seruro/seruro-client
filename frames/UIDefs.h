@@ -9,6 +9,15 @@
 #define DISABLED_BACKGROUND_COLOR "light grey"
 #define DISABLED_TEXT_COLOR "grey"
 
+/* Menu item text */
+#define SERURO_MENU_HOME      "Show Seruro Home"
+#define SERURO_MENU_CONTACTS  "Show Contacts List"
+#define SERURO_MENU_SEARCH    "Open Contact Search..."
+#define SERURO_MENU_HELP      "Open &Help..."
+#define SERURO_MENU_SETTINGS  "Open Seruro Settings..."
+#define SERURO_MENU_EXIT      "E&xit"
+
+
 /* Element IDs (where wxID_ANY is not appropriate. */
 #define SERURO_SETTINGS_TREE_ID		1009
 #define SERURO_ADD_SERVER_PORT_ID	1010
