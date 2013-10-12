@@ -46,7 +46,7 @@
 #define SERURO_INPUT_WHITELIST \
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890.-_() "
 #define SERURO_INPUT_HOSTNAME_WHITELIST \
-"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890.-"
+"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-"
 /* Todo: consider non-ascii characters. */
 #define SERURO_INPUT_ADDRESS_WHITELIST \
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890._-@"

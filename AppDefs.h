@@ -2,11 +2,13 @@
 #define SERURO_APP_NAME "Seruro Client"
 #ifndef SERURO_VERSION
 /* SERURO_VERSION should be set by compiler options. */
-#define SERURO_VERSION  "0.1r1-alpha"
+#define SERURO_VERSION  "0.2.1rc2-alpha"
 #endif
 
 /* For alpha or beta-testing. */
 #define RELEASE_DEBUG 1
+/* For masking the .seruro.com in server name. */
+#define SERURO_CLOUD_CLIENT 1
 
 #undef __VLD__
 

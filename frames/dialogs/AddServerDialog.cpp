@@ -9,7 +9,12 @@
 #include <wx/checkbox.h>
 #include <wx/log.h>
 
+#if SERURO_CLOUD_CLIENT == 1
+#define SERVER_NAME_HINT "myseruro"
+#define SERVER_CLOUD_SUFFIX ".seruro.com"
+#else
 #define SERVER_NAME_HINT "example.seruro.com"
+#endif
 
 DECLARE_APP(SeruroClient);
 
@@ -53,23 +58,29 @@ void AddServerForm::AddForm(wxSizer *sizer,
 	const wxString &host, const wxString &port)
 {
     /* Server details form. */
-	wxFlexGridSizer *const grid_sizer = new wxFlexGridSizer(3, 2,
+	wxFlexGridSizer *const grid_sizer = new wxFlexGridSizer(
+        (SERURO_ALLOW_CUSTOM_PORT) ? 2 : 1,
+        (SERURO_CLOUD_CLIENT) ? 3 : 2,
         GRID_SIZER_WIDTH, GRID_SIZER_HEIGHT);
 	grid_sizer->AddGrowableCol(1, 1);
     
 	/* Host (hostname). */
-	grid_sizer->Add(new Text(parent, "&Hostname: "));
+	grid_sizer->Add(new Text(parent, (SERURO_CLOUD_CLIENT == 1) ? _("Cloud Name: ") : _("Hostname: ")));
     grid_sizer->SetItemMinSize((size_t) 0, SERURO_SETTINGS_FLEX_LABEL_WIDTH, -1);
     
     /* Server host validator. */
 	wxTextValidator host_validator(wxFILTER_EMPTY | wxFILTER_INCLUDE_CHAR_LIST);
-	host_validator.SetCharIncludes(SERURO_INPUT_HOSTNAME_WHITELIST);
+	host_validator.SetCharIncludes(wxString::Format("%s%s",
+        SERURO_INPUT_HOSTNAME_WHITELIST, (! SERURO_CLOUD_CLIENT) ? _(".") : _(wxEmptyString)));
     
     /* Host controller. */
 	this->server_host = new wxTextCtrl(parent, wxID_ANY, host, wxDefaultPosition, wxDefaultSize, 0, host_validator);
     this->server_host->SetHint(_(SERVER_NAME_HINT));
 	grid_sizer->Add(this->server_host, DIALOGS_BOXSIZER_OPTIONS);
-	
+    if (SERURO_CLOUD_CLIENT) {
+        grid_sizer->Add(new Text(parent, _(SERVER_CLOUD_SUFFIX)));
+    }
+    
 	/* Optional server port (validator included). */
     if (SERURO_ALLOW_CUSTOM_PORT) {
         /* Even though the custom port is optional, the client may not allow the option... */
@@ -146,7 +157,8 @@ wxJSONValue AddServerForm::GetValues()
 {
 	wxJSONValue values;
 
-	values["host"] = this->server_host->GetValue();
+	values["host"] = wxString::Format(_("%s%s"),
+        this->server_host->GetValue(), (SERURO_CLOUD_CLIENT) ? _(SERVER_CLOUD_SUFFIX) : _(wxEmptyString));
     
     if (SERURO_ALLOW_CUSTOM_PORT) {
         values["port"] = this->server_port->GetValue();
