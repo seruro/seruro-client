@@ -4,6 +4,7 @@
 
 #include "SeruroMain.h"
 
+#include "../setup/CancelSetupDialog.h"
 #include "../setup/SeruroSetup.h"
 #include "../SeruroClient.h"
 #include "UIDefs.h"
@@ -306,6 +307,15 @@ void SeruroFrameMain::OnQuit(wxCommandEvent& WXUNUSED(event))
     this->Close(true);
 }
 
+wxWindow *SeruroFrameMain::GetTop()
+{
+    if (this->setup_running) {
+        return setup;
+    } else {
+        return this;
+    }
+}
+
 void SeruroFrameMain::SetSetup(SeruroSetup *setup)
 {
     if (this->setup_running) {
@@ -345,15 +355,6 @@ void SeruroFrameMain::StartSetup(bool force)
     
     /* Execute the wizard. */
     initial_setup->RunWizard(initial_setup->GetInitialPage());
-}
-
-wxWindow *SeruroFrameMain::GetTop()
-{
-    if (this->setup_running) {
-        return setup;
-    } else {
-        return this;
-    }
 }
 
 void SeruroFrameMain::StopSetup()
@@ -403,6 +404,25 @@ void SeruroFrameMain::OnFinishSetup()
 
 void SeruroFrameMain::OnSetupCancel(wxWizardEvent& event)
 {
+    CancelSetupDialog *dialog;
+    bool should_cancel;
+    
+    should_cancel = true;
+    if (theSeruroConfig::Get().GetServerNames().size() == 0) {
+        if (! SERURO_ALLOW_NO_ACCOUNTS) {
+            /* Warn about canceling. */
+            dialog = new CancelSetupDialog(this);
+            should_cancel = (dialog->ShowModal() == wxID_YES);
+            delete dialog;
+        }
+    }
+    
+    if (! should_cancel) {
+        /* The wizard should not cancel. */
+        event.Veto();
+        return;
+    }
+    
     this->OnFinishSetup();
 }
 
