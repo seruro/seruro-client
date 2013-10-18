@@ -18,6 +18,10 @@ wxString AsString(const void *value);
 #if defined(__WXMSW__)
 #include <wx/msw/registry.h>
 
+/* System Certificates store (registry location). */
+#define HKCU_CERT_STORES "SOFTWARE\\Microsoft\\SystemCertificates"
+#define HKCU_KEY_CONTACTS L"AddressBook"
+
 /* Base key on both 32 and 64bit. */
 #define HKLM_BIT_ROOT "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Installer"
 /* Key within install key to query version and name. */
@@ -181,6 +185,7 @@ private:
     /* OS app initializers (add app helpers). */
     void InitOSX();
     void InitMSW();
+	void CheckAddressBook(); /* Special initialization for windows */
     void InitGTK();
     
     /* Add a string/application pointer. */

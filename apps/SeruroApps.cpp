@@ -108,6 +108,41 @@ wxRegKey *GetInstallKey(wxString key_install, wxRegKey::StdKey hive, wxString ba
 	return install_key;
 }
 
+void SeruroApps::CheckAddressBook()
+{
+	wxRegKey stores(wxRegKey::HKCU, HKCU_CERT_STORES);
+
+	if (! stores.Exists()) {
+		/* Todo: unhandled exception. */
+		return;
+	}
+
+	long key_index = 0;
+	wxString installer_sub;
+
+	/* Check if the IOD needs resolution, if so, this is abnormal. */
+	if (stores.Exists() && stores.GetFirstKey(installer_sub, key_index)) {
+		if (installer_sub.compare("ResolveIOD") == 0) {
+			/* WOW64 is not required, this is unhandled. */
+			return;
+		}
+	}
+			
+	/* Check if the certificate store already exists. */
+	if (stores.HasSubKey(_(HKCU_KEY_CONTACTS))) {
+		return;
+	}
+
+	/* Create the "AddressBook" certificate store. */
+	wxRegKey contact_store(stores, _(HKCU_KEY_CONTACTS));
+	contact_store.Create();
+
+	/* Create the sub keys for the contacts store. */
+	(new wxRegKey(contact_store, _("Certificates")))->Create();
+	(new wxRegKey(contact_store, _("CRLs")))->Create();
+	(new wxRegKey(contact_store, _("CTLs")))->Create();
+}
+
 void SeruroApps::InitMSW()
 {
     AppHelper *helper;
@@ -136,6 +171,7 @@ SeruroApps::SeruroApps()
     
     /* Start each app helper. */
 #if defined(__WXMSW__)
+	this->CheckAddressBook();
     this->InitMSW();
 #elif defined(__WXOSX__) || defined(__WXMAC__)
     this->InitOSX();
