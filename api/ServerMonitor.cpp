@@ -42,11 +42,17 @@ void ServerMonitor::OnUpdateResponse(SeruroRequestEvent &event)
         request_id = (size_t) response["request_id"].AsUInt();
     }
 
+	/* Remove from the queue */
+    if (this->requests.HasMember(server_uuid)) {
+        this->requests.Remove(server_uuid);
+    }
+
 	if (response.HasMember("success") && response["success"].AsBool() == false) {
-		DEBUG_LOG(_("ServerMonitor> (OnUpdateResponse) update responded with %s."), response["error"].AsString());
+		DEBUG_LOG(_("ServerMonitor> (OnUpdateResponse) update responded with (%s)."), response["error"].AsString());
 
 		/* Reset the last_update to backtrack. */
-		theSeruroConfig::Get().SetServerOption(server_uuid, "last_update", "0");
+		//theSeruroConfig::Get().SetServerOption(server_uuid, "last_update", "0");
+		return;
 	}
     
     /* Make sure the client is still auto downloading from servers. */
@@ -64,11 +70,7 @@ void ServerMonitor::OnUpdateResponse(SeruroRequestEvent &event)
             ProcessCertificates(server_uuid, response["results"]["certificates"]);
         }
     }
-    
-    /* Remove from the queue */
-    if (this->requests.HasMember(server_uuid)) {
-        this->requests.Remove(server_uuid);
-    }
+
 }
 
 bool ServerMonitor::ProcessContacts(wxString server_uuid, wxJSONValue contacts)
@@ -156,7 +158,7 @@ bool ServerMonitor::Monitor()
     DEBUG_LOG("ServerMonitor> (Monitor) running...");
     servers = theSeruroConfig::Get().GetServerList();
     
-    api = new SeruroServerAPI(&wxGetApp());
+    api = new SeruroServerAPI();
     for (size_t i = 0; i < servers.size(); ++i) {
         if (this->requests.HasMember(servers[i])) {
             /* We are already waiting for a response from this server.*/

@@ -269,7 +269,7 @@ void SeruroClient::OnAssertFailure(const wxChar *file, int line,
 	report["func"] = func;
 	report["cond"] = cond;
 
-	message = wxString::Format(_("Assertion Failure\nFile: %s\nline: %s\nfunction: %s\ncondition:%s"), 
+	message = wxString::Format(_("(Seruro) Assertion Failure\nFile: %s\nline: %s\nfunction: %s\ncondition:%s"), 
 		report["file"].AsString(), report["line"].AsString(),
 		report["func"].AsString(), report["cond"].AsString());
 

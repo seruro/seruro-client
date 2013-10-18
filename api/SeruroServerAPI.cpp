@@ -79,7 +79,7 @@ wxJSONValue SeruroServerAPI::GetServer(const wxString &server_uuid)
  * The SeruroRequest will use params[request] as it's input, along with the parent object's 
  * event handler object and the provided 'evtId'.
  */
-SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue params, int evtId)
+SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue params, seruro_api_callbacks_t evtId)
 {
 	/* Create the request based on the API call. (Fills in object, verb, method, data, query.) */
 	params["request"] = this->GetRequest(name, params);
@@ -100,7 +100,8 @@ SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue param
 	}
 
 	/* Create the request thread after all data is filled in. */
-	SeruroRequest *thread = new SeruroRequest(params["request"], evtHandler, evtId);
+	int request_api_id = (int) evtId;
+	SeruroRequest *thread = new SeruroRequest(params["request"], evtHandler, request_api_id);
     //params.Clear();
 
 	if (thread->Create() != wxTHREAD_NO_ERROR) {

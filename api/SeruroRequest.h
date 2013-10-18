@@ -31,8 +31,7 @@ public:
     /* The ID specifies the callback, the developer should not need to modify the command_type. */
 	SeruroRequestEvent(int id = 0);
     
-	SeruroRequestEvent(const SeruroRequestEvent &event) 
-		: wxCommandEvent(event) { this->SetResponse(event.GetResponse()); }
+	SeruroRequestEvent(const SeruroRequestEvent &event);
 	wxEvent* Clone() const { return new SeruroRequestEvent(*this); }
 
 	wxJSONValue GetResponse() const { return response_data; }
@@ -40,18 +39,16 @@ public:
     
     /* Event handler getter/setter. */
     void SetOriginalEvent(wxEvtHandler *event_handler, int event_id) {
-        this->og_handler = event_handler;
-        this->og_event_id = event_id;
+        seruro_handler = event_handler;
+        seruro_event_id = event_id;
     }
-    wxEvtHandler *GetEventHandler() const { return this->og_handler; }
-    int GetEventID() const { return this->og_event_id; }
+    wxEvtHandler *GetEventHandler() const { return seruro_handler; }
+    int GetEventID() const { return seruro_event_id; }
 
 private:
 	wxJSONValue response_data;
-    
-    /* The response may create a susequent request, using the original event handler/id. */
-    wxEvtHandler *og_handler;
-    int og_event_id;
+	int seruro_event_id;
+    wxEvtHandler *seruro_handler;
 };
 
 wxDECLARE_EVENT(SERURO_REQUEST_RESPONSE, SeruroRequestEvent);

@@ -55,6 +55,8 @@ public:
 	  evtHandler(caller) {}
 	SeruroServerAPI(wxWindow *caller) :
 	  evtHandler(caller->GetEventHandler()) {}
+	/* Creates a server which makes requests to SeruroClient only. */
+	SeruroServerAPI() { evtHandler = NULL; }
 
 	/* Helper functions for those who do not want to DECLARE_APP 
 	 * for access to the config methods. 
@@ -63,7 +65,7 @@ public:
     
 	/* Must provide the API name, params, and callback event ID */
 	SeruroRequest *CreateRequest(api_name_t name, 
-		wxJSONValue params, int evtId);
+		wxJSONValue params, seruro_api_callbacks_t evtId);
 
 	/* Special API calls. */
 	SeruroRequest *Ping(wxJSONValue params) {
