@@ -52,7 +52,7 @@ void AddAccountForm::AddForm(wxSizer *sizer, const wxString &address,
 	grid_sizer->Add(this->password, DIALOGS_BOXSIZER_OPTIONS);
 	
     /* Add sizers together. */
-	sizer->Add(grid_sizer, DIALOGS_BOXSIZER_SIZER_OPTIONS);
+	sizer->Add(grid_sizer, DEFAULT_BOXSIZER_SIZER_OPTIONS);
 }
 
 void AddAccountForm::DisableForm()

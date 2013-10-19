@@ -16,10 +16,6 @@
 
 #include "../ImageDefs.h"
 
-/* Status (for accounts/identities) */
-#include "../../resources/images/check_icon_12_flat.png.h"
-#include "../../resources/images/cross_icon_12_flat.png.h"
-
 /* Set these to help search for strings on selection. */
 #define SERVERS_LIST_NAME_COLUMN 1
 #define ACCOUNTS_LIST_NAME_COLUMN 1

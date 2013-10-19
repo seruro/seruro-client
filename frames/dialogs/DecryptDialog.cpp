@@ -26,7 +26,7 @@ void DecryptForm::AddForms(wxSizer *sizer)
 	grid_sizer->Add(authentication_control, DIALOGS_BOXSIZER_OPTIONS);
     authentication_control->RefreshStyle();
     
-	sizer->Add(grid_sizer, DIALOGS_BOXSIZER_SIZER_OPTIONS);
+	sizer->Add(grid_sizer, DEFAULT_BOXSIZER_SIZER_OPTIONS);
 }
 
 DecryptDialog::DecryptDialog(const wxString &method) :

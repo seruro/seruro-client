@@ -2,19 +2,16 @@
 #include "SettingsWindows.h"
 #include "../SeruroSettings.h"
 #include "../UIDefs.h"
+#include "../ImageDefs.h"
 
 #include "../../SeruroClient.h"
 #include "../../api/SeruroStateEvents.h"
 
 #include <wx/log.h>
 
-/* Include image data. */
-#include "../../resources/images/blank.png.h"
-#include "../../resources/images/certificate_icon_12_flat.png.h"
-#include "../../resources/images/identity_icon_12_flat.png.h"
-
-//#define APP_ACCOUNTS_LIST_NAME_COLUMN 1
-//#define APP_ACCOUNTS_LIST_APP_COLUMN 2
+#define APP_INFO_INSTALLED "Installed"
+#define ITEM_IMAGE_EXISTS 2
+#define ITEM_IMAGE_NOT_EXISTS 3
 
 BEGIN_EVENT_TABLE(ApplicationsWindow, SettingsView)
     EVT_LIST_ITEM_SELECTED(SETTINGS_APPS_LIST_ID, ApplicationsWindow::OnAppSelected)
@@ -151,13 +148,16 @@ void ApplicationsWindow::GenerateApplicationsList()
     
     apps_list->DeleteAllItems();
 	for (size_t i = 0; i < apps.size(); i++) {
-        item_index = apps_list->InsertItem(0, _(""), 0);
+		item_index = apps_list->InsertItem(0, wxEmptyString, 0);
 		apps_list->SetItem(item_index, 1, _(apps[i]));
         
         /* Todo: set image based on status. */
         app_info = theSeruroApps::Get().GetApp(apps[i]);
         apps_list->SetItem(item_index, 2, app_info["version"].AsString());
         apps_list->SetItem(item_index, 3, app_info["status"].AsString());
+
+		apps_list->SetItemImage(item_index, 
+			(app_info["status"].AsString() == _(APP_INFO_INSTALLED)) ? ITEM_IMAGE_EXISTS : ITEM_IMAGE_NOT_EXISTS);
 	}
 }
 
@@ -172,8 +172,11 @@ ApplicationsWindow::ApplicationsWindow(SeruroPanelSettings *window) : SettingsVi
     apps_list_images = new wxImageList(12, 12, true);
     apps_list_images->Add(wxGetBitmapFromMemory(blank));
 	apps_list_images->Add(wxGetBitmapFromMemory(certificate_icon_12_flat));
-	apps_list_images->Add(wxGetBitmapFromMemory(identity_icon_12_flat));
-    
+	//apps_list_images->Add(wxGetBitmapFromMemory(identity_icon_12_flat));
+	/* Status icons for applications. */
+	apps_list_images->Add(wxGetBitmapFromMemory(check_icon_12_flat));
+	apps_list_images->Add(wxGetBitmapFromMemory(cross_icon_12_flat));
+	
 	apps_list = new wxListCtrl(this, SETTINGS_APPS_LIST_ID,
         wxDefaultPosition, wxSize(-1, SETTINGS_APPLICATION_LIST_HEIGHT), wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_THEME);
     apps_list->SetImageList(apps_list_images, wxIMAGE_LIST_SMALL);

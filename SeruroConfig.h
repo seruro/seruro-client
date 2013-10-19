@@ -131,6 +131,8 @@ public:
 	bool HaveIdentity(wxString server_uuid, wxString address,
         wxString fingerprint = wxEmptyString);
 	bool HaveCA(wxString server_uuid);
+	/* Search for at least one installed identity. */
+	bool IdentityExists(wxString address);
     
     /* Check if fingerprint is owned by a server/account. */
     //bool FingerprintExists(wxString fingerprint);

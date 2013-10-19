@@ -675,12 +675,12 @@ account_status_t AppMSW_Outlook::IdentityStatus(wxString address, wxString &serv
 	}
 
 	if (alternated_assigned) {
-		//return APP_ALTERNATE_ASSIGNED;
+		return APP_ALTERNATE_ASSIGNED;
 
 		/* Todo: this is a temporary hack while the security blob data is investigated. */
-		server_uuid.Append((theSeruroConfig::Get().GetServerList().size() > 0) ?
-			theSeruroConfig::Get().GetServerList()[0] : _("(None)"));
-		return APP_ASSIGNED;
+		//server_uuid.Append((theSeruroConfig::Get().GetServerList().size() > 0) ?
+		//	theSeruroConfig::Get().GetServerList()[0] : _("(None)"));
+		//return APP_ASSIGNED;
 	}
 
 	return APP_UNASSIGNED;

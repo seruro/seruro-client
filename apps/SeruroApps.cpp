@@ -334,7 +334,6 @@ account_status_t SeruroApps::IdentityStatus(wxString app_name, wxString account_
 bool SeruroApps::AssignIdentity(wxString app_name, wxString server_uuid, wxString address)
 {
     AppHelper *helper;
-    bool assign_status;
     
     if (this->assign_pending == true) {
         /* Cannot assign while waiting for another application. */
@@ -349,8 +348,8 @@ bool SeruroApps::AssignIdentity(wxString app_name, wxString server_uuid, wxStrin
     this->assign_pending = true;
     
     /* Ask the application to assign. */
-    assign_status = helper->AssignIdentity(server_uuid, address);
-    if (! assign_status) {
+    if (! helper->AssignIdentity(server_uuid, address)) {
+		this->assign_pending = false;
         return false;
     }
     

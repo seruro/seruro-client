@@ -1039,6 +1039,27 @@ bool SeruroConfig::HaveIdentity(wxString server_uuid, wxString address, wxString
 	return false;
 }
 
+bool SeruroConfig::IdentityExists(wxString address)
+{
+    wxArrayString server_list;
+    wxArrayString account_list;
+
+    /* Is a server configured with the given address. */
+    server_list = theSeruroConfig::Get().GetServerList();
+    for (size_t i = 0; i < server_list.size(); i++) {
+        account_list = theSeruroConfig::Get().GetAddressList(server_list[i]);
+        for (size_t j = 0; j < account_list.size(); j++) {
+            if (account_list[j] == address) {
+				/* Adds an additional condition to check the identity. */
+				if (this->HaveIdentity(server_list[i], address)) return true;
+			}
+        }
+    }
+
+	/* No identity found. */
+    return false;
+}
+
 bool SeruroConfig::HaveCA(wxString server_uuid)
 {
 	if (HasConfig() && config.HasMember("servers") &&

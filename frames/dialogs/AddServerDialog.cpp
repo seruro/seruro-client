@@ -103,7 +103,7 @@ void AddServerForm::AddForm(wxSizer *sizer,
     }
         
     /* Add sizers together. */
-	sizer->Add(grid_sizer, DIALOGS_BOXSIZER_SIZER_OPTIONS);
+	sizer->Add(grid_sizer, DEFAULT_BOXSIZER_SIZER_OPTIONS);
 }
 
 /* This event handler function will be duplicated (defined) for each implmentor. 

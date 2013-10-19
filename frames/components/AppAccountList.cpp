@@ -2,19 +2,12 @@
 #include "AppAccountList.h"
 
 #include "../UIDefs.h"
+#include "../ImageDefs.h"
+
 #include "../../SeruroClient.h"
 #include "../../SeruroConfig.h"
 
 #include <wx/event.h>
-
-/* Include image data. */
-#include "../../resources/images/blank.png.h"
-#include "../../resources/images/certificate_icon_12_flat.png.h"
-#include "../../resources/images/identity_icon_12_flat.png.h"
-
-/* Status (for accounts/identities) */
-#include "../../resources/images/check_icon_12_flat.png.h"
-#include "../../resources/images/cross_icon_12_flat.png.h"
 
 #define ITEM_IMAGE_EXISTS 3
 #define ITEM_IMAGE_NOT_EXISTS 4
@@ -120,6 +113,12 @@ void AppAccountList::SetAccountStatus(long index, const wxString &app, const wxS
         accounts_list->SetItem(index, 3, APP_ALTERNATE_ASSIGNED_TEXT);
         accounts_list->SetItemImage(index, ITEM_IMAGE_NOT_EXISTS);
     }
+
+	/* Diable an account if not configured within Seruro, or has no identity. */
+	if (! theSeruroConfig::Get().IdentityExists(account)) {
+        accounts_list->SetItemTextColour(index, wxColour(DISABLED_TEXT_COLOR));
+    }
+
 }
 
 bool AppAccountList::HasAnyAssigned()
@@ -283,11 +282,6 @@ void AppAccountList::AddAccount(wxString app, wxString account)
     this->accounts_list->SetItem(item_index, 1, display_name);
     this->accounts_list->SetItem(item_index, 2, app);
     
-    /* Check if account exists, and if not, "disable the row". */
-    if (! theSeruroConfig::Get().AddressExists(account)) {
-        accounts_list->SetItemTextColour(item_index, wxColour(DISABLED_TEXT_COLOR));
-    }
-    
     this->SetAccountStatus(item_index, app, account);
 }
 
@@ -324,7 +318,7 @@ bool AppAccountList::SelectAccount(long index)
     }
     
     /* This item will be shown as disabled. */
-    if (! theSeruroConfig::Get().AddressExists(item.GetText())) {
+	if (! theSeruroConfig::Get().IdentityExists(item.GetText())) {
         accounts_list->SetItemState(index, 0, wxLIST_STATE_SELECTED);
         return false;
     }
