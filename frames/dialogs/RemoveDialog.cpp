@@ -12,7 +12,7 @@
 DECLARE_APP(SeruroClient);
 
 RemoveDialog::RemoveDialog(const wxString &server_uuid, const wxString &address) :
-	wxDialog(wxGetApp().GetFrame(), wxID_ANY, wxString(wxT("Remove"))),
+	wxDialog(wxGetApp().GetFrame(), wxID_ANY, wxEmptyString),
 	server_uuid(server_uuid), address(address)
 {
     wxArrayString addresses;
@@ -23,6 +23,13 @@ RemoveDialog::RemoveDialog(const wxString &server_uuid, const wxString &address)
     server_name = theSeruroConfig::Get().GetServerName(server_uuid);
 	remove_server = (address.compare(wxEmptyString) == 0);
     
+	/* Set the appropriate title (for the dialog). */
+	if (remove_server) {
+		this->SetTitle(wxString::Format(_("Remove %s"), server_name));
+	} else {
+		this->SetTitle(wxString::Format(_("Remove %s"), address));
+	}
+
 	wxSizer *const vert_sizer = new wxBoxSizer(wxVERTICAL);
 
     wxSizer *message_sizer = new wxBoxSizer(wxHORIZONTAL);

@@ -8,6 +8,8 @@
 #include "../frames/dialogs/DecryptDialog.h"
 #include "../crypto/SeruroCrypto.h"
 
+#include "../logging/SeruroLogger.h"
+
 #include <wx/base64.h>
 #include <wx/buffer.h>
 
@@ -16,13 +18,13 @@ DECLARE_APP(SeruroClient);
 bool CheckResponse(wxJSONValue response, wxString required_key)
 {
 	if (! response.HasMember("success") || ! response["success"].AsBool()) {
-		wxLogMessage(wxT("SeruroServerAPI> Bad Result."));
+		DEBUG_LOG(_("ServerAPI> Bad Result."));
 		return false;
 	}
 
 	/* The getP12 API call should respond with up to 3 P12s. */
 	if (! response.HasMember(required_key)) {
-		wxLogMessage(wxT("SeruroServerAPI> Response does not include '%s' data."), required_key);
+		DEBUG_LOG(_("ServerAPI> Response does not include '%s' data."), required_key);
 		return false;
 	}
 
@@ -40,7 +42,7 @@ bool DecodeBase64(const wxString &encoded, wxMemoryBuffer *decode)
 	(*decode) = wxBase64Decode(encoded, wxBase64DecodeMode_Relaxed, &decode_error);
 
 	if (decode_error != 0) {
-		wxLogMessage(wxT("ServerAPI> (Decode) Could not decode position %d in ca blob '%s'."), 
+		DEBUG_LOG(_("ServerAPI> (Decode) Could not decode position %d in ca blob '%s'."), 
 				decode_error, encoded);
 		return false;
 	}
@@ -105,7 +107,7 @@ SeruroRequest *SeruroServerAPI::CreateRequest(api_name_t name, wxJSONValue param
     //params.Clear();
 
 	if (thread->Create() != wxTHREAD_NO_ERROR) {
-		wxLogError(wxT("SeruroServerAPI::CreateRequest> Could not create thread."));
+		DEBUG_LOG("ServerAPI> (CreateRequest) Could not create thread.");
 	}
 
 	return thread;
@@ -121,7 +123,8 @@ wxJSONValue SeruroServerAPI::GetAuth(wxJSONValue params)
         /* Pin this request to an address. If the auth fails, the UI control will not allow the user to auth with another address. */
         auth["address"] = params["address"];
         if (params["server"].HasMember("uuid")) {
-            auth["token"] = theSeruroConfig::Get().GetToken(params["server"]["uuid"].AsString(), params["address"].AsString());
+            auth["token"] = theSeruroConfig::Get().GetToken(params["server"]["uuid"].AsString(), 
+				params["address"].AsString());
         }
 	} else {
         /* Assume a uuid is present. */
@@ -241,7 +244,7 @@ bool SeruroServerAPI::InstallCA(wxJSONValue response)
         theSeruroConfig::Get().SetCAFingerprint(server_uuid, ca_fingerprint);
     }
 
-    wxLogMessage(_("SeruroServerAPI> (InstallCA) CA for (%s) status: %s"),
+    DEBUG_LOG(_("ServerAPI> (InstallCA) CA for (%s) status: %s"),
         server_uuid, (result) ? _("success") : _("failed"));
     
 	return result;
@@ -276,7 +279,7 @@ bool SeruroServerAPI::InstallCertificate(wxJSONValue response)
             (i == 0) ? ID_AUTHENTICATION : ID_ENCIPHERMENT, cert_fingerprint);
 	}
     
-    wxLogMessage(_("SeruroServerAPI> (InstallCertificate) Certificate for (%s, %s) status: %s"),
+    DEBUG_LOG(_("ServerAPI> (InstallCertificate) Certificate for (%s, %s) status: %s"),
         server_uuid, response["address"].AsString(), (result) ? _("success") : _("failed"));
     
     if (! result) {
@@ -298,11 +301,16 @@ bool SeruroServerAPI::InstallP12(wxString server_uuid, wxString address, identit
     /* Add the identity (p12) to the certificate store. */
     SeruroCrypto crypto;
     if (! crypto.InstallP12(decoded_p12, unlock_code, fingerprints)) {
-        wxLogMessage(_("SeruroServerAPI> (InstallP12) could not install (%d) p12."), cert_type);
+        DEBUG_LOG(_("ServerAPI> (InstallP12) could not install (%d) p12."), cert_type);
         return false;
     } else {
-        wxLogMessage(_("SeruroServerAPI> (InstallP12) installed (%d) p12."), cert_type);
+        DEBUG_LOG(_("ServerAPI> (InstallP12) installed (%d) p12."), cert_type);
     }
+
+	if (fingerprints.size() == 0) {
+		DEBUG_LOG(_("ServerAPI> (InstallP12) p12 contained no identity certificates."));
+		return false;
+	}
     
     existing_fingerprint = theSeruroConfig::Get().GetIdentity(server_uuid, address, cert_type);
     theSeruroConfig::Get().RemoveIdentity(server_uuid, address, cert_type, false);
@@ -320,7 +328,7 @@ bool SeruroServerAPI::UninstallIdentity(wxString server_uuid, wxString address)
     if (fingerprints.size() == 0) return false;
     
     if (! crypto.RemoveIdentity(fingerprints)) {
-        wxLogMessage(_("SeruroServerAPI> (UninstallIdentity) could not remove (%s) (%s)."), server_uuid, address);
+        DEBUG_LOG(_("ServerAPI> (UninstallIdentity) could not remove (%s) (%s)."), server_uuid, address);
         return false;
     }
     
@@ -339,7 +347,7 @@ bool SeruroServerAPI::UninstallCertificates(wxString server_uuid, wxString addre
     if (fingerprints.size() == 0) return false;
     
     if (! crypto.RemoveCertificates(fingerprints)) {
-        wxLogMessage(_("SeruroServerAPI> (UninstallAddress) could not remove (%s) (%s)."), server_uuid, address);
+        DEBUG_LOG(_("ServerAPI> (UninstallAddress) could not remove (%s) (%s)."), server_uuid, address);
         return false;
     }
     
@@ -357,7 +365,7 @@ bool SeruroServerAPI::UninstallCA(wxString server_uuid)
     if (fingerprint.compare(wxEmptyString) == 0) return false;
     
     if (! crypto.RemoveCA(fingerprint)) {
-        wxLogMessage(_("SeruroServerAPI> (UninstallCA) could not remove (%s)."), server_uuid);
+        DEBUG_LOG(_("ServerAPI> (UninstallCA) could not remove (%s)."), server_uuid);
         return false;
     }
     return theSeruroConfig::Get().RemoveCACertificate(server_uuid, true);
