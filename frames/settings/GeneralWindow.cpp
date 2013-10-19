@@ -178,10 +178,10 @@ GeneralWindow::GeneralWindow(SeruroPanelSettings *window) : SettingsView(window)
 	wxSizer *const sizer = new wxBoxSizer(wxVERTICAL);
     
 	//wxButton *button = new wxButton(this, wxID_ANY, _("General"));
-    //sizer->Add(button, DIALOGS_SIZER_OPTIONS);
+    //sizer->Add(button, SETTINGS_PANEL_SIZER_OPTIONS);
 
 	/* A simple message about general settings. */
-	sizer->Add(new Text(this, _(TEXT_GENERAL_SETTINGS)), DIALOGS_SIZER_OPTIONS);
+	sizer->Add(new Text(this, _(TEXT_GENERAL_SETTINGS)), SETTINGS_PANEL_SIZER_OPTIONS);
 
 	option_auto_download = new wxCheckBox(this, OPTION_AUTO_DOWNLOAD_ID, TEXT_OPTION_AUTO_DOWNLOAD);
 	option_auto_download->SetValue(this->GetBoolean("auto_download"));
@@ -196,7 +196,7 @@ GeneralWindow::GeneralWindow(SeruroPanelSettings *window) : SettingsView(window)
 	//this->GenerateServersList();
 
 	//server_sizer->Add(option_default_server, SERVER_SIZER_OPTIONS);
-	//sizer->Add(server_sizer, DIALOGS_BOXSIZER_SIZER_OPTIONS);
+	//sizer->Add(server_sizer, SETTINGS_PANEL_SIZER_OPTIONS);
 	//sizer->AddStretchSpacer();
 
 	/* Add the less-commonly-used options. */

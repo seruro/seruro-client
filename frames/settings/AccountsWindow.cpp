@@ -406,7 +406,7 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
 	servers_list->InsertColumn(2, _("Expires"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
 	servers_list->SetColumnWidth(0, 24);
 
-    lists_sizer->Add(servers_list, DIALOGS_SIZER_OPTIONS);
+    lists_sizer->Add(servers_list, SETTINGS_PANEL_SIZER_OPTIONS);
 
 	accounts_list = new wxListCtrl(this, SETTINGS_ACCOUNTS_LIST_ID,
 		wxDefaultPosition, wxDefaultSize,
@@ -421,7 +421,7 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
 	accounts_list->InsertColumn(3, _("Expires"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
 	accounts_list->SetColumnWidth(0, 24);
 
-	lists_sizer->Add(accounts_list, DIALOGS_SIZER_OPTIONS.Proportion(1).Top().Bottom());
+	lists_sizer->Add(accounts_list, SETTINGS_PANEL_SIZER_OPTIONS.Proportion(1).Top().Bottom());
 
 	/* A sizer for ACTION buttons. */
 	wxSizer *const actions_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -432,12 +432,12 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
 	
     wxButton *add_server_button = new wxButton(this, BUTTON_ADD_SERVER, _("Add Server"));
 	this->add_account_button = new wxButton(this, BUTTON_ADD_ACCOUNT, _("Add Account"));
-	actions_sizer->Add(this->update_button, DIALOGS_SIZER_OPTIONS);
-	actions_sizer->Add(this->remove_button, DIALOGS_SIZER_OPTIONS);
-	actions_sizer->Add(add_server_button, DIALOGS_SIZER_OPTIONS);
-	actions_sizer->Add(this->add_account_button, DIALOGS_SIZER_OPTIONS);
+	actions_sizer->Add(this->update_button, SETTINGS_PANEL_SIZER_OPTIONS);
+	actions_sizer->Add(this->remove_button, SETTINGS_PANEL_SIZER_OPTIONS);
+	actions_sizer->Add(add_server_button, SETTINGS_PANEL_SIZER_OPTIONS);
+	actions_sizer->Add(this->add_account_button, SETTINGS_PANEL_SIZER_OPTIONS);
 
-	lists_sizer->Add(actions_sizer, DIALOGS_SIZER_OPTIONS.FixedMinSize().Bottom());
+	lists_sizer->Add(actions_sizer, SETTINGS_PANEL_SIZER_OPTIONS.FixedMinSize().Bottom());
 
 	/* Set up event handler bindings. */
 	wxGetApp().Bind(SERURO_STATE_CHANGE, &AccountsWindow::OnServerStateChange, this, STATE_TYPE_SERVER);

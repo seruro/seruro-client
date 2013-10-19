@@ -164,7 +164,7 @@ ApplicationsPage::ApplicationsPage(SeruroSetup *parent) : SetupPage(parent)
     
     /* Generic explaination. */
     Text *msg = new Text(this, TEXT_ASSIGN_IDENTITY);
-    vert_sizer->Add(msg, DIALOGS_SIZER_OPTIONS);
+    vert_sizer->Add(msg, DEFAULT_SIZER_OPTIONS);
     
     /* Show each account for this address in a list. */
     AppAccountList::AddAccountList(vert_sizer);
@@ -179,10 +179,10 @@ ApplicationsPage::ApplicationsPage(SeruroSetup *parent) : SetupPage(parent)
     
     /* Align these buttons to the right. */
     actions_sizer->AddStretchSpacer();
-    actions_sizer->Add(assign_button, DIALOGS_SIZER_OPTIONS);
-    actions_sizer->Add(unassign_button, DIALOGS_SIZER_OPTIONS);
-    actions_sizer->Add(refresh_button, DIALOGS_SIZER_OPTIONS);
-    vert_sizer->Add(actions_sizer, DIALOGS_SIZER_OPTIONS.FixedMinSize().Bottom());
+    actions_sizer->Add(assign_button, DEFAULT_SIZER_OPTIONS);
+    actions_sizer->Add(unassign_button, DEFAULT_SIZER_OPTIONS);
+    actions_sizer->Add(refresh_button, DEFAULT_SIZER_OPTIONS);
+    vert_sizer->Add(actions_sizer, DEFAULT_SIZER_OPTIONS.FixedMinSize().Bottom());
     
     /* Relevant state events. */
     wxGetApp().Bind(SERURO_STATE_CHANGE, &ApplicationsPage::OnIdentityStateChange, this, STATE_TYPE_IDENTITY);

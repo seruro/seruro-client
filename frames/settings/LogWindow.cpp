@@ -30,9 +30,9 @@ LogWindow::LogWindow(SeruroPanelSettings *window) : SettingsView(window), Seruro
     wxSizer *const actions_sizer = new wxBoxSizer(wxHORIZONTAL);
     
     send_button = new wxButton(this, wxID_ANY, _("Create Debug Report"));
-    actions_sizer->Add(send_button, DIALOGS_SIZER_OPTIONS);
-    actions_sizer->Add(new Text(this, _("Debug build enabled.")), DIALOGS_SIZER_OPTIONS);
-    sizer->Add(actions_sizer, DIALOGS_SIZER_OPTIONS.FixedMinSize().Bottom());
+    actions_sizer->Add(send_button, SETTINGS_PANEL_SIZER_OPTIONS);
+    actions_sizer->Add(new Text(this, _("Debug build enabled.")), SETTINGS_PANEL_SIZER_OPTIONS);
+    sizer->Add(actions_sizer, SETTINGS_PANEL_SIZER_OPTIONS.FixedMinSize().Bottom());
 #endif
     
     this->SetSizer(sizer);

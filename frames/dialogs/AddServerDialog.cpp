@@ -147,7 +147,7 @@ AddServerDialog::AddServerDialog(
 		//name, 
 		host, port);
 	
-	vert_sizer->Add(info_box, DIALOGS_BOXSIZER_SIZER_OPTIONS);
+	vert_sizer->Add(info_box, DIALOGS_SIZER_OPTIONS);
 
 	vert_sizer->Add(CreateStdDialogButtonSizer(wxOK | wxCANCEL), DIALOGS_BUTTONS_OPTIONS);
 	this->SetSizerAndFit(vert_sizer);

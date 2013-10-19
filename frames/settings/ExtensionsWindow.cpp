@@ -8,7 +8,7 @@ ExtensionsWindow::ExtensionsWindow(SeruroPanelSettings *window) : SettingsView(w
     wxSizer *const sizer = new wxBoxSizer(wxHORIZONTAL);
     
     Text *warning = new Text(this, _("Extensions are disabled."));
-    sizer->Add(warning, DIALOGS_SIZER_OPTIONS);
+    sizer->Add(warning, SETTINGS_PANEL_SIZER_OPTIONS);
     
     this->SetSizer(sizer);
 }

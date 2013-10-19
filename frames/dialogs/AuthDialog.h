@@ -15,7 +15,7 @@
 class AuthDialog : public wxDialog
 {
 public:
-    AuthDialog(const wxString &server,
+    AuthDialog(const wxString &server_uuid,
         const wxString &address = wxEmptyString, int selected = 0);
     
 	/* Return the address/password pair. */

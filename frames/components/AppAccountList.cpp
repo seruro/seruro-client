@@ -166,7 +166,7 @@ bool AppAccountList::Assign()
 		return false;
 	} else if (server_accounts.size() > 1) {
 		/* More than one server found, create a selection dialog to replace server. */
-		/* Set server_uuid. */
+		/* Todo: Set server_uuid. */
 		return false;
 	} else {
 		server_uuid = server_accounts[0];
@@ -362,7 +362,7 @@ void AppAccountList::DeselectAccounts()
 void AppAccountList::AddAccountList(wxSizer *sizer)
 {
     if (this->accounts_list != 0) {
-        sizer->Add(accounts_list, DIALOGS_SIZER_OPTIONS.Proportion(1).Top().Bottom());
+        sizer->Add(accounts_list, DEFAULT_SIZER_OPTIONS.Proportion(1).Top().Bottom());
     }
 }
 

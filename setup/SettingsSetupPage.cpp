@@ -93,10 +93,10 @@ SettingsPage::SettingsPage(SeruroSetup *parent) : SetupPage(parent)
     
     /* Generic explaination. */
     Text *msg = new Text(this, TEXT_FINISH_SETUP);
-    vert_sizer->Add(msg, DIALOGS_SIZER_OPTIONS);
+    vert_sizer->Add(msg, DEFAULT_SIZER_OPTIONS);
     
     this->server_text = new Text(this, "");
-    vert_sizer->Add(this->server_text, DIALOGS_SIZER_OPTIONS);
+    vert_sizer->Add(this->server_text, DEFAULT_SIZER_OPTIONS);
     
 	/* Auto-download contacts. */
     this->certs_option = new wxCheckBox(this, wxID_ANY, TEXT_DOWNLOAD_CERTS);

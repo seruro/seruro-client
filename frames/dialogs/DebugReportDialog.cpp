@@ -28,9 +28,10 @@ DebugReportDialog::DebugReportDialog()
     sizer->Add(new Text(this,
         wxT("The activity log and the client configuration (without tokens) will be sent as a debug report. ")
         wxT("You may be contacted for additional details.")
-    ), DIALOGS_BOXSIZER_SIZER_OPTIONS);
-    version_sizer->Add(new Text(this, _("Build version: ")), DIALOGS_BOXSIZER_OPTIONS);
-    version_sizer->Add(new Text(this, _(SERURO_VERSION)), DIALOGS_BOXSIZER_OPTIONS);
+    ), DIALOGS_SIZER_OPTIONS);
+
+	version_sizer->Add(new Text(this, 
+		wxString::Format(_("Build version: %s."), _(SERURO_VERSION))), DIALOGS_SIZER_OPTIONS);
     sizer->Add(version_sizer, DIALOGS_BOXSIZER_SIZER_OPTIONS);
     
     report = new wxTextCtrl(this, wxID_ANY, _("Optionally, describe this report..."),

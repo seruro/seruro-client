@@ -191,14 +191,14 @@ ApplicationsWindow::ApplicationsWindow(SeruroPanelSettings *window) : SettingsVi
 	apps_list->InsertColumn(3, _("Status"), wxLIST_FORMAT_LEFT, wxLIST_AUTOSIZE_USEHEADER);
     
     this->GenerateApplicationsList();
-    sizer->Add(apps_list, DIALOGS_SIZER_OPTIONS);
+    sizer->Add(apps_list, SETTINGS_PANEL_SIZER_OPTIONS);
     
     /* Use the AppAccounts controller. */
     AppAccountList::GenerateAccountsList();
     AppAccountList::AddAccountList(sizer);
     
-	//sizer->Add(apps_list, DIALOGS_SIZER_OPTIONS);
-    //sizer->Add(accounts_list, DIALOGS_SIZER_OPTIONS.Proportion(1).Top().Bottom());
+	//sizer->Add(apps_list, SETTINGS_PANEL_SIZER_OPTIONS);
+    //sizer->Add(accounts_list, SETTINGS_PANEL_SIZER_OPTIONS.Proportion(1).Top().Bottom());
     
     /* A sizer for ACTION buttons. */
 	wxSizer *const actions_sizer = new wxBoxSizer(wxHORIZONTAL);
@@ -207,11 +207,11 @@ ApplicationsWindow::ApplicationsWindow(SeruroPanelSettings *window) : SettingsVi
 	unassign_button = new wxButton(this, BUTTON_UNASSIGN, _("Unassign"));
 	unassign_button->Disable();
     wxButton *refresh_button = new wxButton(this, BUTTON_REFRESH, _("Refresh"));
-    actions_sizer->Add(assign_button, DIALOGS_SIZER_OPTIONS);
-    actions_sizer->Add(unassign_button, DIALOGS_SIZER_OPTIONS);
-    actions_sizer->Add(refresh_button, DIALOGS_SIZER_OPTIONS);
+    actions_sizer->Add(assign_button, SETTINGS_PANEL_SIZER_OPTIONS);
+    actions_sizer->Add(unassign_button, SETTINGS_PANEL_SIZER_OPTIONS);
+    actions_sizer->Add(refresh_button, SETTINGS_PANEL_SIZER_OPTIONS);
 
-    sizer->Add(actions_sizer, DIALOGS_SIZER_OPTIONS.FixedMinSize().Bottom());
+    sizer->Add(actions_sizer, SETTINGS_PANEL_SIZER_OPTIONS.FixedMinSize().Bottom());
     
 	/* Set up event handler bindings. */
 	wxGetApp().Bind(SERURO_STATE_CHANGE, &ApplicationsWindow::OnAccountStateChange, this, STATE_TYPE_ACCOUNT);

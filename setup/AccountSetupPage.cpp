@@ -40,7 +40,7 @@ void AccountPage::SetAccountStatus(wxString status, bool is_error)
         status_sizer->GetItem(1)->DetachSizer();
         status_sizer->Remove(1);
         
-        status_sizer->Add(this->account_status, DIALOGS_SIZER_OPTIONS);
+        status_sizer->Add(this->account_status, DEFAULT_SIZER_OPTIONS);
         this->was_error = false;
     }
     this->Layout();
@@ -253,7 +253,7 @@ AccountPage::AccountPage(SeruroSetup *parent)
 
     wxString msg_text = wxT("Please enter the information for your account:");
     Text *msg = new Text(this, msg_text);
-    vert_sizer->Add(msg, DIALOGS_SIZER_OPTIONS);
+    vert_sizer->Add(msg, DEFAULT_SIZER_OPTIONS);
     
 	/* Server information (when this page is generated), allow a lookup. */
 	if (! wizard->IsNewServer()) {
@@ -283,7 +283,7 @@ AccountPage::AccountPage(SeruroSetup *parent)
 
     /* Add a status message (display a response if the 'add' was not successful). */
     status_sizer = new wxBoxSizer(wxHORIZONTAL);
-	status_sizer->Add(new Text(this, _("Login status: ")), DIALOGS_SIZER_OPTIONS);
+	status_sizer->Add(new Text(this, _("Login status: ")), DEFAULT_SIZER_OPTIONS);
     status_sizer->SetItemMinSize((size_t) 0, SERURO_SETTINGS_FLEX_LABEL_WIDTH, -1);
     
 	this->account_status = new Text(this, _("Not logged in."));

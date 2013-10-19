@@ -46,7 +46,7 @@ void IdentityPage::SetIdentityStatus(wxString status, bool is_error)
         status_sizer->GetItem(1)->DetachSizer();
         status_sizer->Remove(1);
         
-        status_sizer->Add(this->identity_status, DIALOGS_SIZER_OPTIONS);
+        status_sizer->Add(this->identity_status, DEFAULT_SIZER_OPTIONS);
         this->was_error = false;
     }
     this->Layout();
@@ -202,14 +202,14 @@ void IdentityPage::AddDownloadForm()
     
     /* Generate a form, duplicate of the initializer. */
     wxSizer *const identity_form = new wxStaticBoxSizer(wxHORIZONTAL, this, "&Download Encryption and Digital Identity");
-    identity_form->Add(new Text(this, _(TEXT_DOWNLOAD_INSTALL_WARNING)), DIALOGS_SIZER_OPTIONS);
+    identity_form->Add(new Text(this, _(TEXT_DOWNLOAD_INSTALL_WARNING)), DEFAULT_SIZER_OPTIONS);
     identity_form->AddStretchSpacer();
     
     download_button = new wxButton(this, BUTTON_DOWNLOAD_IDENTITY, wxEmptyString);
     download_button->SetLabelMarkup(_("Retry Download"));
-    identity_form->Add(download_button, DIALOGS_SIZER_OPTIONS);
+    identity_form->Add(download_button, DEFAULT_SIZER_OPTIONS);
     
-    page_sizer->Insert(1, identity_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);
+    page_sizer->Insert(1, identity_form, DEFAULT_BOXSIZER_SIZER_OPTIONS);
     
     this->Layout();
 }
@@ -232,16 +232,16 @@ IdentityPage::IdentityPage(SeruroSetup *parent, bool force_download)
     /* Textual notice about the use of an identity. */
     wxString msg_text = _((SETUP_REQUIRE_DOWNLOAD) ? TEXT_DOWNLOAD_INSTALL_IDENTITY : TEXT_INSTALL_IDENTITY);
     Text *msg = new Text(this, msg_text);
-    vert_sizer->Add(msg, DIALOGS_SIZER_OPTIONS);
+    vert_sizer->Add(msg, DEFAULT_SIZER_OPTIONS);
     
     /* Download form if the P12 is not retreived automatically. */
     if (SETUP_REQUIRE_DOWNLOAD) {
         wxSizer *const identity_form = new wxStaticBoxSizer(wxHORIZONTAL, this, "&Download Identity and Encryption Containers");
-        identity_form->Add(new Text(this, _("I trust this machine: ")), DIALOGS_SIZER_OPTIONS);
+        identity_form->Add(new Text(this, _("I trust this machine: ")), DEFAULT_SIZER_OPTIONS);
         identity_form->AddStretchSpacer();
         download_button = new wxButton(this, BUTTON_DOWNLOAD_IDENTITY, _("Download"));
-        identity_form->Add(download_button, DIALOGS_SIZER_OPTIONS);
-        vert_sizer->Add(identity_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);
+        identity_form->Add(download_button, DEFAULT_SIZER_OPTIONS);
+        vert_sizer->Add(identity_form, DEFAULT_BOXSIZER_SIZER_OPTIONS);
     } else {
         /* Tell the focus to download one time. */
         this->download_button = 0;
@@ -257,14 +257,14 @@ IdentityPage::IdentityPage(SeruroSetup *parent, bool force_download)
 
     /* Add status message. */
     status_sizer = new wxBoxSizer(wxHORIZONTAL);
-	status_sizer->Add(new Text(this, _("Install status: ")), DIALOGS_SIZER_OPTIONS);
+	status_sizer->Add(new Text(this, _("Install status: ")), DEFAULT_SIZER_OPTIONS);
     status_sizer->SetItemMinSize((size_t) 0, SERURO_SETTINGS_FLEX_LABEL_WIDTH, -1);
     
 	identity_status = new Text(this, _("Not downloaded or unlocked."));
-	status_sizer->Add(this->identity_status, DIALOGS_SIZER_OPTIONS);
-	decrypt_form->Add(status_sizer, DIALOGS_BOXSIZER_OPTIONS);
+	status_sizer->Add(this->identity_status, DEFAULT_SIZER_OPTIONS);
+	decrypt_form->Add(status_sizer, DEFAULT_BOXSIZER_OPTIONS);
     
-	vert_sizer->Add(decrypt_form, DIALOGS_BOXSIZER_SIZER_OPTIONS);
+	vert_sizer->Add(decrypt_form, DEFAULT_BOXSIZER_SIZER_OPTIONS);
     
     this->SetSizer(vert_sizer);
 }
