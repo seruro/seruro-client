@@ -85,6 +85,9 @@ public:
 	virtual bool AssignIdentity(wxString server_uuid, wxString address) {
 		return false;
 	}
+	virtual bool UnassignIdentity(wxString address) {
+		return false;
+	}
 
     /* Check if the application is running. */
     virtual bool IsRunning() {
@@ -147,6 +150,7 @@ public:
     
 	bool AssignIdentity(wxString app_name,
 		wxString server_uuid, wxString address);
+	bool UnassignIdentity(wxString app_name, wxString address);
 
     bool CanAssign(wxString app_name);
     bool CanUnassign(wxString app_name);

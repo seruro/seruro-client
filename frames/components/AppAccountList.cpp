@@ -88,14 +88,15 @@ void AppAccountList::SetAccountStatus(long index, const wxString &app, const wxS
 	}
     
     /* Save 'assigned' status for potentially stateless-app running responses (refresh list button). */
-	if (identity_status == APP_ASSIGNED) {
-		this->pending_list[app][account] = wxJSONValue((unsigned int) APP_ASSIGNED);
+	if (this->is_initial) {
+		if (identity_status == APP_ASSIGNED) {
+			this->pending_list[app][account] = wxJSONValue((unsigned int) APP_ASSIGNED);
+		}
+		/* Do not give false "unstateful" information about pending restarts (refresh list button). */
+		if (this->pending_list[app].HasMember(account) && this->pending_list[app][account].AsUInt() == APP_ASSIGNED) {
+			identity_status = APP_ASSIGNED;
+		}
 	}
-    
-    /* Do not give false "unstateful" information about pending restarts (refresh list button). */
-    if (this->pending_list[app].HasMember(account) && this->pending_list[app][account].AsUInt() == APP_ASSIGNED) {
-        identity_status = APP_ASSIGNED;
-    }
 
     accounts_list->SetItemData(index, (long) identity_status);
     if (identity_status == APP_ASSIGNED) {
@@ -181,10 +182,12 @@ bool AppAccountList::Assign()
 
 bool AppAccountList::Unassign()
 {
-	/* Forget assigned state. */
-	//this->pending_list[this->app_name][this->account] = wxJSONValue((unsigned int) APP_UNASSIGNED);
+	if (! theSeruroApps::Get().UnassignIdentity(this->app_name, this->account)) {
+		/* Todo: Display error message. */
+		return false;
+	}
 
-    return false;
+    return true;
 }
 
 void AppAccountList::Create(wxWindow *parent, bool use_address, bool initial)

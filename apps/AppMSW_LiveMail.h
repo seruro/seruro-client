@@ -28,6 +28,7 @@ public:
     wxArrayString GetAccountList();
     account_status_t IdentityStatus(wxString address, wxString &server_uuid);
 	bool AssignIdentity(wxString server_uuid, wxString address);
+	bool UnassignIdentity(wxString address);
     
 	bool IsRunning();
 	bool StopApp();

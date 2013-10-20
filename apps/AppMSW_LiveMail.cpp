@@ -285,6 +285,11 @@ void SetNodeValue(wxXmlDocument &document, wxString key, wxString value)
 		child = child->GetNext();
 	}
 
+	if (value == wxEmptyString) {
+		/* If the value is empty, then do not insert the element again. */
+		return;
+	}
+
 	/* Create the element and the attribute, binary. */
 	wxXmlAttribute *type_attribute = new wxXmlAttribute(_("type"), _("BINARY"));
 
@@ -295,6 +300,35 @@ void SetNodeValue(wxXmlDocument &document, wxString key, wxString value)
 
 	/* The values we're assigned to the xmlNode structure? */
 	/* Do NOT delete! */
+}
+
+bool AppMSW_LiveMail::UnassignIdentity(wxString address)
+{
+	wxString account_file;
+
+	account_file = this->GetAccountFile(address);
+	if (account_file == wxEmptyString) {
+		DEBUG_LOG(_("AppMSW_LiveMail> (UnassignIdentity) Cannot find (%s) within account info."), address);
+		return false;
+	}
+
+	wxXmlDocument xml_doc;
+	if (! LoadAccountFile(info["accounts"][account_file]["filename"].AsString(), xml_doc)) {
+		return false;
+	}
+
+	/* This should delete the fields. */
+	SetNodeValue(xml_doc, XML_FIELD_ENCIPHERMENT, wxEmptyString);
+	SetNodeValue(xml_doc, XML_FIELD_AUTHENTICATION, wxEmptyString);
+
+	if (! SaveAccountFile(info["accounts"][account_file]["filename"].AsString(), xml_doc)) {
+		return false;
+	}
+
+	/* Re-read the accounts list. Todo: just re-read the saved account? */
+	this->GetAccountList();
+
+	return true;
 }
 
 bool AppMSW_LiveMail::AssignIdentity(wxString server_uuid, wxString address)
@@ -312,7 +346,7 @@ bool AppMSW_LiveMail::AssignIdentity(wxString server_uuid, wxString address)
 
 	/* Get both certificate SKIDs from config. */
 	auth_skid = theSeruroConfig::Get().GetIdentity(server_uuid, address, ID_AUTHENTICATION);
-	enc_skid  =theSeruroConfig::Get().GetIdentity(server_uuid, address, ID_ENCIPHERMENT);
+	enc_skid = theSeruroConfig::Get().GetIdentity(server_uuid, address, ID_ENCIPHERMENT);
 
 	/* For each, GetIdentityHashBySKID */
 	auth_hash = crypto.GetIdentityHashBySKID(auth_skid);
@@ -331,10 +365,12 @@ bool AppMSW_LiveMail::AssignIdentity(wxString server_uuid, wxString address)
 	SetNodeValue(xml_doc, XML_FIELD_ENCIPHERMENT, AsHex(wxBase64Decode(enc_hash)));
 	SetNodeValue(xml_doc, XML_FIELD_AUTHENTICATION, AsHex(wxBase64Decode(auth_hash)));
 
-	/* This step is not working. */
 	if (! SaveAccountFile(info["accounts"][account_file]["filename"].AsString(), xml_doc)) {
 		return false;
 	}
+
+	/* Re-read the accounts list. Todo: just re-read the saved account? */
+	this->GetAccountList();
 
 	return true;
 }

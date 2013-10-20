@@ -64,12 +64,24 @@ void ApplicationsWindow::OnIdentityStateChange(SeruroStateEvent &event)
 
 void ApplicationsWindow::OnAssign(wxCommandEvent &event)
 {
-    AppAccountList::Assign();
+    if (! AppAccountList::Assign()) {
+		return;
+	}
+
+	AppAccountList::DeselectAccounts();
+	this->assign_button->Disable();
+	this->unassign_button->Disable();
 }
 
 void ApplicationsWindow::OnUnassign(wxCommandEvent &event)
 {
-    AppAccountList::Unassign();
+    if (! AppAccountList::Unassign()) {
+		return;
+	}
+
+	AppAccountList::DeselectAccounts();
+	this->assign_button->Disable();
+	this->unassign_button->Disable();
 }
 
 void ApplicationsWindow::OnRefresh(wxCommandEvent &event)

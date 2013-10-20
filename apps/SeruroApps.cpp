@@ -331,13 +331,53 @@ account_status_t SeruroApps::IdentityStatus(wxString app_name, wxString account_
     return status;
 }
 
+bool SeruroApps::UnassignIdentity(wxString app_name, wxString address)
+{
+	/* Same as assign. */
+	AppHelper *helper;
+
+	if (this->assign_pending == true) {
+		DEBUG_LOG(_("SeruroApps> (UnassignIdentity) cannot unassign (%s), another operation is pending."), app_name);
+		return false;
+	}
+
+	helper = this->GetHelper(app_name);
+	if (helper == 0) return false;
+
+	wxCriticalSectionLocker enter(wxGetApp().seruro_critsection_assign);
+	this->assign_pending = true;
+
+	if (! helper->UnassignIdentity(address)) {
+		this->assign_pending = false;
+		return false;
+	}
+
+	if (helper->needs_restart && helper->IsRunning()) {
+		if (this->RequireRestart(helper, app_name, address)) {
+			return true;
+		}
+	}
+
+	this->assign_pending = false;
+
+    SeruroStateEvent identity_event(STATE_TYPE_IDENTITY, STATE_ACTION_UPDATE);
+	/* Todo: should this accept server_uuid? */
+    identity_event.SetValue("app", app_name);
+    identity_event.SetAccount(address);
+
+    /* Process the event. */
+    wxGetApp().AddEvent(identity_event);
+    
+    return true;
+}
+
 bool SeruroApps::AssignIdentity(wxString app_name, wxString server_uuid, wxString address)
 {
     AppHelper *helper;
     
     if (this->assign_pending == true) {
         /* Cannot assign while waiting for another application. */
-        DEBUG_LOG(_("SeruroApps> (AssignIdentity) cannot to %s, there is another application pending."), app_name);
+        DEBUG_LOG(_("SeruroApps> (AssignIdentity) cannot assign (%s), another operation is pending."), app_name);
         return false;
     }
     

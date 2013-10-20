@@ -94,7 +94,13 @@ void ApplicationsPage::OnAssign(wxCommandEvent &event)
 
 void ApplicationsPage::OnUnassign(wxCommandEvent &event)
 {
-    AppAccountList::Unassign();
+    if (! AppAccountList::Unassign()) {
+		return;
+	}
+
+	AppAccountList::DeselectAccounts();
+	this->assign_button->Disable();
+	this->unassign_button->Disable();
 }
 
 void ApplicationsPage::OnRefresh(wxCommandEvent &event)
