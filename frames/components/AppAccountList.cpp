@@ -187,6 +187,11 @@ bool AppAccountList::Unassign()
 		return false;
 	}
 
+	/* A forced unassign will remove an account from pending restarts. */
+	if (this->pending_list[this->app_name].HasMember(this->account)) {
+		this->pending_list[this->app_name].Remove(this->account);
+	}
+
     return true;
 }
 
