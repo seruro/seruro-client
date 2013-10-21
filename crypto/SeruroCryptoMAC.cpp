@@ -188,38 +188,56 @@ wxString GetSubjectKeyIDFromCertificate(SecCertificateRef &cert)
     return wxBase64Encode(subject_data);
 }
 
-/* Sets trust of x509 extensions for the certificate. */
+/* Sets trust of x509 extensions and S/MIME for the certificate. */
 bool SetTrustPolicy(SecCertificateRef &cert)
 {
     OSStatus result;
     CFMutableArrayRef trust_settings_list;
     CFMutableDictionaryRef trust_setting;
+    SecPolicyRef trust_policy;
+    
     CFNumberRef trust_decision;
-    SecPolicyRef x509_policy;
+    SecTrustSettingsResult trust_action;
+    
+    /* Create a list of trust settings (x509 and S/MIME). */
+    trust_settings_list = CFArrayCreateMutable (NULL, 0, &kCFTypeArrayCallBacks);
+    trust_action = kSecTrustResultConfirm;
     
     /* Create a basic x509 policy. */
-    x509_policy = SecPolicyCreateBasicX509();
-    
-    /* Create a list of trust settings, and a single trust setting (dictionary). */
-    trust_settings_list = CFArrayCreateMutable (NULL, 0, &kCFTypeArrayCallBacks);
+    trust_policy = SecPolicyCreateBasicX509();
+    /* Create a single trust setting (dictionary). */
     trust_setting = CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
-    
     /* Set the setting to confirm trust. */
-    SecTrustSettingsResult trust_action = kSecTrustResultConfirm;
     trust_decision = CFNumberCreate(NULL, kCFNumberSInt32Type, &trust_action);
-    
     /* Set the policy for the trust setting. */
-    CFDictionaryAddValue(trust_setting, kSecTrustSettingsPolicy, x509_policy);
+    CFDictionaryAddValue(trust_setting, kSecTrustSettingsPolicy, trust_policy);
     CFDictionaryReplaceValue(trust_setting, kSecTrustSettingsResult, trust_decision);
     CFArrayAppendValue(trust_settings_list, trust_setting);
     
-    /* Apply trust settings to certificate (OSX). */
-    result = SecTrustSettingsSetTrustSettings(cert, kSecTrustSettingsDomainUser, trust_settings_list);
-    
-    CFRelease(x509_policy);
-    CFRelease(trust_settings_list);
+    /* Cleanup x509 trust data. */
+    CFRelease(trust_policy);
     CFRelease(trust_setting);
     CFRelease(trust_decision);
+    
+    /* Create an S/MIME policy. */
+    trust_policy = SecPolicyCreateWithOID(kSecPolicyAppleSMIME);
+    /* Create a single trust setting (dictionary). */
+    trust_setting = CFDictionaryCreateMutable(NULL, 0, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+    /* Set the setting to confirm trust. */
+    trust_decision = CFNumberCreate(NULL, kCFNumberSInt32Type, &trust_action);
+    /* Set the policy for the trust setting. */
+    CFDictionaryAddValue(trust_setting, kSecTrustSettingsPolicy, trust_policy);
+    CFDictionaryReplaceValue(trust_setting, kSecTrustSettingsResult, trust_decision);
+    CFArrayAppendValue(trust_settings_list, trust_setting);
+    
+    /* Cleanup S/MIME trust data. */
+    CFRelease(trust_policy);
+    CFRelease(trust_setting);
+    CFRelease(trust_decision);
+    
+    /* Apply trust settings to certificate (OSX). */
+    result = SecTrustSettingsSetTrustSettings(cert, kSecTrustSettingsDomainUser, trust_settings_list);
+    CFRelease(trust_settings_list);
     
     if (! result == errSecSuccess) {
         wxLogMessage(_("SeruroCrypto> (SetTrustPolicy) failed (err= %d)."), result);
@@ -492,6 +510,7 @@ bool SeruroCryptoMAC::InstallP12(const wxMemoryBuffer &p12, const wxString &pass
     options = CFDictionaryCreateMutable(kCFAllocatorDefault, 3,
         &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
     CFDictionaryAddValue(options, kSecImportExportPassphrase, password_data);
+    CFRelease(password_data);
     
     /* Convert type of p12. */
     p12_data = CFDataCreate(kCFAllocatorDefault,
