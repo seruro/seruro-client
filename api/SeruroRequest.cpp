@@ -24,7 +24,7 @@ SeruroRequestEvent::SeruroRequestEvent(int id)
 {
     response_data = wxJSONValue(wxJSONTYPE_OBJECT);
 	seruro_handler = NULL;
-	seruro_event_id = 0;
+	seruro_event_id = id;
 }
 
 SeruroRequestEvent::SeruroRequestEvent(const SeruroRequestEvent &event)
@@ -186,7 +186,9 @@ void SeruroRequest::Reply(wxJSONValue response)
     /* Event handler requires a critical section. */
     if (this->evtHandler != NULL) {
         this->evtHandler->AddPendingEvent(event);
-    }
+    } else {
+		wxGetApp().AddEvent(event);
+	}
 }
 
 void SeruroRequest::ReplyWithFailure(const wxString &error_msg)
