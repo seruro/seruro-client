@@ -56,6 +56,10 @@ extern "C" { void CPSEnableForegroundOperation(ProcessSerialNumber *psn); }
 int seruro_panels_ids[SERURO_MAX_PANELS];
 int seruro_panels_size;
 
+enum {
+    MENU_RECHECK_CONTACTS_ID,
+};
+
 BEGIN_EVENT_TABLE(SeruroFrameMain, wxFrame)
 	/* Events for Window interaction */
 	EVT_MENU	(wxID_EXIT,     SeruroFrameMain::OnQuit)
@@ -124,21 +128,43 @@ void SeruroFrameMain::AddOSXMenu()
 {
     //wxApp::s_macPreferencesMenuItemId = 1;
     wxMenuBar *menubar = new wxMenuBar();
-    //wxMenu *main_menu = new wxMenu();
+    wxMenu *file_menu = new wxMenu();
     wxMenu *help_menu = new wxMenu();
+    wxMenu *window_menu = new wxMenu();
     
     /* Set up standard menu items. */
     help_menu->Append(SERURO_PANEL_SETTINGS_ID, _("Preferences...") + "\tCtrl+,");
+    help_menu->Append(wxID_ABOUT, _("About Seruro Client"));
     //help_menu->Append(SERURO_EXIT_ID, _(SERURO_MENU_EXIT));
     
-    /* Set up help items. */
-    help_menu->Append(SERURO_PANEL_HELP_ID, _("Seruro Help"));
+    /* Set up file menu. */
+    file_menu->Append(wxID_ANY, _("Add New Account") + "\tCtrl+N");
+    file_menu->Append(wxID_ANY, _("Add New Server") + "\tCtrl+S");
+    file_menu->AppendSeparator();
+    file_menu->Append(wxID_ANY, _("Save Log..."));
+    file_menu->Append(wxID_ANY, _("Check for New Contacts..."));
+    menubar->Append(file_menu, _("File"));
     
-    //menubar->Append(main_menu, );
-//#if !wxOSX_USE_CARBON
+    /* Set up window menu. */
+    window_menu->Append(wxID_ANY, _("Hide Window"));
+    window_menu->AppendSeparator();
+    window_menu->Append(wxID_ANY, _("Show Seruro Home") + "\tShift+Ctrl+1");
+    window_menu->Append(wxID_ANY, _("Show Contacts") + "\tShift+Ctrl+2");
+    window_menu->Append(wxID_ANY, _("Show Accounts") + "\tShift+Ctrl+3");
+    window_menu->Append(wxID_ANY, _("Show Applications") + "\tShift+Ctrl+4");
+    window_menu->Append(wxID_ANY, _("Show Log") + "\tShift+Ctrl+5");
+    window_menu->AppendSeparator();
+    window_menu->Append(wxID_ANY, _("Bring All to Front"));
+    menubar->Append(window_menu, _("Window"));
+    
+    /* Set up help items. */
+    help_menu->Append(wxID_ANY, _("Report and issue..."));
+    help_menu->AppendSeparator();
+    help_menu->Append(wxID_ANY, _("View online help..."));
+    help_menu->Append(SERURO_PANEL_HELP_ID, _("Seruro Help"));
     menubar->Append(help_menu, _("Help"));
+    
     this->SetMenuBar(menubar);
-//#endif
 }
 
 /* The frame's (book's) panels may depend on objects created after the first frame,

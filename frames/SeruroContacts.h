@@ -12,7 +12,7 @@
 #include "../wxJSON/wx/jsonval.h"
 #include "../api/SeruroStateEvents.h"
 
-//#include <wx/button.h>
+#include <wx/button.h>
 
 class SeruroPanelContacts : public SeruroPanel, public ContactList
 {
@@ -20,18 +20,18 @@ public:
 	SeruroPanelContacts(wxBookCtrlBase *book);
 
 private:
-    //wxButton *recheck_button;
+    wxButton *recheck_button;
     
 	void OnContactStateChange(SeruroStateEvent &event);
 	void OnServerStateChange(SeruroStateEvent &event);
     
     /* Add/remove recheck button. */
-    //void OnOptionChange(SeruroStateEvent &event);
-    //void OnRecheckContacts(wxCommandEvent &event);
+    void OnOptionChange(SeruroStateEvent &event);
+    void OnRecheckContacts(wxCommandEvent &event);
     
     void AlignList();
     
-    //DECLARE_EVENT_TABLE()
+    DECLARE_EVENT_TABLE()
 };
 
 #endif
