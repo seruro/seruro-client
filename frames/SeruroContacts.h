@@ -24,6 +24,7 @@ private:
     
 	void OnContactStateChange(SeruroStateEvent &event);
 	void OnServerStateChange(SeruroStateEvent &event);
+    void OnIdentityStateChange(SeruroStateEvent &event);
     
     /* Add/remove recheck button. */
     void OnOptionChange(SeruroStateEvent &event);

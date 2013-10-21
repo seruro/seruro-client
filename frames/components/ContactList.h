@@ -52,6 +52,7 @@ protected:
     
     /* Prevent the first column from moving. */
     void OnContactColumnDrag(wxListEvent &event);
+    void OnContactSelected(wxListEvent &event);
 };
 
 #endif

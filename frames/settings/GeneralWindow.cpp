@@ -18,7 +18,7 @@ If you use multiple Seruro servers you may select the a 'default' for searching.
 #define TEXT_OPTION_POLL_REVOCATIONS "Continue to monitor Seruro certificate revocations."
 #define TEXT_OPTION_POLL_CERTSTORE "Monitor the operating system for certificate changes."
 
-#define OPTION_SIZER_OPTIONS wxSizerFlags().Expand().Border(wxALL, 5).Border(wxLEFT | wxBOTTOM, 10)
+#define OPTION_SIZER_OPTIONS wxSizerFlags().Expand().Border(wxALL, 10).Border(wxLEFT | wxBOTTOM, 10)
 #define SERVER_SIZER_OPTIONS wxSizerFlags().Border(wxLEFT, 5)
 
 enum setting_options_ids
@@ -185,6 +185,7 @@ GeneralWindow::GeneralWindow(SeruroPanelSettings *window) : SettingsView(window)
 
 	option_auto_download = new wxCheckBox(this, OPTION_AUTO_DOWNLOAD_ID, TEXT_OPTION_AUTO_DOWNLOAD);
 	option_auto_download->SetValue(this->GetBoolean("auto_download"));
+    sizer->AddSpacer(5);
 	sizer->Add(option_auto_download, OPTION_SIZER_OPTIONS);
 	sizer->AddSpacer(10);
 

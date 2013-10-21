@@ -36,13 +36,15 @@ void ContactList::OnContactStateChange(SeruroStateEvent &event)
 /* A certificate changes. */
 void ContactList::OnCertificateStateChange(SeruroStateEvent &event)
 {
-    
+    /* Brute force regenerate. */
+    this->GenerateContactList();
 }
 
 /* An identity is added. */
 void ContactList::OnIdentityStateChange(SeruroStateEvent &event)
 {
-    
+    /* Brute force regenerate. */
+    this->GenerateContactList();
 }
 
 /* Make sure we property identify/call out identity-accounts. */
@@ -84,8 +86,8 @@ void ContactList::Create(wxWindow *parent)
     this->contact_list->SetColumnWidth(4, SEARCH_PANEL_COLUMN_WIDTH/4.55);
 
     /* Use the app object to bind. */
-    wxGetApp().Bind(wxEVT_LIST_COL_BEGIN_DRAG,
-        &ContactList::OnContactColumnDrag, this, CONTACT_LIST_ID);
+    wxGetApp().Bind(wxEVT_LIST_COL_BEGIN_DRAG, &ContactList::OnContactColumnDrag, this, CONTACT_LIST_ID);
+    wxGetApp().Bind(wxEVT_LIST_ITEM_SELECTED, &ContactList::OnContactSelected, this, CONTACT_LIST_ID);
 }
 
 void ContactList::AddContactList(wxSizer *sizer)
@@ -118,15 +120,27 @@ void ContactList::AddContact(wxString address, wxString server_uuid)
     wxString server_name;
     wxJSONValue contact;
     SeruroCrypto crypto;
+    
+    bool contact_complete;
 
     server_name = theSeruroConfig::Get().GetServerName(server_uuid);
     contact = theSeruroConfig::Get().GetContact(server_uuid, address);
     
-    /* Create a new row. */
+    /* Create a new row (complete means certificates exists). */
+    contact_complete = (crypto.HaveCertificates(server_uuid, address) || crypto.HaveIdentity(server_uuid, address));
     item_index = this->contact_list->InsertItem(0, wxEmptyString,
-        (crypto.HaveCertificates(server_uuid, address)) ? ITEM_IMAGE_EXISTS : ITEM_IMAGE_NOT_EXISTS);
+        (contact_complete) ? ITEM_IMAGE_EXISTS : ITEM_IMAGE_NOT_EXISTS);
 
-    this->contact_list->SetItem(item_index, 1, address);
+    /* Update the column/row if the address is an identity. */
+    if (theSeruroConfig::Get().AddressExists(address)) {
+        this->contact_list->SetItem(item_index, 1, wxString::Format(_("%s"), address));
+        //this->contact_list->SetItem(item_index, 1, wxString::Format(_("%s (you)"), address));
+        this->contact_list->SetItemTextColour(item_index, wxColour(DISABLED_TEXT_COLOR));
+    } else {
+        /* Otherwise a normal contact. */
+        this->contact_list->SetItem(item_index, 1, address);
+    }
+    
     this->contact_list->SetItem(item_index, 2, contact["name"][0].AsString());
     this->contact_list->SetItem(item_index, 3, contact["name"][1].AsString());
     this->contact_list->SetItem(item_index, 4, server_name);
@@ -160,9 +174,35 @@ void ContactList::RemoveContact(wxString address, wxString server_uuid)
     }
 }
 
-bool SelectContact(long index)
+bool ContactList::SelectContact(long index)
 {
+    wxListItem address_item;
+    
+    address_item.SetMask(wxLIST_MASK_TEXT);
+    address_item.SetColumn(1);
+    address_item.SetId(index);
+    
+    if (! contact_list->GetItem(address_item)) {
+        return false;
+    }
+    
+    /* The address exists as an account, do not select the item. */
+    if (theSeruroConfig::Get().AddressExists(address_item.GetText())) {
+        contact_list->SetItemState(index, 0, wxLIST_STATE_SELECTED);
+        return false;
+    }
+    
     return true;
+}
+
+void ContactList::OnContactSelected(wxListEvent &event)
+{
+    long index = event.GetIndex();
+    
+    if (! this->SelectContact(index)) {
+        event.Veto();
+        return;
+    }
 }
 
 void ContactList::OnContactColumnDrag(wxListEvent &event)

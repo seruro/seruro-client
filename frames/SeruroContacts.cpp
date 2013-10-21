@@ -35,12 +35,13 @@ SeruroPanelContacts::SeruroPanelContacts(wxBookCtrlBase *book) : SeruroPanel(boo
     }
     
     wxBoxSizer *button_sizer = new wxBoxSizer(wxHORIZONTAL);
-    button_sizer->AddStretchSpacer();
+    //button_sizer->AddStretchSpacer();
     button_sizer->Add(recheck_button, 1, wxBOTTOM|wxLEFT|wxEXPAND, 10);
     sizer->Add(button_sizer);
     
     wxGetApp().Bind(SERURO_STATE_CHANGE, &SeruroPanelContacts::OnContactStateChange, this, STATE_TYPE_CONTACT);
 	wxGetApp().Bind(SERURO_STATE_CHANGE, &SeruroPanelContacts::OnServerStateChange, this, STATE_TYPE_SERVER);
+    wxGetApp().Bind(SERURO_STATE_CHANGE, &SeruroPanelContacts::OnIdentityStateChange, this, STATE_TYPE_IDENTITY);
     wxGetApp().Bind(SERURO_STATE_CHANGE, &SeruroPanelContacts::OnOptionChange, this, STATE_TYPE_OPTION);
     
     this->SetSizer(sizer);
@@ -69,6 +70,14 @@ void SeruroPanelContacts::OnServerStateChange(SeruroStateEvent &event)
 	}
     
     event.Skip();
+}
+
+void SeruroPanelContacts::OnIdentityStateChange(SeruroStateEvent &event)
+{
+    event.Skip();
+    
+    ContactList::OnIdentityStateChange(event);
+    this->AlignList();
 }
 
 void SeruroPanelContacts::OnOptionChange(SeruroStateEvent &event)
