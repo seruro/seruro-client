@@ -17,7 +17,7 @@
  *   Personal certificate revocation.
  *   Personal account banning (deletion will not be detected).
  *   Server CA (root) removal.
- *   Certificate approval & account approval.
+ *   Certificate (request) approval & account approval.
  *   Server subscription expiration.
  *   Server not found (unabled to be reached).
  */
@@ -41,3 +41,4 @@
  * Application monitor: applications becoming "unassigned" of their security profiles.
  */
 
+#endif
