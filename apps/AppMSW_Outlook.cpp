@@ -9,13 +9,8 @@
 #include "../crypto/SeruroCrypto.h"
 #include "../api/Utils.h"
 
-//#include "../crypto/SeruroCryptoMSW.h"
-
 #include <wx/msw/registry.h>
 #include <wx/base64.h>
-
-//#include "../include/MAPIX.h"
-//#include "../include/MAPIUtil.h"
 
 /* Add all keys which may contain Outlook. */
 #define KEY_OFFICE_2010_PLUS L"\\UserData\\S-1-5-18\\Products\\00004109110000000000000000F01FEC"
@@ -24,11 +19,13 @@
 #define HKCU_SUBSYSTEM_BASE L"Software\\Microsoft\\Windows NT\\CurrentVersion"
 #define HKCU_SUBSYSTEM L"Windows Messaging Subsystem\\Profiles\\Outlook"
 
-//const GUID CDECL GUID_Dilkie = {  0x53bc2ec0, 0xd953, 0x11cd, 
-//   {0x97, 0x52, 0x00, 0xaa, 0x00, 0x4a, 0xe4, 0x0e}  };
+/* const GUID CDECL GUID_Dilkie = {  0x53bc2ec0, 0xd953, 0x11cd, 
+ *   {0x97, 0x52, 0x00, 0xaa, 0x00, 0x4a, 0xe4, 0x0e}  };
+ */
 #define DILKIE_GUID "\xc0\x2e\xbc\x53\x53\xd9\xcd\x11\x97\x52\x00\xaa\x00\x4a\xe4\x0e"
 #define PR_SECURITY_PROFILES PROP_TAG(PT_MV_BINARY, 0x355)
 
+/* Reference: http://support.microsoft.com/kb/312900 */
 enum security_properties {
 	PR_CERT_PROP_VERSION     = 0x0001, /* Reserved = 1 */
 	PR_CERT_MESSAGE_ENCODING = 0x0006, /* Type of encoding (S/MIME = 1) */
@@ -36,7 +33,9 @@ enum security_properties {
 	PR_CERT_DISPLAY_NAME_A   = 0x000B, /* Display name. */
 	PR_CERT_KEYEX_SHA1_HASH  = 0x0022, /* hash of encryption certificate. */
 	PR_CERT_SIGN_SHA1_HASH   = 0x0009, /* hash of identity certificate. */
-	PR_CERT_ASYMETRIC_CAPS   = 0x0002  /* ASN1-encoded S/MIME capabilities. */
+	PR_CERT_ASYMETRIC_CAPS   = 0x0002, /* ASN1-encoded S/MIME capabilities. */
+
+	PR_CERT_DISPLAY_NAME_W	 = 0x0051  /* Wide display name. */ 
 };
 
 #define ASYMETRIC_CAPS_BLOB "\
@@ -62,24 +61,6 @@ bool SafeANSIString(void *data, size_t length, wxString &safe_result)
 		}
 	}
 	return true;
-}
-
-bool AppMSW_Outlook::IsInstalled()
-{
-	if (! GetInfo()) return false;
-
-	return this->is_installed;
-}
-
-wxString AppMSW_Outlook::GetVersion()
-{
-	if (! GetInfo()) return _("N/A");
-
-	if (this->info.HasMember("version")) {
-		return info["version"].AsString();
-	}
-
-	return _("0");
 }
 
 bool MAPIProfileExists(LPPROFADMIN &profile_admin)
@@ -276,7 +257,7 @@ bool SetSecurityProperties(wxString &service_uid, wxJSONValue properties)
 	memcpy(profile_data+profile_offset+2, &length, 2);
 	cert_buffer.Clear();
 	cert_buffer = wxBase64Decode(properties["encipherment"].AsString());
-	memcpy(profile_data+profile_offset+4, AsChar(AsHex(cert_buffer)), 20);
+	memcpy(profile_data+profile_offset+4, cert_buffer.GetData(), 20);
 
 	profile_offset += 24;
 	tag = PR_CERT_SIGN_SHA1_HASH, length = 4+ 20;
@@ -284,7 +265,7 @@ bool SetSecurityProperties(wxString &service_uid, wxJSONValue properties)
 	memcpy(profile_data+profile_offset+2, &length, 2);
 	cert_buffer.Clear();
 	cert_buffer = wxBase64Decode(properties["authentication"].AsString());
-	memcpy(profile_data+profile_offset+4, AsChar(AsHex(cert_buffer)), 20);
+	memcpy(profile_data+profile_offset+4, cert_buffer.GetData(), 20);
 
 	profile_offset += 24;
 	tag = PR_CERT_ASYMETRIC_CAPS, length = 4+ asymetric_caps.GetDataLen();
@@ -335,8 +316,7 @@ wxJSONValue GetSecurityProperties(SBinary *entry)
 	/* Read through the entry, extracting each touple. */
 	while (entry_offset < entry->cb) {
 		tag = *(entry->lpb + entry_offset);
-		length = *(entry->lpb + entry_offset + 2);
-		//length = length / 2;
+		length = *(entry->lpb + entry_offset + 2 /* tag is uint16 */);
 
 		if ((entry_offset + length) > (unsigned short) entry->cb) {
 			/* There is an overrun error in the ASN1 blob? */
@@ -348,7 +328,7 @@ wxJSONValue GetSecurityProperties(SBinary *entry)
 			break;
 		}
 
-		data = entry->lpb + entry_offset + 4;
+		data = entry->lpb + entry_offset + 2 + 2 /* tag and length are both uint16 */;
 		entry_offset += length;
 
 		if (tag == PR_CERT_MESSAGE_ENCODING && *((unsigned long *) data) != 1) {
@@ -387,6 +367,24 @@ wxJSONValue GetSecurityProperties(SBinary *entry)
 	return properties;
 }
 
+bool AppMSW_Outlook::IsInstalled()
+{
+	if (! GetInfo()) return false;
+
+	return this->is_installed;
+}
+
+wxString AppMSW_Outlook::GetVersion()
+{
+	if (! GetInfo()) return _("N/A");
+
+	if (this->info.HasMember("version")) {
+		return info["version"].AsString();
+	}
+
+	return _("0");
+}
+
 void AppMSW_Outlook::FindAccountProperties(LPSERVICEADMIN &service_admin, SPropValue &uid, wxString &account_name)
 {
 	HRESULT result;
@@ -411,8 +409,7 @@ void AppMSW_Outlook::FindAccountProperties(LPSERVICEADMIN &service_admin, SPropV
 		return;
 	}
 
-	result = provider_admin->OpenProfileSection((LPMAPIUID) DILKIE_GUID, 
-		NULL, MAPI_MODIFY, &profile_section);
+	result = provider_admin->OpenProfileSection((LPMAPIUID) DILKIE_GUID, NULL, MAPI_MODIFY, &profile_section);
 	if (FAILED(result)) {
 		DEBUG_LOG(_("AppMSW_Outlook> (FindAccountProperties) cannot open section (%s) (%0x)."),
 			account_name, result);
@@ -454,11 +451,9 @@ void AppMSW_Outlook::FindAccountProperties(LPSERVICEADMIN &service_admin, SPropV
 	wxJSONValue entry_properties;
 
 	for (unsigned int i = 0; i < profile_entries; ++i) {
-		//profile_entry = (property_values[0].Value.MVbin.lpbin)[i];
 		profile_entry = (SBinary *) ((property_values[0].Value.MVbin.lpbin) + i);
 		entry_offset += profile_entry->cb + 2;
 
-		//entry_size = (unsigned short) *(property_values[0].Value.MVbin.lpbin + entry_offset);
 		entry_properties = GetSecurityProperties(profile_entry);
 		this->info["accounts"][account_name]["profiles"].Append(entry_properties);
 	}
@@ -526,6 +521,7 @@ wxArrayString AppMSW_Outlook::GetAccountList()
 	SRestriction service_restriction;
 	SPropValue service_property;
 
+	/* Create a "restriction", a filter, for service name "INTERSTOR". */
 	service_restriction.rt = RES_CONTENT;
 	service_restriction.res.resContent.ulFuzzyLevel = FL_FULLSTRING;
 	service_restriction.res.resContent.ulPropTag = PR_SERVICE_NAME;
@@ -533,7 +529,6 @@ wxArrayString AppMSW_Outlook::GetAccountList()
 
 	service_property.ulPropTag = PR_SERVICE_NAME;
 	service_property.Value.lpszW = L"INTERSTOR";
-	//service_property.Value.lpszA = "MSEMS";
 
 	/* Fetch the following columns from the services table. */
 	enum {display_name_index, service_name_index, service_uid_index};

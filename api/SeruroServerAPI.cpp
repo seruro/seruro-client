@@ -257,7 +257,7 @@ bool SeruroServerAPI::InstallCertificate(wxJSONValue response)
 
 	wxString cert_encoded;
 	wxMemoryBuffer cert_decoded;
-    wxString server_uuid;
+    wxString server_uuid, address;
     wxString cert_fingerprint;
     bool result;
 
@@ -265,6 +265,8 @@ bool SeruroServerAPI::InstallCertificate(wxJSONValue response)
 
 	result = true;
     server_uuid = response["server_uuid"].AsString();
+	address = response["address"].AsString();
+
 	for (int i = 0; i < response["certs"].Size(); i++) {
 		cert_encoded = response["certs"][i].AsString();
 
@@ -275,15 +277,15 @@ bool SeruroServerAPI::InstallCertificate(wxJSONValue response)
         if (! result) continue;
 
 		/* Track this certificate. Todo: pull out of a loop. */
-		theSeruroConfig::Get().AddCertificate(server_uuid, response["address"].AsString(),
-            (i == 0) ? ID_AUTHENTICATION : ID_ENCIPHERMENT, cert_fingerprint);
+		theSeruroConfig::Get().AddCertificate(server_uuid, address,
+			(i == 0) ? ID_AUTHENTICATION : ID_ENCIPHERMENT, cert_fingerprint);
 	}
     
     DEBUG_LOG(_("ServerAPI> (InstallCertificate) Certificate for (%s, %s) status: %s"),
-        server_uuid, response["address"].AsString(), (result) ? _("success") : _("failed"));
+        server_uuid, address, (result) ? _("success") : _("failed"));
     
     if (! result) {
-        /* Roll back any changes. */
+        /* Todo: Roll back any changes. */
     }
 
 	return result;

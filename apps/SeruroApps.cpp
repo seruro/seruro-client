@@ -421,6 +421,58 @@ bool SeruroApps::AssignIdentity(wxString app_name, wxString server_uuid, wxStrin
     return true;
 }
 
+bool SeruroApps::AddContact(wxString server_uuid, wxString address)
+{
+	AppHelper *helper;
+	bool status;
+
+	status = true;
+	for (size_t i = 0; i < this->app_names.size(); ++i) {
+		helper = this->GetHelper(this->app_names[i]);
+		/* Only applies to apps which require contacts. */
+		if (! helper->needs_contacts) continue;
+
+		if (! helper->AddContact(server_uuid, address)) {
+			/* Log the problem. */
+			LOG(_("SeruroApps> (AddContact) Could not add (%s, %s) to (%s) contact store."), 
+				server_uuid, address, app_names[i]);
+			status = false;
+		}
+	}
+
+	/* If at least one failed, the entire set fails. */
+	return status;
+}
+
+bool SeruroApps::RemoveContact(wxString server_uuid, wxString address)
+{
+	AppHelper *helper;
+	bool status;
+
+	status = true;
+	for (size_t i = 0; i < this->app_names.size(); ++i) {
+		helper = this->GetHelper(this->app_names[i]);
+		/* Only applies to apps which require contacts. */
+		if (! helper->needs_contacts) continue;
+
+		if (! helper->RemoveContact(server_uuid, address)) {
+			/* Log the problem. */
+			LOG(_("SeruroApps> (RemoveContact) Could not remove (%s, %s) from (%s) contact store."), 
+				server_uuid, address, app_names[i]);
+			status = false;
+		}
+	}
+
+	/* If at least one failed, the entire set fails. */
+	return status;
+}
+
+bool SeruroApps::HaveContact(wxString server_uuid, wxString address)
+{
+	/* Not exactly sure how this will be used yet. */
+	return true;
+}
+
 void SeruroApps::RestartDialogFinished()
 {
     /* State management. */

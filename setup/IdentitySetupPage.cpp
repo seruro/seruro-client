@@ -98,6 +98,9 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
 		/* The page will work, but the key entry will not. */
 		this->DisableForm();
 		return;
+	} else if (! SETUP_REQUIRE_DOWNLOAD) {
+		/* No download form needed. */
+		this->RemoveDownloadForm();
 	}
     
     server_uuid = response["uuid"].AsString();
@@ -187,29 +190,44 @@ void IdentityPage::DoFocus()
 	}
 }
 
-/* Todo: remove download form. */
+void IdentityPage::RemoveDownloadForm()
+{
+	if (SETUP_REQUIRE_DOWNLOAD || this->download_button == 0) {
+        /* The download form does not exist, or is not transient. */
+        return;
+    }
 
-
+	//this->download_form->Clear(true);
+	//this->GetSizer()->Detach(download_form);
+	download_form->ShowItems(false);
+}
 
 void IdentityPage::AddDownloadForm()
 {
-    if (SETUP_REQUIRE_DOWNLOAD || this->download_button != 0) {
-        /* The download form already exists. */
+    if (SETUP_REQUIRE_DOWNLOAD) {
+        /* The download form already exists, and is not transient. */
         return;
     }
     
     wxSizer *const page_sizer = this->GetSizer();
     
     /* Generate a form, duplicate of the initializer. */
-    wxSizer *const identity_form = new wxStaticBoxSizer(wxHORIZONTAL, this, "&Download Encryption and Digital Identity");
-    identity_form->Add(new Text(this, _(TEXT_DOWNLOAD_INSTALL_WARNING)), DEFAULT_SIZER_OPTIONS);
-    identity_form->AddStretchSpacer();
+	if (download_button == 0) {
+		download_form = new wxStaticBoxSizer(wxHORIZONTAL, this, "&Download Encryption and Digital Identity");
+
+		download_form->Add(new Text(((wxStaticBoxSizer *)download_form)->GetStaticBox(),
+			_(TEXT_DOWNLOAD_INSTALL_WARNING)), DEFAULT_SIZER_OPTIONS);
+		download_form->AddStretchSpacer();
     
-    download_button = new wxButton(this, BUTTON_DOWNLOAD_IDENTITY, wxEmptyString);
-    download_button->SetLabelMarkup(_("Retry Download"));
-    identity_form->Add(download_button, DEFAULT_SIZER_OPTIONS);
+		download_button = new wxButton(((wxStaticBoxSizer *)download_form)->GetStaticBox(), 
+			BUTTON_DOWNLOAD_IDENTITY, wxEmptyString);
+		download_button->SetLabelMarkup(_("Retry Download"));
+		download_form->Add(download_button, DEFAULT_SIZER_OPTIONS);
     
-    page_sizer->Insert(1, identity_form, DEFAULT_BOXSIZER_SIZER_OPTIONS);
+		page_sizer->Insert(1, download_form, DEFAULT_BOXSIZER_SIZER_OPTIONS);
+	} else {
+		download_form->ShowItems(true);
+	}
     
     this->Layout();
 }

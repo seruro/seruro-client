@@ -41,6 +41,12 @@ void AppAccountList::OnIdentityStateChange(SeruroStateEvent &event)
     wxString display_name, server_uuid;
     bool pending_override;
     
+	if (! event.HasValue("app")) {
+		/* This identity update applies to all application accounts with this email. */
+		this->GenerateAccountsList();
+		return;
+	}
+
     account_item.SetMask(wxLIST_MASK_TEXT);
     account_item.SetColumn(1);
     app_item.SetMask(wxLIST_MASK_TEXT);
@@ -53,10 +59,12 @@ void AppAccountList::OnIdentityStateChange(SeruroStateEvent &event)
         app_item.SetId(i);
         
         if (! accounts_list->GetItem(account_item) || ! accounts_list->GetItem(app_item)) {
+			/* The list searching functions failed. */
             continue;
         }
         
         if (display_name != account_item.GetText() || event.GetValue("app") != app_item.GetText()) {
+			/* This is not an appropraite account. */
             continue;
         }
         

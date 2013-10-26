@@ -34,7 +34,7 @@ void ApplicationsWindow::OnAccountStateChange(SeruroStateEvent &event)
     /* This might cause some headache, but it's the easiest at the moment. */
     AppAccountList::DeselectAccounts();
     
-    AppAccountList::GenerateAccountsList();
+	AppAccountList::OnAccountStateChange(event);
 	this->AlignLists();
     
 	event.Skip();

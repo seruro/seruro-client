@@ -6,6 +6,7 @@
 
 #include "../SeruroClient.h"
 #include "../SeruroConfig.h"
+#include "../apps/SeruroApps.h"
 #include "../logging/SeruroLogger.h"
 
 DECLARE_APP(SeruroClient);
@@ -108,37 +109,40 @@ bool ServerMonitor::ProcessContacts(wxString server_uuid, wxJSONValue contacts)
 
 bool ServerMonitor::ProcessCertificates(wxString server_uuid, wxJSONValue certificates)
 {
-    wxString address;
-    int num_certificates;
-    
     SeruroCrypto crypto;
     wxString cert_fingerprint;
     wxMemoryBuffer cert_decoded;
     wxString cert_encoded;
     bool result;
     
-    num_certificates = certificates.Size();
-    for (int i = 0; i < num_certificates; ++i) {
-        cert_encoded = certificates[i]["cert"].AsString();
-        address = certificates[i]["address"].AsString();
-        
-        if (! DecodeBase64(cert_encoded, &cert_decoded)) continue;
-        
-        cert_fingerprint = wxEmptyString; /* must reset the fingerprint */
-		result = crypto.InstallCertificate(cert_decoded, cert_fingerprint);
-        if (! result) continue;
-        
-        /* Track this certificate. Todo: pull out of a loop. */
-		theSeruroConfig::Get().AddCertificate(server_uuid, address,
-            (certificates[i]["type"].AsString() == _("authentication")) ? ID_AUTHENTICATION : ID_ENCIPHERMENT,
-            cert_fingerprint);
-        
-        /* This may cause duplicate events for a contact add/ then update. but that's fine. */
+	wxArrayString address_list;
+	wxString cert_type;
+
+	address_list = certificates.GetMemberNames();
+	for (int i = 0; i < address_list.size(); ++i) {
+		for (int j = 0; j < certificates[address_list[i]].Size(); j++) {
+			/* For each address provided, parse certificates. */
+			cert_encoded = certificates[address_list[i]][j]["cert"].AsString();
+			cert_type = certificates[address_list[i]][j]["type"].AsString();
+			if (! DecodeBase64(cert_encoded, &cert_decoded)) continue;
+
+			cert_fingerprint = wxEmptyString; /* must reset the fingerprint. */
+			result = crypto.InstallCertificate(cert_decoded, cert_fingerprint);
+			if (! result) continue;
+
+			theSeruroConfig::Get().AddCertificate(server_uuid, address_list[i], 
+				(cert_type == _("authentication")) ? ID_AUTHENTICATION : ID_ENCIPHERMENT, cert_fingerprint);
+		}
+
+		/* Add the contact, this may add the contact "again", if so it will update certificates. */
+		theSeruroApps::Get().AddContact(server_uuid, address_list[i]);
+
+		/* Create the update event. */
         SeruroStateEvent event(STATE_TYPE_CONTACT, STATE_ACTION_UPDATE);
-        event.SetAccount(address);
+        event.SetAccount(address_list[i]);
         event.SetServerUUID(server_uuid);
         wxGetApp().AddEvent(event);
-    }
+	}
     
     return true;
 }
