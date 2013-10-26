@@ -62,6 +62,7 @@ public:
         can_assign = true;
         can_unassign = true;
         needs_restart = false;
+		needs_contacts = false;
         restart_pending = false;
 	}
     
@@ -89,6 +90,18 @@ public:
 		return false;
 	}
 
+	/* Some apps may require contact certificates to be "installed". */
+	virtual bool AddContact(wxString server_uuid, wxString address) {
+		return true;
+	}
+	virtual bool RemoveContact(wxString server_uuid, wxString address) {
+		return true;
+	}
+	/* May be internal to the apps controler. */
+	virtual bool HaveContact(wxString server_uuid, wxString address) {
+		return true;
+	}
+
     /* Check if the application is running. */
     virtual bool IsRunning() {
         return false;
@@ -104,6 +117,8 @@ public:
     bool can_assign;
     bool can_unassign;
     
+	/* Does the application require contact installation. */
+	bool needs_contacts;
     /* Does the application require a restart when assigned. */
     bool needs_restart;
     /* Is the application expecting a current restart. */
@@ -155,6 +170,12 @@ public:
     bool CanAssign(wxString app_name);
     bool CanUnassign(wxString app_name);
     
+	/* Contact control (applies to all apps). */
+	bool AddContact(wxString server_uuid, wxString address);
+	bool RemoveContact(wxString server_uuid, wxString address);
+	/* This should be private? */
+	bool HaveContact(wxString server_uuid, wxString address);
+
     /* Application control. */
     bool IsAppRunning(wxString app_name);
     bool StopApp(wxString app_name);

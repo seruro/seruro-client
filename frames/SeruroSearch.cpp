@@ -1,6 +1,7 @@
 ﻿
 #include "SeruroSearch.h"
 #include "../SeruroClient.h"
+#include "../apps/SeruroApps.h"
 
 /* Need GetServerChoice */
 #include "dialogs/AddServerDialog.h"
@@ -13,6 +14,11 @@
 
 /* Image data. */
 #include "../resources/images/certificate_icon_18_flat.png.h"
+
+#define SEARCH_COLUMN_ADDRESS    1
+#define SEARCH_COLUMN_FIRSTNAME  2
+#define SEARCH_COLUMN_LASTNAME   3
+#define SEARCH_COLUMN_SERVERNAME 4
 
 DECLARE_APP(SeruroClient);
 
@@ -96,22 +102,39 @@ void SeruroPanelSearch::OnInstallResult(SeruroRequestEvent &event)
     wxJSONValue response;
     wxString server_name;
     
+	wxString address, server_uuid;
+
     response = event.GetResponse();
     if (! response.HasMember("success") || ! response["success"].AsBool() || ! response.HasMember("address")) {
         wxLogMessage(wxT("OnInstallResults> Bad Result."));
         return;
     }
     
+	server_uuid = response["server_uuid"].AsString();
+	address = response["address"].AsString();
+
     if (! response.HasMember("certs") || response["certs"].Size() == 0) {
-        wxLogMessage(wxT("OnInstallResult> No certs found for address (%s)."), response["address"].AsString());
+        wxLogMessage(wxT("OnInstallResult> No certs found for address (%s)."), address);
         return;
     }
     
+	/* Todo: fix this empty string for contact firstname/lastname. */
+	theSeruroConfig::Get().AddContact(server_uuid, address, wxEmptyString, wxEmptyString);
+
     /* Check the corresponding item(s) in the list control. */
-    server_name = theSeruroConfig::Get().GetServerName(response["server_uuid"].AsString());
+    server_name = theSeruroConfig::Get().GetServerName(server_uuid);
     if (api->InstallCertificate(response)) {
-        list_control->SetCheck(server_name, response["address"].AsString(), true);
+        list_control->SetCheck(server_name, address, true);
     }
+
+	/* Add the "contact" to any required applications, should occur after certs. */
+	theSeruroApps::Get().AddContact(server_uuid, address);
+
+	/* Add contact event. */
+	SeruroStateEvent contact_event(STATE_TYPE_CONTACT, STATE_ACTION_ADD);
+    contact_event.SetAccount(address);
+    contact_event.SetServerUUID(server_uuid);
+    wxGetApp().AddEvent(contact_event);
 }
 
 /* There is no callback for uninstall, this happens locally. */
@@ -121,9 +144,22 @@ void SeruroPanelSearch::Uninstall(const wxString& server_name, const wxString& a
     
     server_uuid = theSeruroConfig::Get().GetServerUUID(server_name);
     wxLogMessage(_("SeruroPanelSearch> (Uninstall) trying to uninstall (name= %s) (%s)."), server_name, address);
+
+	/* Remove contact, before certs? */
+	theSeruroApps::Get().RemoveContact(server_uuid, address);
+
     if (api->UninstallCertificates(server_uuid, address)) {
         list_control->SetCheck(server_name, address, false);
     }
+
+	/* Remove contact from config. */
+	theSeruroConfig::Get().RemoveContact(server_uuid, address);
+
+	/* Remove contact event. */
+	SeruroStateEvent contact_event(STATE_TYPE_CONTACT, STATE_ACTION_REMOVE);
+    contact_event.SetAccount(address);
+    contact_event.SetServerUUID(server_uuid);
+    wxGetApp().AddEvent(contact_event);
 }
 
 void SeruroPanelSearch::OnAllServersCheck(wxCommandEvent &event)
@@ -163,10 +199,10 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	/* Create all of the column for the search results response. 
 	 * This must start at the integer 1, where 0 is the place holder for the checkmark. 
 	 */
-	list_control->InsertColumn(1, _("Email Address"), wxLIST_FORMAT_LEFT);
-	list_control->InsertColumn(2, _("First Name"), wxLIST_FORMAT_LEFT);
-	list_control->InsertColumn(3, _("Last Name"), wxLIST_FORMAT_LEFT);
-	list_control->InsertColumn(4, _("Server Name"), wxLIST_FORMAT_LEFT);
+	list_control->InsertColumn(SEARCH_COLUMN_ADDRESS, _("Email Address"), wxLIST_FORMAT_LEFT);
+	list_control->InsertColumn(SEARCH_COLUMN_FIRSTNAME, _("First Name"), wxLIST_FORMAT_LEFT);
+	list_control->InsertColumn(SEARCH_COLUMN_LASTNAME, _("Last Name"), wxLIST_FORMAT_LEFT);
+	list_control->InsertColumn(SEARCH_COLUMN_SERVERNAME, _("Server Name"), wxLIST_FORMAT_LEFT);
 
 	/* Add the list-control to the UI. */
 	results_sizer->Add(list_control, 1, wxALL | wxEXPAND, 5);
@@ -202,10 +238,10 @@ SeruroPanelSearch::SeruroPanelSearch(wxBookCtrlBase *book) : SeruroPanel(book, w
 	this->SetSizer(components_sizer);
 
 	/* Testing: setting even column widths. */
-	this->list_control->SetColumnWidth(1, SEARCH_PANEL_COLUMN_WIDTH/3);
-	this->list_control->SetColumnWidth(2, SEARCH_PANEL_COLUMN_WIDTH/4.55);
-	this->list_control->SetColumnWidth(3, SEARCH_PANEL_COLUMN_WIDTH/4.55);
-    this->list_control->SetColumnWidth(4, SEARCH_PANEL_COLUMN_WIDTH/4.55);
+	this->list_control->SetColumnWidth(SEARCH_COLUMN_ADDRESS, SEARCH_PANEL_COLUMN_WIDTH/3);
+	this->list_control->SetColumnWidth(SEARCH_COLUMN_FIRSTNAME, SEARCH_PANEL_COLUMN_WIDTH/4.55);
+	this->list_control->SetColumnWidth(SEARCH_COLUMN_LASTNAME, SEARCH_PANEL_COLUMN_WIDTH/4.55);
+    this->list_control->SetColumnWidth(SEARCH_COLUMN_SERVERNAME, SEARCH_PANEL_COLUMN_WIDTH/4.55);
 
     /* Debug for now, show a "nothing message" in the list. */
 	//this->AddResult(wxString("No Email Address"), wxString("No First Name"), wxString("No Last Name"));
@@ -250,10 +286,10 @@ void SeruroPanelSearch::AddResult(const wxString &address, const wxString &first
     }
     
     /* Add the textual (UI) information. */
-	list_control->SetItem(item_index, 1, display_address);
-	list_control->SetItem(item_index, 2, first_name);
-	list_control->SetItem(item_index, 3, last_name);
-    list_control->SetItem(item_index, 4, server_name);
+	list_control->SetItem(item_index, SEARCH_COLUMN_ADDRESS, display_address);
+	list_control->SetItem(item_index, SEARCH_COLUMN_FIRSTNAME, first_name);
+	list_control->SetItem(item_index, SEARCH_COLUMN_LASTNAME, last_name);
+    list_control->SetItem(item_index, SEARCH_COLUMN_SERVERNAME, server_name);
 }
 
 void SeruroPanelSearch::DoSearch()

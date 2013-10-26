@@ -257,9 +257,13 @@ public:
     
     /* Add download form. Used if unlock codes are not available. */
     void AddDownloadForm();
+	void RemoveDownloadForm();
 
 private:
+	/* Components for failed downloads. */
     wxButton *download_button;
+	wxSizer *download_form;
+
 	wxJSONValue download_response;
 	
     /* The client's certificate store is queried at the response of a P12.
