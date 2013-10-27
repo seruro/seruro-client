@@ -25,6 +25,12 @@
 #define DILKIE_GUID "\xc0\x2e\xbc\x53\x53\xd9\xcd\x11\x97\x52\x00\xaa\x00\x4a\xe4\x0e"
 #define PR_SECURITY_PROFILES PROP_TAG(PT_MV_BINARY, 0x355)
 
+#define PR_USER_X509_CERTIFICATE PROP_TAG( PT_MV_BINARY, 0x3A70)
+
+#define CERT_DEFAULTS_SMIME 0x01
+#define CERT_DEFAULTS_CERT  0x02
+#define CERT_DEFAULTS_SEND  0x04
+
 /* Reference: http://support.microsoft.com/kb/312900 */
 enum security_properties {
 	PR_CERT_PROP_VERSION     = 0x0001, /* Reserved = 1 */
@@ -33,11 +39,13 @@ enum security_properties {
 	PR_CERT_DISPLAY_NAME_A   = 0x000B, /* Display name. */
 	PR_CERT_KEYEX_SHA1_HASH  = 0x0022, /* hash of encryption certificate. */
 	PR_CERT_SIGN_SHA1_HASH   = 0x0009, /* hash of identity certificate. */
-	PR_CERT_ASYMETRIC_CAPS   = 0x0002, /* ASN1-encoded S/MIME capabilities. */
+	PR_CERT_ASYMETRIC_CAPS   = 0x0002, /* ASN.1 DER encoded S/MIME capabilities. */
 
-	PR_CERT_DISPLAY_NAME_W	 = 0x0051  /* Wide display name. */ 
+	PR_CERT_DISPLAY_NAME_W	 = 0x0051, /* Wide display name. */ 
+	PR_CERT_KEYEX_CERT       = 0x0003, /* ASN.1 DER encoded x509 certificate. */
 };
 
+/* ASN.1 DER encoded encryption capabilities. */
 #define ASYMETRIC_CAPS_BLOB "\
 30819A300B060960864801650304012A300B0609\
 608648016503040116300A06082A864886F70D03\
@@ -63,7 +71,7 @@ bool SafeANSIString(void *data, size_t length, wxString &safe_result)
 	return true;
 }
 
-bool MAPIProfileExists(LPPROFADMIN &profile_admin)
+bool MAPIProfileExists(LPPROFADMIN &profile_admin, wxString match_name)
 {
 	HRESULT result;
 	LPMAPITABLE mapi_table;
@@ -97,7 +105,7 @@ bool MAPIProfileExists(LPPROFADMIN &profile_admin)
 			if (property.ulPropTag == PR_DISPLAY_NAME_A) {
 				/* PR_DISPLAY_NAME, PR_DISPLAY_NAME_A, PR_DISPLAY_NAME_W are the same constant. */
 				profile_name = _(property.Value.lpszA);
-				if (profile_name == "Outlook") break;
+				if (profile_name == match_name) break;
 			}
 		}
 	}
@@ -106,7 +114,7 @@ bool MAPIProfileExists(LPPROFADMIN &profile_admin)
 	::FreeProws(profile_rows);
 	mapi_table->Release();
 
-	if (profile_name != "Outlook") {
+	if (profile_name != match_name) {
 		/* Could not find an Outlook profile. */
 		DEBUG_LOG(_("AppMSW_Outlook> (MAPIProfileExists) could not find profile table."));
 		return false;
@@ -115,32 +123,293 @@ bool MAPIProfileExists(LPPROFADMIN &profile_admin)
 	return true;
 }
 
+/* Contact-related methods. */
+wxJSONValue GetContactProperties(wxString address);
+wxJSONValue GetContactProperties(LPMAPISESSION &address_book, SRow &contact);
+wxJSONValue GetMessageX509Properties(SBinary &x509_property);
+wxJSONValue GetSecurityProperties(SBinary &entry);
+wxMemoryBuffer CreateSecurityProperties(wxJSONValue properties, bool add_caps = false);
+
+bool GetOutlookProfile(LPPROFADMIN *profile_admin)
+{
+	HRESULT result;
+
+	result = ::MAPIInitialize(NULL);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot initialize MAPI (%0x)."), result);
+		return false;
+	}
+
+	/* Create admin. */
+	result = ::MAPIAdminProfiles(0, profile_admin);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot open profile (%0x)."), result);
+		return false;
+	}
+
+	/* Make sure the Outlook profile exists. */
+	if (! MAPIProfileExists((*profile_admin), _("Outlook"))) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) no MAPI profile exists (%0x)."), result);
+		(*profile_admin)->Release();
+		return false;
+	}
+
+	return true;
+}
+
+wxJSONValue GetContactProperties(wxString address)
+{
+	wxJSONValue contacts;
+
+	HRESULT result;
+	LPPROFADMIN profile_admin;
+
+	contacts["success"] = false;
+	if (!GetOutlookProfile(&profile_admin)) {
+		return contacts;
+	}
+	/* Profile only needed to check existance. */
+	profile_admin->Release();
+
+	ULONG logon_flags;
+	LPMAPISESSION logon_session;
+	LPADRBOOK address_book;
+
+	/* Login to MAPI to retreive the user's address book. */
+	logon_flags = 0 | MAPI_LOGON_UI | MAPI_NO_MAIL | MAPI_EXTENDED | MAPI_NEW_SESSION;
+	result = MAPILogonEx(0, (LPTSTR) "Outlook", NULL, logon_flags, &logon_session);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot logon to MAPI (%0x)."), result);
+		return contacts;
+	}
+
+	/* Open MAPI address book. */
+	result = logon_session->OpenAddressBook(0, NULL, 0, &address_book);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot open address book (%0x)."), result);
+		goto logoff_mapi;
+	}
+
+	ULONG open_entry_flags;
+	ULONG opened_entry_type;
+	LPMAPITABLE address_table;
+	IABContainer *container;
+
+	ULONG entry_size;
+	ENTRYID *entry;
+
+	/* Get the personal address book. */
+	result = address_book->GetPAB(&entry_size, &entry);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot get personal address book (%0x)."), result);
+		goto logoff_mapi;
+	}
+
+	/* Chooses best READ/WRITE access possible (based on client/server). */
+	open_entry_flags = MAPI_BEST_ACCESS;
+	result = address_book->OpenEntry(entry_size, 
+		entry, NULL, open_entry_flags, &opened_entry_type, (LPUNKNOWN FAR *) &container);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot open PAB entry (%0x)."), result);
+		goto release_address_book;
+	}
+
+	/* Only support the "Address Book Container" type. */
+	if (opened_entry_type != MAPI_ABCONT /* 4 */) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) PAB is not an AB container (%0x)."), result);
+		goto release_address_book;
+	}
+
+	/* The returned container keeps a table for accesses (a table of contacts). */
+	result = container->GetContentsTable(0, &address_table);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot get PAB contents (%0x)."), result);
+		goto release_address_container;
+	}
+
+	/* The number of rows is the number of contacts. */
+	ULONG num_rows;
+	result = address_table->GetRowCount(0, &num_rows);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot get PAB row count (%0x)."), result);
+		goto release_address_table;
+	}
+
+	/* Allocate each of the contacts (potentially large, revisit). */
+	LPSRowSet address_rows;
+	result = address_table->QueryRows(num_rows, 0, &address_rows);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot get PAB rows (%0x)."), result);
+		goto release_address_table;
+	}
+
+	/* Iterate over each contact. */
+	for (ULONG i = 0; i < num_rows; ++i) {
+		contacts.Append(GetContactProperties(logon_session, address_rows->aRow[i]));
+	}
+
+	/* Clean up */
+	//::FREEBUFFER(address_rows);
+	::FreeProws(address_rows);
+
+release_address_table:
+	address_table->Release();
+release_address_container:
+	container->Release();
+release_address_book:
+	address_book->Release();
+logoff_mapi:
+	logon_session->Logoff(0, 0, 0);
+	logon_session->Release();
+	
+	return contacts;
+}
+
+wxJSONValue GetContactProperties(LPMAPISESSION &address_book, SRow &contact)
+{
+	LPSPropValue contact_entryid;
+	wxJSONValue properties;
+
+	/* Iterate over each contact property. */
+	properties["success"] = false;
+	for (ULONG j = 0; j < contact.cValues; ++j) {
+		if (contact.lpProps[j].ulPropTag == PR_ENTRYID) {
+			contact_entryid = &contact.lpProps[j];
+		} else if (contact.lpProps[j].ulPropTag == PR_EMAIL_ADDRESS_A) {
+			properties["email_address"] = _(contact.lpProps[j].Value.lpszA);
+		}
+	}
+
+	/* Use the stored entryid to format the iMessage/Contact entryid. */
+	/* http://msdn.microsoft.com/en-us/library/ee203147(v=exchg.80).aspx 
+	 * Flags: 4 bytes 
+	 * ProviderUID: 16 bytes
+	 * Version (4), Type (4), Index (4), EntryIDCount (4), EntryID Bytes (variable)
+	 */
+
+	ULONG entryid_size;
+	if (contact_entryid->Value.bin.cb < 36) {
+		/* Incorrect size, no entryid count given. */
+		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) ENTRYID has incorrect size (%d)."), 
+			contact_entryid->Value.bin.cb);
+		return properties;
+	}
+
+	/* Todo: copy unsigned int bytes, no application of endianess. */
+	memcpy(&entryid_size, (contact_entryid->Value.bin.lpb) + 32, 4);
+	if (contact_entryid->Value.bin.cb < (36 + entryid_size)) {
+		/* The entryid_size is larger than the contact_entryid buffer. */
+		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) ENTRYID has incorrect internal size (%d)."), entryid_size);
+		return properties;
+	}
+
+	ULONG opened_entry_type;
+	HRESULT result;
+
+	/* Open IMessage (IMAPSession) using the entryid found in the PAB. */
+	IMessage *message;
+	result = address_book->OpenEntry(24, (LPENTRYID) (contact_entryid->Value.bin.lpb + 36), 
+		&IID_IMessage, 0, &opened_entry_type, (LPUNKNOWN FAR *) &message);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot open IMessage ENTRYID (%0x)."), result);
+		return properties;
+	}
+
+	/* Requested IMessage type */
+	if (opened_entry_type != MAPI_MESSAGE /* 5 */) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) entry is not an IMessage (%0x)."), result);
+		//message->Release();
+		return properties;
+	}
+
+	/* Access properties only available in IMessage. */
+	SizedSPropTagArray(3, property_columns) = {3, PR_USER_X509_CERTIFICATE, PR_SURNAME_A, PR_GIVEN_NAME_A};
+
+	LPSPropValue property_values;
+	ULONG property_count;
+	result = message->GetProps((LPSPropTagArray) &property_columns, 0, &property_count, &property_values);
+	if (FAILED(result) || property_count != 3) {
+		/* The property count SHOULD = 3. */
+		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot get IMessage properties (%0x)."), result);
+		message->Release();
+		return properties;
+	}
+
+	/* Store the relevant properties. */
+	for (ULONG i = 0; i < property_count; ++i) {
+		if (property_values[i].ulPropTag == PR_USER_X509_CERTIFICATE) {
+			/* Parse each certificate. */
+			for (ULONG j = 0; j < property_values[i].Value.MVbin.cValues; ++j) {
+				properties["user_x509_certificate"].Append(
+					GetMessageX509Properties(property_values[i].Value.MVbin.lpbin[j])
+				);
+			}
+		} else if (property_values[i].ulPropTag == PR_SURNAME_A) {
+			properties["last_name"] = _(property_values[i].Value.lpszA);
+		} else if (property_values[i].ulPropTag == PR_GIVEN_NAME_A) {
+			properties["first_name"] = _(property_values[i].Value.lpszA);
+		}
+	}
+
+	/* Add the entryID to properties, to allow the caller to set. */
+	wxMemoryBuffer entry_buffer;
+	entry_buffer.AppendData((contact_entryid->Value.bin.lpb + 36), 24);
+	properties["entryid"] = wxBase64Encode(entry_buffer);
+
+	//::FreeProws(property_values);
+	message->Release();
+
+	return properties;
+}
+
+wxJSONValue GetMessageX509Properties(SBinary &x509_property)
+{
+	wxJSONValue properties;
+
+	properties = GetSecurityProperties(x509_property);
+	if (! properties.HasMember("exchange")) {
+		/* There is no certificate attached. */
+		return properties;
+	}
+
+	/* The exchange property must be ASN.1 DER decoded, as a certificate. */
+	wxMemoryBuffer exchange_buffer;
+	PCCERT_CONTEXT exchange_cert;
+
+	/* Try to parse the exchange field as a certificate. */
+	exchange_buffer = wxBase64Decode(properties["exchange"].AsString());
+	exchange_cert = CertCreateCertificateContext(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 
+		(BYTE *) exchange_buffer.GetData(), exchange_buffer.GetDataLen());
+
+	if (exchange_cert == NULL) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetMessageX509Properties) cannot parse ASN.1."));
+		return properties;
+	}
+
+	wxString fingerprint;
+	bool have_fingerprint;
+
+	fingerprint = GetFingerprintFromCertificate(exchange_cert, BY_SKID);
+	/* This might be optional, or better, checked in a more appropriate location. */
+	have_fingerprint = HaveCertificateByFingerprint(fingerprint, CERTSTORE_CONTACTS, BY_SKID);
+	CertFreeCertificateContext(exchange_cert);
+
+	properties["skid"] = fingerprint;
+	properties["skid_exists"] = have_fingerprint;
+
+	return properties;
+}
+
 bool SetSecurityProperties(wxString &service_uid, wxJSONValue properties)
 {
 	HRESULT result;
 	LPPROFADMIN profile_admin;
 
-	/* Create a profile administration object. */
-	result = ::MAPIInitialize(NULL);
-	if (FAILED(result)) {
-		DEBUG_LOG(_("AppMSW_Outlook> (SetSecurityProperties) cannot initialize MAPI (%0x)."), result);
-		return false;
-	}
-
-	result = ::MAPIAdminProfiles(0, &profile_admin);
-	if (FAILED(result)) {
-		DEBUG_LOG(_("AppMSW_Outlook> (SetSecurityProperties) cannot open profile (%0x)."), result);
-		return false;
-	}
-
-	if (! MAPIProfileExists(profile_admin)) {
-		DEBUG_LOG(_("AppMSW_Outlook> (SetSecurityProperties) no MAPI profile exists (%0x)."), result);
+	if (! GetOutlookProfile(&profile_admin)) {
 		return false;
 	}
 
 	LPSERVICEADMIN service_admin;
-	//LPMAPITABLE service_table;
-	//LPSRowSet service_rows;
 
 	/* The profile name is in ANSI? */
 	result = profile_admin->AdminServices((LPTSTR) "Outlook", NULL, NULL, 0, &service_admin);
@@ -150,36 +419,15 @@ bool SetSecurityProperties(wxString &service_uid, wxJSONValue properties)
 		profile_admin->Release();
 		return false;
 	}
-	//result = service_admin->GetMsgServiceTable(0, &service_table);
 
-	//SRestriction service_restriction;
 	SPropValue service_property;
 	wxMemoryBuffer service_uid_buffer;
-
-	//service_restriction.rt = RES_CONTENT;
-	//service_restriction.res.resContent.ulFuzzyLevel = FL_FULLSTRING;
-	//service_restriction.res.resContent.ulPropTag = PR_SERVICE_UID;
-	//service_restriction.res.resContent.lpProp = &service_property;
 
 	service_property.ulPropTag = PR_SERVICE_UID;
 	service_uid_buffer = wxBase64Decode(service_uid);
 
 	service_property.Value.bin.cb = service_uid_buffer.GetDataLen();
 	service_property.Value.bin.lpb = (byte *) service_uid_buffer.GetData();
-	//service_property.Value.bin.lpb = (byte *) malloc(service_uid_buffer.GetDataLen());
-	//memcpy(service_property.Value.bin.lpb, service, 16);
-
-	//service_property.Value.lpszA = "MSEMS";
-
-	//result = ::HrQueryAllRows(service_table, NULL, &service_restriction, NULL, 1, &service_rows);
-	//if (FAILED(result) || service_rows == NULL || service_rows->cRows == 0) {
-	//	DEBUG_LOG(_("AppMSW_Outlook> (GetAccountList) cannot query service table (%0x)."), result);
-
-	//	service_table->Release();
-	//	service_admin->Release();
-	//	profile_admin->Release();
-	//	return false;
-	//}
 
 	LPPROVIDERADMIN provider_admin;
 	LPPROFSECT profile_section;
@@ -204,88 +452,21 @@ bool SetSecurityProperties(wxString &service_uid, wxJSONValue properties)
 		return false;
 	}
 
-	/* Not sure how this is calculated. */
-	wxMemoryBuffer asymetric_caps = AsBinary(ASYMETRIC_CAPS_BLOB);
-	wxMemoryBuffer cert_buffer;
-
-	unsigned short profile_offset;
-	unsigned short entity_name_size = properties["entity_name"].AsString().size();
-	unsigned long profile_size = (
-		  (4+ 4) /* PR_CERT_PROP_VERSION */
-		+ (4+ 4) /* PR_CERT_MESSAGE_ENCODING */
-		+ (4+ 4) /* PR_CERT_DEFAULTS */
-		+ (4+ entity_name_size+1) /* PR_CERT_DISPLAY_NAME_A */
-		+ (4+ 20) /* PR_CERT_KEYEX_SHA1_HASH */
-		+ (4+ 20) /* PR_CERT_SIGN_SHA1_HASH */
-		+ (4+ asymetric_caps.GetDataLen()) /* PR_CERT_ASYMETRIC_CAPS */
-	);
-
-	unsigned short tag, length;
-	unsigned long type_data;
-	byte *profile_data;
-
-	profile_data = (byte *) malloc(profile_size);
-	profile_offset = 0;
-
-	tag = PR_CERT_PROP_VERSION, length = 4+ 4, type_data = 0x1;
-	memcpy(profile_data, &tag, 2);
-	memcpy(profile_data+2, &length, 2);
-	memcpy(profile_data+4, &type_data, 4);
-
-	profile_offset = 8;
-	tag = PR_CERT_MESSAGE_ENCODING, length = 4+ 4, type_data = 0x1;
-	memcpy(profile_data+profile_offset, &tag, 2);
-	memcpy(profile_data+profile_offset+2, &length, 2);
-	memcpy(profile_data+profile_offset+4, &type_data, 4);
-
-	profile_offset += 8;
-	tag = PR_CERT_DEFAULTS, length = 4+ 4, type_data = 0x1 | 0x2 | 0x4;
-	memcpy(profile_data+profile_offset, &tag, 2);
-	memcpy(profile_data+profile_offset+2, &length, 2);
-	memcpy(profile_data+profile_offset+4, &type_data, 4);
-
-	profile_offset += 8;
-	tag = PR_CERT_DISPLAY_NAME_A, length = 4+ entity_name_size+1;
-	memcpy(profile_data+profile_offset, &tag, 2);
-	memcpy(profile_data+profile_offset+2, &length, 2);
-	memcpy(profile_data+profile_offset+4, AsChar(properties["entity_name"].AsString()), length-1);
-	memset(profile_data+profile_offset+4+entity_name_size, 0, 1); 
-
-	profile_offset += entity_name_size+1 + 4;
-	tag = PR_CERT_KEYEX_SHA1_HASH, length = 4+ 20;
-	memcpy(profile_data+profile_offset, &tag, 2);
-	memcpy(profile_data+profile_offset+2, &length, 2);
-	cert_buffer.Clear();
-	cert_buffer = wxBase64Decode(properties["encipherment"].AsString());
-	memcpy(profile_data+profile_offset+4, cert_buffer.GetData(), 20);
-
-	profile_offset += 24;
-	tag = PR_CERT_SIGN_SHA1_HASH, length = 4+ 20;
-	memcpy(profile_data+profile_offset, &tag, 2);
-	memcpy(profile_data+profile_offset+2, &length, 2);
-	cert_buffer.Clear();
-	cert_buffer = wxBase64Decode(properties["authentication"].AsString());
-	memcpy(profile_data+profile_offset+4, cert_buffer.GetData(), 20);
-
-	profile_offset += 24;
-	tag = PR_CERT_ASYMETRIC_CAPS, length = 4+ asymetric_caps.GetDataLen();
-	memcpy(profile_data+profile_offset, &tag, 2);
-	memcpy(profile_data+profile_offset+2, &length, 2);
-	memcpy(profile_data+profile_offset+4, asymetric_caps.GetData(), asymetric_caps.GetDataLen());
-
 	SBinary security_profile;
 	SPropValue property_values;
+	wxMemoryBuffer entry_buffer;
 
 	/* Only support one MAPI security profile at a time. */
+	entry_buffer = CreateSecurityProperties(properties, true);
 	property_values.ulPropTag = PR_SECURITY_PROFILES;
 	property_values.Value.MVbin.cValues = 1;
 	property_values.Value.MVbin.lpbin = &security_profile;
-	property_values.Value.MVbin.lpbin[0].cb = profile_size;
-	property_values.Value.MVbin.lpbin[0].lpb = profile_data;
+	property_values.Value.MVbin.lpbin[0].cb = entry_buffer.GetDataLen();
+	property_values.Value.MVbin.lpbin[0].lpb = (BYTE *) entry_buffer.GetData();
 
 	result = profile_section->SetProps(1, &property_values, NULL);
 
-	delete profile_data;
+	/* Clean up. */
 	profile_section->Release();
 	provider_admin->Release();
 	service_admin->Release();
@@ -299,36 +480,113 @@ bool SetSecurityProperties(wxString &service_uid, wxJSONValue properties)
 	return true;
 }
 
-wxJSONValue GetSecurityProperties(SBinary *entry)
+wxMemoryBuffer CreateSecurityProperties(wxJSONValue properties, bool add_caps)
+{
+	wxMemoryBuffer entry_buffer;
+	wxMemoryBuffer cert_buffer;
+
+	USHORT tag, length;
+	ULONG long_data;
+
+	/* Set mandatory property version. */
+	tag = PR_CERT_PROP_VERSION, length = 4+4, long_data = 0x1;
+	entry_buffer.AppendData(&tag, 2);
+	entry_buffer.AppendData(&length, 2);
+	entry_buffer.AppendData(&long_data, 4);
+
+	/* Set the OXCDATA encoding, also static. */
+	tag = PR_CERT_MESSAGE_ENCODING, length = 4+4, long_data = 0x1;
+	entry_buffer.AppendData(&tag, 2);
+	entry_buffer.AppendData(&length, 2);
+	entry_buffer.AppendData(&long_data, 4);
+
+	/* Set all of the defaults. */
+	tag = PR_CERT_DEFAULTS, length = 4+4;
+	long_data = CERT_DEFAULTS_SMIME | CERT_DEFAULTS_CERT | CERT_DEFAULTS_SEND;
+	entry_buffer.AppendData(&tag, 2);
+	entry_buffer.AppendData(&length, 2);
+	entry_buffer.AppendData(&long_data, 4);
+
+	//ULONG defaults = 0;
+	//defaults += (properties["default_smime"].AsBool() == true) ? CERT_DEFAULTS_SMIME : 0;
+	//defaults += (properties["default_cert"].AsBool()  == true) ? CERT_DEFAULTS_CERT  : 0;
+	//defaults += (properties["default_send"].AsBool()  == true) ? CERT_DEFAULTS_SEND  : 0;
+
+	if (properties.HasMember("entry_name")) {
+		tag = PR_CERT_DISPLAY_NAME_A, length = 4 + properties["entry_name"].AsString().size() + 1;
+		entry_buffer.AppendData(&tag, 2);
+		entry_buffer.AppendData(&length, 2);
+		entry_buffer.AppendData(AsChar(properties["entry_name"].AsString()), length - 4 - 1);
+		entry_buffer.AppendByte(0);
+	} else if (properties.HasMember("authentication")) {
+		cert_buffer.Clear();
+		cert_buffer = wxBase64Decode(properties["authentication"].AsString());
+		if (cert_buffer.GetDataLen() == 20) {
+			tag = PR_CERT_SIGN_SHA1_HASH, length = 4 + 20;
+			entry_buffer.AppendData(&tag, 2);
+			entry_buffer.AppendData(&length, 2);
+			entry_buffer.AppendData(cert_buffer.GetData(), 20);
+		}
+	} else if (properties.HasMember("encipherment")) {
+		cert_buffer.Clear();
+		cert_buffer = wxBase64Decode(properties["encipherment"].AsString());
+		if (cert_buffer.GetDataLen() == 20) {
+			tag = PR_CERT_KEYEX_SHA1_HASH, length = 4 + 20;
+			entry_buffer.AppendData(&tag, 2);
+			entry_buffer.AppendData(&length, 2);
+			entry_buffer.AppendData(cert_buffer.GetData(), 20);
+		}
+	} else if (properties.HasMember("exchange")) {
+		cert_buffer.Clear();
+		cert_buffer = wxBase64Decode(properties["exchange"].AsString());
+		tag = PR_CERT_KEYEX_CERT, length = 4 + cert_buffer.GetDataLen();
+		entry_buffer.AppendData(&tag, 2);
+		entry_buffer.AppendData(&length, 2);
+		entry_buffer.AppendData(cert_buffer.GetData(), cert_buffer.GetDataLen());
+	}
+
+	tag = PR_CERT_ASYMETRIC_CAPS;
+	entry_buffer.AppendData(&tag, 2);
+	if (add_caps) {
+		wxMemoryBuffer asymetric_caps = AsBinary(ASYMETRIC_CAPS_BLOB);
+		length = 4 + asymetric_caps.GetDataLen();
+		entry_buffer.AppendData(&length, 2);
+		entry_buffer.AppendData(asymetric_caps.GetData(), asymetric_caps.GetDataLen());
+	} else {
+		/* Capabilities entry added, but blank. */
+		length = 4 + 4, long_data = 0;
+		entry_buffer.AppendData(&length, 2);
+		entry_buffer.AppendData(&long_data, 4);
+	}
+
+	return entry_buffer;
+}
+
+wxJSONValue GetSecurityProperties(SBinary &entry)
 {
 	wxJSONValue properties;
 	wxString display_name;
 	wxMemoryBuffer certificate_hash;
 	wxString test;
 
-	unsigned short entry_offset = 0;
+	USHORT entry_offset = 0;
 
 	/* Parse TAG (2 bytes)/LENGTH (2 bytes)/DATA (LENGTH bytes) */
-	unsigned short tag;
-	unsigned short length;
+	USHORT tag, length;
 	byte* data;
 
 	/* Read through the entry, extracting each touple. */
-	while (entry_offset < entry->cb) {
-		tag = *(entry->lpb + entry_offset);
-		length = *(entry->lpb + entry_offset + 2 /* tag is uint16 */);
+	while (entry_offset < entry.cb) {
+		tag = *(entry.lpb + entry_offset);
+		length = (UCHAR) *(entry.lpb + entry_offset + 2);
+		length += ((UCHAR) *(entry.lpb + entry_offset + 3) * 256);
 
-		if ((entry_offset + length) > (unsigned short) entry->cb) {
-			/* There is an overrun error in the ASN1 blob? */
+		if ((entry_offset + length) > (unsigned short) entry.cb || tag == 0 || length == 0) {
+			/* There is an overrun/underrun error in the OXCDATA blob? */
 			break;
 		}
 
-		if (tag == 0 || length == 0) {
-			/* Problem reading data. */
-			break;
-		}
-
-		data = entry->lpb + entry_offset + 2 + 2 /* tag and length are both uint16 */;
+		data = entry.lpb + entry_offset + 2 + 2 /* tag and length are both uint16 */;
 		entry_offset += length;
 
 		if (tag == PR_CERT_MESSAGE_ENCODING && *((unsigned long *) data) != 1) {
@@ -338,33 +596,187 @@ wxJSONValue GetSecurityProperties(SBinary *entry)
 
 		if (tag == PR_CERT_DISPLAY_NAME_A) {
 			if (! SafeANSIString(data, length, display_name)) {
-				/* The ANSI data type contained non-ASCII characters? */
+				/* The OXCDATA data type contained non-ASCII characters? */
 				break;
 			}
 			properties["entry_name"] = display_name;
 		}
 
 		if (tag == PR_CERT_DEFAULTS) {
-			properties["default_smime"] = ((unsigned long) *(data) & 0x1);
-			properties["default_certificate"] = ((unsigned long) *(data) & 0x2);
-		}
-
-		if (tag == PR_CERT_SIGN_SHA1_HASH) {
+			properties["default_smime"] = ((ULONG) *(data)) && CERT_DEFAULTS_SMIME;
+			properties["default_cert"]  = ((ULONG) *(data)) && CERT_DEFAULTS_CERT;
+			properties["default_send"]  = ((ULONG) *(data)) && CERT_DEFAULTS_SEND;
+		} else if (tag == PR_CERT_SIGN_SHA1_HASH) {
 			certificate_hash.Clear();
 			certificate_hash.AppendData(data, length-4);
 			properties["authentication"] = wxBase64Encode(certificate_hash);
 			test = properties["authentication"].AsString();
-		}
-
-		if (tag == PR_CERT_KEYEX_SHA1_HASH) {
+		} else if (tag == PR_CERT_KEYEX_SHA1_HASH) {
 			certificate_hash.Clear();
 			certificate_hash.AppendData(data, length-4);
 			properties["encipherment"] = wxBase64Encode(certificate_hash);
 			test = properties["encipherment"].AsString();
+		} else if (tag == PR_CERT_KEYEX_CERT) {
+			certificate_hash.Clear();
+			certificate_hash.AppendData(data, length-4);
+			properties["exchange"] = wxBase64Encode(certificate_hash);
 		}
 	}
 
 	return properties;
+}
+
+wxJSONValue GetAccountProperties(LPSERVICEADMIN &service_admin, SPropValue &uid, wxString &account_name)
+{
+	wxJSONValue properties;
+
+	HRESULT result;
+	LPPROVIDERADMIN provider_admin;
+	LPPROFSECT profile_section;
+	LPSPropValue property_values;
+	ULONG property_count;
+
+	/* Set a reference to the account name using itself as an index. */
+	properties["name"] = account_name;
+
+	wxMemoryBuffer uid_buffer;
+	wxJSONValue entry_properties;
+
+	SizedSPropTagArray(1, property_columns) = {1, PR_SECURITY_PROFILES};
+
+	/* The profile has a security "profile" property. Store it and parse later. */
+	uid_buffer.AppendData((void *) uid.Value.bin.lpb, uid.Value.bin.cb);
+	properties["service_uid"] = wxBase64Encode(uid_buffer);
+
+	result = service_admin->AdminProviders((LPMAPIUID) uid.Value.bin.lpb, 0, &provider_admin);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (FindAccountProperties) cannot get provider (%s) (%0x)."), 
+			account_name, result);
+		return properties;
+	}
+
+	result = provider_admin->OpenProfileSection((LPMAPIUID) DILKIE_GUID, NULL, MAPI_MODIFY, &profile_section);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (FindAccountProperties) cannot open section (%s) (%0x)."),
+			account_name, result);
+		goto release_provider_admin;
+	}
+
+	result = profile_section->GetProps((LPSPropTagArray) &property_columns, 0, &property_count, &property_values);
+	if (FAILED(result) || property_count == 0) {
+		DEBUG_LOG(_("AppMSW_Outlook> (FindAccountProperties) cannot get DILKIE properties (%s) (%0x)."),
+			account_name, result);
+		goto release_profile_section;
+	}
+
+	/* If there are no sercurity profiles the count is still 1, but the property tag is not set correctly. */
+	if (property_values[0].ulPropTag != PR_SECURITY_PROFILES) {
+		goto release_property_values;
+	}
+
+	/* The MVbin = # (4 bytes) of entires PT_BINARY: {size (2 bytes), data} */
+	/* SProperty (data): http://support.microsoft.com/kb/312900 */
+
+	for (ULONG i = 0; i < property_values[0].Value.MVbin.cValues; ++i) {
+		entry_properties = GetSecurityProperties(property_values[0].Value.MVbin.lpbin[i]);
+		properties["profiles"].Append(entry_properties);
+	}
+
+release_property_values:
+	::MAPIFreeBuffer(property_values);
+
+release_profile_section:
+	profile_section->Release();
+release_provider_admin:
+	provider_admin->Release();
+
+	return properties;
+}
+
+wxJSONValue GetOutlookMAPIAccounts()
+{
+	wxJSONValue accounts;
+	wxString account_name;
+
+	HRESULT result;
+	LPPROFADMIN profile_admin;
+
+	if (! GetOutlookProfile(&profile_admin)) {
+		return accounts;
+	}
+
+	LPSERVICEADMIN service_admin;
+	LPMAPITABLE service_table;
+	LPSRowSet service_rows;
+
+	/* Fetch the following columns from the services table. */
+	enum {display_name_index, service_name_index, service_uid_index};
+	SizedSPropTagArray(3, service_columns) = {3, 
+		PR_DISPLAY_NAME,
+		PR_SERVICE_NAME,
+		PR_SERVICE_UID
+	};
+
+	/* The profile name is in ANSI? */
+	result = profile_admin->AdminServices((LPTSTR) "Outlook", NULL, NULL, 0, &service_admin);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetAccountList) cannot open Outlook service (%0x)."), result);
+		goto release_profile_admin;
+	}
+
+	result = service_admin->GetMsgServiceTable(0, &service_table);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetAccountList) cannot get service table (%0x)."), result);
+		goto release_service_admin;
+	}
+
+	SRestriction service_restriction;
+	SPropValue service_property;
+
+	/* Create a "restriction", a filter, for service name "INTERSTOR". */
+	service_restriction.rt = RES_CONTENT;
+	service_restriction.res.resContent.ulFuzzyLevel = FL_FULLSTRING;
+	service_restriction.res.resContent.ulPropTag = PR_SERVICE_NAME;
+	service_restriction.res.resContent.lpProp = &service_property;
+
+	service_property.ulPropTag = PR_SERVICE_NAME;
+	service_property.Value.lpszW = L"INTERSTOR";
+
+	result = ::HrQueryAllRows(service_table, (LPSPropTagArray) &service_columns,
+		&service_restriction, NULL, 0, &service_rows);
+	if (FAILED(result) || service_rows == NULL || service_rows->cRows == 0) {
+		DEBUG_LOG(_("AppMSW_Outlook> (GetAccountList) cannot query service table (%0x)."), result);
+		goto release_service_table;
+	}
+
+	for (unsigned long i = 0; i < service_rows->cRows; ++i) {
+		/* Reset the account name, just incase a row does not contain a display name. */
+		account_name = wxEmptyString;
+
+		if (service_rows->aRow[i].lpProps[display_name_index].ulPropTag == PR_DISPLAY_NAME_W) {
+			account_name = _(service_rows->aRow[i].lpProps[display_name_index].Value.lpszW);
+		} else if (service_rows->aRow[i].lpProps[display_name_index].ulPropTag == PR_DISPLAY_NAME_A) {
+			account_name = _(service_rows->aRow[i].lpProps[display_name_index].Value.lpszA);
+		}
+
+		if (account_name != wxEmptyString) {
+			/* Found a row with a valid display name. */
+			accounts[account_name] = GetAccountProperties(service_admin, 
+				service_rows->aRow[i].lpProps[service_uid_index], account_name);
+		}
+	}
+
+	::FreeProws(service_rows);
+
+release_service_table:
+	service_table->Release();
+release_service_admin:
+	service_admin->Release();
+
+release_profile_admin:
+	profile_admin->Release();
+
+	return accounts;
 }
 
 bool AppMSW_Outlook::IsInstalled()
@@ -385,196 +797,21 @@ wxString AppMSW_Outlook::GetVersion()
 	return _("0");
 }
 
-void AppMSW_Outlook::FindAccountProperties(LPSERVICEADMIN &service_admin, SPropValue &uid, wxString &account_name)
-{
-	HRESULT result;
-	LPPROVIDERADMIN provider_admin;
-	LPPROFSECT profile_section;
-	LPSPropValue property_values;
-	unsigned long property_count;
-
-	/* Set a reference to the account name using itself as an index. */
-	this->info["accounts"][account_name]["name"] = account_name;
-
-	wxMemoryBuffer uid_buffer;
-	uid_buffer.AppendData((void *) uid.Value.bin.lpb, uid.Value.bin.cb);
-
-	/* The profile has a security "profile" property. Store it and parse later. */
-	this->info["accounts"][account_name]["service_uid"] = wxBase64Encode(uid_buffer);
-
-	result = service_admin->AdminProviders((LPMAPIUID) uid.Value.bin.lpb, 0, &provider_admin);
-	if (FAILED(result)) {
-		DEBUG_LOG(_("AppMSW_Outlook> (FindAccountProperties) cannot get provider (%s) (%0x)."), 
-			account_name, result);
-		return;
-	}
-
-	result = provider_admin->OpenProfileSection((LPMAPIUID) DILKIE_GUID, NULL, MAPI_MODIFY, &profile_section);
-	if (FAILED(result)) {
-		DEBUG_LOG(_("AppMSW_Outlook> (FindAccountProperties) cannot open section (%s) (%0x)."),
-			account_name, result);
-
-		provider_admin->Release();
-		return;
-	}
-
-	SizedSPropTagArray(1, property_columns) = {1, PR_SECURITY_PROFILES};
-
-	result = profile_section->GetProps((LPSPropTagArray) &property_columns, 0, &property_count, &property_values);
-	if (FAILED(result) || property_count == 0) {
-		DEBUG_LOG(_("AppMSW_Outlook> (FindAccountProperties) cannot get DILKIE properties (%s) (%0x)."),
-			account_name, result);
-
-		profile_section->Release();
-		provider_admin->Release();
-		return;
-	}
-
-	/* If there are no sercurity profiles the count is still 1, but the property tag is not set correctly. */
-	if (property_values[0].ulPropTag != PR_SECURITY_PROFILES) {
-
-		::MAPIFreeBuffer(property_values);
-		profile_section->Release();
-		provider_admin->Release();
-		return;
-	}
-
-	/* The MVbin = # (4 bytes) of entires PT_BINARY: {size (2 bytes), data} */
-	/* SProperty (data): http://support.microsoft.com/kb/312900 */
-
-	/* The number of profile entries. */
-	unsigned int profile_entries = property_values[0].Value.MVbin.cValues;
-	/* The offset within the value to parse the "next" entry. */
-	unsigned int entry_offset = 0;
-	
-	SBinary *profile_entry;
-	wxJSONValue entry_properties;
-
-	for (unsigned int i = 0; i < profile_entries; ++i) {
-		profile_entry = (SBinary *) ((property_values[0].Value.MVbin.lpbin) + i);
-		entry_offset += profile_entry->cb + 2;
-
-		entry_properties = GetSecurityProperties(profile_entry);
-		this->info["accounts"][account_name]["profiles"].Append(entry_properties);
-	}
-
-	::MAPIFreeBuffer(property_values);
-	profile_section->Release();
-	provider_admin->Release();
-}
-
 wxArrayString AppMSW_Outlook::GetAccountList()
 {
 	wxArrayString accounts;
 
 	/* Reset previous account info. */
-	this->info["accounts"] = wxJSONValue(wxJSONTYPE_OBJECT);
+	//this->info["accounts"] = wxJSONValue(wxJSONTYPE_OBJECT);
 
 	/* Fail if no application info is detected. */
 	if (! this->GetInfo()) {
 		return accounts;
 	}
 
-	HRESULT result;
-	LPPROFADMIN profile_admin;
-
-	/* Create a profile administration object. */
-	result = ::MAPIInitialize(NULL);
-	if (FAILED(result)) {
-		DEBUG_LOG(_("AppMSW_Outlook> (GetAccountList) cannot initialize MAPI (%0x)."), result);
-		return accounts;
-	}
-
-	result = ::MAPIAdminProfiles(0, &profile_admin);
-	if (FAILED(result)) {
-		DEBUG_LOG(_("AppMSW_Outlook> (GetAccountList) cannot open profile (%0x)."), result);
-		return accounts;
-	}
-
-	if (! MAPIProfileExists(profile_admin)) {
-		DEBUG_LOG(_("AppMSW_Outlook> (GetAccountList) no MAPI profile exists (%0x)."), result);
-		return accounts;
-	}
-
-	LPSERVICEADMIN service_admin;
-	LPMAPITABLE service_table;
-	LPSRowSet service_rows;
-
-	/* The profile name is in ANSI? */
-	result = profile_admin->AdminServices((LPTSTR) "Outlook", NULL, NULL, 0, &service_admin);
-	if (FAILED(result)) {
-		DEBUG_LOG(_("AppMSW_Outlook> (GetAccountList) cannot open Outlook service (%0x)."), result);
-
-		profile_admin->Release();
-		return accounts;
-	}
-
-	result = service_admin->GetMsgServiceTable(0, &service_table);
-	if (FAILED(result)) {
-		DEBUG_LOG(_("AppMSW_Outlook> (GetAccountList) cannot get service table (%0x)."), result);
-
-		service_admin->Release();
-		profile_admin->Release();
-		return accounts;
-	}
-
-	SRestriction service_restriction;
-	SPropValue service_property;
-
-	/* Create a "restriction", a filter, for service name "INTERSTOR". */
-	service_restriction.rt = RES_CONTENT;
-	service_restriction.res.resContent.ulFuzzyLevel = FL_FULLSTRING;
-	service_restriction.res.resContent.ulPropTag = PR_SERVICE_NAME;
-	service_restriction.res.resContent.lpProp = &service_property;
-
-	service_property.ulPropTag = PR_SERVICE_NAME;
-	service_property.Value.lpszW = L"INTERSTOR";
-
-	/* Fetch the following columns from the services table. */
-	enum {display_name_index, service_name_index, service_uid_index};
-	SizedSPropTagArray(3, service_columns) = {3, 
-		PR_DISPLAY_NAME,
-		PR_SERVICE_NAME,
-		PR_SERVICE_UID
-	};
-
-	result = ::HrQueryAllRows(service_table, (LPSPropTagArray) &service_columns,
-		&service_restriction, NULL, 0, &service_rows);
-	if (FAILED(result) || service_rows == NULL || service_rows->cRows == 0) {
-		DEBUG_LOG(_("AppMSW_Outlook> (GetAccountList) cannot query service table (%0x)."), result);
-
-		service_table->Release();
-		service_admin->Release();
-		profile_admin->Release();
-		return accounts;
-	}
-
-	wxString account_name;
-	for (unsigned long i = 0; i < service_rows->cRows; ++i) {
-		/* Reset the account name, just incase a row does not contain a display name. */
-		account_name = wxEmptyString;
-
-		if (service_rows->aRow[i].lpProps[display_name_index].ulPropTag == PR_DISPLAY_NAME_W) {
-			account_name = _(service_rows->aRow[i].lpProps[display_name_index].Value.lpszW);
-		} else if (service_rows->aRow[i].lpProps[display_name_index].ulPropTag == PR_DISPLAY_NAME_A) {
-			account_name = _(service_rows->aRow[i].lpProps[display_name_index].Value.lpszA);
-		}
-
-		if (account_name != wxEmptyString) {
-			/* Found a row with a valid display name. */
-			this->FindAccountProperties(service_admin, 
-				service_rows->aRow[i].lpProps[service_uid_index], 
-				account_name);
-			accounts.Add(account_name);
-		}
-	}
-
-	::FreeProws(service_rows);
-	service_table->Release();
-	service_admin->Release();
-
-	/* Finally, release the admin profile. */
-	profile_admin->Release();
+	/* Set/ReSet the account information. */
+	this->info["accounts"] = GetOutlookMAPIAccounts();
+	accounts = this->info["accounts"].GetMemberNames();
 
 	return accounts;
 }

@@ -9,11 +9,29 @@
 
 #include "../wxJSON/wx/jsonval.h"
 
+#define CERTSTORE_TRUSTED_ROOT "Root"
+#define CERTSTORE_CONTACTS	   "AddressBook"
+#define CERTSTORE_PERSONAL	   "My"
+
 /* Given an addres/hash:
  * (1) Check if the hash is installed, (2) if it belongs to the address. */
 bool IsHashInstalledAndSet(wxString address, wxMemoryBuffer hash);
 /* Return the SHA1 hex presentation of a SKID fingerprint. */
 wxString GetIdentityHashHex(wxString fingerprint);
+
+/* The windows store uses SHA1s to search. */
+enum search_type_t {
+	BY_HASH,
+	BY_SKID
+};
+
+/* Internal store searching functions used by applications. */
+wxString GetFingerprintFromCertificate(PCCERT_CONTEXT &cert, 
+	search_type_t match_type);
+bool HaveCertificateByFingerprint(wxString fingerprint, wxString store_name, 
+	search_type_t match_type = BY_SKID);
+PCCERT_CONTEXT GetCertificateByFingerprint(wxString fingerprint, wxString store_name, 
+	search_type_t match_type);
 
 class SeruroCryptoMSW
 {

@@ -20,19 +20,6 @@
 
 DECLARE_APP(SeruroClient);
 
-#define CERTSTORE_TRUSTED_ROOT "Root"
-#define CERTSTORE_CONTACTS	   "AddressBook"
-#define CERTSTORE_PERSONAL	   "My"
-
-enum search_type_t {
-	BY_HASH,
-	BY_SKID
-};
-
-wxString GetFingerprintFromCertificate(PCCERT_CONTEXT &cert, search_type_t match_type);
-bool HaveCertificateByFingerprint(wxString fingerprint, wxString store_name, search_type_t match_type = BY_SKID);
-PCCERT_CONTEXT GetCertificateByFingerprint(wxString fingerprint, wxString store_name, search_type_t match_type);
-
 /* Helper function to convert wxString to a L, the caller is responsible for memory. */
 BSTR AsLongString(const wxString &input)
 {
@@ -133,12 +120,12 @@ bool InstallCertificateToStore(const wxMemoryBuffer &cert, wxString store_name, 
 
 	BOOL result;
 	DWORD error_num;	
-	BYTE *data = (BYTE *) cert.GetData();
-	DWORD len = cert.GetDataLen();
+	//BYTE *data = (BYTE *) cert.GetData();
+	//DWORD len = cert.GetDataLen();
 
 	/* Add the encoded certificate, receive the decoded context (for fingerprinting). */
 	result = CertAddEncodedCertificateToStore(cert_store, X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
-		data, len, CERT_STORE_ADD_REPLACE_EXISTING, &cert_context);
+		(BYTE *) cert.GetData(), cert.GetDataLen(), CERT_STORE_ADD_REPLACE_EXISTING, &cert_context);
 
 	if (result == false) {
 		error_num = GetLastError();
@@ -151,6 +138,7 @@ bool InstallCertificateToStore(const wxMemoryBuffer &cert, wxString store_name, 
 	fingerprint.Append(GetFingerprintFromCertificate(cert_context, BY_SKID));
 
 	wxLogMessage(wxT("SeruroCrypto::InstallCA> cert installed."));
+	CertFreeCertificateContext(cert_context);
 	CertCloseStore(cert_store, 0);
 	return true;
 }

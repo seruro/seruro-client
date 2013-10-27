@@ -23,8 +23,11 @@
 #include "frames/dialogs/ErrorDialog.h"
 
 #include <wx/image.h>
-
 #include <wx/notifmsg.h>
+
+/* Testing */
+#include "apps/AppMSW_Outlook.h"
+/* End testing */
 
 #if !defined(__VLD__)
     /* (Hack) If the Virtual Leak Detector is not enabled (a MSW DLL only) then create dummy
@@ -54,6 +57,8 @@ bool SeruroClient::OnInit()
         return false;
     }
     
+	GetContactProperties(_("tedmon@valdrea.com"));
+
     /* Setup OSX menu positioning. */
 #ifdef __WXMAC__
     //wxApp::s_macAboutMenuItemId = AboutID;

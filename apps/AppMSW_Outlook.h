@@ -7,12 +7,30 @@
 
 #include "SeruroApps.h"
 
+#define INITGUID
+#define USES_IID_IMessage
+//#define USES_IID_IMAPIPropData
+//#define USES_IID_IMAPITable
+
 #include <Windows.h>
 #include <MAPI.h>
 
+#include <initguid.h> //this is needed,
+#include <mapiguid.h> //then this
+#include <mapiform.h>
+#include <objbase.h>
+#include <mapix.h>
+#include <mapitags.h>
+#include <mapidefs.h>
+#include <mapiutil.h>
+#include <imessage.h>
+
 /* Not available in the Windows 8 SDK, copied from 7A and linked explicitly. */
-#include <MAPIX.h>
-#include <MAPIUtil.h>
+//#include <MAPIX.h>
+//#include <MAPIUtil.h>
+
+/* Defined in header for testing. */
+wxJSONValue GetContactProperties(wxString address);
 
 class AppMSW_Outlook : public AppHelper
 {
@@ -36,8 +54,8 @@ public:
 private:
     bool GetInfo();
 
-void FindAccountProperties(LPSERVICEADMIN &service_admin, 
-	SPropValue &uid, wxString &account_name);
+	//void FindAccountProperties(LPSERVICEADMIN &service_admin, 
+	//	SPropValue &uid, wxString &account_name);
 
 	/* Get info from an account .oeaccount file. 
 	 *  - Set the account info in this->info,
