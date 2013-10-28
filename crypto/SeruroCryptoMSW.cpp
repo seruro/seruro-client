@@ -282,7 +282,7 @@ PCCERT_CONTEXT GetCertificateByFingerprint(wxString fingerprint, wxString store_
 	return cert;
 }
 
-wxString GetCertificateByFingerprint(wxString fingerprint, wxString store_name, search_type_t match_type)
+wxString GetEncodedByFingerprint(wxString fingerprint, wxString store_name, search_type_t match_type)
 {
     /* A wrapper for the above method, but representes the certificate as an encoded string. */
     PCCERT_CONTEXT cert;
@@ -292,7 +292,7 @@ wxString GetCertificateByFingerprint(wxString fingerprint, wxString store_name, 
     cert = GetCertificateByFingerprint(fingerprint, store_name, match_type);
     cert_data = wxBase64Encode(cert->pbCertEncoded, cert->cbCertEncoded);
     
-    CertFreeCertificateContext(exchange_cert);
+    CertFreeCertificateContext(cert);
     return cert_data;
 }
 

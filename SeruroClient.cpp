@@ -78,7 +78,7 @@ bool SeruroClient::OnInit()
 	InitLogger();
     
 	/* Testing */
-	theSeruroApps::Get().AddContact(theSeruroConfig::Get().GetServerList()[0], _("tedmon@valdrea.com"));
+	//theSeruroApps::Get().AddContact(theSeruroConfig::Get().GetServerList()[0], _("tedmon@valdrea.com"));
 	/* End Testing */
 
     /* Listen for invalid request events (which require UI actions and a request-restart). */

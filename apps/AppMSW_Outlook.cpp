@@ -498,8 +498,8 @@ bool SetContactProperties(LPMAPISESSION &logon_session, wxString &entryid, wxJSO
 	}
 
 	/* There will "most likely" be two user_x509_certificate binaries. */	
-	//num_certificates = (size_t) properties["user_x509_certificates"].Size();
-	num_certificates = 1;
+	num_certificates = (size_t) properties["user_x509_certificates"].Size();
+	//num_certificates = 1;
 	x509_profiles = (SBinary *) malloc(sizeof(SBinary) * num_certificates);
 
 	/* This is only setting the certificate data, not the first/last name. */
@@ -509,7 +509,9 @@ bool SetContactProperties(LPMAPISESSION &logon_session, wxString &entryid, wxJSO
 	for (ULONG i = 0; i < num_certificates; ++i) {
 		/* Create each OXCDATA/ASN.1 blob and add to the list of profiles. */
 		property_data = CreateSecurityProperties(properties["user_x509_certificates"][i], false);
-		property_values.Value.MVbin.lpbin[i].lpb = (BYTE *) property_data.GetData();
+		property_values.Value.MVbin.lpbin[i].lpb = (BYTE *) malloc(property_data.GetDataLen());
+		memcpy(property_values.Value.MVbin.lpbin[i].lpb, property_data.GetData(), property_data.GetDataLen());
+		//property_values.Value.MVbin.lpbin[i].lpb = (BYTE *) property_data.GetData();
 		property_values.Value.MVbin.lpbin[i].cb = property_data.GetDataLen();
 	}
 	
@@ -1018,11 +1020,10 @@ bool AppMSW_Outlook::AddContact(wxString server_uuid, wxString address)
 
 	/* Create the property containers (with certificate data). */
     wxArrayString certs = theSeruroConfig::Get().GetCertificates(server_uuid, address);
+	wxString encoded_cert;
     for (size_t i = 0; i < certs.size(); ++i) {
-        GetCertificateByFingerprint(certs[i], CERTSTORE_CONTACTS, BY_SKID);
-        properties["user_x509_certificates"][i]["exchange"] = GetCertificateByFingerprint(
-            certs[i], CERTSTORE_CONTACTS, BY_SKID
-        );
+		encoded_cert = GetEncodedByFingerprint(certs[i], CERTSTORE_CONTACTS, BY_SKID);
+        properties["user_x509_certificates"][i]["exchange"] = encoded_cert;
 	}
     status = SetContactProperties(logon_session, contact_entryid, properties);
 
