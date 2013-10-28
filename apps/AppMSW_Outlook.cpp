@@ -970,7 +970,7 @@ bool AppMSW_Outlook::AddContact(wxString server_uuid, wxString address)
 	/* A list of matching contacts. */
 	wxJSONValue contacts;
 	/* The security parameters to get/set for contact. */
-	wxJSONValue properties, security_properties;
+	wxJSONValue properties;
 	/* The working contact, if more than one, or it's created. */
 	wxString contact_entryid;
 	/* A contact contains non-seruro x509 properties. */
@@ -1016,11 +1016,15 @@ bool AppMSW_Outlook::AddContact(wxString server_uuid, wxString address)
 		/* Todo: warn the user about potentially removing custom certifcates. */
 	}
 
-	/* Create the property contaciners (with certificate data). */
-	security_properties["exchance"] = wxEmptyString;
-	properties["user_x509_certificates"].Append(security_properties);
-	properties["user_x509_certificates"].Append(security_properties);
-	status = SetContactProperties(logon_session, contact_entryid, properties);
+	/* Create the property containers (with certificate data). */
+    wxArrayString certs = theSeruroConfig::Get().GetCertificates(server_uuid, address);
+    for (size_t i = 0; i < certs.size(); ++i) {
+        GetCertificateByFingerprint(certs[i], CERTSTORE_CONTACTS, BY_SKID);
+        properties["user_x509_certificates"][i]["exchange"] = GetCertificateByFingerprint(
+            certs[i], CERTSTORE_CONTACTS, BY_SKID
+        );
+	}
+    status = SetContactProperties(logon_session, contact_entryid, properties);
 
 	ReleaseOutlookAddressBook(logon_session, address_book, container, address_table);
 	return status;

@@ -28,10 +28,12 @@ enum search_type_t {
 /* Internal store searching functions used by applications. */
 wxString GetFingerprintFromCertificate(PCCERT_CONTEXT &cert, 
 	search_type_t match_type);
-bool HaveCertificateByFingerprint(wxString fingerprint, wxString store_name, 
-	search_type_t match_type = BY_SKID);
-PCCERT_CONTEXT GetCertificateByFingerprint(wxString fingerprint, wxString store_name, 
-	search_type_t match_type);
+wxString GetCertificateByFingerprint(wxString fingerprint, wxString store_name,
+    search_type_t match_type);
+//bool HaveCertificateByFingerprint(wxString fingerprint, wxString store_name,
+//	search_type_t match_type = BY_SKID);
+//PCCERT_CONTEXT GetCertificateByFingerprint(wxString fingerprint, wxString store_name,
+//	search_type_t match_type);
 
 BSTR AsLongString(const wxString &input);
 
