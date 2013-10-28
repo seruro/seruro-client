@@ -56,8 +56,6 @@ bool SeruroClient::OnInit()
     if (this->IsAnotherRunning()) {
         return false;
     }
-    
-	GetContactProperties(_("tedmon@valdrea.com"));
 
     /* Setup OSX menu positioning. */
 #ifdef __WXMAC__
@@ -79,6 +77,10 @@ bool SeruroClient::OnInit()
 	/* Start logger */
 	InitLogger();
     
+	/* Testing */
+	theSeruroApps::Get().AddContact(theSeruroConfig::Get().GetServerList()[0], _("tedmon@valdrea.com"));
+	/* End Testing */
+
     /* Listen for invalid request events (which require UI actions and a request-restart). */
     Bind(SERURO_REQUEST_RESPONSE, &SeruroClient::OnInvalidAuth, this, SERURO_REQUEST_CALLBACK_AUTH);
     Bind(SERURO_STATE_CHANGE, &SeruroClient::OnApplicationClose, this, STATE_TYPE_APPLICATION);

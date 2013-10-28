@@ -124,11 +124,13 @@ bool MAPIProfileExists(LPPROFADMIN &profile_admin, wxString match_name)
 }
 
 /* Contact-related methods. */
-wxJSONValue GetContactProperties(wxString address);
-wxJSONValue GetContactProperties(LPMAPISESSION &address_book, SRow &contact);
+wxJSONValue GetContactProperties(LPMAPISESSION &logon_session, LPMAPITABLE &address_table, wxString address);
+wxJSONValue GetContactProperties(LPMAPISESSION &logon_session, SRow &contact);
 wxJSONValue GetMessageX509Properties(SBinary &x509_property);
 wxJSONValue GetSecurityProperties(SBinary &entry);
+bool SetContactProperties(LPMAPISESSION &logon_session, wxString &entryid, wxJSONValue properties);
 wxMemoryBuffer CreateSecurityProperties(wxJSONValue properties, bool add_caps = false);
+wxString CreateOutlookContact(LPADRBOOK &address_book, IABContainer* &container, wxString address);
 
 bool GetOutlookProfile(LPPROFADMIN *profile_admin)
 {
@@ -157,82 +159,270 @@ bool GetOutlookProfile(LPPROFADMIN *profile_admin)
 	return true;
 }
 
-wxJSONValue GetContactProperties(wxString address)
+bool OpenOutlookAddressBook(LPMAPISESSION *logon_session, LPADRBOOK *address_book, 
+	IABContainer **container, LPMAPITABLE *address_table)
 {
-	wxJSONValue contacts;
-
 	HRESULT result;
-	LPPROFADMIN profile_admin;
-
-	contacts["success"] = false;
-	if (!GetOutlookProfile(&profile_admin)) {
-		return contacts;
-	}
-	/* Profile only needed to check existance. */
-	profile_admin->Release();
-
 	ULONG logon_flags;
-	LPMAPISESSION logon_session;
-	LPADRBOOK address_book;
-
-	/* Login to MAPI to retreive the user's address book. */
-	logon_flags = 0 | MAPI_LOGON_UI | MAPI_NO_MAIL | MAPI_EXTENDED | MAPI_NEW_SESSION;
-	result = MAPILogonEx(0, (LPTSTR) "Outlook", NULL, logon_flags, &logon_session);
-	if (FAILED(result)) {
-		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot logon to MAPI (%0x)."), result);
-		return contacts;
-	}
-
-	/* Open MAPI address book. */
-	result = logon_session->OpenAddressBook(0, NULL, 0, &address_book);
-	if (FAILED(result)) {
-		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot open address book (%0x)."), result);
-		goto logoff_mapi;
-	}
+	LPPROFADMIN profile_admin;
 
 	ULONG open_entry_flags;
 	ULONG opened_entry_type;
-	LPMAPITABLE address_table;
-	IABContainer *container;
 
 	ULONG entry_size;
 	ENTRYID *entry;
 
+	if (! GetOutlookProfile(&profile_admin)) {
+		return false;
+	}
+	/* Profile only needed to check existance. */
+	profile_admin->Release();
+
+	/* Login to MAPI to retreive the user's address book. */
+	logon_flags = 0 | MAPI_LOGON_UI | MAPI_NO_MAIL | MAPI_EXTENDED | MAPI_NEW_SESSION;
+	result = MAPILogonEx(0, (LPTSTR) "Outlook", NULL, logon_flags, logon_session);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (CreateOutlookContact) cannot logon to MAPI (%0x)."), result);
+		return false;
+	}
+
+	/* Open MAPI address book. */
+	result = (*logon_session)->OpenAddressBook(0, NULL, 0, address_book);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (CreateOutlookContact) cannot open address book (%0x)."), result);
+		(*logon_session)->Release();
+		return false;
+	}
+
 	/* Get the personal address book. */
-	result = address_book->GetPAB(&entry_size, &entry);
+	result = (*address_book)->GetPAB(&entry_size, &entry);
 	if (FAILED(result)) {
 		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot get personal address book (%0x)."), result);
-		goto logoff_mapi;
+		(*address_book)->Release();
+		(*logon_session)->Release();
+		return false;
 	}
 
 	/* Chooses best READ/WRITE access possible (based on client/server). */
 	open_entry_flags = MAPI_BEST_ACCESS;
-	result = address_book->OpenEntry(entry_size, 
-		entry, NULL, open_entry_flags, &opened_entry_type, (LPUNKNOWN FAR *) &container);
+	result = (*address_book)->OpenEntry(entry_size, 
+		entry, NULL, open_entry_flags, &opened_entry_type, (LPUNKNOWN FAR *) container);
 	if (FAILED(result)) {
 		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot open PAB entry (%0x)."), result);
-		goto release_address_book;
+		(*address_book)->Release();
+		(*logon_session)->Release();
+		return false;
 	}
+
+	/* PAB entry no longer needed. */
+	::MAPIFreeBuffer(entry);
 
 	/* Only support the "Address Book Container" type. */
 	if (opened_entry_type != MAPI_ABCONT /* 4 */) {
 		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) PAB is not an AB container (%0x)."), result);
-		goto release_address_book;
+		(*address_book)->Release();
+		(*logon_session)->Release();
+		return false;
 	}
 
 	/* The returned container keeps a table for accesses (a table of contacts). */
-	result = container->GetContentsTable(0, &address_table);
+	result = (*container)->GetContentsTable(0, address_table);
 	if (FAILED(result)) {
 		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot get PAB contents (%0x)."), result);
-		goto release_address_container;
+		(*container)->Release();
+		(*address_book)->Release();
+		(*logon_session)->Release();
+		return false;
 	}
+
+	return true;
+}
+
+bool ReleaseOutlookAddressBook(LPMAPISESSION &logon_session, LPADRBOOK &address_book, 
+	IABContainer* &container, LPMAPITABLE &address_table)
+{
+	address_table->Release();
+	container->Release();
+	address_book->Release();
+	logon_session->Logoff(0, 0, 0);
+	logon_session->Release();
+
+	return true;
+}
+
+wxString CreateOutlookContact(LPADRBOOK &address_book, IABContainer* &container, wxString address)
+{
+	/* On success, sets the entryid to the created encoded value. */
+	wxString new_entryid;
+	HRESULT result;
+	//LPPROFADMIN profile_admin;
+
+	//if (!GetOutlookProfile(&profile_admin)) {
+	//	return new_entryid;
+	//}
+	/* Profile only needed to check existance. */
+	//profile_admin->Release();
+
+	//ULONG logon_flags;
+	//LPMAPISESSION logon_session;
+	//LPADRBOOK address_book;
+
+	/* Used to create the PAB entry. */
+	//ULONG entry_size;
+	//ENTRYID *entry;
+
+	/* Used to open the PAB for operations. */
+	//ULONG open_entry_flags;
+	//ULONG opened_entry_type;
+	//IABContainer *container;
+
+	/* Login to MAPI to retreive the user's address book. */
+	//logon_flags = 0 | MAPI_LOGON_UI | MAPI_NO_MAIL | MAPI_EXTENDED | MAPI_NEW_SESSION;
+	//result = MAPILogonEx(0, (LPTSTR) "Outlook", NULL, logon_flags, &logon_session);
+	//if (FAILED(result)) {
+	//	DEBUG_LOG(_("AppMSW_Outlook> (CreateOutlookContact) cannot logon to MAPI (%0x)."), result);
+	//	goto release_logon_session;
+	//}
+
+	/* Open MAPI address book. */
+	//result = logon_session->OpenAddressBook(0, NULL, 0, &address_book);
+	//if (FAILED(result)) {
+	//	DEBUG_LOG(_("AppMSW_Outlook> (CreateOutlookContact) cannot open address book (%0x)."), result);
+	//	goto release_logon_session;
+	//}
+
+	/* Get the personal address book. */
+	//result = address_book->GetPAB(&entry_size, &entry);
+	//if (FAILED(result)) {
+	//	DEBUG_LOG(_("AppMSW_Outlook> (CreateOutlookContact) cannot get personal address book (%0x)."), result);
+	//	return wxEmptyString;
+	//}
+
+	/* Chooses best READ/WRITE access possible (based on client/server). */
+	//open_entry_flags = MAPI_BEST_ACCESS | MAPI_MODIFY;
+	//result = address_book->OpenEntry(entry_size, 
+	//	entry, NULL, open_entry_flags, &opened_entry_type, (LPUNKNOWN FAR *) &container);
+	//if (FAILED(result)) {
+	//	DEBUG_LOG(_("AppMSW_Outlook> (CreateOutlookContact) cannot open PAB entry (%0x)."), result);
+	//	goto release_pab_entry;
+	//}
+
+	ULONG oneoff_entryid_size;
+	LPENTRYID oneoff_entryid;
+	result = address_book->CreateOneOff(AsLongString(address), L"SMTP", AsLongString(address), 
+		MAPI_UNICODE, &oneoff_entryid_size, &oneoff_entryid);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (CreateOutlookContact) cannot create one-off contact (%0x)."), result);
+		return wxEmptyString;
+	}
+
+	LPMAPIPROP contact_property;
+	result = container->CreateEntry(oneoff_entryid_size, oneoff_entryid, 0, &contact_property);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (CreateOutlookContact) cannot add one-off to PAB (%0x)."), result);
+		::MAPIFreeBuffer(oneoff_entryid);
+		return wxEmptyString;
+	}
+
+	/* Write the entryid into the output parameter. */
+	new_entryid = wxBase64Encode(oneoff_entryid, oneoff_entryid_size);
+
+	/* Clean up jumps. */
+	contact_property->Release();
+//release_oneoff_entry:
+	//::MAPIFreeBuffer(oneoff_entryid);
+
+//release_container:
+	//container->Release();
+//release_pab_entry:
+	//::MAPIFreeBuffer(entry);
+//release_address_book:
+	//address_book->Release();
+//release_logon_session:
+	//logon_session->Logoff(0, 0, 0);
+	//logon_session->Release();
+
+	return new_entryid;
+}
+
+wxJSONValue GetContactProperties(LPMAPISESSION &logon_session, LPMAPITABLE &address_table, wxString address)
+{
+	wxJSONValue contacts;
+	wxJSONValue contact;
+
+	HRESULT result;
+	//LPPROFADMIN profile_admin;
+
+	contacts["success"] = false;
+	//if (!GetOutlookProfile(&profile_admin)) {
+	//	return contacts;
+	//}
+	/* Profile only needed to check existance. */
+	//profile_admin->Release();
+
+	//ULONG logon_flags;
+	//LPMAPISESSION logon_session;
+	//LPADRBOOK address_book;
+
+	/* Login to MAPI to retreive the user's address book. */
+	//logon_flags = 0 | MAPI_LOGON_UI | MAPI_NO_MAIL | MAPI_EXTENDED | MAPI_NEW_SESSION;
+	//result = MAPILogonEx(0, (LPTSTR) "Outlook", NULL, logon_flags, &logon_session);
+	//if (FAILED(result)) {
+	//	DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot logon to MAPI (%0x)."), result);
+	//	return contacts;
+	//}
+
+	/* Open MAPI address book. */
+	//result = logon_session->OpenAddressBook(0, NULL, 0, &address_book);
+	//if (FAILED(result)) {
+	//	DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot open address book (%0x)."), result);
+	//	goto logoff_mapi;
+	//}
+
+	//ULONG open_entry_flags;
+	//ULONG opened_entry_type;
+	//LPMAPITABLE address_table;
+	//IABContainer *container;
+
+	//ULONG entry_size;
+	//ENTRYID *entry;
+
+	/* Get the personal address book. */
+	//result = address_book->GetPAB(&entry_size, &entry);
+	//if (FAILED(result)) {
+	//	DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot get personal address book (%0x)."), result);
+	//	//goto logoff_mapi;
+	//	return contacts;
+	//}
+
+	/* Chooses best READ/WRITE access possible (based on client/server). */
+	//open_entry_flags = MAPI_BEST_ACCESS;
+	//result = address_book->OpenEntry(entry_size, 
+	//	entry, NULL, open_entry_flags, &opened_entry_type, (LPUNKNOWN FAR *) &container);
+	//if (FAILED(result)) {
+	//	DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot open PAB entry (%0x)."), result);
+	//	goto release_address_book;
+	//}
+
+	/* Only support the "Address Book Container" type. */
+	//if (opened_entry_type != MAPI_ABCONT /* 4 */) {
+	//	DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) PAB is not an AB container (%0x)."), result);
+	//	goto release_address_book;
+	//}
+
+	/* The returned container keeps a table for accesses (a table of contacts). */
+	//result = container->GetContentsTable(0, &address_table);
+	//if (FAILED(result)) {
+	//	DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot get PAB contents (%0x)."), result);
+	//	goto release_address_container;
+	//}
 
 	/* The number of rows is the number of contacts. */
 	ULONG num_rows;
 	result = address_table->GetRowCount(0, &num_rows);
 	if (FAILED(result)) {
 		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot get PAB row count (%0x)."), result);
-		goto release_address_table;
+		return contacts;
 	}
 
 	/* Allocate each of the contacts (potentially large, revisit). */
@@ -240,32 +430,36 @@ wxJSONValue GetContactProperties(wxString address)
 	result = address_table->QueryRows(num_rows, 0, &address_rows);
 	if (FAILED(result)) {
 		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot get PAB rows (%0x)."), result);
-		goto release_address_table;
+		return contacts;
 	}
 
 	/* Iterate over each contact. */
 	for (ULONG i = 0; i < num_rows; ++i) {
-		contacts.Append(GetContactProperties(logon_session, address_rows->aRow[i]));
+		contact = GetContactProperties(logon_session, address_rows->aRow[i]);
+		if (contact.HasMember("email_address") && contact["email_address"].AsString() == address) {
+			contacts.Append(contact);
+		}
 	}
 
-	/* Clean up */
-	//::FREEBUFFER(address_rows);
+	/* Clean up jumps. */
 	::FreeProws(address_rows);
 
-release_address_table:
-	address_table->Release();
-release_address_container:
-	container->Release();
-release_address_book:
-	address_book->Release();
-logoff_mapi:
-	logon_session->Logoff(0, 0, 0);
-	logon_session->Release();
+//release_address_table:
+	/* Address table must remain open for iMessage entrys? */
+	//address_table->Release();
+//release_address_container:
+	//container->Release();
+//release_address_book:
+	//::MAPIFreeBuffer(entry);
+	//address_book->Release();
+//logoff_mapi:
+	//logon_session->Logoff(0, 0, 0);
+	//logon_session->Release();
 	
 	return contacts;
 }
 
-wxJSONValue GetContactProperties(LPMAPISESSION &address_book, SRow &contact)
+wxJSONValue GetContactProperties(LPMAPISESSION &logon_session, SRow &contact)
 {
 	LPSPropValue contact_entryid;
 	wxJSONValue properties;
@@ -280,6 +474,18 @@ wxJSONValue GetContactProperties(LPMAPISESSION &address_book, SRow &contact)
 		}
 	}
 
+	ULONG opened_entry_type;
+	HRESULT result;
+
+	/* Used to query all contact properties, not just the limited IAdrBook properties. */
+	IMessage *message;
+
+	/* Access properties only available in IMessage. */
+	SizedSPropTagArray(3, property_columns) = {3, PR_USER_X509_CERTIFICATE, PR_SURNAME_A, PR_GIVEN_NAME_A};
+
+	LPSPropValue property_values;
+	ULONG property_count;
+
 	/* Use the stored entryid to format the iMessage/Contact entryid. */
 	/* http://msdn.microsoft.com/en-us/library/ee203147(v=exchg.80).aspx 
 	 * Flags: 4 bytes 
@@ -288,6 +494,7 @@ wxJSONValue GetContactProperties(LPMAPISESSION &address_book, SRow &contact)
 	 */
 
 	ULONG entryid_size;
+	//LPENTRYID entryid;
 	if (contact_entryid->Value.bin.cb < 36) {
 		/* Incorrect size, no entryid count given. */
 		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) ENTRYID has incorrect size (%d)."), 
@@ -303,13 +510,10 @@ wxJSONValue GetContactProperties(LPMAPISESSION &address_book, SRow &contact)
 		return properties;
 	}
 
-	ULONG opened_entry_type;
-	HRESULT result;
-
 	/* Open IMessage (IMAPSession) using the entryid found in the PAB. */
-	IMessage *message;
-	result = address_book->OpenEntry(24, (LPENTRYID) (contact_entryid->Value.bin.lpb + 36), 
-		&IID_IMessage, 0, &opened_entry_type, (LPUNKNOWN FAR *) &message);
+	//entryid = (LPENTRYID) (contact_entryid->Value.bin.lpb + 36);
+	result = logon_session->OpenEntry(24, (LPENTRYID) (contact_entryid->Value.bin.lpb + 36), 
+		&IID_IMessage, MAPI_BEST_ACCESS, &opened_entry_type, (LPUNKNOWN FAR *) &message);
 	if (FAILED(result)) {
 		DEBUG_LOG(_("AppMSW_Outlook> (GetContactProperties) cannot open IMessage ENTRYID (%0x)."), result);
 		return properties;
@@ -322,11 +526,6 @@ wxJSONValue GetContactProperties(LPMAPISESSION &address_book, SRow &contact)
 		return properties;
 	}
 
-	/* Access properties only available in IMessage. */
-	SizedSPropTagArray(3, property_columns) = {3, PR_USER_X509_CERTIFICATE, PR_SURNAME_A, PR_GIVEN_NAME_A};
-
-	LPSPropValue property_values;
-	ULONG property_count;
 	result = message->GetProps((LPSPropTagArray) &property_columns, 0, &property_count, &property_values);
 	if (FAILED(result) || property_count != 3) {
 		/* The property count SHOULD = 3. */
@@ -340,7 +539,7 @@ wxJSONValue GetContactProperties(LPMAPISESSION &address_book, SRow &contact)
 		if (property_values[i].ulPropTag == PR_USER_X509_CERTIFICATE) {
 			/* Parse each certificate. */
 			for (ULONG j = 0; j < property_values[i].Value.MVbin.cValues; ++j) {
-				properties["user_x509_certificate"].Append(
+				properties["user_x509_certificates"].Append(
 					GetMessageX509Properties(property_values[i].Value.MVbin.lpbin[j])
 				);
 			}
@@ -356,7 +555,8 @@ wxJSONValue GetContactProperties(LPMAPISESSION &address_book, SRow &contact)
 	entry_buffer.AppendData((contact_entryid->Value.bin.lpb + 36), 24);
 	properties["entryid"] = wxBase64Encode(entry_buffer);
 
-	//::FreeProws(property_values);
+	/* Cleanups. */
+	::MAPIFreeBuffer(property_values);
 	message->Release();
 
 	return properties;
@@ -387,17 +587,130 @@ wxJSONValue GetMessageX509Properties(SBinary &x509_property)
 	}
 
 	wxString fingerprint;
-	bool have_fingerprint;
+	//bool have_fingerprint;
 
 	fingerprint = GetFingerprintFromCertificate(exchange_cert, BY_SKID);
 	/* This might be optional, or better, checked in a more appropriate location. */
-	have_fingerprint = HaveCertificateByFingerprint(fingerprint, CERTSTORE_CONTACTS, BY_SKID);
+	//have_fingerprint = HaveCertificateByFingerprint(fingerprint, CERTSTORE_CONTACTS, BY_SKID);
 	CertFreeCertificateContext(exchange_cert);
 
 	properties["skid"] = fingerprint;
-	properties["skid_exists"] = have_fingerprint;
+	//properties["skid_exists"] = have_fingerprint;
 
 	return properties;
+}
+
+bool SetContactProperties(LPMAPISESSION &logon_session, wxString &entryid, wxJSONValue properties)
+{
+	HRESULT result;
+	bool status;
+	//LPPROFADMIN profile_admin;
+	ULONG opened_entry_type;
+
+	/* Used to open MAPI and the user PAB. */
+	//ULONG logon_flags;
+	//LPMAPISESSION logon_session;
+	//LPADRBOOK address_book;
+	
+	/* Used to store the entryid. */
+	wxMemoryBuffer entry_buffer;
+
+	/* Used to open advanced properties for contact. */
+	IMessage *message;
+
+	/* Create profiles for each provided (in the properties parameter). */
+	SBinary *x509_profiles;
+	size_t num_certificates;
+
+	/* The new propery value. */
+	SPropValue property_values;
+	wxMemoryBuffer property_data;
+
+	status = false;
+	entry_buffer = wxBase64Decode(entryid);
+	//if (!GetOutlookProfile(&profile_admin)) {
+	//	return status;
+	//}
+	/* Profile only needed to check existance. */
+	//profile_admin->Release();
+
+	/* Login to MAPI to retreive the user's address book. */
+	//logon_flags = 0 | MAPI_LOGON_UI | MAPI_NO_MAIL | MAPI_EXTENDED | MAPI_NEW_SESSION;
+	//result = MAPILogonEx(0, (LPTSTR) "Outlook", NULL, logon_flags, &logon_session);
+	//if (FAILED(result)) {
+	//	DEBUG_LOG(_("AppMSW_Outlook> (SetContactProperties) cannot logon to MAPI (%0x)."), result);
+	//	return status;
+	//}
+
+	/* Open MAPI address book. */
+	//result = logon_session->OpenAddressBook(0, NULL, 0, &address_book);
+	//if (FAILED(result)) {
+	//	DEBUG_LOG(_("AppMSW_Outlook> (SetContactProperties) cannot open address book (%0x)."), result);
+	//	goto release_logon_session;
+	//}
+
+	/* Open IMessage (IMAPSession) using the entryid found in the PAB. */
+	//LPENTRYID s_entryid;
+	//s_entryid = (LPENTRYID) entry_buffer.GetData();
+	result = logon_session->OpenEntry(24, (LPENTRYID) entry_buffer.GetData(), 
+		&IID_IMessage, MAPI_BEST_ACCESS, &opened_entry_type, (LPUNKNOWN FAR *) &message);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (SetContactProperties) cannot open IMessage ENTRYID (%0x)."), result);
+		//goto release_address_book;
+		return false;
+	}
+
+	/* Requested IMessage type */
+	if (opened_entry_type != MAPI_MESSAGE /* 5 */) {
+		DEBUG_LOG(_("AppMSW_Outlook> (SetContactProperties) entry is not an IMessage (%0x)."), result);
+		//goto release_address_book;
+		return false;
+	}
+
+	/* There will "most likely" be two user_x509_certificate binaries. */	
+	//num_certificates = (size_t) properties["user_x509_certificates"].Size();
+	num_certificates = 1;
+	x509_profiles = (SBinary *) malloc(sizeof(SBinary) * num_certificates);
+
+	/* This is only setting the certificate data, not the first/last name. */
+	property_values.ulPropTag = PR_USER_X509_CERTIFICATE;
+	property_values.Value.MVbin.cValues = num_certificates;
+	property_values.Value.MVbin.lpbin = x509_profiles;
+	for (ULONG i = 0; i < num_certificates; ++i) {
+		/* Create each OXCDATA/ASN.1 blob and add to the list of profiles. */
+		property_data = CreateSecurityProperties(properties["user_x509_certificates"][i], false);
+		property_values.Value.MVbin.lpbin[i].lpb = (BYTE *) property_data.GetData();
+		property_values.Value.MVbin.lpbin[i].cb = property_data.GetDataLen();
+	}
+	
+	result = message->SetProps(1, &property_values, NULL);
+	if (FAILED(result)) {
+		/* Problem saving the properties. */
+		DEBUG_LOG(_("AppMSW_Outlook> (SetContactProperties) could write properties (%0x)."), result);
+		goto release_profiles;
+	}
+
+	result = message->SaveChanges(0);
+	if (FAILED(result)) {
+		DEBUG_LOG(_("AppMSW_Outlook> (SetContactProperties) could not save properties (%0x)."), result);
+		goto release_profiles;
+	}
+
+	/* Success, return the correct status. */
+	status = true;
+
+	/* Cleanup jumps. */
+release_profiles:
+	delete x509_profiles;
+//release_message:
+	message->Release();
+//release_address_book:
+	//address_book->Release();
+//release_logon_session:
+	//logon_session->Logoff(0, 0, 0);
+	//logon_session->Release();
+
+	return status;
 }
 
 bool SetSecurityProperties(wxString &service_uid, wxJSONValue properties)
@@ -693,6 +1006,18 @@ release_provider_admin:
 	return properties;
 }
 
+bool HasAlternateSecurityProperties(wxJSONValue properties)
+{
+	/* Check to make sure the associated certificates have Seruro usage. */
+	return false;
+}
+
+bool ValidContactSecurityProperties(wxString &server_uuid, wxString &address, wxJSONValue properties)
+{
+	/* Check the security properties and if they include ONLY the auth/enc for the given contact. */
+	return false;
+}
+
 wxJSONValue GetOutlookMAPIAccounts()
 {
 	wxJSONValue accounts;
@@ -814,6 +1139,67 @@ wxArrayString AppMSW_Outlook::GetAccountList()
 	accounts = this->info["accounts"].GetMemberNames();
 
 	return accounts;
+}
+
+bool AppMSW_Outlook::AddContact(wxString server_uuid, wxString address)
+{
+	/* A list of matching contacts. */
+	wxJSONValue contacts;
+	/* The security parameters to get/set for contact. */
+	wxJSONValue properties, security_properties;
+	/* The working contact, if more than one, or it's created. */
+	wxString contact_entryid;
+	/* A contact contains non-seruro x509 properties. */
+	bool alternate_properties, status;
+
+	/* State managers for address book operations. */
+	LPMAPISESSION logon_session;
+	LPADRBOOK address_book;
+	IABContainer *container;
+	LPMAPITABLE address_table;
+
+	if (! OpenOutlookAddressBook(&logon_session, &address_book, &container, &address_table)) {
+		return false;
+	}
+
+	alternate_properties = false;
+	contacts = GetContactProperties(logon_session, address_table, address);
+	if (contacts.Size() > 0) {
+		/* Look for contact with appropraite x509, make sure they match. */
+		for (int i = 0; i < contacts.Size(); ++i) {
+			if (HasAlternateSecurityProperties(contacts[i])) {
+				alternate_properties = true;
+			}
+			if (ValidContactSecurityProperties(server_uuid, address, contacts[i])) {
+				/* This contact already exists and has the correct certificates. */
+				ReleaseOutlookAddressBook(logon_session, address_book, container, address_table);
+				return true;
+			}
+		}
+		/* Operate on the first contact. */
+		contact_entryid = contacts[0]["entryid"].AsString();
+	} else {
+		/* Create contact, then get it's properties. */
+		contact_entryid = CreateOutlookContact(address_book, container, address);
+		if (contact_entryid == wxEmptyString) {
+			/* The create failed. */
+			ReleaseOutlookAddressBook(logon_session, address_book, container, address_table);
+			return false;
+		}
+	}
+
+	if (alternate_properties) {
+		/* Todo: warn the user about potentially removing custom certifcates. */
+	}
+
+	/* Create the property contaciners (with certificate data). */
+	security_properties["exchance"] = wxEmptyString;
+	properties["user_x509_certificates"].Append(security_properties);
+	properties["user_x509_certificates"].Append(security_properties);
+	status = SetContactProperties(logon_session, contact_entryid, properties);
+
+	ReleaseOutlookAddressBook(logon_session, address_book, container, address_table);
+	return status;
 }
 
 bool AppMSW_Outlook::AssignIdentity(wxString server_uuid, wxString address)

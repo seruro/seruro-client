@@ -33,6 +33,8 @@ bool HaveCertificateByFingerprint(wxString fingerprint, wxString store_name,
 PCCERT_CONTEXT GetCertificateByFingerprint(wxString fingerprint, wxString store_name, 
 	search_type_t match_type);
 
+BSTR AsLongString(const wxString &input);
+
 class SeruroCryptoMSW
 {
 public:

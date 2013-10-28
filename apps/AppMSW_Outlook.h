@@ -9,6 +9,7 @@
 
 #define INITGUID
 #define USES_IID_IMessage
+#define USES_IID_IMAPITable
 //#define USES_IID_IMAPIPropData
 //#define USES_IID_IMAPITable
 
@@ -31,6 +32,7 @@
 
 /* Defined in header for testing. */
 wxJSONValue GetContactProperties(wxString address);
+wxString CreateOutlookContact(wxString address);
 
 class AppMSW_Outlook : public AppHelper
 {
@@ -42,6 +44,7 @@ public:
 		can_assign = true;
 		can_unassign = true;
 		needs_restart = false;
+		needs_contacts = true;
 	}
     
     bool IsInstalled();
@@ -50,6 +53,9 @@ public:
     wxArrayString GetAccountList();
     account_status_t IdentityStatus(wxString address, wxString &server_uuid);
 	bool AssignIdentity(wxString server_uuid, wxString address);
+
+	bool AddContact(wxString server_uuid, wxString address);
+	//bool RemoveContact(wxString server_uuid, wxString address);
     
 private:
     bool GetInfo();
