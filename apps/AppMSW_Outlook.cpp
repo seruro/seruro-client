@@ -289,7 +289,6 @@ wxJSONValue GetContactProperties(LPMAPISESSION &logon_session, LPMAPITABLE &addr
 
 	HRESULT result;
 
-	contacts["success"] = false;
 	/* The number of rows is the number of contacts. */
 	ULONG num_rows;
 	result = address_table->GetRowCount(0, &num_rows);
@@ -595,15 +594,29 @@ bool SetSecurityProperties(wxString &service_uid, wxJSONValue properties)
 	SPropValue property_values;
 	wxMemoryBuffer entry_buffer;
 
-	/* Only support one MAPI security profile at a time. */
-	entry_buffer = CreateSecurityProperties(properties, true);
-	property_values.ulPropTag = PR_SECURITY_PROFILES;
-	property_values.Value.MVbin.cValues = 1;
-	property_values.Value.MVbin.lpbin = &security_profile;
-	property_values.Value.MVbin.lpbin[0].cb = entry_buffer.GetDataLen();
-	property_values.Value.MVbin.lpbin[0].lpb = (BYTE *) entry_buffer.GetData();
+	SPropTagArray property_tags;
+	//ULONG tag_array[1];
 
-	result = profile_section->SetProps(1, &property_values, NULL);
+	/* Only support one MAPI security profile at a time. */
+	if (! properties.HasMember("clear")) {
+		property_values.ulPropTag = PR_SECURITY_PROFILES;
+		property_values.Value.MVbin.lpbin = &security_profile;
+		
+		entry_buffer = CreateSecurityProperties(properties, true);
+		property_values.Value.MVbin.cValues = 1;
+		property_values.Value.MVbin.lpbin[0].cb = entry_buffer.GetDataLen();
+		property_values.Value.MVbin.lpbin[0].lpb = (BYTE *) malloc(entry_buffer.GetDataLen());
+		memcpy(property_values.Value.MVbin.lpbin[0].lpb, entry_buffer.GetData(), entry_buffer.GetDataLen());
+		
+		result = profile_section->SetProps(1, &property_values, NULL);
+	} else {
+		//property_tags.aulPropTag = PR_SECURITY_PROFILES;
+		//tag_array[0] = PR_SECURITY_PROFILES;
+		property_tags.aulPropTag[0] = PR_SECURITY_PROFILES;
+		property_tags.cValues = 1;
+
+		result = profile_section->DeleteProps(&property_tags, NULL);
+	}
 
 	/* Clean up. */
 	profile_section->Release();
@@ -657,7 +670,9 @@ wxMemoryBuffer CreateSecurityProperties(wxJSONValue properties, bool add_caps)
 		entry_buffer.AppendData(&length, 2);
 		entry_buffer.AppendData(AsChar(properties["entry_name"].AsString()), length - 4 - 1);
 		entry_buffer.AppendByte(0);
-	} else if (properties.HasMember("authentication")) {
+	}
+	
+	if (properties.HasMember("authentication")) {
 		cert_buffer.Clear();
 		cert_buffer = wxBase64Decode(properties["authentication"].AsString());
 		if (cert_buffer.GetDataLen() == 20) {
@@ -666,7 +681,9 @@ wxMemoryBuffer CreateSecurityProperties(wxJSONValue properties, bool add_caps)
 			entry_buffer.AppendData(&length, 2);
 			entry_buffer.AppendData(cert_buffer.GetData(), 20);
 		}
-	} else if (properties.HasMember("encipherment")) {
+	} 
+	
+	if (properties.HasMember("encipherment")) {
 		cert_buffer.Clear();
 		cert_buffer = wxBase64Decode(properties["encipherment"].AsString());
 		if (cert_buffer.GetDataLen() == 20) {
@@ -675,7 +692,9 @@ wxMemoryBuffer CreateSecurityProperties(wxJSONValue properties, bool add_caps)
 			entry_buffer.AppendData(&length, 2);
 			entry_buffer.AppendData(cert_buffer.GetData(), 20);
 		}
-	} else if (properties.HasMember("exchange")) {
+	}
+	
+	if (properties.HasMember("exchange")) {
 		cert_buffer.Clear();
 		cert_buffer = wxBase64Decode(properties["exchange"].AsString());
 		tag = PR_CERT_KEYEX_CERT, length = 4 + cert_buffer.GetDataLen();
@@ -1006,12 +1025,21 @@ bool AppMSW_Outlook::AddContact(wxString server_uuid, wxString address)
 		contact_entryid = contacts[0]["entryid"].AsString();
 	} else {
 		/* Create contact, then get it's properties. */
-		contact_entryid = CreateOutlookContact(address_book, container, address);
-		if (contact_entryid == wxEmptyString) {
-			/* The create failed. */
-			ReleaseOutlookAddressBook(logon_session, address_book, container, address_table);
+		CreateOutlookContact(address_book, container, address);
+
+		/* Reset the address book event table (this could be done better). */
+		ReleaseOutlookAddressBook(logon_session, address_book, container, address_table);
+		if (! OpenOutlookAddressBook(&logon_session, &address_book, &container, &address_table)) {
 			return false;
 		}
+		contacts = GetContactProperties(logon_session, address_table, address);
+		contact_entryid = contacts[0]["entryid"].AsString();
+	}
+
+	if (contact_entryid == wxEmptyString) {
+		/* There was a logic problem with finding/creating a contact. */
+		ReleaseOutlookAddressBook(logon_session, address_book, container, address_table);
+		return false;
 	}
 
 	if (alternate_properties) {
@@ -1029,6 +1057,27 @@ bool AppMSW_Outlook::AddContact(wxString server_uuid, wxString address)
 
 	ReleaseOutlookAddressBook(logon_session, address_book, container, address_table);
 	return status;
+}
+
+bool AppMSW_Outlook::UnassignIdentity(wxString address)
+{
+	wxString service_uid;
+	wxJSONValue properties;
+
+	service_uid = this->info["accounts"][address]["service_uid"].AsString();
+	if (service_uid == wxEmptyString) {
+		/* The service uid was not probed during an account enumeration? */
+		return false;
+	}
+
+	/* Set the profile to clear. */
+	properties["clear"] = true;
+	if (! SetSecurityProperties(service_uid, properties)) {
+		return false;
+	}
+
+	this->info["accounts"][address].Remove("profiles");
+	return true;
 }
 
 bool AppMSW_Outlook::AssignIdentity(wxString server_uuid, wxString address)
@@ -1053,7 +1102,7 @@ bool AppMSW_Outlook::AssignIdentity(wxString server_uuid, wxString address)
 	properties["authentication"] = crypto.GetIdentityHashBySKID(auth_skid);
 	properties["encipherment"]  = crypto.GetIdentityHashBySKID(enc_skid);
 
-	properties["entity_name"] = wxString::Format(_("Seruro Identity (%s) for %s"), 
+	properties["entry_name"] = wxString::Format(_("Seruro Identity (%s) for %s"), 
 		theSeruroConfig::Get().GetServerName(server_uuid),	address);
 
 	if (! SetSecurityProperties(service_uid, properties)) {
@@ -1061,6 +1110,7 @@ bool AppMSW_Outlook::AssignIdentity(wxString server_uuid, wxString address)
 		return false;
 	}
 
+	this->info["accounts"][address]["profiles"].Append(properties);
 	return true;
 }
 
