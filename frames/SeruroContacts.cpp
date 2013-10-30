@@ -94,6 +94,7 @@ void SeruroPanelContacts::OnOptionChange(SeruroStateEvent &event)
     } else {
         this->recheck_button->Hide();
     }
+	this->Layout();
 }
 
 void SeruroPanelContacts::OnRecheckContacts(wxCommandEvent &event)
