@@ -712,9 +712,9 @@ wxMemoryBuffer CreateSecurityProperties(wxJSONValue properties, bool add_caps)
 		entry_buffer.AppendData(asymetric_caps.GetData(), asymetric_caps.GetDataLen());
 	} else {
 		/* Capabilities entry added, but blank. */
-		length = 4 + 4, long_data = 0;
+		length = 4, long_data = 0;
 		entry_buffer.AppendData(&length, 2);
-		entry_buffer.AppendData(&long_data, 4);
+		//entry_buffer.AppendData(&long_data, 4);
 	}
 
 	return entry_buffer;
