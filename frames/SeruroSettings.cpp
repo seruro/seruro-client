@@ -20,6 +20,7 @@ BEGIN_EVENT_TABLE(SeruroPanelSettings, SeruroPanel)
 	EVT_LIST_ITEM_SELECTED(SETTINGS_MENU_ID, SeruroPanelSettings::OnSelected)
 END_EVENT_TABLE()
 
+
 void SeruroPanelSettings::OnSelected(wxListEvent &event)
 {
 	/* Hide all windows, then show the selected. */
@@ -96,11 +97,9 @@ void SeruroPanelSettings::AddMenu(wxSizer *sizer)
         image_list->Add(wxGetBitmapFromMemory(log_icon_42_flat));
     }
 
-    menu = new wxListCtrl(this, SETTINGS_MENU_ID, 
-		/* We want a static width, and allow the sizer to determine the height. */
-		wxDefaultPosition, wxSize(SERURO_SETTINGS_TREE_MIN_WIDTH, -1),
-		/* Report / virtual will allow row colors in the future (2.9.5). */
-        wxLC_REPORT | wxLC_SINGLE_SEL | wxLC_NO_HEADER | wxBORDER_SIMPLE);
+	menu = new SettingsMenu();
+	menu->Create(this, SETTINGS_MENU_ID, wxDefaultPosition, wxSize(SERURO_SETTINGS_TREE_MIN_WIDTH, -1),
+		wxLC_REPORT | wxLC_SINGLE_SEL | wxLC_NO_HEADER | wxBORDER_SIMPLE);
 	/* Set the image list for the selections (must be small). */
 	menu->SetImageList(image_list, wxIMAGE_LIST_SMALL);
 
@@ -118,3 +117,4 @@ void SeruroPanelSettings::AddMenu(wxSizer *sizer)
     
 	sizer->Add(menu, 0, wxEXPAND | wxALL, 10);
 }
+

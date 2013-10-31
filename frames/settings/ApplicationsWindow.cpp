@@ -87,11 +87,14 @@ void ApplicationsWindow::OnUnassign(wxCommandEvent &event)
 void ApplicationsWindow::OnRefresh(wxCommandEvent &event)
 {
     /* Refresh applications list. */
+	this->Freeze();
     this->GenerateApplicationsList();
     
     /* Refresh accounts list. */
     AppAccountList::GenerateAccountsList();
     this->AlignLists();
+	this->Thaw();
+	this->Layout();
 }
 
 void ApplicationsWindow::OnAppSelected(wxListEvent &event)

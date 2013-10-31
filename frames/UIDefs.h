@@ -33,8 +33,10 @@
 /* Uniform UI options / configurations. */
 #if defined(__WXMAC__)
 #define SERURO_APP_DEFAULT_WIDTH  675
+#define SERURO_SETUP_WIDTH		  500
 #else
 #define SERURO_APP_DEFAULT_WIDTH  600
+#define SERURO_SETUP_WIDTH		  400
 #endif
 #define SERURO_APP_DEFAULT_HEIGHT 500
 

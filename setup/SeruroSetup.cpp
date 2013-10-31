@@ -1,7 +1,7 @@
 
 #include "SeruroSetup.h"
 #include "../logging/SeruroLogger.h"
-//#include "../frames/UIDefs.h"
+#include "../frames/UIDefs.h"
 
 #include <wx/event.h>
 #include <wx/clipbrd.h>
@@ -113,13 +113,10 @@ void InitialPage::DoFocus()
     wizard->SetBitmap(wxGetBitmapFromMemory(setup_full_step_0_flat));
 }
 
-//SeruroSetup::SeruroSetup(wxFrame *parent, bool add_server, bool add_address) : 
 SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
     wxString server_uuid, wxString account)
   : setup_type(type), server_uuid(server_uuid), account(account)
-	//server_setup(type), address_setup(type)
 {
-	//wxGetApp().SetSetup(this);
 
 	/* Pre-check for sanity. */
 	if (type == SERURO_SETUP_ACCOUNT || type == SERURO_SETUP_IDENTITY) {
@@ -137,14 +134,12 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
 	if (setup_type == SERURO_SETUP_IDENTITY) setup_title = _("Install Identity");
 
 	/* Create ICON. */
-    //wxIcon setup_icon;
-    //setup_icon.CopyFromBitmap(wxGetBitmapFromMemory(setup_full_step_0));
 
     this->Create(parent, SERURO_SETUP_ID, setup_title,
         wxGetBitmapFromMemory(setup_full_step_0_flat), wxDefaultPosition,
         wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER);
-	//this->SetIcon(setup_icon);
-    
+	this->SetPageSize(wxSize(SERURO_SETUP_WIDTH, -1));
+
     /* OSX uses a larger font, the identity page warning text may fall off. */
 #if defined(__WXOSX__) || defined(__WXMAC__)
     this->SetPageSize(wxSize(SERURO_APP_DEFAULT_WIDTH - 150, -1));
@@ -195,15 +190,9 @@ SeruroSetup::SeruroSetup(wxFrame *parent, setup_type_t type,
     this->GetPageAreaSizer()->Add(this->initial_page);
 }
 
-void SeruroSetup::OnFinished(wxWizardEvent &event)
-{
-	//wxGetApp().RemoveSetup();
-}
+void SeruroSetup::OnFinished(wxWizardEvent &event) {}
 
-void SeruroSetup::OnCanceled(wxWizardEvent &event)
-{
-	//wxGetApp().RemoveSetup();
-}
+void SeruroSetup::OnCanceled(wxWizardEvent &event) {}
 
 bool SeruroSetup::IsNewServer()
 {
@@ -258,9 +247,6 @@ void SeruroSetup::ForceNext()
 {
 	/* If a callback is trying to force the forward action, the wizard must 
 	 * process the event. */
-	//wxCommandEvent event(wxEVT_COMMAND_BUTTON_CLICKED); 
-	//event.SetId(wxID_FORWARD); 
-	//this->ProcessEvent(event); 
 	if (! this->HasNextPage(this->GetCurrentPage())) return;
 
 	(void)ShowPage(this->GetCurrentPage()->GetNext(), true);
@@ -268,15 +254,13 @@ void SeruroSetup::ForceNext()
 
 void SeruroSetup::OnChanging(wxWizardEvent &event)
 {
-    wxLogMessage(_("SeruroSetup> (OnChanging) the page is trying to move."));
+    DEBUG_LOG(_("SeruroSetup> (OnChanging) the page is trying to move."));
     
 	/* Don't worry if the page is going backward (for now). */
 	if (! event.GetDirection() ) {
         event.Skip();
         return;
     }
-    
-	//wxLogMessage(_("SeruroSetup> (OnChanging) the page is trying to move forward."));
 
 	/* The PAGE_CHANGING event will have taken care of the generic (back/forward) 
 	 * events which include checking the page for validation errors.
@@ -284,7 +268,7 @@ void SeruroSetup::OnChanging(wxWizardEvent &event)
 
 	/* This page may not allow us to proceed. */
 	if (! ((SetupPage*) event.GetPage())->GoNext()) {
-		wxLogMessage(_("SeruroSetup> (OnChanging) this page prevented the wizard form moving next."));
+		DEBUG_LOG(_("SeruroSetup> (OnChanging) this page prevented the wizard form moving next."));
 		event.Veto();
 	}
 	/* Continue normally... */
@@ -293,11 +277,10 @@ void SeruroSetup::OnChanging(wxWizardEvent &event)
 /* Catch the wizard when a new page is displayed (to update UI elements). */
 void SeruroSetup::OnChanged(wxWizardEvent &event)
 {
-	wxLogMessage(_("SeruroSetup> (OnChanged) the page has changed."));
+	DEBUG_LOG(_("SeruroSetup> (OnChanged) the page has changed."));
 	SetupPage *shown_page = (SetupPage*) event.GetPage();
 
 	/* Decorate the buttons */
-	//if (shown_page->enable_back) 
 	this->EnablePrev(shown_page->enable_prev);
     this->EnableNext(shown_page->enable_next);
 	this->RequireAuth(shown_page->require_auth);

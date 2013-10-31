@@ -9,6 +9,12 @@
 
 class SettingsView;
 
+class SettingsMenu : public wxListCtrl
+{
+public:
+	SettingsMenu() {}
+};
+
 class SeruroPanelSettings : public SeruroPanel
 {
 public:
@@ -27,7 +33,7 @@ private:
     void AddMenu(wxSizer *sizer);
     
     /* Components. */
-    wxListCtrl *menu;
+    SettingsMenu *menu;
     SettingsView *general_window;
 	SettingsView *accounts_window;
 	SettingsView *applications_window;

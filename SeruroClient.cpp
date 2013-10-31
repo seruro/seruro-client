@@ -25,10 +25,6 @@
 #include <wx/image.h>
 #include <wx/notifmsg.h>
 
-/* Testing */
-#include "apps/AppMSW_Outlook.h"
-/* End testing */
-
 #if !defined(__VLD__)
     /* (Hack) If the Virtual Leak Detector is not enabled (a MSW DLL only) then create dummy
      * symbols for control functions used in this application. */
@@ -76,18 +72,17 @@ bool SeruroClient::OnInit()
     
 	/* Start logger */
 	InitLogger();
-    
-	/* Testing */
-	//theSeruroApps::Get().AddContact(theSeruroConfig::Get().GetServerList()[0], _("tedmon@valdrea.com"));
-	/* End Testing */
 
     /* Listen for invalid request events (which require UI actions and a request-restart). */
     Bind(SERURO_REQUEST_RESPONSE, &SeruroClient::OnInvalidAuth, this, SERURO_REQUEST_CALLBACK_AUTH);
     Bind(SERURO_STATE_CHANGE, &SeruroClient::OnApplicationClose, this, STATE_TYPE_APPLICATION);
     
 	/* Now safe to start sub-frames (panels). */
+	main_frame->Freeze();
 	main_frame->AddPanels();
-    
+	main_frame->Thaw();
+	main_frame->Layout();
+
     /* Check to see if the application is running for the first time. */
     main_frame->StartSetup(false);
     
@@ -95,10 +90,6 @@ bool SeruroClient::OnInit()
     wxThread::Sleep(1000);
     this->seruro_monitor = NULL;
     StartMonitor();
-
-    //AlertDialog *alert = new AlertDialog();
-    //this->SetTopWindow(alert);
-    //alert->ShowModal();
 
     return true;
 }
