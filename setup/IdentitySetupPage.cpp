@@ -39,7 +39,7 @@ void IdentityPage::SetIdentityStatus(wxString status, bool is_error)
         status_sizer->Remove(1);
         AddIconText(this, status_sizer, wxGetBitmapFromMemory(other_warning_20), this->identity_status);
         this->was_error = true;
-    } else if (this->was_error) {
+    } else if (! is_error && this->was_error) {
         /* Remove an icon. */
         error_sizer = status_sizer->GetItem(1)->GetSizer();
         error_sizer->GetItem((size_t) 0)->GetWindow()->Destroy();
