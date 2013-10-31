@@ -281,12 +281,14 @@ void SeruroSetup::OnChanged(wxWizardEvent &event)
 	SetupPage *shown_page = (SetupPage*) event.GetPage();
 
 	/* Decorate the buttons */
+	this->Freeze();
 	this->EnablePrev(shown_page->enable_prev);
     this->EnableNext(shown_page->enable_next);
 	this->RequireAuth(shown_page->require_auth);
 
 	/* Let us take care of the text. */
 	this->SetButtonText(shown_page->prev_button, shown_page->next_button);
+	this->Thaw();
 
 	/* Finally, each page may update it's content with 'DoFocus'. */
 	shown_page->DoFocus();

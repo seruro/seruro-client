@@ -401,6 +401,11 @@ account_status_t AppMSW_LiveMail::IdentityStatus(wxString address, wxString &ser
 	wxJSONValue profile;
 
     server_uuid.Clear();
+
+	if (! this->GetInfo()) {
+		return APP_UNASSIGNED;
+	}
+
 	account_name = this->GetAccountFile(address);
 	if (account_name.compare(wxEmptyString) == 0) {
 		DEBUG_LOG(_("AppMSW_LiveMail> (IsIdentityInstalled) Cannot find (%s) within account info."), address);

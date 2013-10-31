@@ -79,6 +79,7 @@ void ApplicationsPage::OnAccountDeselected(wxListEvent &event)
 
 void ApplicationsPage::OnAssign(wxCommandEvent &event)
 {
+	this->Freeze();
     if (! AppAccountList::Assign()) {
         /* If a restart was required, pause the app and wait for a choice? */
         return;
@@ -90,10 +91,13 @@ void ApplicationsPage::OnAssign(wxCommandEvent &event)
     
     /* Change the next text to indicate the assignment was successful. */
     this->wizard->SetButtonText(wxEmptyString, _("&Next >"));
+	this->Thaw();
+	this->Layout();
 }
 
 void ApplicationsPage::OnUnassign(wxCommandEvent &event)
 {
+	this->Freeze();
     if (! AppAccountList::Unassign()) {
 		return;
 	}
@@ -101,6 +105,8 @@ void ApplicationsPage::OnUnassign(wxCommandEvent &event)
 	AppAccountList::DeselectAccounts();
 	this->assign_button->Disable();
 	this->unassign_button->Disable();
+	this->Thaw();
+	this->Layout();
 }
 
 void ApplicationsPage::OnRefresh(wxCommandEvent &event)
@@ -123,6 +129,7 @@ void ApplicationsPage::DoFocus()
     this->account = wizard->GetAccount();
     whitelist.Add(this->account);
     
+	this->Freeze();
     AppAccountList::SetAccountWhitelist(whitelist);
     AppAccountList::GenerateAccountsList();
 
@@ -132,8 +139,8 @@ void ApplicationsPage::DoFocus()
     }
     
     /* Make sure the list fits correctly. */
-    this->Layout();
     this->AlignList();
+	this->Thaw();
     this->Layout();
 }
 

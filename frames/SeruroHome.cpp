@@ -367,11 +367,17 @@ bool SeruroPanelHome::IsReady()
 		return false;
 	}
 
+	/* Get apps list and get accounts list. */
 	apps = theSeruroApps::Get().GetAppList();
+	for (size_t i = 0; i < apps.size(); ++i) {
+		theSeruroApps::Get().GetAccountList(apps[i]);
+	}
 
 	bool has_account = false;
 	bool has_contact = false;
 	bool has_assigned = false;
+	account_status_t status;
+
 	for (size_t i = 0; i < servers.size(); ++i) {
 		accounts = theSeruroConfig::Get().GetAddressList(servers[i]);
 		contacts = theSeruroConfig::Get().GetContactsList(servers[i]);
@@ -382,14 +388,15 @@ bool SeruroPanelHome::IsReady()
 
 		/* Check for at least one assigned account. */
 		for (size_t j = 0; j < accounts.size(); ++j) {
-			if (has_assigned) continue;
 			for (size_t k = 0; k < apps.size(); ++k) {
 				if (theSeruroApps::Get().IdentityStatus(apps[k], accounts[j], server_uuid) == APP_ASSIGNED) {
 					has_assigned = true;
 					break;
 				}
 			}
+			if (has_assigned) break;
 		}
+		/* End checking assignments. */
 	}
 
     /* If there was any cause for failure (false), set the appropriate action. */

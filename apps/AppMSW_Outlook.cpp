@@ -1125,6 +1125,10 @@ account_status_t AppMSW_Outlook::IdentityStatus(wxString address, wxString &serv
 	/* The account name is the address. */
 	server_uuid.Clear();
 
+	if (! this->GetInfo()) {
+		return APP_UNASSIGNED;
+	}
+
 	if (! this->info["accounts"].HasMember(address)) {
 		/* There was no account found for the given address. */
 		return APP_UNASSIGNED;
