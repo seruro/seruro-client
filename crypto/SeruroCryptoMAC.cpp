@@ -279,7 +279,7 @@ bool InstallIdentityToKeychain(SecIdentityRef &identity, wxString keychain_name)
         return true;
     }
     
-    if (success != errSecSuccess) {
+    if (success != errSecSuccess && success != errSecDuplicateItem) {
         wxLogMessage(_("SeruroCrypto> (InstallIdentityToKeychain) could not add identity to keychain (err= %d)."), success);
         return false;
     }

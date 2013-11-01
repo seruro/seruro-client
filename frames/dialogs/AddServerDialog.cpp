@@ -10,7 +10,7 @@
 #include <wx/log.h>
 
 #if SERURO_CLOUD_CLIENT == 1
-#define SERVER_NAME_HINT "myseruro"
+#define SERVER_NAME_HINT "alpha"
 #define SERVER_CLOUD_SUFFIX ".seruro.com"
 #else
 #define SERVER_NAME_HINT "example.seruro.com"

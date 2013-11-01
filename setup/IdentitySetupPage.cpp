@@ -150,7 +150,7 @@ void IdentityPage::OnP12sResponse(SeruroRequestEvent &event)
 		this->wizard->FocusNext();
 		identity_installed = true;
 	} else {
-		this->SetIdentityStatus(_("Certificates downloaded, please install."));
+		this->SetIdentityStatus(_("Certificates downloaded, please unlock."));
 	}
 
     this->EnablePage();
