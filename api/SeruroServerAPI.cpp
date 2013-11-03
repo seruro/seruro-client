@@ -292,7 +292,7 @@ bool SeruroServerAPI::InstallCertificate(wxJSONValue response)
 }
 
 bool SeruroServerAPI::InstallP12(wxString server_uuid, wxString address, identity_type_t cert_type,
-    wxString encoded_p12, wxString unlock_code, bool force_install)
+    wxString encoded_p12, wxArrayString codes, bool force_install)
 {
     wxArrayString  fingerprints;
     wxMemoryBuffer decoded_p12;
@@ -302,7 +302,16 @@ bool SeruroServerAPI::InstallP12(wxString server_uuid, wxString address, identit
     
     /* Add the identity (p12) to the certificate store. */
     SeruroCrypto crypto;
-    if (! crypto.InstallP12(decoded_p12, unlock_code, fingerprints)) {
+    bool install_status;
+    
+    install_status = false;
+    for (size_t i = 0; i < codes.size(); ++i) {
+        /* Try each code provided. */
+        install_status = crypto.InstallP12(decoded_p12, codes[i], fingerprints);
+        if (install_status) break;
+    }
+    
+    if (! install_status) {
         DEBUG_LOG(_("ServerAPI> (InstallP12) could not install (%d) p12."), cert_type);
         return false;
     } else {

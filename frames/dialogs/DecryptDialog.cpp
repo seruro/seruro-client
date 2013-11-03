@@ -105,8 +105,9 @@ wxJSONValue DecryptForm::GetValues()
 {
     wxJSONValue values;
     
-    values["authentication"] = this->authentication_control->GetValue();
-    values["encipherment"] = this->encipherment_control->GetValue();
+    /* The codes are trimmed of whitespace from both sides. */
+    values["authentication"] = this->authentication_control->GetValue().Trim();
+    values["encipherment"] = this->encipherment_control->GetValue().Trim();
     
     return values;
 }

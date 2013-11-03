@@ -321,6 +321,7 @@ void IdentityPage::DisablePage()
 bool IdentityPage::GoNext(bool from_callback)
 {
     wxJSONValue unlock_codes;
+    wxArrayString codes;
     wxString server_uuid, address;
     
 	/* Either a subsequent click or a callback success. */
@@ -338,8 +339,15 @@ bool IdentityPage::GoNext(bool from_callback)
 
 	/* About to do some security-related work, which may block for a while. */
     unlock_codes = this->GetValues();
-	this->DisablePage();
+    /* Add the codes a try-all list of unlocks. */
+    if (unlock_codes.HasMember("authentication") && unlock_codes["authentication"].AsString().length() > 0) {
+        codes.Add(unlock_codes["authentication"].AsString());
+    }
+    if (unlock_codes.HasMember("encipherment") && unlock_codes["encipherment"].AsString().length() > 0) {
+        codes.Add(unlock_codes["encipherment"].AsString());
+    }
 
+    this->DisablePage();
 	SeruroServerAPI *api = new SeruroServerAPI(this);
     
     server_uuid = this->download_response["server_uuid"].AsString();
@@ -349,16 +357,12 @@ bool IdentityPage::GoNext(bool from_callback)
     bool authentication_result = true, encipherment_result = true;
     if (install_authentication) {
         authentication_result = api->InstallP12(server_uuid, address, 
-			ID_AUTHENTICATION,
-            this->download_response["p12"]["authentication"][1].AsString(),
-            unlock_codes["authentication"].AsString(), true);
+			ID_AUTHENTICATION, this->download_response["p12"]["authentication"][1].AsString(), codes, true);
     }
     
     if (install_encipherment) {
         encipherment_result = api->InstallP12(server_uuid, address, 
-			ID_ENCIPHERMENT,
-            this->download_response["p12"]["encipherment"][1].AsString(),
-            unlock_codes["encipherment"].AsString(), true);
+			ID_ENCIPHERMENT, this->download_response["p12"]["encipherment"][1].AsString(), codes, true);
     }
     
     delete api;

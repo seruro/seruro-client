@@ -77,7 +77,7 @@ public:
 	//bool InstallP12(wxJSONValue response, wxJSONValue unlock_codes, bool force_install = false);
     bool InstallP12(wxString server_uuid, wxString address, 
 		identity_type_t cert_type,
-        wxString encoded_p12, wxString unlock_code, bool force_install = false);
+        wxString encoded_p12, wxArrayString codes, bool force_install = false);
 	bool InstallCA(wxJSONValue response);
 	bool InstallCertificate(wxJSONValue response);
     
