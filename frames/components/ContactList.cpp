@@ -5,13 +5,14 @@
 #include "../../SeruroConfig.h"
 #include "../../crypto/SeruroCrypto.h"
 #include "../UIDefs.h"
+#include "../ImageDefs.h"
 
 /* Image data. */
-#include "../../resources/images/blank.png.h"
-#include "../../resources/images/certificate_icon_12_flat.png.h"
+//#include "../../resources/images/blank.png.h"
+//#include "../../resources/images/certificate_icon_12_flat.png.h"
 
 /* Status (for accounts/identities) */
-#include "../../resources/images/check_icon_12_flat.png.h"
+//#include "../../resources/images/check_icon_12_flat.png.h"
 //#include "../../resources/images/cross_icon_12_flat.png.h"
 
 #define ITEM_IMAGE_EXISTS 2
@@ -59,10 +60,10 @@ void ContactList::Create(wxWindow *parent)
     this->contact_list = new wxListCtrl(parent, CONTACT_LIST_ID, wxDefaultPosition, wxDefaultSize,
         (wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_SIMPLE));
     
-    list_images = new wxImageList(12, 12, true);
-    list_images->Add(wxGetBitmapFromMemory(blank));
-    list_images->Add(wxGetBitmapFromMemory(certificate_icon_12_flat));
-    list_images->Add(wxGetBitmapFromMemory(check_icon_12_flat));
+    list_images = new wxImageList(SERURO_IMAGE_LIST_WIDTH, SERURO_IMAGE_LIST_HEIGHT, true);
+    list_images->Add(wxGetBitmapFromMemory(blank_icon));
+    list_images->Add(wxGetBitmapFromMemory(certificate_icon_flat));
+    list_images->Add(wxGetBitmapFromMemory(check_icon_flat));
     
     this->contact_list->SetImageList(list_images, wxIMAGE_LIST_SMALL);
     

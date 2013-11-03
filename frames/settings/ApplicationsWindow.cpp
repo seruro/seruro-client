@@ -184,13 +184,13 @@ ApplicationsWindow::ApplicationsWindow(SeruroPanelSettings *window) : SettingsVi
     AppAccountList::Create(this, true);
     //AppAccountList::CreateHelper();
  
-    apps_list_images = new wxImageList(12, 12, true);
-    apps_list_images->Add(wxGetBitmapFromMemory(blank));
-	apps_list_images->Add(wxGetBitmapFromMemory(certificate_icon_12_flat));
+    apps_list_images = new wxImageList(SERURO_IMAGE_LIST_WIDTH, SERURO_IMAGE_LIST_HEIGHT, true);
+    apps_list_images->Add(wxGetBitmapFromMemory(blank_icon));
+	apps_list_images->Add(wxGetBitmapFromMemory(certificate_icon_flat));
 	//apps_list_images->Add(wxGetBitmapFromMemory(identity_icon_12_flat));
 	/* Status icons for applications. */
-	apps_list_images->Add(wxGetBitmapFromMemory(check_icon_12_flat));
-	apps_list_images->Add(wxGetBitmapFromMemory(cross_icon_12_flat));
+	apps_list_images->Add(wxGetBitmapFromMemory(check_icon_flat));
+	apps_list_images->Add(wxGetBitmapFromMemory(cross_icon_flat));
 	
 	apps_list = new wxListCtrl(this, SETTINGS_APPS_LIST_ID,
         wxDefaultPosition, wxSize(-1, SETTINGS_APPLICATION_LIST_HEIGHT), wxLC_REPORT | wxLC_SINGLE_SEL | wxBORDER_THEME);

@@ -372,14 +372,14 @@ AccountsWindow::AccountsWindow(SeruroPanelSettings *window) : SettingsView(windo
 	/* This will hold the column of lists. */
 	wxSizer *const lists_sizer = new wxBoxSizer(wxVERTICAL);
 
-	list_images = new wxImageList(12, 12, true);
-    list_images->Add(wxGetBitmapFromMemory(blank));
-	list_images->Add(wxGetBitmapFromMemory(certificate_icon_12_flat));
-	list_images->Add(wxGetBitmapFromMemory(identity_icon_12_flat));
+	list_images = new wxImageList(SERURO_IMAGE_LIST_WIDTH, SERURO_IMAGE_LIST_HEIGHT, true);
+    list_images->Add(wxGetBitmapFromMemory(blank_icon));
+	list_images->Add(wxGetBitmapFromMemory(certificate_icon_flat));
+	list_images->Add(wxGetBitmapFromMemory(identity_icon_flat));
     
     /* Status icons. */
-    list_images->Add(wxGetBitmapFromMemory(check_icon_12_flat));
-    list_images->Add(wxGetBitmapFromMemory(cross_icon_12_flat));
+    list_images->Add(wxGetBitmapFromMemory(check_icon_flat));
+    list_images->Add(wxGetBitmapFromMemory(cross_icon_flat));
 
 	//servers_list = new wxListCtrl(this, SETTINGS_SERVERS_LIST_ID,
 	//	wxDefaultPosition, wxDefaultSize,

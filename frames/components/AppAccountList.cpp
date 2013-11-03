@@ -211,12 +211,12 @@ void AppAccountList::Create(wxWindow *parent, bool use_address, bool initial)
     this->is_initial = initial;
     
     /* Create image list */
-    list_images = new wxImageList(12, 12, true);
-    list_images->Add(wxGetBitmapFromMemory(blank));
-	list_images->Add(wxGetBitmapFromMemory(certificate_icon_12_flat));
-	list_images->Add(wxGetBitmapFromMemory(identity_icon_12_flat));
-    list_images->Add(wxGetBitmapFromMemory(check_icon_12_flat));
-    list_images->Add(wxGetBitmapFromMemory(cross_icon_12_flat));
+    list_images = new wxImageList(SERURO_IMAGE_LIST_WIDTH, SERURO_IMAGE_LIST_HEIGHT, true);
+    list_images->Add(wxGetBitmapFromMemory(blank_icon));
+	list_images->Add(wxGetBitmapFromMemory(certificate_icon_flat));
+	list_images->Add(wxGetBitmapFromMemory(identity_icon_flat));
+    list_images->Add(wxGetBitmapFromMemory(check_icon_flat));
+    list_images->Add(wxGetBitmapFromMemory(check_empty_icon_flat)); /* was cross_icon_12_flat */
 
     /* Create accounts list. */
     accounts_list = new wxListCtrl(parent, APPACCOUNT_LIST_ID,

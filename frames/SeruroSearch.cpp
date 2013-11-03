@@ -6,14 +6,12 @@
 /* Need GetServerChoice */
 #include "dialogs/AddServerDialog.h"
 #include "UIDefs.h"
+#include "ImageDefs.h"
 
 #include "../wxJSON/wx/jsonval.h"
 #include "../wxJSON/wx/jsonreader.h"
 #include "../wxJSON/wx/jsonwriter.h"
 #include <wx/checkbox.h>
-
-/* Image data. */
-#include "../resources/images/certificate_icon_18_flat.png.h"
 
 #define SEARCH_COLUMN_ADDRESS    1
 #define SEARCH_COLUMN_FIRSTNAME  2
