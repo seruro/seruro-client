@@ -30,12 +30,18 @@ wxMemoryBuffer AsBinary(wxString hex_string)
 		byte = 0;
 		hex = hex_string.GetChar(i*2);
 		if (hex >= '0' && hex <= '9') { byte = hex-'0'; } 
-		else { byte = hex-'a'+10; }
+		else {
+			if (hex >= 'a') { byte = hex-'a'+10; }
+			else { byte = hex-'A'+10; } 
+		}
 		
 		byte *= 16;
 		hex = hex_string.GetChar(i*2 + 1);
 		if (hex >= '0' && hex <= '9') { byte += hex-'0'; } 
-		else { byte += hex-'a'+10; }
+		else {
+			if (hex >= 'a') { byte += hex-'a'+10; }
+			else { byte += hex-'A'+10; } 
+		}
 		buffer.AppendByte(byte);
 	}
 

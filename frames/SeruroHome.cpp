@@ -376,7 +376,7 @@ bool SeruroPanelHome::IsReady()
 	bool has_account = false;
 	bool has_contact = false;
 	bool has_assigned = false;
-	account_status_t status;
+	//account_status_t status;
 
 	for (size_t i = 0; i < servers.size(); ++i) {
 		accounts = theSeruroConfig::Get().GetAddressList(servers[i]);

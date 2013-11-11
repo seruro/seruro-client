@@ -119,7 +119,7 @@ bool ServerMonitor::ProcessCertificates(wxString server_uuid, wxJSONValue certif
 	wxString cert_type;
 
 	address_list = certificates.GetMemberNames();
-	for (int i = 0; i < address_list.size(); ++i) {
+	for (size_t i = 0; i < address_list.size(); ++i) {
 		for (int j = 0; j < certificates[address_list[i]].Size(); j++) {
 			/* For each address provided, parse certificates. */
 			cert_encoded = certificates[address_list[i]][j]["cert"].AsString();

@@ -24,12 +24,20 @@
  */
 #define DILKIE_GUID "\xc0\x2e\xbc\x53\x53\xd9\xcd\x11\x97\x52\x00\xaa\x00\x4a\xe4\x0e"
 #define PR_SECURITY_PROFILES PROP_TAG(PT_MV_BINARY, 0x355)
+#define PR_USER_X509_CERTIFICATE PROP_TAG(PT_MV_BINARY, 0x3A70)
+#define PR_CUSTOM_TRUST_CENTER PROP_TAG(PT_LONG, 0x354);
 
-#define PR_USER_X509_CERTIFICATE PROP_TAG( PT_MV_BINARY, 0x3A70)
-
+/* Certificate profile options. */
 #define CERT_DEFAULTS_SMIME 0x01
 #define CERT_DEFAULTS_CERT  0x02
 #define CERT_DEFAULTS_SEND  0x04
+
+/* Trust center options. */
+#define TC_ENCRYPT_CONTENTS 0x001
+#define TC_ADD_SIGNATURE    0x002
+/* this applies when sending ONLY signed (inverse = 0x20). */
+#define TC_SEND_CLEAR_TEXT  0x000
+#define TC_REQUEST_CERTS    0x200
 
 /* Reference: http://support.microsoft.com/kb/312900 */
 enum security_properties {
@@ -45,18 +53,64 @@ enum security_properties {
 	PR_CERT_KEYEX_CERT       = 0x0003, /* ASN.1 DER encoded x509 certificate. */
 };
 
-/* ASN.1 DER encoded encryption capabilities. */
-#define ASYMETRIC_CAPS_BLOB "\
-30819A300B060960864801650304012A300B0609\
-608648016503040116300A06082A864886F70D03\
-07300B0609608648016503040102300E06082A86\
-4886F70D030202020080300706052B0E03020730\
-0D06082A864886F70D0302020140300D06082A86\
-4886F70D0302020128300706052B0E03021A300B\
-0609608648016503040203300B06096086480165\
-03040202300B0609608648016503040201"
+/* ASN.1 DER encoded capabilities (OID list), in order of preference. */
+#define ASYMCAP_ENC_AES256_CBC	"300B060960864801650304012A"
+#define ASYMCAP_ENC_AES192_CBC	"300B0609608648016503040116"
+#define ASYMCAP_ENC_AES128_CBC  "300A06082A864886F70D0307"
+#define ASYMCAP_ENC_DESEDE3_CBC "300B0609608648016503040102"
+#define ASYMCAP_ENC_RC2_CBC_128 "300E06082A864886F70D030202020080"
+#define ASYMCAP_ENC_DES_CBC		"300706052B0E030207"
+#define ASYMCAP_ENC_RC2_CBC_64  "300D06082A864886F70D0302020140" 
+#define ASYMCAP_ENC_RC2_CBC_40	"300D06082A864886F70D0302020128"
+#define ASYMCAP_HASH_SHA1		"300706052B0E03021A"
+#define ASYMCAP_HASH_SHA512		"300B0609608648016503040203" 
+#define ASYMCAP_HASH_SHA384		"300B0609608648016503040202"
+#define ASYMCAP_HASH_SHA256		"300B0609608648016503040201"
 
 wxDECLARE_APP(SeruroClient);
+
+wxMemoryBuffer BuildDefaultAsymetricCaps()
+{
+	wxMemoryBuffer caps_sequence, capability;
+
+	/* Add encryption preferences. */
+	capability = AsBinary(ASYMCAP_ENC_AES256_CBC);
+	caps_sequence.AppendData(capability.GetData(), capability.GetDataLen());
+	capability = AsBinary(ASYMCAP_ENC_AES192_CBC);
+	caps_sequence.AppendData(capability.GetData(), capability.GetDataLen());
+	capability = AsBinary(ASYMCAP_ENC_AES128_CBC);
+	caps_sequence.AppendData(capability.GetData(), capability.GetDataLen());
+	capability = AsBinary(ASYMCAP_ENC_DESEDE3_CBC);
+	caps_sequence.AppendData(capability.GetData(), capability.GetDataLen());
+	capability = AsBinary(ASYMCAP_ENC_RC2_CBC_128);
+	caps_sequence.AppendData(capability.GetData(), capability.GetDataLen());
+	capability = AsBinary(ASYMCAP_ENC_DES_CBC);
+	caps_sequence.AppendData(capability.GetData(), capability.GetDataLen());
+	capability = AsBinary(ASYMCAP_ENC_RC2_CBC_64);
+	caps_sequence.AppendData(capability.GetData(), capability.GetDataLen());
+	capability = AsBinary(ASYMCAP_ENC_RC2_CBC_40);
+	caps_sequence.AppendData(capability.GetData(), capability.GetDataLen());
+
+	/* Add signature-hashing preferences. */
+	capability = AsBinary(ASYMCAP_HASH_SHA1);
+	caps_sequence.AppendData(capability.GetData(), capability.GetDataLen());
+	capability = AsBinary(ASYMCAP_HASH_SHA512);
+	caps_sequence.AppendData(capability.GetData(), capability.GetDataLen());
+	capability = AsBinary(ASYMCAP_HASH_SHA384);
+	caps_sequence.AppendData(capability.GetData(), capability.GetDataLen());
+	capability = AsBinary(ASYMCAP_HASH_SHA256);
+	caps_sequence.AppendData(capability.GetData(), capability.GetDataLen());
+
+	wxMemoryBuffer wrapped_caps_set;
+
+	wrapped_caps_set.AppendByte((char) 0x30); /* tag. */
+	wrapped_caps_set.AppendByte((char) 0x81); /* extended length (>127) */
+	wrapped_caps_set.AppendByte((char) caps_sequence.GetDataLen());
+	//wrapped_caps_set.AppendByte((char) 0x9A); /* length */
+	wrapped_caps_set.AppendData(caps_sequence.GetData(), caps_sequence.GetDataLen());
+
+	return wrapped_caps_set;
+}
 
 bool SafeANSIString(void *data, size_t length, wxString &safe_result)
 {
@@ -597,6 +651,12 @@ bool SetSecurityProperties(wxString &service_uid, wxJSONValue properties)
 	SPropTagArray property_tags;
 	//ULONG tag_array[1];
 
+	/* Try to set the trust center preferences for sending secure email. */
+	property_values.ulPropTag = PR_CUSTOM_TRUST_CENTER;
+	property_values.Value.l = (TC_ENCRYPT_CONTENTS | TC_ADD_SIGNATURE | TC_SEND_CLEAR_TEXT | TC_REQUEST_CERTS);
+	/* This can fail. */
+	result = profile_section->SetProps(1, &property_values, NULL);
+
 	/* Only support one MAPI security profile at a time. */
 	if (! properties.HasMember("clear")) {
 		property_values.ulPropTag = PR_SECURITY_PROFILES;
@@ -636,6 +696,7 @@ wxMemoryBuffer CreateSecurityProperties(wxJSONValue properties, bool add_caps)
 {
 	wxMemoryBuffer entry_buffer;
 	wxMemoryBuffer cert_buffer;
+	wxMemoryBuffer asymetric_caps;
 
 	USHORT tag, length;
 	ULONG long_data;
@@ -706,7 +767,8 @@ wxMemoryBuffer CreateSecurityProperties(wxJSONValue properties, bool add_caps)
 	tag = PR_CERT_ASYMETRIC_CAPS;
 	entry_buffer.AppendData(&tag, 2);
 	if (add_caps) {
-		wxMemoryBuffer asymetric_caps = AsBinary(ASYMETRIC_CAPS_BLOB);
+		//wxMemoryBuffer asymetric_caps = AsBinary(ASYMETRIC_CAPS_BLOB);
+		asymetric_caps = BuildDefaultAsymetricCaps();
 		length = 4 + asymetric_caps.GetDataLen();
 		entry_buffer.AppendData(&length, 2);
 		entry_buffer.AppendData(asymetric_caps.GetData(), asymetric_caps.GetDataLen());
@@ -916,7 +978,9 @@ wxJSONValue GetOutlookMAPIAccounts()
 		&service_restriction, NULL, 0, &service_rows);
 	if (FAILED(result) || service_rows == NULL || service_rows->cRows == 0) {
 		DEBUG_LOG(_("AppMSW_Outlook> (GetAccountList) cannot query service table (%0x)."), result);
-		goto release_service_table;
+		//goto release_service_table;
+		/* Todo: split checked into multiple gotos, depending on the result then values. */
+		goto release_service_admin;
 	}
 
 	for (unsigned long i = 0; i < service_rows->cRows; ++i) {
@@ -936,9 +1000,12 @@ wxJSONValue GetOutlookMAPIAccounts()
 		}
 	}
 
-	::FreeProws(service_rows);
+	if (service_rows->cRows > 0) {
+		/* Todo: check that this is correct. */
+		::FreeProws(service_rows);
+	}
 
-release_service_table:
+//release_service_table:
 	service_table->Release();
 release_service_admin:
 	service_admin->Release();
@@ -981,7 +1048,9 @@ wxArrayString AppMSW_Outlook::GetAccountList()
 
 	/* Set/ReSet the account information. */
 	this->info["accounts"] = GetOutlookMAPIAccounts();
-	accounts = this->info["accounts"].GetMemberNames();
+	if (this->info["accounts"].IsObject()) { 
+		accounts = this->info["accounts"].GetMemberNames();
+	}
 
 	return accounts;
 }

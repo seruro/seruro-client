@@ -2,7 +2,7 @@
 #define SERURO_APP_NAME "Seruro Client"
 #ifndef SERURO_VERSION
 /* SERURO_VERSION should be set by compiler options. */
-#define SERURO_VERSION  "0.2.2-alpha"
+#define SERURO_VERSION  "0.2.2.1"
 #endif
 
 /* For alpha or beta-testing. */
