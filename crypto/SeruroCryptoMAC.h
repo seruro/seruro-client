@@ -9,7 +9,7 @@
 
 #include <wx/string.h>
 
-const char* AsChar(const wxString &input);
+//const char* AsChar(const wxString &input);
 
 class SeruroCryptoMAC
 {

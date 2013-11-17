@@ -165,7 +165,7 @@ wxString GetSubjectKeyIDFromCertificate(SecCertificateRef &cert)
     CFArrayRef skid_list = (CFArrayRef) CFDictionaryGetValue(skid_value, kSecPropertyKeyValue); /* size =2 */
     
     CFDictionaryRef skid;
-    CFDataRef skid_data;
+    CFDataRef skid_data = nil;
     const void *sub_value;
     
     for (int i = 0; i < CFArrayGetCount(skid_list); i++) {
@@ -179,7 +179,9 @@ wxString GetSubjectKeyIDFromCertificate(SecCertificateRef &cert)
         }
     }
     
-    subject_data.AppendData(CFDataGetBytePtr(skid_data), CFDataGetLength(skid_data));
+    if (skid_data != nil) {
+        subject_data.AppendData(CFDataGetBytePtr(skid_data), CFDataGetLength(skid_data));
+    }
     
     CFRelease(keys);
     CFRelease(certificate_values);

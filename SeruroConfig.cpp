@@ -72,7 +72,7 @@ bool WriteTokenData(wxJSONValue token_data)
     /* Possibly assure writes only occur within main thread. */
     if (! wxIsMainThread()) {
         /* Stop execution? */
-        int i = 0;
+        //int i = 0;
     }
     
 	/* Write the data into a string for saving. */
@@ -193,7 +193,7 @@ bool SeruroConfig::WriteConfig()
 
     if (! wxIsMainThread()) {
         /* Stop execution? */
-        int i = 0;
+        //int i = 0;
     }
     
     if (HasConfig() && ! this->config_file->Exists()) {

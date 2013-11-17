@@ -42,34 +42,7 @@ wxString UUIDFromFingerprint(const wxString &fingerprint)
 #if defined(__WXOSX__) || defined(__WXMAC__)
 /* OSX includes. */
 #include "AppOSX_Mail.h"
-#include <CoreFoundation/CFStream.h>
-
-/* Converts a CF string into a wx string. */
-wxString AsString(CFStringRef string)
-{
-    char *path;
-    /* CFString lengths are in UTF 16 pairs. */
-    size_t length = CFStringGetLength(string) * 2 * sizeof(char);
-    
-    /* Allocate and convert. */
-    path = (char *) malloc(length);
-    CFStringGetCString(string, path, length, kCFStringEncodingASCII);
-    wxString path_string = _(path);
-    delete path;
-    
-    return path_string;
-}
-
-/* Converts an expected CF string from CF collection into a wx string. */
-wxString AsString(const void *value)
-{
-    if (CFGetTypeID(value) != CFStringGetTypeID()) {
-        /* If the actual type is not a string, return an empty representation. */
-        return wxEmptyString;
-    }
-    
-    return AsString((CFStringRef) value);
-}
+#include "AppOSX_Outlook.h"
 
 void SeruroApps::InitOSX()
 {
@@ -78,13 +51,14 @@ void SeruroApps::InitOSX()
     /* Example, create the helper, add the string association. */
     helper = (AppHelper *) new AppOSX_Mail();
     AddAppHelper(_("OSX Mail"), helper);
+    helper = (AppHelper *) new AppOSX_Outlook();
+    AddAppHelper(_("Microsoft Outlook 2011"), helper);
 }
 
 #endif
 
 #if defined(__WXMSW__)
 /* MS windows includes. */
-
 #include "AppMSW_LiveMail.h"
 #include "AppMSW_Outlook.h"
 

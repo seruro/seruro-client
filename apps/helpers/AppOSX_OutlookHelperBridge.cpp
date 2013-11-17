@@ -1,4 +1,6 @@
 
+#if defined(__WXOSX__) || defined(__WXMAC__)
+
 #import "AppOSX_OutlookHelper.h"
 #include "AppOSX_OutlookHelperBridge.h"
 
@@ -25,3 +27,5 @@ namespace CocoaBridge {
     
     
 }
+
+#endif /* OS Check */

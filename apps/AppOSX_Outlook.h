@@ -1,15 +1,39 @@
 
-//#include <Foundation/Foundation.h>
-//#include <Foundation/NSObject.h>
-#include <Cocoa/Cocoa.h>
+#ifndef H_AppOSX_Outlook
+#define H_AppOSX_Outlook
 
+#if defined(__WXOSX__) || defined(__WXMAC__)
 
-//@implementation AppOSX_OutlookHelper : NSObject
+#include "helpers/AppOSX_OutlookIdentity.h"
+#include "SeruroApps.h"
 
-/* Helper Objective-C class methods for scripting resources. */
-//+ (void) addContactWithFirstName: (id) first_name
-//                        lastName: (id) last_name
-//                           email: (id) address
+class AppOSX_Outlook : public AppHelper
+{
+public:
+    AppOSX_Outlook() : AppHelper() {
+        can_assign = true;
+        can_unassign = false;
+        
+        needs_restart = true;
+    }
+    
+    bool IsInstalled();
+    wxString GetVersion();
+    
+    bool IsRunning();
+    bool StopApp();
+    bool StartApp();
+    
+    wxArrayString GetAccountList();
+    
+private:
+    /* For each sub file within IDENTITIES, try to parse. */
+    void ParseIdentity(wxString identity_path);
+    bool GetIdentity(wxString full_path, AppOSX_OutlookIdentity &identity);
+    
+    bool GetInfo();
+};
 
-//@end
+#endif /* OS Check */
 
+#endif

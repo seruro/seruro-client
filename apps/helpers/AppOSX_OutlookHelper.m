@@ -1,4 +1,6 @@
 
+#if defined(__WXOSX__) || defined(__WXMAC__)
+
 #include "AppOSX_OutlookHelper.h"
 
 /* MDLS attributes:
@@ -63,3 +65,5 @@
 */
 
 @end
+
+#endif /* OS Check */

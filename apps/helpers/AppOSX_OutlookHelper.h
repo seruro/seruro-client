@@ -2,7 +2,7 @@
 #ifndef H_AppOSX_OutlookHelper
 #define H_AppOSX_OutlookHelper
 
-
+#if defined(__WXOSX__) || defined(__WXMAC__)
 
 #include <Foundation/Foundation.h>
 
@@ -29,5 +29,7 @@
 //+(void) addContact;
 
 @end
+
+#endif /* OS Check */
 
 #endif

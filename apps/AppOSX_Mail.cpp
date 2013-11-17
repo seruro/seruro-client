@@ -7,6 +7,7 @@
 
 #include "AppOSX_Mail.h"
 #include "ProcessManager.h"
+#include "helpers/AppOSX_Utils.h"
 
 #include "../SeruroClient.h"
 #include "../SeruroConfig.h"
@@ -28,58 +29,6 @@
 #define MAILDATA_PLIST "/Library/Mail/V2/MailData/Accounts.plist"
 
 DECLARE_APP(SeruroClient);
-
-/* Read the MailData PList. */
-bool ReadDataPList(CFMutableDictionaryRef &results_dict)
-{
-    CFURLRef plist_url; /* File location to accounts plist. */
-    CFPropertyListRef properties; /* list data structure. */
-    //CFDictionaryRef dict; /* the plist should be a single dict type. */
-    CFDataRef resource_data; /* File contents. */
-    /* Error/state handleing. */
-    SInt32 error_code = 0;
-    CFErrorRef error_string;
-    bool success;
-    
-    /* Get url to account data. */
-    // use wxFileName::GetHomeDir()
-    wxString plist_url_path;
-    CFStringRef plist_url_cfpath;
-    
-    plist_url_path = wxString(wxFileName::GetHomeDir() + _(MAILDATA_PLIST));
-    plist_url_cfpath = CFStringCreateWithCString(kCFAllocatorDefault, plist_url_path.mb_str(wxConvUTF8), kCFStringEncodingMacRoman);
-    plist_url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, plist_url_cfpath, kCFURLPOSIXPathStyle, false);
-    /* Load file contents. */
-    success = CFURLCreateDataAndPropertiesFromResource(kCFAllocatorDefault, plist_url, &resource_data, NULL, NULL, &error_code);
-    CFRelease(plist_url);
-    
-    if (!success || error_code != 0) {
-        //CFRelease(resource_data);
-        wxLogMessage(_("AppOSX_Mail> (ReadDataPList) failed to read (error= %d)."), error_code);
-        return false;
-    }
-    
-    /* This is deprecated. */
-    //properties = CFPropertyListCreateFromXMLData(kCFAllocatorDefault, resource_data, kCFPropertyListImmutable, &error_string);
-    properties = CFPropertyListCreateWithData(kCFAllocatorDefault, resource_data, kCFPropertyListImmutable, NULL, &error_string);
-    CFRelease(resource_data);
-    
-    //if (CFErrorGetCode(error_string) != 0) {
-    //    DEBUG_LOG(_("AppOSX_Mail> (ReadDataPList) encountered error while reading account plist (%d)."), CFErrorGetCode(error_string));
-    //    //CFRelease(error_string);
-    //}
-    
-    /* Make sure the property list can be represented as a dictionary. */
-    if (CFGetTypeID(properties) != CFDictionaryGetTypeID()) {
-        CFRelease(properties);
-        
-        wxLogMessage(_("AppOSX_Mail> (ReadDataPList) plist data is not a dictionary."));
-        return false;
-    }
-    
-    results_dict = (CFMutableDictionaryRef) properties;
-    return true;
-}
 
 bool AppOSX_Mail::IsRunning()
 {
@@ -111,7 +60,8 @@ wxString AppOSX_Mail::GetVersion()
         return info["version"].AsString();
     }
     
-    return _("0");
+    this->info["version"] = AppVersion(this->info["location"].AsString());
+    return this->info["version"].AsString();
 }
 
 wxArrayString AppOSX_Mail::GetAccountList()
@@ -122,8 +72,9 @@ wxArrayString AppOSX_Mail::GetAccountList()
     
     CFMutableDictionaryRef properties;
     //CFStringRef key;
-    if (! ReadDataPList(properties)) {
-        wxLogMessage(_("AppOSX_Mail> (GetAccountsList) could not read plist."));
+    if (! ReadPList(_(MAILDATA_PLIST), properties)) {
+        DEBUG_LOG(_("AppOSX_Mail> (GetAccountsList) could not read plist."));
+        
         return accounts;
     }
 
@@ -131,8 +82,9 @@ wxArrayString AppOSX_Mail::GetAccountList()
     
     /* Key must be a CFStringRef. */
     if (! CFDictionaryContainsKey(properties, CFSTR("MailAccounts"))) {
-        // problem
-        wxLogMessage(_("AppleOSX_Mail> (ReadDataPList) 'MailAccounts' not in dictionary."));
+        DEBUG_LOG(_("AppleOSX_Mail> (GetAccountList) 'MailAccounts' not in dictionary."));
+        
+        CFRelease(properties);
         return accounts;
     }
     
@@ -142,7 +94,7 @@ wxArrayString AppOSX_Mail::GetAccountList()
     accounts_value = CFDictionaryGetValue(properties, CFSTR("MailAccounts"));
     
     if (CFGetTypeID(accounts_value) != CFArrayGetTypeID()) {
-        wxLogMessage(_("AppleOSX_Mail> (ReadDataPList) 'MailAccounts' is not an array."));
+        wxLogMessage(_("AppleOSX_Mail> (GetAccountList) 'MailAccounts' is not an array."));
         return accounts;
     }
     
@@ -256,7 +208,7 @@ bool AppOSX_Mail::GetInfo()
     if (success != 0) {
         if (success != kLSApplicationNotFoundErr) {
             /* There was a problem detecting the application. */
-            wxLogMessage(_("AppOSXMail> error (%d) detection application."), success);
+            wxLogMessage(_("AppOSX_Outlook> error (%d) detection application."), success);
             this->is_detected = false;
         }
         CFRelease(bundle_id);
@@ -269,7 +221,7 @@ bool AppOSX_Mail::GetInfo()
     CFStringRef app_string = CFURLCopyFileSystemPath(app_url, kCFURLPOSIXPathStyle);
     wxString path_string = AsString(app_string);
     
-    wxLogMessage(_("AppOSX_Main> url: (%s)."), path_string);
+    wxLogMessage(_("AppOSX_Outlook> url: (%s)."), path_string);
     
     this->is_detected = true;
     this->is_installed = true;

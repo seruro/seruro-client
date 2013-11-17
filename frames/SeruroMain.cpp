@@ -248,7 +248,7 @@ void SeruroFrameMain::OnOptionChange(SeruroStateEvent &event)
     }
 
 	/* The search panel was never added. */
-	if (search_panel_id < 0) {
+	if (search_panel_id <= 0) {
 		return;
 	}
     
