@@ -31,11 +31,13 @@
 
 bool AppOSX_Outlook::GetIdentity(wxString full_path, AppOSX_OutlookIdentity &identity)
 {
+    /* A raw file wrapper */
     wxFFile identity_file;
     
     void *read_buffer;
     size_t read_size;
     
+    /* Try to open the file and assure we can read (default open parameter is readonly). */
     if (! identity_file.Open(full_path) || ! identity_file.IsOpened()) {
         DEBUG_LOG(_("AppOSX_Outlook> (ParseIdentity) could not open file (%s)."), full_path);
         return false;
@@ -64,23 +66,25 @@ bool AppOSX_Outlook::GetIdentity(wxString full_path, AppOSX_OutlookIdentity &ide
         return false;
     }
     
-    read_buffer = (void*) malloc(length - 4);
-    memset(read_buffer, 0, length - 4);
-    read_size = identity_file.Read(read_buffer, length - 4);
+    read_buffer = (void*) malloc(length);
+    memset(read_buffer, 0, length);
     
-    if (read_size != (length - 4)) {
-        DEBUG_LOG(_("AppOSX_Outlook> (ParseIdentity) read (%d) bytes does not match size (%d)."), read_size, (length - 4));
+    identity_file.Seek(0);
+    read_size = identity_file.Read(read_buffer, length);
+    
+    if (read_size != (length)) {
+        DEBUG_LOG(_("AppOSX_Outlook> (ParseIdentity) read (%d) bytes does not match size (%d)."), (int) read_size, ((int) length));
         
         identity_file.Close();
         return false;
     }
     
-    free(read_buffer);
-    identity_file.Close();
-    
     /* Fill in identity information (without acting on it). */
     identity.SetPath(full_path);
-    identity.SetData(read_buffer, (length - 4));
+    identity.SetData(read_buffer, length);
+    
+    free(read_buffer);
+    identity_file.Close();
     
     return true;
 }
@@ -104,6 +108,9 @@ void AppOSX_Outlook::ParseIdentity(wxString identity_path)
         /* Nothing left to do. */
         return;
     }
+    
+    /* Perform the parsed data formatting. */
+    identity.ParseAccount();
     
     /* Add this account instance to the list of accounts. */
     this->info["accounts"].Append(identity.GetAccount());
