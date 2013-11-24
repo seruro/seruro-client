@@ -82,11 +82,24 @@ typedef struct
 
 typedef struct
 {
+    uint32_t _unknown;
+    uint32_t der_offset;
+    uint32_t der_size;
+    
+    uint8_t *serial;
+    uint8_t *der;
+} marc_cert_t;
+
+typedef struct
+{
     size_t auth_cert_size;
     size_t enc_cert_size;
     
     uint8_t *auth_cert_data;
     uint8_t *enc_cert_data;
+    
+    marc_cert_t auth_cert;
+    marc_cert_t enc_cert;
 } marc_certs_t;
 
 /* Option data (quad ints) proceed strings and their length is specified by 0x2015.
@@ -115,14 +128,11 @@ WX_DEFINE_ARRAY(marc_option_t*, MarcOptionArray);
 WX_DEFINE_ARRAY(marc_option_string_t*, MarcOptionStringArray);
 WX_DEFINE_ARRAY(marc_option_data_t*, MarcOptionDataArray);
 
-
-
 class AppOSX_OutlookIdentity
 {
 public:
     AppOSX_OutlookIdentity() {
         marc_parsed = false;
-        account_parsed = false;
         
         marc_certs.auth_cert_size = 0;
         marc_certs.enc_cert_size = 0;
@@ -134,14 +144,18 @@ public:
     bool ParseMarc();
     
     /* Proccess marc data into account. */
-    void ParseAccount();
+    wxString GetAddress();
     
-    /* After the identity is parsed, accessors open. */
-    wxJSONValue GetAccount();
+    bool HasAuthCertificate();
+    bool HasEncCertificate();
+    wxJSONValue GetAuthCertificate();
+    wxJSONValue GetEncCertificate();
     
 private:
     wxMemoryBuffer raw_data;
-    wxJSONValue account;
+    wxString full_path;
+    
+    bool ParseCert(uint8_t *data, uint32_t size, bool is_auth);
     
     /* Data structures for identity. */
     marc_header_t *marc_header;
@@ -158,7 +172,6 @@ private:
     
     /* Determine if accessors are valid. */
     bool marc_parsed;
-    bool account_parsed;
 };
 
 #endif /* OS Check */

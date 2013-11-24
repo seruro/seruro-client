@@ -43,7 +43,10 @@ public:
 	bool HaveIdentity(wxString server_name, wxString address,
         wxString fingerprint = wxEmptyString);
     
-	//wxString GetFingerprint(wxMemoryBuffer &cert);
+	/* Special functions used by Applications. */
+    bool HasIdentityIssuer(const wxString &encoded_subject, const wxString &encoded_serial);
+    wxString GetIdentityIssuerSKID(const wxString &encoded_subject, const wxString &encoded_serial);
+    bool GetSKIDIdentityIssuer(const wxString &fingerprint, wxString &issuer, wxString &serial);
 };
 
 #endif 

@@ -8,6 +8,7 @@
 #include "../../SeruroClient.h"
 #include "../../logging/SeruroLogger.h"
 
+#include <wx/base64.h>
 
 uint32_t __bint32(uint32_t x)
 {
@@ -28,7 +29,7 @@ void AppOSX_OutlookIdentity::SetPath(wxString path)
     wxArrayString test_string;
     
     /* A simple wrapper to set the path. */
-    this->account["path"] = path;
+    this->full_path = path;
 }
 
 void AppOSX_OutlookIdentity::SetData(void *data, size_t length)
@@ -37,11 +38,59 @@ void AppOSX_OutlookIdentity::SetData(void *data, size_t length)
     this->raw_data.AppendData(data, length);
 }
 
-void AppOSX_OutlookIdentity::ParseAccount()
+bool AppOSX_OutlookIdentity::HasAuthCertificate()
+{
+    return (this->marc_certs.auth_cert_size > 0);
+}
+
+bool AppOSX_OutlookIdentity::HasEncCertificate()
+{
+    return (this->marc_certs.enc_cert_size > 0);
+}
+
+wxJSONValue AppOSX_OutlookIdentity::GetAuthCertificate()
+{
+    wxJSONValue auth_certificate;
+    wxMemoryBuffer serial, subject;
+    
+    if (this->marc_certs.auth_cert_size > 0) {
+        serial.AppendData(this->marc_certs.auth_cert.serial, this->marc_certs.auth_cert.der_offset);
+        subject.AppendData(this->marc_certs.auth_cert.der, this->marc_certs.auth_cert.der_size);
+        
+        auth_certificate["serial"] = wxBase64Encode(serial);
+        auth_certificate["subject"] = wxBase64Encode(subject);
+        
+        serial.Clear();
+        subject.Clear();
+    }
+    
+    return auth_certificate;
+}
+
+wxJSONValue AppOSX_OutlookIdentity::GetEncCertificate()
+{
+    wxJSONValue enc_certificate;
+    wxMemoryBuffer serial, subject;
+    
+    if (this->marc_certs.enc_cert_size > 0) {
+        serial.AppendData(this->marc_certs.enc_cert.serial, this->marc_certs.enc_cert.der_offset);
+        subject.AppendData(this->marc_certs.enc_cert.der, this->marc_certs.enc_cert.der_size);
+        
+        enc_certificate["serial"] = wxBase64Encode(serial);
+        enc_certificate["subject"] = wxBase64Encode(subject);
+        
+        serial.Clear();
+        subject.Clear();
+    }
+    
+    return enc_certificate;
+}
+
+wxString AppOSX_OutlookIdentity::GetAddress()
 {
     /* Marc data must be present. */
     if (! this->marc_parsed) {
-        return;
+        return wxEmptyString;
     }
     
     wxString account_address;
@@ -53,12 +102,11 @@ void AppOSX_OutlookIdentity::ParseAccount()
         
         if (__bint32(option_string->tag) == OPTION_EMAIL_ADDRESS) {
             account_address.Append((char*) option_string->value, __bint32(option_string->length));
-            this->account["address"] = account_address;
             break;
         }
     }
     
-    
+    return account_address;
 }
 
 bool AppOSX_OutlookIdentity::ParseMarc()
@@ -158,6 +206,7 @@ bool AppOSX_OutlookIdentity::ParseMarc()
             return false;
         }
         marc_certs.auth_cert_data = ((uint8_t*) raw_data.GetData() + marc_offset);
+        this->ParseCert(marc_certs.auth_cert_data, marc_certs.auth_cert_size, true);
         marc_offset += marc_certs.auth_cert_size;
     }
     
@@ -169,6 +218,7 @@ bool AppOSX_OutlookIdentity::ParseMarc()
             return false;
         }
         marc_certs.enc_cert_data = ((uint8_t*) raw_data.GetData() + marc_offset);
+        this->ParseCert(marc_certs.enc_cert_data, marc_certs.enc_cert_size, false);
         marc_offset += marc_certs.enc_cert_size;
     }
     
@@ -240,12 +290,33 @@ bool AppOSX_OutlookIdentity::ParseMarc()
     return true;
 }
 
-wxJSONValue AppOSX_OutlookIdentity::GetAccount()
+bool AppOSX_OutlookIdentity::ParseCert(uint8_t *data, uint32_t size, bool is_auth)
 {
-    /* Should check if the account is parsed. */
+    marc_cert_t *cert;
     
-    /* Return the private account data. */
-    return account;
+    /* Select the auth structure. */
+    if (is_auth) { cert = &this->marc_certs.auth_cert; }
+    else { cert = &this->marc_certs.enc_cert; }
+    
+    if (size < sizeof(uint32_t) * 3) {
+        return false;
+    }
+    
+    /* This, like certs, is a pseudo structure "filled-in" with the raw_data structure counter parts. */
+    cert->_unknown =   __bint32(*(uint32_t*) (data));
+    cert->der_offset = __bint32(*(uint32_t*) (data + sizeof(uint32_t)));
+    cert->der_size =   __bint32(*(uint32_t*) (data + (sizeof(uint32_t) * 2)));
+    
+    if (cert->der_offset == 0 || cert->der_size == 0 ||
+        cert->der_offset + cert->der_size + (sizeof(uint32_t) * 3) != size) {
+        /* Sizing problems. */
+        return false;
+    }
+    
+    cert->serial = data + (sizeof(uint32_t) * 3);
+    cert->der = data + (sizeof(uint32_t) * 3) + cert->der_offset;
+    
+    return true;
 }
 
 #endif /* OS Check */

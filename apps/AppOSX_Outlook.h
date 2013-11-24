@@ -24,12 +24,21 @@ public:
     bool StopApp();
     bool StartApp();
     
+    /* Requires parsing. */
     wxArrayString GetAccountList();
+    account_status_t IdentityStatus(wxString address, wxString &server_uuid);
+    
+    /* Requires assembling. */
+    bool AssignIdentity(wxString server_uuid, wxString address);
+	bool UnassignIdentity(wxString address);
     
 private:
     /* For each sub file within IDENTITIES, try to parse. */
     void ParseIdentity(wxString identity_path);
     bool GetIdentity(wxString full_path, AppOSX_OutlookIdentity &identity);
+    
+    /* Given a serial and subject, determine if CA exists. */
+    //bool HasCert(wxString serial, wxString subject);
     
     bool GetInfo();
 };

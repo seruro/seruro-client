@@ -12,6 +12,9 @@
 #include "../logging/SeruroLogger.h"
 #include "helpers/AppOSX_Utils.h"
 
+#include "../crypto/SeruroCrypto.h"
+#include "../SeruroConfig.h"
+
 /* For application location/info. */
 #include <ApplicationServices/ApplicationServices.h>
 
@@ -93,6 +96,7 @@ bool AppOSX_Outlook::GetIdentity(wxString full_path, AppOSX_OutlookIdentity &ide
 void AppOSX_Outlook::ParseIdentity(wxString identity_path)
 {
     wxString full_path;
+    wxJSONValue account;
     
     full_path = wxFileName::GetHomeDir() + _(MAILDATA_RECORDS) + _(MAILDATA_IDENTITIES);
     full_path += _("/") + identity_path;
@@ -110,10 +114,20 @@ void AppOSX_Outlook::ParseIdentity(wxString identity_path)
     }
     
     /* Perform the parsed data formatting. */
-    identity.ParseAccount();
+    account["path"] = full_path;
+    account["address"] = identity.GetAddress();
+    
+    /* Retrieve auth/enc certificate serial/subject from identity, check if serial/subject exists. */
+    if (identity.HasAuthCertificate()) {
+        account["auth_data"] = identity.GetAuthCertificate();
+    }
+
+    if (identity.HasEncCertificate()) {
+        account["enc_data"] = identity.GetEncCertificate();
+    }
     
     /* Add this account instance to the list of accounts. */
-    this->info["accounts"].Append(identity.GetAccount());
+    this->info["accounts"].Append(account);
 }
 
 wxArrayString AppOSX_Outlook::GetAccountList()
@@ -150,6 +164,98 @@ wxArrayString AppOSX_Outlook::GetAccountList()
     }
     
     return accounts;
+}
+
+account_status_t AppOSX_Outlook::IdentityStatus(wxString address, wxString &server_uuid)
+{
+    wxJSONValue account;
+    wxString serial, subject, subject_key;
+    
+	if (! this->GetInfo()) {
+		return APP_UNASSIGNED;
+	}
+    
+    /* Check that the address exists as a configured account for Outlook. */
+    for (size_t i = 0; i < info["accounts"].Size(); ++i) {
+        if (info["accounts"][i].HasMember("address") && info["accounts"][i]["address"].AsString() == address) {
+            account = info["accounts"][i];
+            break;
+        }
+    }
+    
+    /* Check that the account has both an auth an enc certificate configured. */
+    if (! account.HasMember("auth_data") || ! account.HasMember("enc_data")) {
+        return APP_UNASSIGNED;
+    }
+    
+    SeruroCrypto crypto;
+    serial = account["auth_data"]["serial"].AsString();
+    subject = account["auth_data"]["subject"].AsString();
+    
+    /* Verify the certificate exists in the keychain. */
+    if (! crypto.HasIdentityIssuer(subject, serial)) {
+        return APP_ALTERNATE_ASSIGNED;
+    }
+    
+    serial = account["enc_data"]["serial"].AsString();
+    subject = account["enc_data"]["subject"].AsString();
+    
+    if (! crypto.HasIdentityIssuer(subject, serial)) {
+        return APP_ALTERNATE_ASSIGNED;
+    }
+    
+    subject_key = crypto.GetIdentityIssuerSKID(subject, serial);
+    server_uuid.Append(UUIDFromFingerprint(subject_key));
+    
+    /* Testing, REMOVE!. */
+    AssignIdentity(server_uuid, address);
+    
+    return APP_ASSIGNED;
+}
+
+bool AppOSX_Outlook::AssignIdentity(wxString server_uuid, wxString address)
+{
+    wxString identity_path;
+    wxString auth_skid, enc_skid;
+    wxString auth_subject, auth_serial, enc_subject, enc_serial;
+    
+	if (! this->GetInfo()) {
+		return false;
+	}
+    
+    /* Get account/identity from address. */
+    for (size_t i = 0; i < info["accounts"].Size(); ++i) {
+        if (info["accounts"][i].HasMember("address") && info["accounts"][i]["address"].AsString() == address) {
+            identity_path = info["accounts"][i]["path"].AsString();
+            break;
+        }
+    }
+    
+    AppOSX_OutlookIdentity identity;
+    
+    /* Could not read identity for given address. */
+    if (! this->GetIdentity(identity_path, identity)) {
+        return false;
+    }
+    
+    /* Could not parse identity MaRC file. */
+    if (! identity.ParseMarc()) {
+        return false;
+    }
+    
+    /* Get subject serial from address/server_uuid. */
+    SeruroCrypto crypto;
+    
+    address = "teddy@valdrea.com";
+    auth_skid = theSeruroConfig::Get().GetIdentity(server_uuid, address, ID_AUTHENTICATION);
+    crypto.GetSKIDIdentityIssuer(auth_skid, auth_subject, auth_serial);
+    
+    return true;
+}
+
+bool AppOSX_Outlook::UnassignIdentity(wxString address)
+{
+    return false;
 }
 
 bool AppOSX_Outlook::IsRunning()

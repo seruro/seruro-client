@@ -4,6 +4,7 @@
 
 #include <wx/log.h>
 #include <wx/textfile.h>
+#include <wx/wx.h>
 
 #define SERURO_LOG_FILE_NAME "seruro.log"
 #define SERURO_USE_LOGGER       1

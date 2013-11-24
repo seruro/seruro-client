@@ -302,6 +302,11 @@ account_status_t SeruroApps::IdentityStatus(wxString app_name, wxString account_
         }
     }
     
+    if (status == APP_ASSIGNED && server_uuid.length() == 0) {
+        /* The helper did not fill in the server UUID. */
+        return APP_ALTERNATE_ASSIGNED;
+    }
+    
     return status;
 }
 

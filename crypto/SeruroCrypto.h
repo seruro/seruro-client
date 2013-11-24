@@ -8,8 +8,8 @@
 
 /* Class inherits from OS-specific? */
 
-#include "SeruroCryptoMSW.h"
-#include "SeruroCryptoMAC.h"
+#include "SeruroOSXCrypto.h"
+#include "SeruroMSWCrypto.h"
 
 #if defined(__WXMSW__)
 class SeruroCrypto : public SeruroCryptoMSW
