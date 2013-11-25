@@ -261,11 +261,11 @@ bool ParseIssuerAttribute(issuer_attr_t &attribute, const CFStringRef &oid, cons
     /* Encode the 4-sized OID. */
     oid_encoded = OIDFromString((CFStringRef) CFArrayGetValueAtIndex(oid_sections, 0));
     if (oid_encoded == 0) { CFRelease(oid_sections); return false; }
-    attribute.oid[0] = oid_encoded << 4;
+    attribute.oid[0] = oid_encoded * 40;
     
     oid_encoded = OIDFromString((CFStringRef) CFArrayGetValueAtIndex(oid_sections, 1));
     if (oid_encoded == 0) { CFRelease(oid_sections); return false; }
-    attribute.oid[0] = oid_encoded;
+    attribute.oid[0] += oid_encoded;
     
     oid_encoded = OIDFromString((CFStringRef) CFArrayGetValueAtIndex(oid_sections, 2));
     if (oid_encoded == 0) { CFRelease(oid_sections); return false; }

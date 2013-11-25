@@ -247,8 +247,16 @@ bool AppOSX_Outlook::AssignIdentity(wxString server_uuid, wxString address)
     SeruroCrypto crypto;
     
     address = "teddy@valdrea.com";
+    /* Fillin required certificate information. */
     auth_skid = theSeruroConfig::Get().GetIdentity(server_uuid, address, ID_AUTHENTICATION);
     crypto.GetSKIDIdentityIssuer(auth_skid, auth_subject, auth_serial);
+    enc_skid = theSeruroConfig::Get().GetIdentity(server_uuid, address, ID_ENCIPHERMENT);
+    crypto.GetSKIDIdentityIssuer(enc_skid, enc_subject, enc_serial);
+    
+    if (! identity.AssignCerts(auth_subject, auth_serial, enc_subject, enc_serial)) {
+        /* Big problem, recover by applying backup. */
+        return false;
+    }
     
     return true;
 }

@@ -15,12 +15,23 @@
 
 #include <wx/dynarray.h>
 
-enum {
+enum marc_option_tag_t {
+    /* String options before booleans. */
+    OPTION_ACCOUNT_TYPE      = 0x310,
+    OPTION_UNKNOWN1          = 0x328 /* 5 */,
+    OPTION_UNKNOWN2          = 0x329,
+    OPTION_UNKNOWN3          = 0x333,
+    OPTION_UNKNOWN4          = 0x334,
+    OPTION_ENC_TYPE          = 0x33a,
+    OPTION_HASH_TYPE         = 0x33b,
+    
+    OPTION_LAST_UPDATE       = 0x780,
+    
     /* Boolean options (a lot missing. */
-    OPTION_ENCRYPT_OUTGOING  = 0xb1a,
     OPTION_SIGN_OUTGOING     = 0xb17,
     OPTION_INCLUDE_CERTS     = 0xb18,
     OPTION_SEND_SIGNED_CLEAR = 0xb19,
+    OPTION_ENCRYPT_OUTGOING  = 0xb1a,
     
     /* Certificate data options. */
     OPTION_AUTH_CERT_LENGTH  = 0xd10,
@@ -35,6 +46,7 @@ enum {
     OPTION_EMAIL_ADDRESS_U   = 0x1f13,
     
     /* Option value data section. */
+    OPTION_REVISION          = 0x2014,
     OPTION_DATA              = 0x2015
 };
 
@@ -44,8 +56,10 @@ enum {
 /* Size of each tag/value pair in options set. */
 #define MARC_OPTION_BYTE_SIZE 8
 #define MARC_OPTION_DATA_SIZE 12
-#define MARC_OPTION_FLAG_MIN 0xb00
-#define MARC_OPTION_FLAG_MAX 0xc00
+#define MARC_OPTION_FIELD_MIN  0x300
+#define MARC_OPTION_FIELD_MAX  0xb00
+#define MARC_OPTION_FLAG_MIN   0xb00
+#define MARC_OPTION_FLAG_MAX   0xc00
 #define MARC_OPTION_STRING_MIN 0x1e00
 #define MARC_OPTION_STRING_MAX 0x3000
 
@@ -55,7 +69,7 @@ typedef struct
     uint32_t size1;
     uint32_t size2;
     uint32_t crc;
-    uint32_t _unknown; /* might be the version. */
+    uint32_t marc_version;
 } marc_header_t;
 
 typedef struct
@@ -108,13 +122,16 @@ typedef struct
 typedef struct
 {
     uint32_t tag;
-    uint64_t value;
+    uint32_t value1;
+    uint32_t value2;
 } marc_option_data_t;
 
+/* Todo: this can be a variety of formats. */
 typedef struct
 {
     unsigned char account_type[4];
     uint32_t account_int;
+    //uint32_t revision;
     uint32_t _unknown1[3];
     unsigned char encryption_algorithm[4];
     unsigned char hash_algorithm[4];
@@ -151,6 +168,9 @@ public:
     wxJSONValue GetAuthCertificate();
     wxJSONValue GetEncCertificate();
     
+    bool AssignCerts(const wxString &auth_issuer, const wxString &auth_serial, const wxString &enc_issuer, const wxString &enc_serial);
+    bool ClearCerts();
+    
 private:
     wxMemoryBuffer raw_data;
     wxString full_path;
@@ -160,13 +180,17 @@ private:
     /* Data structures for identity. */
     marc_header_t *marc_header;
     marc_extended_header_t *marc_ext_header;
-    marc_data_header_t *marc_data_header;
+    //marc_data_header_t *marc_data_header;
     
     MarcOptionArray marc_options;
     uint8_t *marc_option_flags;
     
+    /* This should be a 64, but we cheat and move the pointer. */
+    uint32_t revision;
+    
     marc_certs_t marc_certs;
 
+    MarcOptionStringArray marc_option_fields;
     MarcOptionStringArray marc_option_strings;
     MarcOptionDataArray marc_option_datas;
     
