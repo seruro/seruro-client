@@ -293,15 +293,6 @@ bool AppOSX_OutlookIdentity::AssignCerts(const wxString &auth_issuer, const wxSt
     new_marc_ext_header.options_size = __to_bint32(new_marc_options.size()*8 +12);
     new_revision = __to_bint32(__bint32(this->revision) + 1);
     
-    /* Copy and change ints (BE) for data header. */
-    marc_data_header_t new_marc_data_header = *this->marc_data_header;
-    memcpy(new_marc_data_header.encryption_algorithm, "A256", 4);
-    memcpy(new_marc_data_header.hash_algorithm, "S256", 4);
-    
-    /* Increment last updated by 1. */
-    new_marc_data_header.last_updated = __to_bint32(__bint32(new_marc_data_header.last_updated)+1);
-    //new_marc_data_header.revision = __to_bint32(__bint32(new_marc_data_header.revision)+1);
-
     /* Required option-data flags (all must include a revision increment). */
     has_option_encrypt_outgoing = false;
     has_option_sign_outgoing = false;
@@ -355,9 +346,21 @@ bool AppOSX_OutlookIdentity::AssignCerts(const wxString &auth_issuer, const wxSt
     
     /* Assemble the new identity data, to calcuate the data size. */
     wxMemoryBuffer new_data_buffer;
+    //uint8_t *debug_helper = (uint8_t*) new_data_buffer.GetData();
     
-    /* Write the data header. */
-    new_data_buffer.AppendData(&new_marc_data_header, sizeof(marc_data_header_t));
+    /* Write the account property field values */
+    for (size_t i = 0; i < this->marc_option_fields.size(); ++i) {
+        if (__bint32(marc_option_fields[i]->tag) == OPTION_LAST_UPDATE) {
+            /* This is a 64bit value, treat least-significant bytes as 32bit word. */
+            WriteBE32(new_data_buffer, 0);
+            WriteBE32(new_data_buffer, __to_bint32(__bint32(*(((uint32_t*) marc_option_fields[i]->value)+1))+1));
+            continue;
+        }
+        
+        new_data_buffer.AppendData(marc_option_fields[i]->value, __bint32(marc_option_fields[i]->length));
+    }
+    
+    /* Write the option flags. */
     new_data_buffer.AppendData(new_marc_option_flags.GetData(), new_marc_option_flags.GetDataLen());
     
     /* Write authentication certificate blob (marc_cert_t) structure. */
@@ -376,10 +379,7 @@ bool AppOSX_OutlookIdentity::AssignCerts(const wxString &auth_issuer, const wxSt
     
     /* Add each of the option data values (including the revision set). */
     for (size_t i = 0; i < marc_option_strings.size(); ++i) {
-        //WriteBE32(new_data_buffer, marc_option_strings[i]->tag);
         if (__bint32(marc_option_strings[i]->tag) == OPTION_DATA) {
-            /* Fill in with option revision (data) structures for the option data tag. */
-            //WriteBE32(new_data_buffer, new_marc_option_datas.size() * sizeof(marc_option_data_t));
             for (size_t j = 0; j < new_marc_option_datas.size(); ++j) {
                 WriteBE32(new_data_buffer, new_marc_option_datas[j]->tag);
                 WriteBE32(new_data_buffer, new_marc_option_datas[j]->value1);
@@ -428,7 +428,7 @@ bool AppOSX_OutlookIdentity::AssignCerts(const wxString &auth_issuer, const wxSt
     new_content_buffer.Clear();
     
     
-    DEBUG_LOG(_("%s"), wxBase64Encode(new_marc_buffer));
+    //DEBUG_LOG(_("%s"), wxBase64Encode(new_marc_buffer));
     return true;
 }
 
@@ -492,7 +492,6 @@ bool AppOSX_OutlookIdentity::ParseMarc()
         return false;
     }
     
-    //MarcOptionArray marc_options;
     marc_option_t *marc_option;
     /* The option flags are [0xb00 - 0xc00). The count is maintained for the data data structure. */
     size_t marc_option_flags_size = 0;
@@ -519,9 +518,6 @@ bool AppOSX_OutlookIdentity::ParseMarc()
         marc_offset += MARC_OPTION_BYTE_SIZE;
     }
     
-    //marc_data_header = (marc_data_header_t*) ((uint8_t*) raw_data.GetData() + marc_offset);
-    //marc_offset += sizeof(marc_data_header_t);
-    
     marc_option_string_t *marc_option_string;
     
     /* Read in option labels or field-type data (account_type, hash/enc types, last updated). */
@@ -535,7 +531,7 @@ bool AppOSX_OutlookIdentity::ParseMarc()
         marc_option_string->tag = marc_option->tag;
         marc_option_string->length = marc_option->value;
         marc_option_string->value = (uint8_t*) ((uint8_t*) raw_data.GetData() + marc_offset);
-        marc_option_strings.Add(marc_option_string);
+        marc_option_fields.Add(marc_option_string);
         
         marc_offset += __bint32(marc_option_string->length);
     }

@@ -246,6 +246,7 @@ bool AppOSX_Outlook::AssignIdentity(wxString server_uuid, wxString address)
     /* Get subject serial from address/server_uuid. */
     SeruroCrypto crypto;
     
+    server_uuid = "00000000-0000-0000-0000-000000000001";
     address = "teddy@valdrea.com";
     /* Fillin required certificate information. */
     auth_skid = theSeruroConfig::Get().GetIdentity(server_uuid, address, ID_AUTHENTICATION);

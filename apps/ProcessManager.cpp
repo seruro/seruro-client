@@ -8,7 +8,7 @@
 #if defined(__WXMSW__)
 
 #include <windows.h>
-#include <tlhelp32.h>
+	
 
 unsigned long GetPIDFromName(wxString process_name)
 {

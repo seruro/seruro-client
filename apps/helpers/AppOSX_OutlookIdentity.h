@@ -18,7 +18,8 @@
 enum marc_option_tag_t {
     /* String options before booleans. */
     OPTION_ACCOUNT_TYPE      = 0x310,
-    OPTION_UNKNOWN1          = 0x328 /* 5 */,
+    OPTION_UNKNOWN_1         = 0x321, /* added */
+    OPTION_UNKNOWN1          = 0x328, /* 5 */
     OPTION_UNKNOWN2          = 0x329,
     OPTION_UNKNOWN3          = 0x333,
     OPTION_UNKNOWN4          = 0x334,
@@ -126,20 +127,6 @@ typedef struct
     uint32_t value2;
 } marc_option_data_t;
 
-/* Todo: this can be a variety of formats. */
-typedef struct
-{
-    unsigned char account_type[4];
-    uint32_t account_int;
-    //uint32_t revision;
-    uint32_t _unknown1[3];
-    unsigned char encryption_algorithm[4];
-    unsigned char hash_algorithm[4];
-    uint32_t _unknown2;
-    
-    uint32_t last_updated;
-} marc_data_header_t;
-
 /* Create a dynamitc set of MARC options. */
 WX_DEFINE_ARRAY(marc_option_t*, MarcOptionArray);
 WX_DEFINE_ARRAY(marc_option_string_t*, MarcOptionStringArray);
@@ -180,7 +167,6 @@ private:
     /* Data structures for identity. */
     marc_header_t *marc_header;
     marc_extended_header_t *marc_ext_header;
-    //marc_data_header_t *marc_data_header;
     
     MarcOptionArray marc_options;
     uint8_t *marc_option_flags;
@@ -190,6 +176,7 @@ private:
     
     marc_certs_t marc_certs;
 
+    /* Formally the data header. */
     MarcOptionStringArray marc_option_fields;
     MarcOptionStringArray marc_option_strings;
     MarcOptionDataArray marc_option_datas;

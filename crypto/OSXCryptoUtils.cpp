@@ -17,6 +17,17 @@
 /* For adding identity to keychain. */
 #include <Security/SecItem.h>
 
+uint8_t HexToDec(const char* buf) {
+    uint8_t firstDigit, secondDigit;
+    
+    if (buf[0] >= 'A') { firstDigit = buf[0] - 'A' + 10; }
+    else { firstDigit = buf[0] - '0'; }
+    if (buf[1] >= 'A') { secondDigit = buf[1] - 'A' + 10; }
+    else { secondDigit = buf[1] - '0'; }
+    
+    return (firstDigit & 0xF) * 16 + (secondDigit & 0xF );
+}
+
 bool GetReferenceFromSubjectKeyID(wxString subject_key, search_types_t type, wxString keychain_name, CFTypeRef *reference)
 {
     /* Find the base64 encoded subject key ID. */
@@ -216,8 +227,33 @@ wxString GetSerialFromCertificate(const SecCertificateRef &cert)
         return wxEmptyString;
     }
     
+    if (serial_cstring[0] == '0' && serial_cstring[1] == '0') {
+        /* This is hex-encoded. (bytes = length/3 + 1, because each byte is space-separated) */
+        for (size_t i = 0; i < CFStringGetLength(serial_data)/3 + 1; ++i) {
+            encoded_serial.AppendByte(HexToDec(serial_cstring + i*3));
+        }
+    } else {
+        /* This is dec-encoded (a string which is an integer, max of 64bit?). */
+        uint64_t serial_ull;
+        serial_ull = strtoull(serial_cstring, NULL, 10);
+        
+        size_t byte_count = 0;
+        while (pow(2, byte_count*8) < serial_ull && byte_count*8 < 160) {
+            byte_count++;
+        }
+        
+        /* Calculate hex value for each nibble. */
+        uint64_t serial_overflow = 0; /* the already-encoded ull value. */
+        uint8_t msb; /* most significant nibble. */
+        
+        for (int byte_index = (byte_count)-1; byte_index >= 0; byte_index--) {
+            msb = (serial_ull-serial_overflow) / (pow(2, byte_index*8)); /* nibbles are 4 bits. */
+            serial_overflow += (msb * pow(2, byte_index*8));
+            encoded_serial.AppendByte(msb);
+        }
+    }
+    
     /* Add cstring to a memory buffer to return encoded. */
-    encoded_serial.AppendData(serial_cstring, CFStringGetLength(serial_data));
     free(serial_cstring);
     
     return wxBase64Encode(encoded_serial);
