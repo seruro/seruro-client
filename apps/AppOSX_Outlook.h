@@ -12,7 +12,7 @@ class AppOSX_Outlook : public AppHelper
 public:
     AppOSX_Outlook() : AppHelper() {
         can_assign = true;
-        can_unassign = false;
+        can_unassign = true;
         
         needs_restart = true;
     }
@@ -35,10 +35,7 @@ public:
 private:
     /* For each sub file within IDENTITIES, try to parse. */
     void ParseIdentity(wxString identity_path);
-    bool GetIdentity(wxString full_path, AppOSX_OutlookIdentity &identity);
-    
-    /* Given a serial and subject, determine if CA exists. */
-    //bool HasCert(wxString serial, wxString subject);
+    //bool GetIdentity(wxString full_path, AppOSX_OutlookIdentity &identity);
     
     bool GetInfo();
 };

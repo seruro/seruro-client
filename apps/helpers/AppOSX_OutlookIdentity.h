@@ -147,6 +147,9 @@ public:
     void SetData(void *data, size_t length);
     bool ParseMarc();
     
+    bool ReadMarc();
+    bool WriteMarc(const wxMemoryBuffer &marc);
+    
     /* Proccess marc data into account. */
     wxString GetAddress();
     

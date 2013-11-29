@@ -10,6 +10,10 @@
 #include <zlib.h>
 
 #include <wx/base64.h>
+#include <wx/ffile.h>
+
+#define IDENTITY_MAGIC "MaRC"
+#define IDENTITY_MAX_LENGTH 10000
 
 uint32_t buffer_crc32(const wxMemoryBuffer &buffer)
 {
@@ -79,6 +83,90 @@ void WriteBE64(wxMemoryBuffer &buffer, uint64_t i)
         WriteBE32(buffer, (i & 0x00000000FFFFFFFF));
         WriteBE32(buffer, (i & 0xFFFFFFFF00000000) >> 32);
     }
+}
+
+bool AppOSX_OutlookIdentity::ReadMarc()
+{
+    /* A raw file wrapper */
+    wxFFile identity_file;
+    
+    void *read_buffer;
+    size_t read_size;
+    
+    /* Try to open the file and assure we can read (default open parameter is readonly). */
+    if (! identity_file.Open(full_path, "rb") || ! identity_file.IsOpened()) {
+        DEBUG_LOG(_("AppOSX_OutlookIdentity> (ReadMarc) could not open file (%s)."), full_path);
+        return false;
+    }
+    
+    read_buffer = (void*) malloc(5);
+    memset(read_buffer, 0, 5);
+    
+    read_size = identity_file.Read(read_buffer, 4);
+    if (read_size != 4 || wxString((char*) read_buffer) != _(IDENTITY_MAGIC)) {
+        /* Could not read 4 bytes, this is a bad file. */
+        
+        identity_file.Close();
+        return false;
+    }
+    free(read_buffer);
+    
+    /* Store the length, then read the entire file contents, if it less than a threshold. */
+    wxFileOffset length;
+    length = identity_file.Length();
+    
+    if (length < 4 || length > IDENTITY_MAX_LENGTH) {
+        DEBUG_LOG(_("AppOSX_OutlookIdentity> (ReadMarc) the length (%d) of the identity file is too large."), length);
+        
+        identity_file.Close();
+        return false;
+    }
+    
+    read_buffer = (void*) malloc(length);
+    memset(read_buffer, 0, length);
+    
+    identity_file.Seek(0);
+    read_size = identity_file.Read(read_buffer, length);
+    
+    if (read_size != (length)) {
+        DEBUG_LOG(_("AppOSX_OutlookIdentity> (ReadMarc) read (%d) bytes does not match size (%d)."), (int) read_size, ((int) length));
+        
+        identity_file.Close();
+        return false;
+    }
+    
+    /* Fill in identity information (without acting on it). */
+    //identity.SetPath(full_path);
+    this->SetData(read_buffer, length);
+    
+    free(read_buffer);
+    identity_file.Close();
+    
+    return true;
+}
+
+bool AppOSX_OutlookIdentity::WriteMarc(const wxMemoryBuffer &marc)
+{
+    wxFFile identity_file;
+    
+    /* Try to open the file and assure we can read (default open parameter is readonly). */
+    if (! identity_file.Open(full_path, "wb") || ! identity_file.IsOpened()) {
+        DEBUG_LOG(_("AppOSX_OutlookIdentity> (WriteMarc) could not open file (%s)."), full_path);
+        return false;
+    }
+    
+    size_t bytes_written = 0;
+    
+    bytes_written = identity_file.Write(marc.GetData(), marc.GetDataLen());
+    identity_file.Close();
+    
+    if (bytes_written != marc.GetDataLen()) {
+        /* Problem writing data. */
+    
+        return false;
+    }
+    
+    return true;
 }
 
 void AppOSX_OutlookIdentity::SetPath(wxString path)
@@ -427,14 +515,12 @@ bool AppOSX_OutlookIdentity::AssignCerts(const wxString &auth_issuer, const wxSt
     new_marc_buffer.AppendData(new_content_buffer.GetData(), new_content_buffer.GetDataLen());
     new_content_buffer.Clear();
     
-    
-    //DEBUG_LOG(_("%s"), wxBase64Encode(new_marc_buffer));
-    return true;
+    return this->WriteMarc(new_marc_buffer);
 }
 
 bool AppOSX_OutlookIdentity::ClearCerts()
 {
-    return true;
+    return this->AssignCerts(wxEmptyString, wxEmptyString, wxEmptyString, wxEmptyString);
 }
 
 bool AppOSX_OutlookIdentity::ParseMarc()

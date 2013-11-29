@@ -27,71 +27,6 @@
 #define MAILDATA_IDENTITIES "/Mail Accounts/0T/0B/0M/0K"
 #define MAILDATA_CONTACTS   "/Contacts/0T/0B/0M/0K"
 
-#define IDENTITY_MAGIC "MaRC"
-#define IDENTITY_MAX_LENGTH 10000
-
-//DECLARE_APP(SeruroClient);
-
-bool AppOSX_Outlook::GetIdentity(wxString full_path, AppOSX_OutlookIdentity &identity)
-{
-    /* A raw file wrapper */
-    wxFFile identity_file;
-    
-    void *read_buffer;
-    size_t read_size;
-    
-    /* Try to open the file and assure we can read (default open parameter is readonly). */
-    if (! identity_file.Open(full_path) || ! identity_file.IsOpened()) {
-        DEBUG_LOG(_("AppOSX_Outlook> (ParseIdentity) could not open file (%s)."), full_path);
-        return false;
-    }
-    
-    read_buffer = (void*) malloc(5);
-    memset(read_buffer, 0, 5);
-    
-    read_size = identity_file.Read(read_buffer, 4);
-    if (read_size != 4 || wxString((char*) read_buffer) != _(IDENTITY_MAGIC)) {
-        /* Could not read 4 bytes, this is a bad file. */
-        
-        identity_file.Close();
-        return false;
-    }
-    free(read_buffer);
-    
-    /* Store the length, then read the entire file contents, if it less than a threshold. */
-    wxFileOffset length;
-    length = identity_file.Length();
-    
-    if (length < 4 || length > IDENTITY_MAX_LENGTH) {
-        DEBUG_LOG(_("AppOSX_Outlook> (ParseIdentity) the length (%d) of the identity file is too large."), length);
-        
-        identity_file.Close();
-        return false;
-    }
-    
-    read_buffer = (void*) malloc(length);
-    memset(read_buffer, 0, length);
-    
-    identity_file.Seek(0);
-    read_size = identity_file.Read(read_buffer, length);
-    
-    if (read_size != (length)) {
-        DEBUG_LOG(_("AppOSX_Outlook> (ParseIdentity) read (%d) bytes does not match size (%d)."), (int) read_size, ((int) length));
-        
-        identity_file.Close();
-        return false;
-    }
-    
-    /* Fill in identity information (without acting on it). */
-    identity.SetPath(full_path);
-    identity.SetData(read_buffer, length);
-    
-    free(read_buffer);
-    identity_file.Close();
-    
-    return true;
-}
-
 /* Tries to parse an identity file, should also try to verify using AppleScript. */
 void AppOSX_Outlook::ParseIdentity(wxString identity_path)
 {
@@ -103,8 +38,9 @@ void AppOSX_Outlook::ParseIdentity(wxString identity_path)
     
     AppOSX_OutlookIdentity identity;
     
-    if (! this->GetIdentity(full_path, identity)) {
-        /* Could not option/identity/read identity file. */
+    identity.SetPath(full_path);
+    if (! identity.ReadMarc()) {
+        /* Could not open identity file, or identity file is too large. */
         return;
     }
     
@@ -168,8 +104,9 @@ wxArrayString AppOSX_Outlook::GetAccountList()
 
 account_status_t AppOSX_Outlook::IdentityStatus(wxString address, wxString &server_uuid)
 {
-    wxJSONValue account;
+    //wxJSONValue account;
     wxString serial, subject, subject_key;
+    int account_index = 0;
     
 	if (! this->GetInfo()) {
 		return APP_UNASSIGNED;
@@ -178,27 +115,37 @@ account_status_t AppOSX_Outlook::IdentityStatus(wxString address, wxString &serv
     /* Check that the address exists as a configured account for Outlook. */
     for (size_t i = 0; i < info["accounts"].Size(); ++i) {
         if (info["accounts"][i].HasMember("address") && info["accounts"][i]["address"].AsString() == address) {
-            account = info["accounts"][i];
+            //account = info["accounts"][i];
+            account_index = i;
             break;
         }
     }
     
     /* Check that the account has both an auth an enc certificate configured. */
-    if (! account.HasMember("auth_data") || ! account.HasMember("enc_data")) {
+    if (! info["accounts"][account_index].HasMember("auth_data") ||
+        ! info["accounts"][account_index].HasMember("enc_data")) {
         return APP_UNASSIGNED;
     }
     
     SeruroCrypto crypto;
-    serial = account["auth_data"]["serial"].AsString();
-    subject = account["auth_data"]["subject"].AsString();
+    serial = info["accounts"][account_index]["auth_data"]["serial"].AsString();
+    subject = info["accounts"][account_index]["auth_data"]["subject"].AsString();
+    
+    if (serial == wxEmptyString || subject == wxEmptyString) {
+        return APP_UNASSIGNED;
+    }
     
     /* Verify the certificate exists in the keychain. */
     if (! crypto.HasIdentityIssuer(subject, serial)) {
         return APP_ALTERNATE_ASSIGNED;
     }
     
-    serial = account["enc_data"]["serial"].AsString();
-    subject = account["enc_data"]["subject"].AsString();
+    serial = info["accounts"][account_index]["enc_data"]["serial"].AsString();
+    subject = info["accounts"][account_index]["enc_data"]["subject"].AsString();
+    
+    if (serial == wxEmptyString || subject == wxEmptyString) {
+        return APP_UNASSIGNED;
+    }
     
     if (! crypto.HasIdentityIssuer(subject, serial)) {
         return APP_ALTERNATE_ASSIGNED;
@@ -206,9 +153,6 @@ account_status_t AppOSX_Outlook::IdentityStatus(wxString address, wxString &serv
     
     subject_key = crypto.GetIdentityIssuerSKID(subject, serial);
     server_uuid.Append(UUIDFromFingerprint(subject_key));
-    
-    /* Testing, REMOVE!. */
-    AssignIdentity(server_uuid, address);
     
     return APP_ASSIGNED;
 }
@@ -218,6 +162,7 @@ bool AppOSX_Outlook::AssignIdentity(wxString server_uuid, wxString address)
     wxString identity_path;
     wxString auth_skid, enc_skid;
     wxString auth_subject, auth_serial, enc_subject, enc_serial;
+    int account_index = 0;
     
 	if (! this->GetInfo()) {
 		return false;
@@ -227,14 +172,16 @@ bool AppOSX_Outlook::AssignIdentity(wxString server_uuid, wxString address)
     for (size_t i = 0; i < info["accounts"].Size(); ++i) {
         if (info["accounts"][i].HasMember("address") && info["accounts"][i]["address"].AsString() == address) {
             identity_path = info["accounts"][i]["path"].AsString();
+            account_index = i;
             break;
         }
     }
     
     AppOSX_OutlookIdentity identity;
     
-    /* Could not read identity for given address. */
-    if (! this->GetIdentity(identity_path, identity)) {
+    identity.SetPath(identity_path);
+    if (! identity.ReadMarc()) {
+        /* Could not open identity file, or identity file is too large. */
         return false;
     }
     
@@ -246,8 +193,6 @@ bool AppOSX_Outlook::AssignIdentity(wxString server_uuid, wxString address)
     /* Get subject serial from address/server_uuid. */
     SeruroCrypto crypto;
     
-    server_uuid = "00000000-0000-0000-0000-000000000001";
-    address = "teddy@valdrea.com";
     /* Fillin required certificate information. */
     auth_skid = theSeruroConfig::Get().GetIdentity(server_uuid, address, ID_AUTHENTICATION);
     crypto.GetSKIDIdentityIssuer(auth_skid, auth_subject, auth_serial);
@@ -259,12 +204,56 @@ bool AppOSX_Outlook::AssignIdentity(wxString server_uuid, wxString address)
         return false;
     }
     
+    /* Cache the changes. */
+    info["accounts"][account_index]["auth_data"]["serial"] = auth_serial;
+    info["accounts"][account_index]["auth_data"]["subject"] = auth_subject;
+    info["accounts"][account_index]["enc_data"]["serial"] = enc_serial;
+    info["accounts"][account_index]["enc_data"]["subject"] = enc_subject;
+    
     return true;
 }
 
 bool AppOSX_Outlook::UnassignIdentity(wxString address)
 {
-    return false;
+    wxString identity_path;
+    int account_index = 0;
+
+	if (! this->GetInfo()) {
+		return false;
+	}
+    
+    /* Get account/identity from address. */
+    for (size_t i = 0; i < info["accounts"].Size(); ++i) {
+        if (info["accounts"][i].HasMember("address") && info["accounts"][i]["address"].AsString() == address) {
+            identity_path = info["accounts"][i]["path"].AsString();
+            account_index = 0;
+            break;
+        }
+    }
+    
+    AppOSX_OutlookIdentity identity;
+    
+    identity.SetPath(identity_path);
+    if (! identity.ReadMarc()) {
+        /* Could not open identity file, or identity file is too large. */
+        return false;
+    }
+    
+    /* Could not parse identity MaRC file. */
+    if (! identity.ParseMarc()) {
+        return false;
+    }
+    
+    if (! identity.ClearCerts()) {
+        /* Big problem, recover by applying backup. */
+        return false;
+    }
+    
+    /* Cache the changes. */
+    info["accounts"][account_index].Remove("auth_data");
+    info["accounts"][account_index].Remove("enc_data");
+    
+    return true;
 }
 
 bool AppOSX_Outlook::IsRunning()
@@ -274,7 +263,13 @@ bool AppOSX_Outlook::IsRunning()
 
 bool AppOSX_Outlook::StopApp()
 {
-    return ProcessManager::StopProcess(BUNDLE_ID);
+    if (! ProcessManager::StopProcess(BUNDLE_ID)) {
+        return false;
+    }
+    
+    /* Stopping the database daemon is optional. */
+    //ProcessManager::StopProcess(BUNDLE_ID_DAEMON);
+    return true;
 }
 
 bool AppOSX_Outlook::StartApp()
