@@ -28,7 +28,7 @@ enum marc_option_tag_t {
     
     OPTION_LAST_UPDATE       = 0x780,
     
-    /* Boolean options (a lot missing. */
+    /* Boolean options (a lot missing). */
     OPTION_SIGN_OUTGOING     = 0xb17,
     OPTION_INCLUDE_CERTS     = 0xb18,
     OPTION_SEND_SIGNED_CLEAR = 0xb19,
@@ -51,12 +51,9 @@ enum marc_option_tag_t {
     OPTION_DATA              = 0x2015
 };
 
-/* A list of option tags which must be incremented when saving an identity. */
-#define INCREMENTOR_OPTIONS {0xb12, 0xb16, 0x1d12, 0x1d14, 0x1e13}
-
 /* Size of each tag/value pair in options set. */
-#define MARC_OPTION_BYTE_SIZE 8
-#define MARC_OPTION_DATA_SIZE 12
+#define MARC_OPTION_BYTE_SIZE  8
+#define MARC_OPTION_DATA_SIZE  12
 #define MARC_OPTION_FIELD_MIN  0x300
 #define MARC_OPTION_FIELD_MAX  0xb00
 #define MARC_OPTION_FLAG_MIN   0xb00

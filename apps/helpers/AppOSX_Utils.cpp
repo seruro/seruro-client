@@ -97,6 +97,7 @@ bool ReadPList(wxString relative_location, CFMutableDictionaryRef &results_dict,
 
 wxString AppVersion(wxString app_location)
 {
+    wxString app_version;
     wxString version_location;
     CFMutableDictionaryRef properties;
     
@@ -126,25 +127,29 @@ wxString AppVersion(wxString app_location)
         return _("unknown");
     }
     
-    wxString app_version;
     version_cfstring = (CFStringRef) version_value;
     app_version = AsString(version_cfstring);
     
-    CFRelease(version_cfstring);
+    //CFRelease(version_cfstring);
+    CFRelease(properties);
+    
     return app_version;
 }
 
 /* Converts a CF string into a wx string. */
 wxString AsString(CFStringRef string)
 {
+    wxString path_string;
     char *path;
+    size_t length = 0;
+    
     /* CFString lengths are in UTF 16 pairs. */
-    size_t length = CFStringGetLength(string) * 2 * sizeof(char);
+    length = CFStringGetLength(string) * 2 * sizeof(char);
     
     /* Allocate and convert. */
     path = (char *) malloc(length);
     CFStringGetCString(string, path, length, kCFStringEncodingASCII);
-    wxString path_string = _(path);
+    path_string = _(path);
     delete path;
     
     return path_string;
