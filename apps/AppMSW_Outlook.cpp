@@ -13,7 +13,7 @@
 #include <wx/base64.h>
 
 /* Add all keys which may contain Outlook. */
-#define KEY_OFFICE_2010_PLUS L"\\UserData\\S-1-5-18\\Products\\00004109110000000000000000F01FEC"
+#define KEY_OFFICE_2010_PLUS L"\\UserData\\S-1-5-18\\Products\\00004109A10090400000000000F01FEC"
 #define KEY_OFFICE_2010_STD  L"\\UserData\\S-1-5-18\\Products\\00004109A10090400100000000F01FEC"
 #define KEY_OFFICE_2007      L"\\UserData\\S-1-5-18\\Products\\00002109A10000000000000000F01FEC"
 

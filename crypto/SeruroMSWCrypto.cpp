@@ -16,7 +16,7 @@
 /* Code goes here */
 #include "../SeruroClient.h"
 #include "../SeruroConfig.h"
-#include "SeruroCryptoMSW.h"
+#include "SeruroMSWCrypto.h"
 
 DECLARE_APP(SeruroClient);
 
@@ -150,7 +150,7 @@ bool RemoveCertificatesFromStore(wxArrayString &fingerprints, wxString store_nam
 
 	for (size_t i = 0; i < fingerprints.size(); ++i) {
 		cert_context = GetCertificateByFingerprint(fingerprints[i], store_name, BY_SKID);
-		status = status && (CertDeleteCertificateFromStore(cert_context) == true) ? true : false;
+		status = status && CertDeleteCertificateFromStore(cert_context) ? true : false;
 	}
 
 	return status;
