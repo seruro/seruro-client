@@ -71,7 +71,7 @@ wxRegKey *GetInstallKey(wxString key_install, wxRegKey::StdKey hive, wxString ba
 	long key_index = 0;
 
 	if (check_key->Exists() && check_key->GetFirstKey(installer_sub, key_index)) {
-		if (installer_sub.compare("ResolveIOD") == 0) {
+		if (installer_sub == _("ResolveIOD") || installer_sub == _("Secure")) {
 			delete check_key;
 			check_key = new wxRegKey(hive, base, wxRegKey::WOW64ViewMode_64);
 		}

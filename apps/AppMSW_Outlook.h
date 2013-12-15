@@ -17,13 +17,13 @@
 #include <MAPI.h>
 
 #include <initguid.h> //this is needed,
-#include <mapiguid.h> //then this
-#include <mapiform.h>
+#include "../include/mapiguid.h" //then this
+#include "../include/mapiform.h"
 #include <objbase.h>
-#include <mapix.h>
-#include <mapitags.h>
-#include <mapidefs.h>
-#include <mapiutil.h>
+#include "../include/mapix.h"
+#include "../include/mapitags.h"
+#include "../include/mapidefs.h"
+#include "../include/mapiutil.h"
 #include <imessage.h>
 
 /* Not available in the Windows 8 SDK, copied from 7A and linked explicitly. */

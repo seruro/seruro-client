@@ -17,10 +17,10 @@
 /* Include common MAPI header files if they haven't been already. */
 
 #ifndef MAPIDEFS_H
-#include <mapidefs.h>
-#include <mapicode.h>
-#include <mapiguid.h>
-#include <mapitags.h>
+#include "mapidefs.h"
+#include "mapicode.h"
+#include "mapiguid.h"
+#include "mapitags.h"
 #endif
 
 #ifndef BEGIN_INTERFACE
